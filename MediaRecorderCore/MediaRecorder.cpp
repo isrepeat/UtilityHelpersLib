@@ -3,6 +3,7 @@
 #include "MediaFormat/MediaFormatCodecsSupport.h"
 #include "Platform/PlatformClassFactory.h"
 #include <limits>
+#include <filesystem>
 #include <libhelpers/HardDrive.h>
 #include <libhelpers/HSystem.h>
 #include <libhelpers/HMathCP.h>
@@ -129,12 +130,13 @@ void MediaRecorder::Record(const Microsoft::WRL::ComPtr<IMFSample> &sample, bool
 
 void MediaRecorder::EndRecord() {
     FinalizeRecord();
-        
+
     std::vector<std::wstring> chunks;
     chunks.reserve(chunkNumber);
     for (size_t i = 0; i < chunkNumber; ++i) {
         auto chunkFile = params.chunksPath + params.chunksGuid + L"-" + std::to_wstring(i) + containerExt;
-        chunks.push_back(std::move(chunkFile));
+        if (std::filesystem::file_size(chunkFile) > 0)
+            chunks.push_back(std::move(chunkFile));
     }
     ChunkMerger merger{ this->stream.Get(), MediaRecorder::CreateAudioOutMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits), std::move(chunks), containerExt };
     //ChunkMerger merger{ this->stream.Get(), CreateAudioAACOutMediaType(), std::move(chunks), containerExt };
@@ -802,7 +804,7 @@ IMFByteStream* MediaRecorder::StartNewChunk() {
 
     auto hr = MFCreateFile(MF_ACCESSMODE_READWRITE, MF_OPENMODE_DELETE_IF_EXIST, MF_FILEFLAGS_NONE, chunkFile.c_str(), currentOutputStream.GetAddressOf());
     H::System::ThrowIfFailed(hr);
-
+    
     return currentOutputStream.Get();
 }
 
@@ -812,9 +814,10 @@ void MediaRecorder::FinalizeRecord() {
     samplesNumber = 0;
     chunkAudioPtsHns = 0;
     chunkVideoPtsHns = 0;
-
     hr = this->sinkWriter->Finalize();
-    H::System::ThrowIfFailed(hr);
+    if (hr != MF_E_SINK_NO_SAMPLES_PROCESSED) { // occured when was called BeginWritting but not calls WriteSample yet
+        H::System::ThrowIfFailed(hr);
+    }
 
     this->currentOutputStream.Reset();
     this->sinkWriter.Reset();
