@@ -220,7 +220,9 @@ void ChunkMerger::Merge() {
 	}
 
 	auto hr = writer->Finalize();
-	H::System::ThrowIfFailed(hr);
+	if (hr != MF_E_SINK_NO_SAMPLES_PROCESSED) { // occured when was called BeginWritting but not calls WriteSample yet
+		H::System::ThrowIfFailed(hr);
+	}
 }
 
 bool ChunkMerger::WriteInner(Microsoft::WRL::ComPtr<IMFSinkWriter> writer, Microsoft::WRL::ComPtr<IMFSourceReader> reader, DWORD readFrom, DWORD writeTo, bool audio) {
