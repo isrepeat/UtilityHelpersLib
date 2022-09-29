@@ -13,7 +13,7 @@ public:
         MediaRecorderParams params,
         bool useCPUForEncoding,
         bool nv12VideoSamples,
-        std::shared_ptr<IEvent<MediaRecorderErrorsEnum>> recordErrorCallback);
+        std::shared_ptr<IEvent<Native::MediaRecorderEventArgs>> recordEventCallback);
 
     std::unique_ptr<IMediaRecorder> CreateMediaRecorder() override;
 
@@ -27,5 +27,5 @@ private:
     bool nv12VideoSamples;
     MediaRecorderParams params;
     Microsoft::WRL::ComPtr<IMFByteStream> outputStream;
-    std::shared_ptr<IEvent<MediaRecorderErrorsEnum>> recordErrorCallback;
+    std::shared_ptr<IEvent<Native::MediaRecorderEventArgs>> recordEventCallback;
 };

@@ -24,17 +24,18 @@ MediaRecorder::MediaRecorder(
     MediaRecorderParams params,
     bool useCPUForEncoding,
     bool nv12VideoSamples,
-    std::shared_ptr<IEvent<MediaRecorderErrorsEnum>> recordErrorCallback)
+    std::shared_ptr<IEvent<Native::MediaRecorderEventArgs>> recordEventCallback)
     : stream(outputStream), params(std::move(params))
     , audioStreamIdx((std::numeric_limits<DWORD>::max)())
     , videoStreamIdx((std::numeric_limits<DWORD>::max)()), audioPtsHns(0)
-    , videoPtsHns(0), cpuEncoding{ useCPUForEncoding }, nv12Textures{ nv12VideoSamples }, recordErrorCallback{ recordErrorCallback }
+    , videoPtsHns(0), cpuEncoding{ useCPUForEncoding }, nv12Textures{ nv12VideoSamples }, recordEventCallback{ recordEventCallback }
 {
     //this->InitializeSinkWriter(outputStream, useCPUForEncoding, nv12VideoSamples);
     targetRecordDisk = H::HardDrive::GetDiskLetterFromPath(this->params.targetRecordPath);
 
     DefineContainerType();
     auto newStream = StartNewChunk();
+    lastChunkCreatedTime = H::Time::GetCurrentLibTime();
 
     this->InitializeSinkWriter(newStream, useCPUForEncoding, nv12VideoSamples);
     //this->InitializeSinkWriter(outputStream, useCPUForEncoding, nv12VideoSamples);  
@@ -822,19 +823,33 @@ void MediaRecorder::FinalizeRecord() {
     this->currentOutputStream.Reset();
     this->sinkWriter.Reset();
 
-    recordedChunksSize += H::HardDrive::GetFilesize(chunkFile);
-    auto freeSpaceTragetDisk = H::HardDrive::GetFreeMemory(targetRecordDisk);
+    if (recordEventCallback) {
+        Native::MediaRecorderEventArgs eventArgs;
 
-    if (recordedChunksSize >= freeSpaceTragetDisk) {
-        if (recordErrorCallback) {
-            recordErrorCallback->call(MediaRecorderErrorsEnum::NotEnoughSpaceOnTargetRecordPath);
+        auto lastChunkSize = H::HardDrive::GetFilesize(chunkFile);
+        recordedChunksSize += lastChunkSize;
+        auto freeSpaceTragetDisk = H::HardDrive::GetFreeMemory(targetRecordDisk);
+        auto freeSpaceAfterWriteChunks = freeSpaceTragetDisk - recordedChunksSize;
+
+        if (recordedChunksSize >= freeSpaceTragetDisk) {
+            eventArgs.message = Native::MediaRecorderErrorsEnum::NotEnoughSpaceOnTargetRecordPath;
+            recordEventCallback->call(eventArgs);
+            return;
         }
+
+        auto dtSecCreatedChunk = (H::Time::GetCurrentLibTime() - this->lastChunkCreatedTime) / H::Time::HNSResolution;
+        int remainingTime = (float)freeSpaceAfterWriteChunks / lastChunkSize * dtSecCreatedChunk;
+
+        eventArgs.message = Native::MediaRecorderErrorsEnum::RemainingTime;
+        eventArgs.remainingTime = remainingTime;
+        recordEventCallback->call(eventArgs);
     }
 }
 
 void MediaRecorder::ResetSinkWriterOnNewChunk() {
     FinalizeRecord();
     auto newStream = StartNewChunk();
+    lastChunkCreatedTime = H::Time::GetCurrentLibTime();
     this->InitializeSinkWriter(newStream, cpuEncoding, nv12Textures);
     StartRecord();
 }

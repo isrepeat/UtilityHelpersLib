@@ -1,6 +1,14 @@
 #pragma once
 #include "MediaRecorderErrorsEnumDef.h"
 
-enum class MediaRecorderErrorsEnum {
-    MediaRecorderErrors_Enum
-};
+namespace Native {
+    // TODO: rename to MediaRecorderMessageEnum
+    enum class MediaRecorderErrorsEnum {
+        MediaRecorderErrors_Enum
+    };
+
+    struct MediaRecorderEventArgs {
+        MediaRecorderErrorsEnum message;
+        int remainingTime = 0;
+    };
+}

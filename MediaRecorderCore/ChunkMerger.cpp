@@ -226,6 +226,7 @@ void ChunkMerger::Merge() {
 }
 
 bool ChunkMerger::WriteInner(Microsoft::WRL::ComPtr<IMFSinkWriter> writer, Microsoft::WRL::ComPtr<IMFSourceReader> reader, DWORD readFrom, DWORD writeTo, bool audio) {
+	// TODO: If not enaugh space on disk where merging chunks may be 0xC00D36B3: MF_E_INVALIDSTREAMNUMBER
 	HRESULT hr = reader->SetStreamSelection(readFrom, true);
 	H::System::ThrowIfFailed(hr);
 

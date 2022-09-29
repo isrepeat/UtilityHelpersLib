@@ -25,7 +25,7 @@ public:
         MediaRecorderParams params,
         bool useCPUForEncoding,
         bool nv12VideoSamples,
-        std::shared_ptr<IEvent<MediaRecorderErrorsEnum>> recordErrorCallback = nullptr);
+        std::shared_ptr<IEvent<Native::MediaRecorderEventArgs>> recordEventCallback = nullptr);
 
     MediaRecorder(MediaRecorder&&) = default;
     ~MediaRecorder();
@@ -81,14 +81,15 @@ private:
     std::wstring chunkFile;
     std::wstring chunksDisk;
     std::wstring targetRecordDisk;
-    std::uint64_t recordedChunksSize = 0;
+    uint64_t recordedChunksSize = 0;
+    uint64_t lastChunkCreatedTime = 0;
 
     int32_t chunkNumber = 0;
     Microsoft::WRL::ComPtr<IMFByteStream> currentOutputStream;
 
     Microsoft::WRL::ComPtr<IMFMediaType> videoTypeOut, videoTypeIn;
 
-    std::shared_ptr<IEvent<MediaRecorderErrorsEnum>> recordErrorCallback;
+    std::shared_ptr<IEvent<Native::MediaRecorderEventArgs>> recordEventCallback;
 
     void InitializeSinkWriter(IMFByteStream *outputStream, bool useCPUForEncoding, bool nv12VideoSamples);
     static Microsoft::WRL::ComPtr<IMFMediaType> CreateAudioInMediaType(
