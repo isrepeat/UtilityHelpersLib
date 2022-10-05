@@ -139,6 +139,12 @@ void MediaRecorder::EndRecord() {
         if (std::filesystem::file_size(chunkFile) > 0)
             chunks.push_back(std::move(chunkFile));
     }
+
+    // Ignore last chunk to avoid MF_E_INVALIDSTREAMNUMBER when not enough space on disk 
+    if (recordedChunksSize >= H::HardDrive::GetFreeMemory(targetRecordDisk)) {
+        chunks.pop_back();
+    }
+
     ChunkMerger merger{ this->stream.Get(), MediaRecorder::CreateAudioOutMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits), std::move(chunks), containerExt };
     //ChunkMerger merger{ this->stream.Get(), CreateAudioAACOutMediaType(), std::move(chunks), containerExt };
     //ChunkMerger merger{ this->stream.Get(), std::move(chunks) };
