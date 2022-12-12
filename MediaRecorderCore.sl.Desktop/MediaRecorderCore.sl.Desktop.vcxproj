@@ -43,7 +43,7 @@
     <ProjectGuid>{E803EAAA-CE04-446F-85B5-8B29A5F1A338}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>MediaRecorderCore</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
     <SccProjectName>SAK</SccProjectName>
     <SccAuxPath>SAK</SccAuxPath>
     <SccLocalPath>SAK</SccLocalPath>
