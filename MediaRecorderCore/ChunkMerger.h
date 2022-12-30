@@ -9,17 +9,29 @@
 #include <shlwapi.h>
 #include <string>
 #include <libhelpers/HSystem.h>
+#include "MediaFormat/MediaFormat.h"
 
 class ChunkMerger {
 public:
-	ChunkMerger(IMFByteStream* outputStream, Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeAudioOut, std::vector<std::wstring>&& filesToMerge, std::wstring containerExts);
-	//ChunkMerger(IMFByteStream* outputStream, std::vector<std::wstring>&& filesToMerge); // [not used]
+	ChunkMerger(IMFByteStream* outputStream,
+		Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeAudioIn, Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeAudioOut,
+		Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeVideoIn, Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeVideoOut,
+		const IVideoCodecSettings* settings, std::vector<std::wstring>&& filesToMerge, std::wstring containerExt);
+
 	void Merge();
 	
+private:
+	Microsoft::WRL::ComPtr<IMFMediaType> CreateVideoOutMediaType();
 
 private:
 	bool useVideoStream = true;
 	bool useAudioStream = true;
+
+	const IVideoCodecSettings* settings;
+	Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeAudioIn;
+	Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeAudioOut;
+	Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeVideoIn;
+	Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeVideoOut;
 
 	LONGLONG videoHns = 0;
 	LONGLONG audioHns = 0;

@@ -145,16 +145,31 @@ void MediaRecorder::EndRecord() {
         chunks.pop_back();
     }
 
-    ChunkMerger merger{ this->stream.Get(), MediaRecorder::CreateAudioOutMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits), std::move(chunks), containerExt };
-    //ChunkMerger merger{ this->stream.Get(), CreateAudioAACOutMediaType(), std::move(chunks), containerExt };
-    //ChunkMerger merger{ this->stream.Get(), std::move(chunks) };
-    merger.Merge();
+    ChunkMerger merger{
+        this->stream.Get(),
+        MediaRecorder::CreateAudioInMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits),
+        MediaRecorder::CreateAudioOutMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits),
+        MediaRecorder::CreateVideoInMediaType(this->params.mediaFormat.GetVideoCodecSettings(), nv12Textures),
+        MediaRecorder::CreateVideoOutMediaType(this->params.mediaFormat.GetVideoCodecSettings()),
+        this->params.mediaFormat.GetVideoCodecSettings(),
+        std::move(chunks),
+        containerExt
+    };
 
+    merger.Merge();
 }
 
 void MediaRecorder::Restore(IMFByteStream* outputStream, std::vector<std::wstring>&& chunks) {
-    ChunkMerger merger{ this->stream.Get(), MediaRecorder::CreateAudioOutMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits), std::move(chunks), containerExt };
-    merger.Merge();
+    ChunkMerger merger{
+       this->stream.Get(),
+       MediaRecorder::CreateAudioInMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits),
+       MediaRecorder::CreateAudioOutMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits),
+       MediaRecorder::CreateVideoInMediaType(this->params.mediaFormat.GetVideoCodecSettings(), nv12Textures),
+       MediaRecorder::CreateVideoOutMediaType(this->params.mediaFormat.GetVideoCodecSettings()),
+       this->params.mediaFormat.GetVideoCodecSettings(),
+       std::move(chunks),
+       containerExt
+    };
 }
 
 const MediaRecorderParams &MediaRecorder::GetParams() const {
@@ -626,10 +641,11 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateVideoOutMediaType(
     hr = mediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
     H::System::ThrowIfFailed(hr);
 
-    auto codecSup = MediaFormatCodecsSupport::Instance();
-    auto vcodecId = codecSup->MapVideoCodec(settings->GetCodecType());
+    //auto codecSup = MediaFormatCodecsSupport::Instance();
+    //auto vcodecId = codecSup->MapVideoCodec(settings->GetCodecType());
 
-    hr = mediaType->SetGUID(MF_MT_SUBTYPE, vcodecId);
+    //hr = mediaType->SetGUID(MF_MT_SUBTYPE, vcodecId);
+    hr = mediaType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264); // WORKAROUND for merging HEVC [see ChangeMerger notes]
     H::System::ThrowIfFailed(hr);
 
     // default profile of H264 can fail on sink->Finalize with video bitrate > 80 mbits.
