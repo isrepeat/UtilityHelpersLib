@@ -119,55 +119,67 @@ Microsoft::WRL::ComPtr<IMFMediaType> ChunkMerger::CreateVideoOutMediaType()
 
 
 void ChunkMerger::Merge() {
-	for each (auto file in filesToMerge) {
-		Microsoft::WRL::ComPtr<IMFSourceReader> reader;
-		HRESULT hr = MFCreateSourceReaderFromURL(file.c_str(), nullptr, reader.GetAddressOf());
-		H::System::ThrowIfFailed(hr);
-
-		if (useAudioStream) {
-			hr = reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, nullptr, mediaTypeAudioIn.Get());
+	try {
+		for each (auto file in filesToMerge) {
+			Microsoft::WRL::ComPtr<IMFSourceReader> reader;
+			HRESULT hr = MFCreateSourceReaderFromURL(file.c_str(), nullptr, reader.GetAddressOf());
 			H::System::ThrowIfFailed(hr);
-		}
 
-		if (useVideoStream) {
-			hr = reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, nullptr, mediaTypeVideoIn.Get());
-			H::System::ThrowIfFailed(hr);
-		}
+			if (useAudioStream) {
+				hr = reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, nullptr, mediaTypeAudioIn.Get());
+				H::System::ThrowIfFailed(hr);
+			}
 
-		bool videoDone = false;
-		bool audioDone = false;
+			if (useVideoStream) {
+				hr = reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, nullptr, mediaTypeVideoIn.Get());
+				H::System::ThrowIfFailed(hr);
+			}
 
-		while (true) {
-			if (useVideoStream && useAudioStream) {
-				videoDone = WriteInner(writer, reader, MF_SOURCE_READER_FIRST_VIDEO_STREAM, videoStreamIndexToWrite, false);
+			bool videoDone = false;
+			bool audioDone = false;
 
-				while ((audioHns < videoHns && !audioDone) || (videoDone && !audioDone)) {
-					audioDone = WriteInner(writer, reader, MF_SOURCE_READER_FIRST_AUDIO_STREAM, audioStreamIndexToWrite, true);
+			while (true) {
+				if (useVideoStream && useAudioStream) {
+					videoDone = WriteInner(writer, reader, MF_SOURCE_READER_FIRST_VIDEO_STREAM, videoStreamIndexToWrite, false);
+
+					while ((audioHns < videoHns && !audioDone) || (videoDone && !audioDone)) {
+						audioDone = WriteInner(writer, reader, MF_SOURCE_READER_FIRST_AUDIO_STREAM, audioStreamIndexToWrite, true);
+					}
+					if (videoDone && audioDone) {
+						firstSamplesCount = 2048;
+						break;
+					}
 				}
-				if (videoDone && audioDone) {
+				else if (useAudioStream) {
+					while (!audioDone) {
+						audioDone = WriteInner(writer, reader, MF_SOURCE_READER_FIRST_AUDIO_STREAM, audioStreamIndexToWrite, true);
+					}
+
 					firstSamplesCount = 2048;
 					break;
 				}
-			}
-			else if (useAudioStream) {
-				while (!audioDone) {
-					audioDone = WriteInner(writer, reader, MF_SOURCE_READER_FIRST_AUDIO_STREAM, audioStreamIndexToWrite, true);
+				else if (useVideoStream) {
+					videoDone = WriteInner(writer, reader, MF_SOURCE_READER_FIRST_VIDEO_STREAM, videoStreamIndexToWrite, false);
+					if (videoDone)
+						break;
 				}
-
-				firstSamplesCount = 2048;
-				break;
-			}
-			else if (useVideoStream) {
-				videoDone = WriteInner(writer, reader, MF_SOURCE_READER_FIRST_VIDEO_STREAM, videoStreamIndexToWrite, false);
-				if (videoDone)
-					break;
 			}
 		}
-	}
 
-	auto hr = writer->Finalize();
-	if (hr != MF_E_SINK_NO_SAMPLES_PROCESSED) { // occured when was called BeginWritting but not calls WriteSample yet
-		H::System::ThrowIfFailed(hr);
+		auto hr = writer->Finalize();
+		if (hr != MF_E_SINK_NO_SAMPLES_PROCESSED) { // occured when was called BeginWritting but not calls WriteSample yet
+			H::System::ThrowIfFailed(hr);
+		}
+	}
+	catch (HResultException& ex) {
+		// If was error during merging try end writing with already handled chunks
+		if (ex.GetHRESULT() == MF_E_INVALIDSTREAMNUMBER) {
+			auto hr = writer->Finalize();
+			H::System::ThrowIfFailed(hr);
+		}
+		else {
+			throw;
+		}
 	}
 }
 

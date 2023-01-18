@@ -75,6 +75,8 @@ void MediaRecorder::StartRecord() {
     H::System::ThrowIfFailed(hr);
 }
 
+// TODO: Add guard for case when EndRecord called from other thread during record
+// NOTE: we can't use mutex because it need custom copy Ctor(mb add smth like ObjectLocker)
 void MediaRecorder::Record(const Microsoft::WRL::ComPtr<IMFSample> &sample, bool audio) {
     HRESULT hr = S_OK;
     int64_t samplePts = 0;
