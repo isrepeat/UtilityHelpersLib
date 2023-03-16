@@ -32,10 +32,10 @@ ChunkMerger::ChunkMerger(IMFByteStream* outputStream,
 	}
 
 	if (useAudioStream) {
-		hr = writer->AddStream(mediaTypeAudioOut.Get(), &audioStreamIndexToWrite);
+		hr = writer->AddStream(this->mediaTypeAudioOut.Get(), &audioStreamIndexToWrite);
 		H::System::ThrowIfFailed(hr);
 
-		hr = reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, nullptr, mediaTypeAudioIn.Get());
+		hr = reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, nullptr, this->mediaTypeAudioIn.Get());
 		H::System::ThrowIfFailed(hr);
 
 		Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeAudioForWriter;
@@ -54,7 +54,7 @@ ChunkMerger::ChunkMerger(IMFByteStream* outputStream,
 		hr = writer->AddStream(this->mediaTypeVideoOut.Get(), &videoStreamIndexToWrite);
 		H::System::ThrowIfFailed(hr);
 
-		hr = reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, nullptr, mediaTypeVideoIn.Get());
+		hr = reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, nullptr, this->mediaTypeVideoIn.Get());
 		H::System::ThrowIfFailed(hr);
 
 		Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeVideoForWriter;

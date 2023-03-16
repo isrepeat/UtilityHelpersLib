@@ -354,6 +354,9 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateAudioInMediaType(
     const IAudioCodecSettings *settings,
     uint32_t bitsPerSample)
 {
+    if (settings == nullptr)
+        return nullptr;
+
     HRESULT hr = S_OK;
     Microsoft::WRL::ComPtr<IMFMediaType> mediaType;
 
@@ -592,6 +595,9 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateAudioFlacOutMediaType(
 Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateVideoInMediaType(
     const IVideoCodecSettings *settings, bool nv12VideoSamples)
 {
+    if (settings == nullptr)
+        return nullptr;
+
     HRESULT hr = S_OK;
     Microsoft::WRL::ComPtr<IMFMediaType> mediaType;
 
@@ -634,6 +640,9 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateVideoInMediaType(
 Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateVideoOutMediaType(
     const IVideoCodecSettings *settings)
 {
+    if (settings == nullptr)
+        return nullptr;
+
     HRESULT hr = S_OK;
     Microsoft::WRL::ComPtr<IMFMediaType> mediaType;
 
