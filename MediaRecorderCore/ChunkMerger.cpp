@@ -141,9 +141,6 @@ void ChunkMerger::Merge() {
 			HRESULT hr = MFCreateSourceReaderFromURL(file.c_str(), nullptr, reader.GetAddressOf());
 			H::System::ThrowIfFailed(hr);
 
-			DWORD readerAudioStream = -1;
-			DWORD readerVideoStream = -1;
-
 			if (useAudioStream) {
 				hr = reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, nullptr, mediaTypeAudioIn.Get());
 				H::System::ThrowIfFailed(hr);
