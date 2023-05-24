@@ -46,6 +46,12 @@ private:
 	DWORD videoStreamIndexToWrite = -1;
 	DWORD audioStreamIndexToWrite = -1;
 
+	bool audioRemuxUsed = false;
+
 	bool WriteInner(Microsoft::WRL::ComPtr<IMFSinkWriter> writer, Microsoft::WRL::ComPtr<IMFSourceReader> reader, DWORD readFrom, DWORD writeTo, bool audio);
 
+	bool TryInitVideoRemux(IMFSourceReader* chunkReader);
+	bool TryInitAudioRemux(IMFSourceReader* chunkReader);
+
+	static void SetIMFMediaTypeItem(IMFMediaType* dst, IMFMediaType* src, const GUID& key);
 };

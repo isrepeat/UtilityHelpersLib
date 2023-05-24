@@ -1,6 +1,7 @@
 #include "ChunkMerger.h"
 #include <libhelpers/HMathCP.h>
 #include <libhelpers/HTime.h>
+#include <libhelpers/UniquePROPVARIANT.h>
 #include "MediaFormat/MediaFormatCodecsSupport.h"
 #include "Platform/PlatformClassFactory.h"
 
@@ -20,8 +21,19 @@ ChunkMerger::ChunkMerger(IMFByteStream* outputStream,
 	HRESULT hr = MFCreateSourceReaderFromURL(filesToMerge[0].c_str(), nullptr, reader.GetAddressOf());
 	H::System::ThrowIfFailed(hr);
 
+	Microsoft::WRL::ComPtr<IMFAttributes> writerAttr;
+
+	hr = MFCreateAttributes(writerAttr.GetAddressOf(), 0);
+	H::System::ThrowIfFailed(hr);
+
+	// must be used if remux will be enabled
+	// remux will deliver very fast so that throttling will be enabled
+	// https://learn.microsoft.com/en-us/windows/win32/medfound/mf-sink-writer-disable-throttling
+	hr = writerAttr->SetUINT32(MF_SINK_WRITER_DISABLE_THROTTLING, TRUE);
+	H::System::ThrowIfFailed(hr);
+
 	Microsoft::WRL::ComPtr<IMFByteStream> byteStream = outputStream;
-	hr = MFCreateSinkWriterFromURL(containerExt.c_str(), byteStream.Get(), nullptr, writer.GetAddressOf());
+	hr = MFCreateSinkWriterFromURL(containerExt.c_str(), byteStream.Get(), writerAttr.Get(), writer.GetAddressOf());
 	H::System::ThrowIfFailed(hr);
 
 	if (mediaTypeAudioOut == nullptr) {
@@ -32,37 +44,41 @@ ChunkMerger::ChunkMerger(IMFByteStream* outputStream,
 	}
 
 	if (useAudioStream) {
-		hr = writer->AddStream(this->mediaTypeAudioOut.Get(), &audioStreamIndexToWrite);
-		H::System::ThrowIfFailed(hr);
+		if (!this->TryInitAudioRemux(reader.Get())) {
+			hr = writer->AddStream(this->mediaTypeAudioOut.Get(), &audioStreamIndexToWrite);
+			H::System::ThrowIfFailed(hr);
 
-		hr = reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, nullptr, this->mediaTypeAudioIn.Get());
-		H::System::ThrowIfFailed(hr);
+			hr = reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, nullptr, this->mediaTypeAudioIn.Get());
+			H::System::ThrowIfFailed(hr);
 
-		Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeAudioForWriter;
-		hr = reader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, mediaTypeAudioForWriter.GetAddressOf());
-		H::System::ThrowIfFailed(hr);
+			Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeAudioForWriter;
+			hr = reader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, mediaTypeAudioForWriter.GetAddressOf());
+			H::System::ThrowIfFailed(hr);
 
-		hr = writer->SetInputMediaType(audioStreamIndexToWrite, mediaTypeAudioForWriter.Get(), nullptr);
-		H::System::ThrowIfFailed(hr);
+			hr = writer->SetInputMediaType(audioStreamIndexToWrite, mediaTypeAudioForWriter.Get(), nullptr);
+			H::System::ThrowIfFailed(hr);
+		}
 	}
 	if (useVideoStream) {
 		// HEVC TRANSCODING WORKAROUND:
 		// Incoming video must be encoded in H264 for always types, otherwise we can't mrege form HEVC to HEVC,
 		// but can H264 -> HEVC or H264 -> H264.
-		this->mediaTypeVideoOut = CreateVideoOutMediaType();
+		if (!this->TryInitVideoRemux(reader.Get())) {
+			this->mediaTypeVideoOut = CreateVideoOutMediaType();
 
-		hr = writer->AddStream(this->mediaTypeVideoOut.Get(), &videoStreamIndexToWrite);
-		H::System::ThrowIfFailed(hr);
+			hr = writer->AddStream(this->mediaTypeVideoOut.Get(), &videoStreamIndexToWrite);
+			H::System::ThrowIfFailed(hr);
 
-		hr = reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, nullptr, this->mediaTypeVideoIn.Get());
-		H::System::ThrowIfFailed(hr);
+			hr = reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, nullptr, this->mediaTypeVideoIn.Get());
+			H::System::ThrowIfFailed(hr);
 
-		Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeVideoForWriter;
-		hr = reader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, mediaTypeVideoForWriter.GetAddressOf());
-		H::System::ThrowIfFailed(hr);
+			Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeVideoForWriter;
+			hr = reader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, mediaTypeVideoForWriter.GetAddressOf());
+			H::System::ThrowIfFailed(hr);
 
-		hr = writer->SetInputMediaType(videoStreamIndexToWrite, mediaTypeVideoForWriter.Get(), NULL);
-		H::System::ThrowIfFailed(hr);
+			hr = writer->SetInputMediaType(videoStreamIndexToWrite, mediaTypeVideoForWriter.Get(), NULL);
+			H::System::ThrowIfFailed(hr);
+		}
 	}
 
 	hr = writer->BeginWriting();
@@ -120,10 +136,13 @@ Microsoft::WRL::ComPtr<IMFMediaType> ChunkMerger::CreateVideoOutMediaType()
 
 void ChunkMerger::Merge() {
 	try {
-		for each (auto file in filesToMerge) {
+		for (const auto& file : filesToMerge) {
 			Microsoft::WRL::ComPtr<IMFSourceReader> reader;
 			HRESULT hr = MFCreateSourceReaderFromURL(file.c_str(), nullptr, reader.GetAddressOf());
 			H::System::ThrowIfFailed(hr);
+
+			DWORD readerAudioStream = -1;
+			DWORD readerVideoStream = -1;
 
 			if (useAudioStream) {
 				hr = reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, nullptr, mediaTypeAudioIn.Get());
@@ -146,7 +165,9 @@ void ChunkMerger::Merge() {
 						audioDone = WriteInner(writer, reader, MF_SOURCE_READER_FIRST_AUDIO_STREAM, audioStreamIndexToWrite, true);
 					}
 					if (videoDone && audioDone) {
-						firstSamplesCount = 2048;
+						if (!this->audioRemuxUsed) {
+							firstSamplesCount = 2048;
+						}
 						break;
 					}
 				}
@@ -155,7 +176,9 @@ void ChunkMerger::Merge() {
 						audioDone = WriteInner(writer, reader, MF_SOURCE_READER_FIRST_AUDIO_STREAM, audioStreamIndexToWrite, true);
 					}
 
-					firstSamplesCount = 2048;
+					if (!this->audioRemuxUsed) {
+						firstSamplesCount = 2048;
+					}
 					break;
 				}
 				else if (useVideoStream) {
@@ -167,7 +190,7 @@ void ChunkMerger::Merge() {
 		}
 
 		auto hr = writer->Finalize();
-		if (hr != MF_E_SINK_NO_SAMPLES_PROCESSED) { // occured when was called BeginWritting but not calls WriteSample yet
+		if (FAILED(hr) && hr != MF_E_SINK_NO_SAMPLES_PROCESSED) { // occured when was called BeginWritting but not calls WriteSample yet
 			H::System::ThrowIfFailed(hr);
 		}
 	}
@@ -225,4 +248,119 @@ bool ChunkMerger::WriteInner(Microsoft::WRL::ComPtr<IMFSinkWriter> writer, Micro
 		return true;
 
 	return false;
+}
+
+bool ChunkMerger::TryInitVideoRemux(IMFSourceReader* chunkReader) {
+	try {
+		HRESULT hr = S_OK;
+		Microsoft::WRL::ComPtr<IMFMediaType> nativeType;
+
+		hr = chunkReader->GetNativeMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, MF_SOURCE_READER_CURRENT_TYPE_INDEX, nativeType.GetAddressOf());
+		H::System::ThrowIfFailed(hr);
+
+		GUID subtype = {};
+		hr = nativeType->GetGUID(MF_MT_SUBTYPE, &subtype);
+		H::System::ThrowIfFailed(hr);
+
+		if (subtype != MFVideoFormat_H264) {
+			return false;
+		}
+
+		Microsoft::WRL::ComPtr<IMFMediaType> writerMediaType;
+
+		hr = MFCreateMediaType(writerMediaType.GetAddressOf());
+		H::System::ThrowIfFailed(hr);
+
+		ChunkMerger::SetIMFMediaTypeItem(writerMediaType.Get(), nativeType.Get(), MF_MT_MAJOR_TYPE);
+		ChunkMerger::SetIMFMediaTypeItem(writerMediaType.Get(), nativeType.Get(), MF_MT_SUBTYPE);
+		ChunkMerger::SetIMFMediaTypeItem(writerMediaType.Get(), nativeType.Get(), MF_MT_INTERLACE_MODE);
+		ChunkMerger::SetIMFMediaTypeItem(writerMediaType.Get(), nativeType.Get(), MF_MT_PIXEL_ASPECT_RATIO);
+		ChunkMerger::SetIMFMediaTypeItem(writerMediaType.Get(), nativeType.Get(), MF_MT_FRAME_RATE);
+		ChunkMerger::SetIMFMediaTypeItem(writerMediaType.Get(), nativeType.Get(), MF_MT_FRAME_SIZE);
+
+		Microsoft::WRL::ComPtr<IMFMediaType> readerMediaType;
+
+		hr = MFCreateMediaType(readerMediaType.GetAddressOf());
+		H::System::ThrowIfFailed(hr);
+
+		hr = writerMediaType->CopyAllItems(readerMediaType.Get());
+		H::System::ThrowIfFailed(hr);
+
+		hr = readerMediaType->DeleteItem(MF_MT_FRAME_RATE);
+		H::System::ThrowIfFailed(hr);
+
+		hr = chunkReader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, nullptr, readerMediaType.Get());
+		H::System::ThrowIfFailed(hr);
+
+		hr = writer->AddStream(writerMediaType.Get(), &videoStreamIndexToWrite);
+		H::System::ThrowIfFailed(hr);
+
+		hr = writer->SetInputMediaType(videoStreamIndexToWrite, writerMediaType.Get(), NULL);
+		H::System::ThrowIfFailed(hr);
+
+		this->mediaTypeVideoIn = readerMediaType;
+		this->mediaTypeVideoOut = writerMediaType;
+	}
+	catch (...) {
+		return false;
+	}
+
+	return true;
+}
+
+bool ChunkMerger::TryInitAudioRemux(IMFSourceReader* chunkReader) {
+	try {
+		HRESULT hr = S_OK;
+		Microsoft::WRL::ComPtr<IMFMediaType> nativeType;
+
+		hr = chunkReader->GetNativeMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, MF_SOURCE_READER_CURRENT_TYPE_INDEX, nativeType.GetAddressOf());
+		H::System::ThrowIfFailed(hr);
+
+		GUID subtype = {};
+		hr = nativeType->GetGUID(MF_MT_SUBTYPE, &subtype);
+		H::System::ThrowIfFailed(hr);
+
+		if (subtype != MFAudioFormat_AAC) {
+			return false;
+		}
+
+		Microsoft::WRL::ComPtr<IMFMediaType> readerMediaType;
+
+		hr = MFCreateMediaType(readerMediaType.GetAddressOf());
+		H::System::ThrowIfFailed(hr);
+
+		ChunkMerger::SetIMFMediaTypeItem(readerMediaType.Get(), nativeType.Get(), MF_MT_MAJOR_TYPE);
+		ChunkMerger::SetIMFMediaTypeItem(readerMediaType.Get(), nativeType.Get(), MF_MT_SUBTYPE);
+
+		hr = chunkReader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, nullptr, readerMediaType.Get());
+		H::System::ThrowIfFailed(hr);
+
+		hr = writer->AddStream(nativeType.Get(), &audioStreamIndexToWrite);
+		H::System::ThrowIfFailed(hr);
+
+		hr = writer->SetInputMediaType(audioStreamIndexToWrite, nativeType.Get(), nullptr);
+		H::System::ThrowIfFailed(hr);
+
+		this->mediaTypeAudioIn = readerMediaType;
+		this->mediaTypeAudioOut = nativeType;
+
+		this->audioRemuxUsed = true;
+		this->firstSamplesCount = 0;
+	}
+	catch (...) {
+		return false;
+	}
+
+	return true;
+}
+
+void ChunkMerger::SetIMFMediaTypeItem(IMFMediaType* dst, IMFMediaType* src, const GUID& key) {
+	HRESULT hr = S_OK;
+	UniquePROPVARIANT pv;
+
+	hr = src->GetItem(key, pv.get());
+	H::System::ThrowIfFailed(hr);
+
+	hr = dst->SetItem(key, *pv.get());
+	H::System::ThrowIfFailed(hr);
 }
