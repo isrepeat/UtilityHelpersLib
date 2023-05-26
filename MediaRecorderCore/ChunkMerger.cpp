@@ -135,10 +135,12 @@ Microsoft::WRL::ComPtr<IMFMediaType> ChunkMerger::CreateVideoOutMediaType()
 
 
 void ChunkMerger::Merge() {
+	HRESULT hr = S_OK;
+
 	try {
 		for (const auto& file : filesToMerge) {
 			Microsoft::WRL::ComPtr<IMFSourceReader> reader;
-			HRESULT hr = MFCreateSourceReaderFromURL(file.c_str(), nullptr, reader.GetAddressOf());
+			hr = MFCreateSourceReaderFromURL(file.c_str(), nullptr, reader.GetAddressOf());
 			H::System::ThrowIfFailed(hr);
 
 			if (useAudioStream) {
@@ -186,7 +188,7 @@ void ChunkMerger::Merge() {
 			}
 		}
 
-		auto hr = writer->Finalize();
+		hr = writer->Finalize();
 		if (FAILED(hr) && hr != MF_E_SINK_NO_SAMPLES_PROCESSED) { // occured when was called BeginWritting but not calls WriteSample yet
 			H::System::ThrowIfFailed(hr);
 		}
@@ -194,7 +196,7 @@ void ChunkMerger::Merge() {
 	catch (HResultException& ex) {
 		// If was error during merging try end writing with already handled chunks
 		if (ex.GetHRESULT() == MF_E_INVALIDSTREAMNUMBER) {
-			auto hr = writer->Finalize();
+			hr = writer->Finalize();
 			H::System::ThrowIfFailed(hr);
 		}
 		else {
@@ -216,31 +218,62 @@ bool ChunkMerger::WriteInner(Microsoft::WRL::ComPtr<IMFSinkWriter> writer, Micro
 	if (FAILED(hr) || (sample == nullptr && stream == MF_SOURCE_READERF_ENDOFSTREAM))
 		return true;
 
-	
+	Microsoft::WRL::ComPtr<IMFSample> sampleToWrite;
+
+	// create new sample because initial sample may contain additional data that prevents writer to work correctly
+	hr = MFCreateSample(sampleToWrite.GetAddressOf());
+	H::System::ThrowIfFailed(hr);
+
 	LONGLONG duration;
 	
 	hr = sample->GetSampleDuration(&duration);
+	H::System::ThrowIfFailed(hr);
+
+	hr = sampleToWrite->SetSampleDuration(duration);
 	H::System::ThrowIfFailed(hr);
 
 	if (audio) {
 		if (firstSamplesCount > 0) {
 			Microsoft::WRL::ComPtr<IMFMediaBuffer> mediaBuffer;
 			hr = sample->ConvertToContiguousBuffer(&mediaBuffer);
+			H::System::ThrowIfFailed(hr);
+
 			DWORD len;
 			hr = mediaBuffer->GetCurrentLength(&len);
+			H::System::ThrowIfFailed(hr);
 
 			firstSamplesCount -= len / 2;
 			return false;
 		}
-		hr = sample->SetSampleTime(audioHns);
+
+		hr = sampleToWrite->SetSampleTime(audioHns);
+		H::System::ThrowIfFailed(hr);
+
 		audioHns += duration;
 	}
 	else {
-		hr = sample->SetSampleTime(videoHns);
+		hr = sampleToWrite->SetSampleTime(videoHns);
+		H::System::ThrowIfFailed(hr);
+
 		videoHns += duration;
 	}
+
+	DWORD bufCount = 0;
+
+	hr = sample->GetBufferCount(&bufCount);
 	H::System::ThrowIfFailed(hr);
-	hr = writer->WriteSample(writeTo, sample.Get());
+
+	for (DWORD i = 0; i < bufCount; ++i) {
+		Microsoft::WRL::ComPtr<IMFMediaBuffer> buf;
+
+		hr = sample->GetBufferByIndex(i, buf.GetAddressOf());
+		H::System::ThrowIfFailed(hr);
+
+		hr = sampleToWrite->AddBuffer(buf.Get());
+		H::System::ThrowIfFailed(hr);
+	}
+	
+	hr = writer->WriteSample(writeTo, sampleToWrite.Get());
 	if (FAILED(hr))
 		return true;
 
@@ -310,14 +343,28 @@ bool ChunkMerger::TryInitAudioRemux(IMFSourceReader* chunkReader) {
 		HRESULT hr = S_OK;
 		Microsoft::WRL::ComPtr<IMFMediaType> nativeType;
 
-		hr = chunkReader->GetNativeMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, MF_SOURCE_READER_CURRENT_TYPE_INDEX, nativeType.GetAddressOf());
-		H::System::ThrowIfFailed(hr);
+		// cycle through native media types to get supported type
+		// ALAC more than 1 native types
+		for (DWORD i = 0;; ++i) {
+			hr = chunkReader->GetNativeMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, i, nativeType.ReleaseAndGetAddressOf());
+			if (hr == MF_E_NO_MORE_TYPES) {
+				break;
+			}
+			H::System::ThrowIfFailed(hr);
 
-		GUID subtype = {};
-		hr = nativeType->GetGUID(MF_MT_SUBTYPE, &subtype);
-		H::System::ThrowIfFailed(hr);
+			GUID subtype = {};
+			hr = nativeType->GetGUID(MF_MT_SUBTYPE, &subtype);
+			H::System::ThrowIfFailed(hr);
 
-		if (subtype != MFAudioFormat_AAC) {
+			if (subtype != MFAudioFormat_AAC && subtype != MFAudioFormat_MP3 && subtype != MFAudioFormat_Dolby_AC3 && subtype != MFAudioFormat_ALAC) {
+				nativeType.Reset();
+				continue;
+			}
+
+			break;
+		}
+
+		if (!nativeType) {
 			return false;
 		}
 
