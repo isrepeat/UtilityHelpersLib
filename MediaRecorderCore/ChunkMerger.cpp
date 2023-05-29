@@ -292,7 +292,7 @@ bool ChunkMerger::TryInitVideoRemux(IMFSourceReader* chunkReader) {
 		hr = nativeType->GetGUID(MF_MT_SUBTYPE, &subtype);
 		H::System::ThrowIfFailed(hr);
 
-		if (subtype != MFVideoFormat_H264) {
+		if (subtype != MFVideoFormat_H264 && subtype != MFVideoFormat_HEVC) {
 			return false;
 		}
 
@@ -304,7 +304,6 @@ bool ChunkMerger::TryInitVideoRemux(IMFSourceReader* chunkReader) {
 		ChunkMerger::SetIMFMediaTypeItem(writerMediaType.Get(), nativeType.Get(), MF_MT_MAJOR_TYPE);
 		ChunkMerger::SetIMFMediaTypeItem(writerMediaType.Get(), nativeType.Get(), MF_MT_SUBTYPE);
 		ChunkMerger::SetIMFMediaTypeItem(writerMediaType.Get(), nativeType.Get(), MF_MT_INTERLACE_MODE);
-		ChunkMerger::SetIMFMediaTypeItem(writerMediaType.Get(), nativeType.Get(), MF_MT_PIXEL_ASPECT_RATIO);
 		ChunkMerger::SetIMFMediaTypeItem(writerMediaType.Get(), nativeType.Get(), MF_MT_FRAME_RATE);
 		ChunkMerger::SetIMFMediaTypeItem(writerMediaType.Get(), nativeType.Get(), MF_MT_FRAME_SIZE);
 
