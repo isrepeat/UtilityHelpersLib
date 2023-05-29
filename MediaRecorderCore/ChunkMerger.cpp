@@ -344,7 +344,7 @@ bool ChunkMerger::TryInitAudioRemux(IMFSourceReader* chunkReader) {
 		Microsoft::WRL::ComPtr<IMFMediaType> nativeType;
 
 		// cycle through native media types to get supported type
-		// ALAC more than 1 native types
+		// ALAC has more than 1 native types
 		for (DWORD i = 0;; ++i) {
 			hr = chunkReader->GetNativeMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, i, nativeType.ReleaseAndGetAddressOf());
 			if (hr == MF_E_NO_MORE_TYPES) {
