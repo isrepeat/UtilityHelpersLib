@@ -288,7 +288,13 @@ void MediaRecorder::InitializeSinkWriter(IMFByteStream *outputStream, bool useCP
     Microsoft::WRL::ComPtr<IMFByteStream> byteStream = outputStream;
     Microsoft::WRL::ComPtr<IMFAttributes> sinkAttr;
 
-    hr = MFCreateAttributes(sinkAttr.GetAddressOf(), 3);
+    hr = MFCreateAttributes(sinkAttr.GetAddressOf(), 4);
+    H::System::ThrowIfFailed(hr);
+
+    // disable throttling for cases when many samples accumulated during overall high system load
+    // and then trying to write many samples in short period of time
+    // https://learn.microsoft.com/en-us/windows/win32/medfound/mf-sink-writer-disable-throttling
+    hr = sinkAttr->SetUINT32(MF_SINK_WRITER_DISABLE_THROTTLING, TRUE);
     H::System::ThrowIfFailed(hr);
 
     if (!useCPUForEncoding) {
