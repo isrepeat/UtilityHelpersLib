@@ -40,6 +40,9 @@ public:
     int64_t LastAudioPtsHns() const override;
     int64_t LastPtsHns() const override;
 
+    bool ChunkAudioSamplesWritten() const override;
+    bool ChunkVideoSamplesWritten() const override;
+
     void StartRecord() override;
     void Record(const Microsoft::WRL::ComPtr<IMFSample> &sample, bool audio) override;
     void EndRecord() override;

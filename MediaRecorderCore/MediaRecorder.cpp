@@ -68,6 +68,16 @@ int64_t MediaRecorder::LastPtsHns() const {
     return ptsHns;
 }
 
+bool MediaRecorder::ChunkAudioSamplesWritten() const {
+    bool written = this->samplesNumber > 0;
+    return written;
+}
+
+bool MediaRecorder::ChunkVideoSamplesWritten() const {
+    bool written = this->framesNumber > 0;
+    return written;
+}
+
 void MediaRecorder::StartRecord() {
     HRESULT hr = S_OK;
 

@@ -19,6 +19,9 @@ public:
     // default implementation is to return max(LastVideoPtsHns(), LastAudioPtsHns())
     virtual int64_t LastPtsHns() const = 0;
 
+    virtual bool ChunkAudioSamplesWritten() const = 0;
+    virtual bool ChunkVideoSamplesWritten() const = 0;
+
     virtual void StartRecord() = 0;
     // <audio> == true for audio sample; <audio> == false for video sample
     virtual void Record(const Microsoft::WRL::ComPtr<IMFSample> &sample, bool audio) = 0;
