@@ -231,9 +231,15 @@ bool ChunkMerger::WriteInner(Microsoft::WRL::ComPtr<IMFSinkWriter> writer, Micro
 	H::System::ThrowIfFailed(hr);
 
 	LONGLONG duration;
-	
+
 	hr = sample->GetSampleDuration(&duration);
-	H::System::ThrowIfFailed(hr);
+	if (hr == MF_E_NO_SAMPLE_DURATION) {
+		// TODO: check with WMV
+		duration = 0;
+	}
+	else {
+		H::System::ThrowIfFailed(hr);
+	}
 
 	hr = sampleToWrite->SetSampleDuration(duration);
 	H::System::ThrowIfFailed(hr);
