@@ -104,7 +104,7 @@ private:
     static Microsoft::WRL::ComPtr<IMFMediaType> CreateVideoInMediaType(
         const IVideoCodecSettings *settings, bool nv12VideoSamples);
     static Microsoft::WRL::ComPtr<IMFMediaType> CreateVideoOutMediaType(
-        const IVideoCodecSettings *settings);
+        const IVideoCodecSettings *settings, MediaContainerType containerType);
 
     static Microsoft::WRL::ComPtr<IMFMediaType> GetBestOutputType(
         IMFTransform *transform,

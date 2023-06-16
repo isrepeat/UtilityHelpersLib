@@ -16,7 +16,8 @@ public:
 	ChunkMerger(IMFByteStream* outputStream,
 		Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeAudioIn, Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeAudioOut,
 		Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeVideoIn, Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeVideoOut,
-		const IVideoCodecSettings* settings, std::vector<std::wstring>&& filesToMerge, std::wstring containerExt);
+		const IVideoCodecSettings* settings, std::vector<std::wstring>&& filesToMerge, std::wstring containerExt,
+		MediaContainerType containerType);
 
 	void Merge();
 	

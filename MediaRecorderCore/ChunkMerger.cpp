@@ -9,7 +9,8 @@
 ChunkMerger::ChunkMerger(IMFByteStream* outputStream,
 	Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeAudioIn, Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeAudioOut,
 	Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeVideoIn, Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeVideoOut,
-	const IVideoCodecSettings* settings, std::vector<std::wstring>&& filesToMerge, std::wstring containerExt) 
+	const IVideoCodecSettings* settings, std::vector<std::wstring>&& filesToMerge, std::wstring containerExt,
+	MediaContainerType containerType)
 	: mediaTypeAudioIn{ mediaTypeAudioIn }
 	, mediaTypeAudioOut{ mediaTypeAudioOut }
 	, mediaTypeVideoIn{ mediaTypeVideoIn }
@@ -64,7 +65,12 @@ ChunkMerger::ChunkMerger(IMFByteStream* outputStream,
 		// Incoming video must be encoded in H264 for always types, otherwise we can't mrege form HEVC to HEVC,
 		// but can H264 -> HEVC or H264 -> H264.
 		if (!this->TryInitVideoRemux(reader.Get())) {
-			this->mediaTypeVideoOut = CreateVideoOutMediaType();
+			if (containerType == MediaContainerType::MP4) {
+				this->mediaTypeVideoOut = CreateVideoOutMediaType();
+			}
+			else {
+				this->mediaTypeVideoOut = mediaTypeVideoOut;
+			}
 
 			hr = writer->AddStream(this->mediaTypeVideoOut.Get(), &videoStreamIndexToWrite);
 			H::System::ThrowIfFailed(hr);

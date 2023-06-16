@@ -162,10 +162,11 @@ void MediaRecorder::EndRecord() {
         MediaRecorder::CreateAudioInMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits),
         MediaRecorder::CreateAudioOutMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits),
         MediaRecorder::CreateVideoInMediaType(this->params.mediaFormat.GetVideoCodecSettings(), nv12Textures),
-        MediaRecorder::CreateVideoOutMediaType(this->params.mediaFormat.GetVideoCodecSettings()),
+        MediaRecorder::CreateVideoOutMediaType(this->params.mediaFormat.GetVideoCodecSettings(), this->params.mediaFormat.GetMediaContainerType()),
         this->params.mediaFormat.GetVideoCodecSettings(),
         std::move(chunks),
-        containerExt
+        containerExt,
+        this->params.mediaFormat.GetMediaContainerType()
     };
 
     merger.Merge();
@@ -177,10 +178,11 @@ void MediaRecorder::Restore(IMFByteStream* outputStream, std::vector<std::wstrin
        MediaRecorder::CreateAudioInMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits),
        MediaRecorder::CreateAudioOutMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits),
        MediaRecorder::CreateVideoInMediaType(this->params.mediaFormat.GetVideoCodecSettings(), nv12Textures),
-       MediaRecorder::CreateVideoOutMediaType(this->params.mediaFormat.GetVideoCodecSettings()),
+       MediaRecorder::CreateVideoOutMediaType(this->params.mediaFormat.GetVideoCodecSettings(), this->params.mediaFormat.GetMediaContainerType()),
        this->params.mediaFormat.GetVideoCodecSettings(),
        std::move(chunks),
-       containerExt
+       containerExt,
+       this->params.mediaFormat.GetMediaContainerType()
     };
 }
 
@@ -353,7 +355,7 @@ void MediaRecorder::InitializeSinkWriter(IMFByteStream *outputStream, bool useCP
         Microsoft::WRL::ComPtr<IMFMediaType> typeOut, typeIn;
 
         typeIn = MediaRecorder::CreateVideoInMediaType(settings, nv12VideoSamples);
-        typeOut = MediaRecorder::CreateVideoOutMediaType(settings);
+        typeOut = MediaRecorder::CreateVideoOutMediaType(settings, this->params.mediaFormat.GetMediaContainerType());
 
         hr = this->sinkWriter->AddStream(typeOut.Get(), &this->videoStreamIdx);
         H::System::ThrowIfFailed(hr);
@@ -654,7 +656,7 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateVideoInMediaType(
 }
 
 Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateVideoOutMediaType(
-    const IVideoCodecSettings *settings)
+    const IVideoCodecSettings *settings, MediaContainerType containerType)
 {
     if (settings == nullptr)
         return nullptr;
@@ -668,12 +670,15 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateVideoOutMediaType(
     hr = mediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
     H::System::ThrowIfFailed(hr);
 
-    //auto codecSup = MediaFormatCodecsSupport::Instance();
-    //auto vcodecId = codecSup->MapVideoCodec(settings->GetCodecType());
-
-    //hr = mediaType->SetGUID(MF_MT_SUBTYPE, vcodecId);
-    hr = mediaType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264); // WORKAROUND for merging HEVC [see ChangeMerger notes]
-    H::System::ThrowIfFailed(hr);
+    if (containerType == MediaContainerType::MP4) {
+        hr = mediaType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264); // WORKAROUND for merging HEVC [see ChangeMerger notes]
+        H::System::ThrowIfFailed(hr);
+    }
+    else {
+        auto codecSup = MediaFormatCodecsSupport::Instance();
+        auto vcodecId = codecSup->MapVideoCodec(settings->GetCodecType());
+        hr = mediaType->SetGUID(MF_MT_SUBTYPE, vcodecId);
+    }
 
     // default profile of H264 can fail on sink->Finalize with video bitrate > 80 mbits.
     //uint32_t avgVideoBitrate = (std::min)(videoParams->AvgBitrate, uint32_t(80 * 1000000));
