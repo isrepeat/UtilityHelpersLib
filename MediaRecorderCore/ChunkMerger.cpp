@@ -45,7 +45,7 @@ ChunkMerger::ChunkMerger(IMFByteStream* outputStream,
 	}
 
 	if (useAudioStream) {
-		if (!this->TryInitAudioRemux(reader.Get())) {
+		if (!this->TryInitAudioRemux(reader.Get(), containerType)) {
 			hr = writer->AddStream(this->mediaTypeAudioOut.Get(), &audioStreamIndexToWrite);
 			H::System::ThrowIfFailed(hr);
 
@@ -233,13 +233,7 @@ bool ChunkMerger::WriteInner(Microsoft::WRL::ComPtr<IMFSinkWriter> writer, Micro
 	LONGLONG duration;
 
 	hr = sample->GetSampleDuration(&duration);
-	if (hr == MF_E_NO_SAMPLE_DURATION) {
-		// TODO: check with WMV
-		duration = 0;
-	}
-	else {
-		H::System::ThrowIfFailed(hr);
-	}
+	H::System::ThrowIfFailed(hr);
 
 	hr = sampleToWrite->SetSampleDuration(duration);
 	H::System::ThrowIfFailed(hr);
@@ -349,7 +343,12 @@ bool ChunkMerger::TryInitVideoRemux(IMFSourceReader* chunkReader) {
 	return true;
 }
 
-bool ChunkMerger::TryInitAudioRemux(IMFSourceReader* chunkReader) {
+bool ChunkMerger::TryInitAudioRemux(IMFSourceReader* chunkReader, MediaContainerType containerType) {
+	if (containerType == MediaContainerType::WMV) {
+		// for wmv+aac will be sample->GetSampleDuration == MF_E_NO_SAMPLE_DURATION
+		return false;
+	}
+
 	try {
 		HRESULT hr = S_OK;
 		Microsoft::WRL::ComPtr<IMFMediaType> nativeType;
