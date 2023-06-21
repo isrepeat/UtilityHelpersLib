@@ -61,6 +61,19 @@ public:
     void Write(ID3D11DeviceContext *d3dCtx, ID3D11Texture2D *tex, int64_t hns = -1, int64_t durationHns = -1);
     void Write(const void *videoData, size_t rowPitch, int64_t hns = -1, int64_t durationHns = -1);
 
+    static Microsoft::WRL::ComPtr<IMFMediaType> CreateAudioInMediaType(
+        const IAudioCodecSettings* settings,
+        uint32_t bitsPerSample);
+    static Microsoft::WRL::ComPtr<IMFMediaType> CreateAudioOutMediaType(
+        const IAudioCodecSettings* settings,
+        uint32_t bitsPerSample);
+    static Microsoft::WRL::ComPtr<IMFMediaType> CreateVideoInMediaType(
+        const IVideoCodecSettings* settings, bool nv12VideoSamples);
+    static Microsoft::WRL::ComPtr<IMFMediaType> CreateVideoOutMediaType(
+        const IVideoCodecSettings* settings, MediaContainerType containerType);
+
+    static const wchar_t* GetContainerExt(const MediaRecorderParams &params);
+
 private:
     Microsoft::WRL::ComPtr<IMFByteStream> stream;
     const MediaRecorderParams params;
@@ -95,16 +108,6 @@ private:
     std::shared_ptr<IEvent<Native::MediaRecorderEventArgs>> recordEventCallback;
 
     void InitializeSinkWriter(IMFByteStream *outputStream, bool useCPUForEncoding, bool nv12VideoSamples);
-    static Microsoft::WRL::ComPtr<IMFMediaType> CreateAudioInMediaType(
-        const IAudioCodecSettings *settings,
-        uint32_t bitsPerSample);
-    static Microsoft::WRL::ComPtr<IMFMediaType> CreateAudioOutMediaType(
-        const IAudioCodecSettings *settings,
-        uint32_t bitsPerSample);
-    static Microsoft::WRL::ComPtr<IMFMediaType> CreateVideoInMediaType(
-        const IVideoCodecSettings *settings, bool nv12VideoSamples);
-    static Microsoft::WRL::ComPtr<IMFMediaType> CreateVideoOutMediaType(
-        const IVideoCodecSettings *settings, MediaContainerType containerType);
 
     static Microsoft::WRL::ComPtr<IMFMediaType> GetBestOutputType(
         IMFTransform *transform,
@@ -126,4 +129,5 @@ private:
     IMFByteStream* StartNewChunk();
     void ResetSinkWriterOnNewChunk();
     void FinalizeRecord();
+    void MergeChunks(IMFByteStream* outputStream, std::vector<std::wstring>&& chunks);
 };

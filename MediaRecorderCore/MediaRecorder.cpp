@@ -157,33 +157,11 @@ void MediaRecorder::EndRecord() {
         chunks.pop_back();
     }
 
-    ChunkMerger merger{
-        this->stream.Get(),
-        MediaRecorder::CreateAudioInMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits),
-        MediaRecorder::CreateAudioOutMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits),
-        MediaRecorder::CreateVideoInMediaType(this->params.mediaFormat.GetVideoCodecSettings(), nv12Textures),
-        MediaRecorder::CreateVideoOutMediaType(this->params.mediaFormat.GetVideoCodecSettings(), this->params.mediaFormat.GetMediaContainerType()),
-        this->params.mediaFormat.GetVideoCodecSettings(),
-        std::move(chunks),
-        containerExt,
-        this->params.mediaFormat.GetMediaContainerType()
-    };
-
-    merger.Merge();
+    MergeChunks(this->stream.Get(), std::move(chunks));
 }
 
 void MediaRecorder::Restore(IMFByteStream* outputStream, std::vector<std::wstring>&& chunks) {
-    ChunkMerger merger{
-       this->stream.Get(),
-       MediaRecorder::CreateAudioInMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits),
-       MediaRecorder::CreateAudioOutMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits),
-       MediaRecorder::CreateVideoInMediaType(this->params.mediaFormat.GetVideoCodecSettings(), nv12Textures),
-       MediaRecorder::CreateVideoOutMediaType(this->params.mediaFormat.GetVideoCodecSettings(), this->params.mediaFormat.GetMediaContainerType()),
-       this->params.mediaFormat.GetVideoCodecSettings(),
-       std::move(chunks),
-       containerExt,
-       this->params.mediaFormat.GetMediaContainerType()
-    };
+    MergeChunks(outputStream, std::move(chunks));
 }
 
 const MediaRecorderParams &MediaRecorder::GetParams() const {
@@ -836,21 +814,26 @@ int64_t MediaRecorder::GetDefaultVideoFrameDuration() const {
     return hns;
 }
 
-void MediaRecorder::DefineContainerType() {
-    auto containerType = this->params.mediaFormat.GetMediaContainerType();
+const wchar_t* MediaRecorder::GetContainerExt(const MediaRecorderParams& params)
+{
+    auto containerType = params.mediaFormat.GetMediaContainerType();
 
     switch (containerType) {
-    case MediaContainerType::MP4: containerExt = L".mp4"; break;
-    case MediaContainerType::WMV: containerExt = L".wmv"; break;
-    case MediaContainerType::MP3: containerExt = L".mp3"; break;
-    case MediaContainerType::M4A: containerExt = L".m4a"; break;
-    case MediaContainerType::FLAC: containerExt = L".flac"; break;
-    case MediaContainerType::WMA: containerExt = L".wma"; break;
-    case MediaContainerType::WAV: containerExt = L".wav"; break;
-    case MediaContainerType::ThreeGPP: containerExt = L".3gpp"; break;
+    case MediaContainerType::MP4: return L".mp4";
+    case MediaContainerType::WMV: return L".wmv";
+    case MediaContainerType::MP3: return L".mp3";
+    case MediaContainerType::M4A: return L".m4a";
+    case MediaContainerType::FLAC: return L".flac";
+    case MediaContainerType::WMA: return L".wma";
+    case MediaContainerType::WAV: return L".wav";
+    case MediaContainerType::ThreeGPP: return L".3gpp";
     default:
-        break;
+        return L"";
     }
+}
+
+void MediaRecorder::DefineContainerType() {
+    containerExt = GetContainerExt(this->params);
 }
 
 IMFByteStream* MediaRecorder::StartNewChunk() {
@@ -898,6 +881,23 @@ void MediaRecorder::FinalizeRecord() {
         eventArgs.remainingTime = remainingTime;
         recordEventCallback->call(eventArgs);
     }
+}
+
+void MediaRecorder::MergeChunks(IMFByteStream* outputStream, std::vector<std::wstring>&& chunks)
+{
+    ChunkMerger merger{
+        outputStream,
+        MediaRecorder::CreateAudioInMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits),
+        MediaRecorder::CreateAudioOutMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits),
+        MediaRecorder::CreateVideoInMediaType(this->params.mediaFormat.GetVideoCodecSettings(), nv12Textures),
+        MediaRecorder::CreateVideoOutMediaType(this->params.mediaFormat.GetVideoCodecSettings(), this->params.mediaFormat.GetMediaContainerType()),
+        this->params.mediaFormat.GetVideoCodecSettings(),
+        std::move(chunks),
+        containerExt,
+        this->params.mediaFormat.GetMediaContainerType()
+    };
+
+    merger.Merge();
 }
 
 void MediaRecorder::ResetSinkWriterOnNewChunk() {
