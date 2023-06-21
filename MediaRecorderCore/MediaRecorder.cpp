@@ -832,6 +832,19 @@ const wchar_t* MediaRecorder::GetContainerExt(const MediaRecorderParams& params)
     }
 }
 
+MediaContainerType MediaRecorder::GetContainerType(const std::wstring& ext)
+{
+    if (ext == L".mp4") return MediaContainerType::MP4;
+    if (ext == L".wmv") return MediaContainerType::WMV;
+    if (ext == L".mp3") return MediaContainerType::MP3;
+    if (ext == L".m4a") return MediaContainerType::M4A;
+    if (ext == L".flac") return MediaContainerType::FLAC;
+    if (ext == L".wma") return MediaContainerType::WMA;
+    if (ext == L".wav") return MediaContainerType::WAV;
+    if (ext == L".3gpp") return MediaContainerType::ThreeGPP;
+    return MediaContainerType::Unknown;
+}
+
 void MediaRecorder::DefineContainerType() {
     containerExt = GetContainerExt(this->params);
 }

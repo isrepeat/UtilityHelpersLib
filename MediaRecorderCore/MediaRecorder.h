@@ -73,6 +73,7 @@ public:
         const IVideoCodecSettings* settings, MediaContainerType containerType);
 
     static const wchar_t* GetContainerExt(const MediaRecorderParams &params);
+    static MediaContainerType GetContainerType(const std::wstring &containerExt);
 
 private:
     Microsoft::WRL::ComPtr<IMFByteStream> stream;
