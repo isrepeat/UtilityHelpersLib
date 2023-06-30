@@ -45,6 +45,14 @@ MediaRecorder::~MediaRecorder() {
 
 }
 
+void MediaRecorder::SetChunkMergerEnabled(bool enabled) {
+    chunkMergerEnabled = enabled;
+}
+
+bool MediaRecorder::IsChunkMergerEnabled() {
+    return chunkMergerEnabled;
+}
+
 bool MediaRecorder::HasAudio() const {
     bool has = this->audioStreamIdx != (std::numeric_limits<DWORD>::max)();
     return has;
@@ -92,15 +100,16 @@ void MediaRecorder::Record(const Microsoft::WRL::ComPtr<IMFSample> &sample, bool
     int64_t samplePts = 0;
     int64_t sampleDuration = 0;
 
-    if (audio) {
-        //https://stackoverflow.com/questions/33401149/ffmpeg-adding-0-05-seconds-of-silence-to-transcoded-aac-file
-        if (samplesNumber > params.mediaFormat.GetAudioCodecSettings()->GetBasicSettings()->sampleRate * 10 && samplesNumber % 1024 == 0) {
-            ResetSinkWriterOnNewChunk();
-        }
-    }
-    else {
-        if (framesNumber > params.mediaFormat.GetVideoCodecSettings()->GetBasicSettings()->fps * 5) {
-            ResetSinkWriterOnNewChunk();
+    if (chunkMergerEnabled) {
+        if (audio) {
+            //https://stackoverflow.com/questions/33401149/ffmpeg-adding-0-05-seconds-of-silence-to-transcoded-aac-file
+            if (samplesNumber > params.mediaFormat.GetAudioCodecSettings()->GetBasicSettings()->sampleRate * 10 && samplesNumber % 1024 == 0) {
+                ResetSinkWriterOnNewChunk();
+            }
+        } else {
+            if (framesNumber > params.mediaFormat.GetVideoCodecSettings()->GetBasicSettings()->fps * 5) {
+                ResetSinkWriterOnNewChunk();
+            }
         }
     }
 
@@ -144,23 +153,35 @@ void MediaRecorder::Record(const Microsoft::WRL::ComPtr<IMFSample> &sample, bool
 void MediaRecorder::EndRecord() {
     FinalizeRecord();
 
-    std::vector<std::wstring> chunks;
-    chunks.reserve(chunkNumber);
-    for (size_t i = 0; i < chunkNumber; ++i) {
-        auto chunkFile = params.chunksPath + params.chunksGuid + L"-" + std::to_wstring(i) + containerExt;
-        if (std::filesystem::file_size(chunkFile) > 0)
-            chunks.push_back(std::move(chunkFile));
-    }
+    if (!chunkMergerEnabled)
+        return;
 
-    // Ignore last chunk to avoid MF_E_INVALIDSTREAMNUMBER when not enough space on disk 
-    if (recordedChunksSize >= H::HardDrive::GetFreeMemory(targetRecordDisk)) {
-        chunks.pop_back();
-    }
+	std::vector<std::wstring> chunks;
+	chunks.reserve(chunkNumber);
+	for (size_t i = 0; i < chunkNumber; ++i) {
+		auto chunkFile = GetChunkFilePath(i);
+		if (std::filesystem::file_size(chunkFile) > 0)
+			chunks.push_back(std::move(chunkFile));
+	}
 
-    MergeChunks(this->stream.Get(), std::move(chunks));
+	// Ignore last chunk to avoid MF_E_INVALIDSTREAMNUMBER when not enough space on disk 
+	if (recordedChunksSize >= H::HardDrive::GetFreeMemory(targetRecordDisk) && !chunks.empty()) {
+		chunks.pop_back();
+	}
+
+	MergeChunks(this->stream.Get(), std::move(chunks));
+}
+
+std::wstring MediaRecorder::GetChunkFilePath(size_t chunkIndex)
+{
+    //TODO remove extension
+    return params.chunksPath + params.chunksGuid + L"-" + std::to_wstring(chunkIndex) + containerExt;
 }
 
 void MediaRecorder::Restore(IMFByteStream* outputStream, std::vector<std::wstring>&& chunks) {
+    if (!chunkMergerEnabled)
+        H::System::ThrowIfFailed(E_NOTIMPL);
+
     MergeChunks(outputStream, std::move(chunks));
 }
 
@@ -850,8 +871,7 @@ void MediaRecorder::DefineContainerType() {
 }
 
 IMFByteStream* MediaRecorder::StartNewChunk() {
-    //TODO remove extension
-    chunkFile = params.chunksPath + params.chunksGuid + L"-" + std::to_wstring(chunkNumber++) + containerExt;
+    chunkFile = GetChunkFilePath(chunkNumber++);
 
     auto hr = MFCreateFile(MF_ACCESSMODE_READWRITE, MF_OPENMODE_DELETE_IF_EXIST, MF_FILEFLAGS_NONE, chunkFile.c_str(), currentOutputStream.GetAddressOf());
     H::System::ThrowIfFailed(hr);
@@ -873,6 +893,19 @@ void MediaRecorder::FinalizeRecord() {
     this->currentOutputStream.Reset();
     this->sinkWriter.Reset();
 
+    if (!chunkMergerEnabled) {
+        Microsoft::WRL::ComPtr<IMFByteStream> chunkStream;
+        hr = MFCreateFile(
+            MF_ACCESSMODE_READ,
+            MF_OPENMODE_FAIL_IF_NOT_EXIST,
+            MF_FILEFLAGS_NONE,
+            GetChunkFilePath(0).c_str(),
+            &chunkStream);
+        H::System::ThrowIfFailed(hr);
+
+        CopyStream(this->stream, chunkStream);
+    }
+
     if (recordEventCallback) {
         Native::MediaRecorderEventArgs eventArgs;
 
@@ -893,6 +926,36 @@ void MediaRecorder::FinalizeRecord() {
         eventArgs.message = Native::MediaRecorderErrorsEnum::RemainingTime;
         eventArgs.remainingTime = remainingTime;
         recordEventCallback->call(eventArgs);
+    }
+}
+
+void MediaRecorder::CopyStream(
+    Microsoft::WRL::ComPtr<IMFByteStream> dest,
+    Microsoft::WRL::ComPtr<IMFByteStream> src
+)
+{
+    static constexpr size_t bufferSize = 0x100000;
+
+    src->Flush();
+    dest->Flush();
+    H::System::ThrowIfFailed(src->SetCurrentPosition(0));
+    H::System::ThrowIfFailed(dest->SetCurrentPosition(0));
+
+    HRESULT hr;
+    BYTE buffer[bufferSize];
+
+    while (true) {
+        ULONG bytesRead;
+
+        hr = src->Read(buffer, bufferSize, &bytesRead);
+
+        if (FAILED(hr) || !bytesRead)
+            break;
+
+        hr = dest->Write(buffer, bytesRead, &bytesRead);
+
+        if (FAILED(hr))
+            break;
     }
 }
 

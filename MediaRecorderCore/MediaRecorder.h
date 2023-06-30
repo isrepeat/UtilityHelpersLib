@@ -43,6 +43,9 @@ public:
     bool ChunkAudioSamplesWritten() const override;
     bool ChunkVideoSamplesWritten() const override;
 
+    void SetChunkMergerEnabled(bool enabled) override;
+    bool IsChunkMergerEnabled() override;
+
     void StartRecord() override;
     void Record(const Microsoft::WRL::ComPtr<IMFSample> &sample, bool audio) override;
     void EndRecord() override;
@@ -95,6 +98,8 @@ private:
     int samplesNumber = 0;
     int framesNumber = 0;
 
+    bool chunkMergerEnabled = false;
+
     std::wstring chunkFile;
     std::wstring chunksDisk;
     std::wstring targetRecordDisk;
@@ -131,4 +136,7 @@ private:
     void ResetSinkWriterOnNewChunk();
     void FinalizeRecord();
     void MergeChunks(IMFByteStream* outputStream, std::vector<std::wstring>&& chunks);
+    std::wstring GetChunkFilePath(size_t chunkIndex);
+
+    void CopyStream(Microsoft::WRL::ComPtr<IMFByteStream> dest, Microsoft::WRL::ComPtr<IMFByteStream> src);
 };
