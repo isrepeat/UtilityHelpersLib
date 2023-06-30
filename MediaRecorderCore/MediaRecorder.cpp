@@ -938,17 +938,18 @@ void MediaRecorder::CopyStream(
     H::System::ThrowIfFailed(dest->SetCurrentPosition(0));
 
     HRESULT hr;
-    BYTE buffer[bufferSize];
+    std::vector<BYTE> buffer;
+    buffer.resize(bufferSize);
 
     while (true) {
         ULONG bytesRead;
 
-        hr = src->Read(buffer, bufferSize, &bytesRead);
+        hr = src->Read(buffer.data(), bufferSize, &bytesRead);
 
         if (FAILED(hr) || !bytesRead)
             break;
 
-        hr = dest->Write(buffer, bytesRead, &bytesRead);
+        hr = dest->Write(buffer.data(), bytesRead, &bytesRead);
 
         if (FAILED(hr))
             break;
