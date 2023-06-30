@@ -22,7 +22,6 @@ public:
     virtual bool ChunkAudioSamplesWritten() const = 0;
     virtual bool ChunkVideoSamplesWritten() const = 0;
 
-    virtual void SetChunkMergerEnabled(bool enabled) = 0;
     virtual bool IsChunkMergerEnabled() = 0;
 
     virtual void StartRecord() = 0;

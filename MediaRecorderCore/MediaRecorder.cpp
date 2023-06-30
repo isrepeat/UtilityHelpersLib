@@ -45,12 +45,8 @@ MediaRecorder::~MediaRecorder() {
 
 }
 
-void MediaRecorder::SetChunkMergerEnabled(bool enabled) {
-    chunkMergerEnabled = enabled;
-}
-
 bool MediaRecorder::IsChunkMergerEnabled() {
-    return chunkMergerEnabled;
+    return params.UseChunkMerger;
 }
 
 bool MediaRecorder::HasAudio() const {
@@ -100,7 +96,7 @@ void MediaRecorder::Record(const Microsoft::WRL::ComPtr<IMFSample> &sample, bool
     int64_t samplePts = 0;
     int64_t sampleDuration = 0;
 
-    if (chunkMergerEnabled) {
+    if (params.UseChunkMerger) {
         if (audio) {
             //https://stackoverflow.com/questions/33401149/ffmpeg-adding-0-05-seconds-of-silence-to-transcoded-aac-file
             if (samplesNumber > params.mediaFormat.GetAudioCodecSettings()->GetBasicSettings()->sampleRate * 10 && samplesNumber % 1024 == 0) {
@@ -153,7 +149,7 @@ void MediaRecorder::Record(const Microsoft::WRL::ComPtr<IMFSample> &sample, bool
 void MediaRecorder::EndRecord() {
     FinalizeRecord();
 
-    if (!chunkMergerEnabled)
+    if (!params.UseChunkMerger)
         return;
 
 	std::vector<std::wstring> chunks;
@@ -179,7 +175,7 @@ std::wstring MediaRecorder::GetChunkFilePath(size_t chunkIndex)
 }
 
 void MediaRecorder::Restore(IMFByteStream* outputStream, std::vector<std::wstring>&& chunks) {
-    if (!chunkMergerEnabled)
+    if (!params.UseChunkMerger)
         H::System::ThrowIfFailed(E_NOTIMPL);
 
     MergeChunks(outputStream, std::move(chunks));
@@ -893,7 +889,7 @@ void MediaRecorder::FinalizeRecord() {
     this->currentOutputStream.Reset();
     this->sinkWriter.Reset();
 
-    if (!chunkMergerEnabled) {
+    if (!params.UseChunkMerger) {
         Microsoft::WRL::ComPtr<IMFByteStream> chunkStream;
         hr = MFCreateFile(
             MF_ACCESSMODE_READ,

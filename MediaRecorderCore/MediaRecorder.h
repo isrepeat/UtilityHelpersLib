@@ -43,7 +43,6 @@ public:
     bool ChunkAudioSamplesWritten() const override;
     bool ChunkVideoSamplesWritten() const override;
 
-    void SetChunkMergerEnabled(bool enabled) override;
     bool IsChunkMergerEnabled() override;
 
     void StartRecord() override;
@@ -97,8 +96,6 @@ private:
     int64_t chunkVideoPtsHns;
     int samplesNumber = 0;
     int framesNumber = 0;
-
-    bool chunkMergerEnabled = false;
 
     std::wstring chunkFile;
     std::wstring chunksDisk;
