@@ -10,7 +10,7 @@
 #include <libhelpers/HTime.h>
 #include <memcpy.h>
 #include <mfapi.h>
-
+#include <cassert>
 
 // encoder restrictions can be found here : https://msdn.microsoft.com/en-us/library/windows/desktop/dd742785(v=vs.85).aspx
 const uint32_t MediaRecorder::AllowedNumChannels[] = { 1 , 2 };
@@ -30,15 +30,15 @@ MediaRecorder::MediaRecorder(
     , videoStreamIdx((std::numeric_limits<DWORD>::max)()), audioPtsHns(0)
     , videoPtsHns(0), cpuEncoding{ useCPUForEncoding }, nv12Textures{ nv12VideoSamples }, recordEventCallback{ recordEventCallback }
 {
-    //this->InitializeSinkWriter(outputStream, useCPUForEncoding, nv12VideoSamples);
-    targetRecordDisk = H::HardDrive::GetDiskLetterFromPath(this->params.targetRecordPath);
+    if (this->params.UseChunkMerger) {
+        targetRecordDisk = H::HardDrive::GetDiskLetterFromPath(this->params.targetRecordPath);
+    }
 
     DefineContainerType();
-    auto newStream = StartNewChunk();
+    auto newStream = this->params.UseChunkMerger ? StartNewChunk() : this->stream.Get();
     lastChunkCreatedTime = H::Time::GetCurrentLibTime();
 
     this->InitializeSinkWriter(newStream, useCPUForEncoding, nv12VideoSamples);
-    //this->InitializeSinkWriter(outputStream, useCPUForEncoding, nv12VideoSamples);  
 }
 
 MediaRecorder::~MediaRecorder() {
@@ -867,6 +867,11 @@ void MediaRecorder::DefineContainerType() {
 }
 
 IMFByteStream* MediaRecorder::StartNewChunk() {
+    if (!params.UseChunkMerger) {
+        assert(false);
+        return nullptr;
+    }
+
     chunkFile = GetChunkFilePath(chunkNumber++);
 
     auto hr = MFCreateFile(MF_ACCESSMODE_READWRITE, MF_OPENMODE_DELETE_IF_EXIST, MF_FILEFLAGS_NONE, chunkFile.c_str(), currentOutputStream.GetAddressOf());
@@ -889,20 +894,7 @@ void MediaRecorder::FinalizeRecord() {
     this->currentOutputStream.Reset();
     this->sinkWriter.Reset();
 
-    if (!params.UseChunkMerger) {
-        Microsoft::WRL::ComPtr<IMFByteStream> chunkStream;
-        hr = MFCreateFile(
-            MF_ACCESSMODE_READ,
-            MF_OPENMODE_FAIL_IF_NOT_EXIST,
-            MF_FILEFLAGS_NONE,
-            GetChunkFilePath(0).c_str(),
-            &chunkStream);
-        H::System::ThrowIfFailed(hr);
-
-        CopyStream(this->stream, chunkStream);
-    }
-
-    if (recordEventCallback) {
+    if (params.UseChunkMerger && recordEventCallback) {
         Native::MediaRecorderEventArgs eventArgs;
 
         auto lastChunkSize = H::HardDrive::GetFilesize(chunkFile);
@@ -925,37 +917,6 @@ void MediaRecorder::FinalizeRecord() {
     }
 }
 
-void MediaRecorder::CopyStream(
-    Microsoft::WRL::ComPtr<IMFByteStream> dest,
-    Microsoft::WRL::ComPtr<IMFByteStream> src
-)
-{
-    static constexpr size_t bufferSize = 0x100000;
-
-    src->Flush();
-    dest->Flush();
-    H::System::ThrowIfFailed(src->SetCurrentPosition(0));
-    H::System::ThrowIfFailed(dest->SetCurrentPosition(0));
-
-    HRESULT hr;
-    std::vector<BYTE> buffer;
-    buffer.resize(bufferSize);
-
-    while (true) {
-        ULONG bytesRead;
-
-        hr = src->Read(buffer.data(), bufferSize, &bytesRead);
-
-        if (FAILED(hr) || !bytesRead)
-            break;
-
-        hr = dest->Write(buffer.data(), bytesRead, &bytesRead);
-
-        if (FAILED(hr))
-            break;
-    }
-}
-
 void MediaRecorder::MergeChunks(IMFByteStream* outputStream, std::vector<std::wstring>&& chunks)
 {
     ChunkMerger merger{
@@ -974,6 +935,11 @@ void MediaRecorder::MergeChunks(IMFByteStream* outputStream, std::vector<std::ws
 }
 
 void MediaRecorder::ResetSinkWriterOnNewChunk() {
+    if (!params.UseChunkMerger) {
+        assert(false);
+        return;
+    }
+
     FinalizeRecord();
     auto newStream = StartNewChunk();
     lastChunkCreatedTime = H::Time::GetCurrentLibTime();

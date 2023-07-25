@@ -134,6 +134,4 @@ private:
     void FinalizeRecord();
     void MergeChunks(IMFByteStream* outputStream, std::vector<std::wstring>&& chunks);
     std::wstring GetChunkFilePath(size_t chunkIndex);
-
-    void CopyStream(Microsoft::WRL::ComPtr<IMFByteStream> dest, Microsoft::WRL::ComPtr<IMFByteStream> src);
 };
