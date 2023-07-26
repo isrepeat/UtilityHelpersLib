@@ -45,8 +45,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Platform\IDolbyAC3CodecFactory.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Platform\IFlacCodecFactory.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ChunkMerger.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderErrorsEnum.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderErrorsEnumDef.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderMessageEnum.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderMessageEnumDef.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)pch.cpp">

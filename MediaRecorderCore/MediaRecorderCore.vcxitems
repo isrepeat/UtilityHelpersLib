@@ -49,8 +49,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\VideoCodecType.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\VideoCodecTypeDef.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorder.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderErrorsEnum.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderErrorsEnumDef.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderMessageEnum.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderMessageEnumDef.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderFactory.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderParams.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Platform\IAacCodecFactory.h" />

@@ -2,7 +2,7 @@
 #include "IMediaRecorderFactory.h"
 #include <libhelpers/Event.hpp>
 #include "MediaRecorderParams.h"
-#include "MediaRecorderErrorsEnum.h"
+#include "MediaRecorderMessageEnum.h"
 
 #include <vector>
 

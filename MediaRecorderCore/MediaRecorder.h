@@ -1,7 +1,7 @@
 #pragma once
 #include "IMediaRecorder.h"
 #include "MediaRecorderParams.h"
-#include "MediaRecorderErrorsEnum.h"
+#include "MediaRecorderMessageEnum.h"
 
 #include <cstdint>
 #include <array>

@@ -903,7 +903,7 @@ void MediaRecorder::FinalizeRecord() {
         auto freeSpaceAfterWriteChunks = freeSpaceTragetDisk - recordedChunksSize;
 
         if (recordedChunksSize >= freeSpaceTragetDisk) {
-            eventArgs.message = Native::MediaRecorderErrorsEnum::NotEnoughSpaceOnTargetRecordPath;
+            eventArgs.message = Native::MediaRecorderMessageEnum::NotEnoughSpaceOnTargetRecordPath;
             recordEventCallback->call(eventArgs);
             return;
         }
@@ -911,7 +911,7 @@ void MediaRecorder::FinalizeRecord() {
         auto dtSecCreatedChunk = (H::Time::GetCurrentLibTime() - this->lastChunkCreatedTime) / H::Time::HNSResolution;
         int remainingTime = (float)freeSpaceAfterWriteChunks / lastChunkSize * dtSecCreatedChunk;
 
-        eventArgs.message = Native::MediaRecorderErrorsEnum::RemainingTime;
+        eventArgs.message = Native::MediaRecorderMessageEnum::RemainingTime;
         eventArgs.remainingTime = remainingTime;
         recordEventCallback->call(eventArgs);
     }
