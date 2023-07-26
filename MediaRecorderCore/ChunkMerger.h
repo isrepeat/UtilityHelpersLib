@@ -19,6 +19,8 @@ public:
 		const IVideoCodecSettings* settings, std::vector<std::wstring>&& filesToMerge, std::wstring containerExt,
 		MediaContainerType containerType);
 
+	// Can throw exception when result file can be broken
+	// Can throw FinalizedWithWarningException when file is working but merge operation was not fully finished
 	void Merge();
 	
 private:

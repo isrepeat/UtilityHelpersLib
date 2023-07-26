@@ -24,6 +24,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)AvDxgiManagerBufferFactory.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ChunkMerger.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)CodecsTable.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)FinalizedWithWarningException.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)IAvDxBufferFactory.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)IMediaRecorder.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)IMediaRecorderFactory.h" />
@@ -69,6 +70,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)AvDxgiBufferFactory.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)AvDxgiManagerBufferFactory.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ChunkMerger.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)FinalizedWithWarningException.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)IMFVideoSampleAllocatorSimpleNotify.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecCompressedSettings.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecLosslessSettings.cpp" />

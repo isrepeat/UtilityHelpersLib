@@ -92,6 +92,13 @@ void MediaRecorder::StartRecord() {
 // TODO: Add guard for case when EndRecord called from other thread during record
 // NOTE: we can't use mutex because it need custom copy Ctor(mb add smth like ObjectLocker)
 void MediaRecorder::Record(const Microsoft::WRL::ComPtr<IMFSample> &sample, bool audio) {
+    if (this->recordingErrorOccured) {
+        // don't write samples after recording error
+        // because it can throw/report more different exceptions
+        // than the one that caused the initial recording error
+        return;
+    }
+
     HRESULT hr = S_OK;
     int64_t samplePts = 0;
     int64_t sampleDuration = 0;
@@ -119,7 +126,6 @@ void MediaRecorder::Record(const Microsoft::WRL::ComPtr<IMFSample> &sample, bool
     int64_t *ptsPtr = nullptr;
 
     if (audio) {
-
         Microsoft::WRL::ComPtr<IMFMediaBuffer> mediaBuffer;
         hr = sample->ConvertToContiguousBuffer(&mediaBuffer);
       
@@ -141,31 +147,70 @@ void MediaRecorder::Record(const Microsoft::WRL::ComPtr<IMFSample> &sample, bool
         ++framesNumber;
     }
 
-    this->WriteSample(sample, streamIdx);
+    try {
+        this->WriteSample(sample, streamIdx);
+    }
+    catch (const HResultException& ex) {
+        if (ex.GetHRESULT() == HRESULT_FROM_WIN32(ERROR_DISK_FULL))
+        {
+            if (recordEventCallback) {
+                Native::MediaRecorderEventArgs eventArgs;
+
+                if (params.UseChunkMerger) {
+                    eventArgs.message = Native::MediaRecorderMessageEnum::NotEnoughSpaceOnDiskWithChunks;
+                }
+                else {
+                    eventArgs.message = Native::MediaRecorderMessageEnum::NotEnoughSpaceOnTargetRecordPath;
+                }
+
+                recordEventCallback->call(eventArgs);
+                this->recordingErrorOccured = true;
+            }
+            else {
+                throw;
+            }
+        }
+        else {
+            throw;
+        }
+    }
 
     *ptsPtr = samplePts + sampleDuration;
 }
 
 void MediaRecorder::EndRecord() {
-    FinalizeRecord();
+    if (params.UseChunkMerger) {
+        // when finishing record do not report recording error messages, exception is enough
+        try {
+            FinalizeRecord(false);
+        }
+        catch(...) {}
+        // ignore errors with finalization of last chunk, try to merge
 
-    if (!params.UseChunkMerger)
-        return;
+        std::vector<std::wstring> chunks;
+        chunks.reserve(chunkNumber);
+        for (size_t i = 0; i < chunkNumber; ++i) {
+            auto chunkFile = GetChunkFilePath(i);
+            if (std::filesystem::file_size(chunkFile) > 0)
+                chunks.push_back(std::move(chunkFile));
+        }
 
-	std::vector<std::wstring> chunks;
-	chunks.reserve(chunkNumber);
-	for (size_t i = 0; i < chunkNumber; ++i) {
-		auto chunkFile = GetChunkFilePath(i);
-		if (std::filesystem::file_size(chunkFile) > 0)
-			chunks.push_back(std::move(chunkFile));
-	}
+        if (chunks.empty()) {
+            H::System::ThrowIfFailed(E_FAIL);
+        }
 
-	// Ignore last chunk to avoid MF_E_INVALIDSTREAMNUMBER when not enough space on disk 
-	if (recordedChunksSize >= H::HardDrive::GetFreeMemory(targetRecordDisk) && !chunks.empty()) {
-		chunks.pop_back();
-	}
+        // Ignore last chunk to avoid MF_E_INVALIDSTREAMNUMBER when not enough space on disk 
+        // But left at least 1 chunk to try to merge and finalize file
+        if (chunks.size() > 1 && recordedChunksSize >= H::HardDrive::GetFreeMemory(targetRecordDisk)) {
+            chunks.pop_back();
+        }
 
-	MergeChunks(this->stream.Get(), std::move(chunks));
+        MergeChunks(this->stream.Get(), std::move(chunks));
+    }
+    else {
+        // when finishing record do not report recording error messages, exception is enough
+        FinalizeRecord(false);
+    }
 }
 
 std::wstring MediaRecorder::GetChunkFilePath(size_t chunkIndex)
@@ -880,7 +925,7 @@ IMFByteStream* MediaRecorder::StartNewChunk() {
     return currentOutputStream.Get();
 }
 
-void MediaRecorder::FinalizeRecord() {
+void MediaRecorder::FinalizeRecord(bool useRecordEventCallback) {
     HRESULT hr = S_OK;
     framesNumber = 0;
     samplesNumber = 0;
@@ -894,7 +939,7 @@ void MediaRecorder::FinalizeRecord() {
     this->currentOutputStream.Reset();
     this->sinkWriter.Reset();
 
-    if (params.UseChunkMerger && recordEventCallback) {
+    if (useRecordEventCallback && params.UseChunkMerger && recordEventCallback) {
         Native::MediaRecorderEventArgs eventArgs;
 
         auto lastChunkSize = H::HardDrive::GetFilesize(chunkFile);
@@ -940,7 +985,7 @@ void MediaRecorder::ResetSinkWriterOnNewChunk() {
         return;
     }
 
-    FinalizeRecord();
+    FinalizeRecord(true);
     auto newStream = StartNewChunk();
     lastChunkCreatedTime = H::Time::GetCurrentLibTime();
     this->InitializeSinkWriter(newStream, cpuEncoding, nv12Textures);

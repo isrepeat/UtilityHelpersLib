@@ -4,6 +4,7 @@
 #include <libhelpers/UniquePROPVARIANT.h>
 #include "MediaFormat/MediaFormatCodecsSupport.h"
 #include "Platform/PlatformClassFactory.h"
+#include "FinalizedWithWarningException.h"
 
 // NOTE: Merging takes longer than just writing bytes into a stream. Maybe optimize somehow?
 ChunkMerger::ChunkMerger(IMFByteStream* outputStream,
@@ -142,6 +143,8 @@ Microsoft::WRL::ComPtr<IMFMediaType> ChunkMerger::CreateVideoOutMediaType()
 
 void ChunkMerger::Merge() {
 	HRESULT hr = S_OK;
+	// if true then Finalize == S_OK but when merging chunks in try{} there was exception(maybe in WriteInner)
+	bool finalizedWithWarning = false;
 
 	try {
 		for (const auto& file : filesToMerge) {
@@ -193,21 +196,27 @@ void ChunkMerger::Merge() {
 				}
 			}
 		}
-
-		hr = writer->Finalize();
-		if (FAILED(hr) && hr != MF_E_SINK_NO_SAMPLES_PROCESSED) { // occured when was called BeginWritting but not calls WriteSample yet
-			H::System::ThrowIfFailed(hr);
-		}
 	}
-	catch (HResultException& ex) {
+	catch (const HResultException& ex) {
 		// If was error during merging try end writing with already handled chunks
-		if (ex.GetHRESULT() == MF_E_INVALIDSTREAMNUMBER) {
-			hr = writer->Finalize();
-			H::System::ThrowIfFailed(hr);
+		if (ex.GetHRESULT() == MF_E_INVALIDSTREAMNUMBER
+			|| ex.GetHRESULT() == HRESULT_FROM_WIN32(ERROR_DISK_FULL) // when the disk is full file may be finalized successfully
+			)
+		{
+			finalizedWithWarning = true;
 		}
 		else {
 			throw;
 		}
+	}
+
+	hr = writer->Finalize();
+	if (FAILED(hr) && hr != MF_E_SINK_NO_SAMPLES_PROCESSED) { // occured when was called BeginWritting but not calls WriteSample yet
+		H::System::ThrowIfFailed(hr);
+	}
+
+	if (finalizedWithWarning) {
+		throw FinalizedWithWarningException();
 	}
 }
 
@@ -280,8 +289,9 @@ bool ChunkMerger::WriteInner(Microsoft::WRL::ComPtr<IMFSinkWriter> writer, Micro
 	}
 	
 	hr = writer->WriteSample(writeTo, sampleToWrite.Get());
-	if (FAILED(hr))
-		return true;
+	H::System::ThrowIfFailed(hr);
+	/*if (FAILED(hr))
+		return true;*/
 
 	return false;
 }

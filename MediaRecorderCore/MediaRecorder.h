@@ -96,6 +96,7 @@ private:
     int64_t chunkVideoPtsHns;
     int samplesNumber = 0;
     int framesNumber = 0;
+    bool recordingErrorOccured = false;
 
     std::wstring chunkFile;
     std::wstring chunksDisk;
@@ -131,7 +132,7 @@ private:
 
     IMFByteStream* StartNewChunk();
     void ResetSinkWriterOnNewChunk();
-    void FinalizeRecord();
+    void FinalizeRecord(bool useRecordEventCallback);
     void MergeChunks(IMFByteStream* outputStream, std::vector<std::wstring>&& chunks);
     std::wstring GetChunkFilePath(size_t chunkIndex);
 };
