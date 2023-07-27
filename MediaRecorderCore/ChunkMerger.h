@@ -17,7 +17,7 @@ public:
 		Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeAudioIn, Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeAudioOut,
 		Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeVideoIn, Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeVideoOut,
 		const IVideoCodecSettings* settings, std::vector<std::wstring>&& filesToMerge, std::wstring containerExt,
-		MediaContainerType containerType);
+		MediaContainerType containerType, bool tryRemux);
 
 	// Can throw exception when result file can be broken
 	// Can throw FinalizedWithWarningException when file is working but merge operation was not fully finished
@@ -57,4 +57,6 @@ private:
 	bool TryInitAudioRemux(IMFSourceReader* chunkReader, MediaContainerType containerType);
 
 	static void SetIMFMediaTypeItem(IMFMediaType* dst, IMFMediaType* src, const GUID& key);
+
+	static Microsoft::WRL::ComPtr<IMFSourceReader> CreateSourceReader(const std::wstring& filePath);
 };

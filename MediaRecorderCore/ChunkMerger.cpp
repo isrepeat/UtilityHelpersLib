@@ -11,7 +11,7 @@ ChunkMerger::ChunkMerger(IMFByteStream* outputStream,
 	Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeAudioIn, Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeAudioOut,
 	Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeVideoIn, Microsoft::WRL::ComPtr<IMFMediaType> mediaTypeVideoOut,
 	const IVideoCodecSettings* settings, std::vector<std::wstring>&& filesToMerge, std::wstring containerExt,
-	MediaContainerType containerType)
+	MediaContainerType containerType, bool tryRemux)
 	: mediaTypeAudioIn{ mediaTypeAudioIn }
 	, mediaTypeAudioOut{ mediaTypeAudioOut }
 	, mediaTypeVideoIn{ mediaTypeVideoIn }
@@ -19,13 +19,12 @@ ChunkMerger::ChunkMerger(IMFByteStream* outputStream,
 	, filesToMerge{ filesToMerge }
 	, settings{ settings }
 {
-	Microsoft::WRL::ComPtr<IMFSourceReader> reader;
-	HRESULT hr = MFCreateSourceReaderFromURL(filesToMerge[0].c_str(), nullptr, reader.GetAddressOf());
-	H::System::ThrowIfFailed(hr);
+	HRESULT hr = S_OK;
+	Microsoft::WRL::ComPtr<IMFSourceReader> reader = ChunkMerger::CreateSourceReader(filesToMerge[0]);
 
 	Microsoft::WRL::ComPtr<IMFAttributes> writerAttr;
 
-	hr = MFCreateAttributes(writerAttr.GetAddressOf(), 0);
+	hr = MFCreateAttributes(writerAttr.GetAddressOf(), 1);
 	H::System::ThrowIfFailed(hr);
 
 	// must be used if remux will be enabled
@@ -46,7 +45,7 @@ ChunkMerger::ChunkMerger(IMFByteStream* outputStream,
 	}
 
 	if (useAudioStream) {
-		if (!this->TryInitAudioRemux(reader.Get(), containerType)) {
+		if (!tryRemux || !this->TryInitAudioRemux(reader.Get(), containerType)) {
 			hr = writer->AddStream(this->mediaTypeAudioOut.Get(), &audioStreamIndexToWrite);
 			H::System::ThrowIfFailed(hr);
 
@@ -65,7 +64,7 @@ ChunkMerger::ChunkMerger(IMFByteStream* outputStream,
 		// HEVC TRANSCODING WORKAROUND:
 		// Incoming video must be encoded in H264 for always types, otherwise we can't mrege form HEVC to HEVC,
 		// but can H264 -> HEVC or H264 -> H264.
-		if (!this->TryInitVideoRemux(reader.Get())) {
+		if (!tryRemux || !this->TryInitVideoRemux(reader.Get())) {
 			if (containerType == MediaContainerType::MP4) {
 				this->mediaTypeVideoOut = CreateVideoOutMediaType();
 			}
@@ -148,9 +147,7 @@ void ChunkMerger::Merge() {
 
 	try {
 		for (const auto& file : filesToMerge) {
-			Microsoft::WRL::ComPtr<IMFSourceReader> reader;
-			hr = MFCreateSourceReaderFromURL(file.c_str(), nullptr, reader.GetAddressOf());
-			H::System::ThrowIfFailed(hr);
+			Microsoft::WRL::ComPtr<IMFSourceReader> reader = ChunkMerger::CreateSourceReader(file);
 
 			if (useAudioStream) {
 				hr = reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, nullptr, mediaTypeAudioIn.Get());
@@ -426,4 +423,29 @@ void ChunkMerger::SetIMFMediaTypeItem(IMFMediaType* dst, IMFMediaType* src, cons
 
 	hr = dst->SetItem(key, *pv.get());
 	H::System::ThrowIfFailed(hr);
+}
+
+Microsoft::WRL::ComPtr<IMFSourceReader> ChunkMerger::CreateSourceReader(const std::wstring& filePath) {
+	HRESULT hr = S_OK;
+	Microsoft::WRL::ComPtr<IMFAttributes> readerAttr;
+
+	hr = MFCreateAttributes(readerAttr.GetAddressOf(), 2);
+	H::System::ThrowIfFailed(hr);
+
+	hr = readerAttr->SetUINT32(MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, TRUE);
+	H::System::ThrowIfFailed(hr);
+
+	// Use MF_SOURCE_READER_ENABLE_ADVANCED_VIDEO_PROCESSING to get nv12 samples without vertical alignment
+	// Same problem discussed here https://learn.microsoft.com/en-us/answers/questions/804470/unexpected-u-v-plane-offset-with-windows-media-fou
+	// Also some possible explanation is description of V4L2_PIX_FMT_NV12_16L16 https://docs.kernel.org/userspace-api/media/v4l/pixfmt-yuv-planar.html
+	// V4L2_PIX_FMT_NV12_16L16 stores pixels in 16x16 tiles, and stores tiles linearly in memory. The line stride and image height must be aligned to a multiple of 16. The layouts of the luma and chroma planes are identical.
+	// "image height must be aligned to a multiple of 16" looks like that vertical alignment, but why MediaFoundation does so without MF_SOURCE_READER_ENABLE_ADVANCED_VIDEO_PROCESSING is unknown for now
+	hr = readerAttr->SetUINT32(MF_SOURCE_READER_ENABLE_ADVANCED_VIDEO_PROCESSING, TRUE);
+	H::System::ThrowIfFailed(hr);
+
+	Microsoft::WRL::ComPtr<IMFSourceReader> reader;
+	hr = MFCreateSourceReaderFromURL(filePath.c_str(), readerAttr.Get(), reader.GetAddressOf());
+	H::System::ThrowIfFailed(hr);
+
+	return reader;
 }
