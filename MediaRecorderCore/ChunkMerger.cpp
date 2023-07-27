@@ -289,9 +289,8 @@ bool ChunkMerger::WriteInner(Microsoft::WRL::ComPtr<IMFSinkWriter> writer, Micro
 	}
 	
 	hr = writer->WriteSample(writeTo, sampleToWrite.Get());
+	// allow throw errors. For example disk full
 	H::System::ThrowIfFailed(hr);
-	/*if (FAILED(hr))
-		return true;*/
 
 	return false;
 }
