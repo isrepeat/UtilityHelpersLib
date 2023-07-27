@@ -974,7 +974,7 @@ void MediaRecorder::MergeChunks(IMFByteStream* outputStream, std::vector<std::ws
         std::move(chunks),
         containerExt,
         this->params.mediaFormat.GetMediaContainerType(),
-        true
+        this->params.chunkMergerTryRemux
     };
 
     merger.Merge();

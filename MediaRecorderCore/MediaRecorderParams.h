@@ -7,6 +7,7 @@
 struct MediaRecorderParams {
     MediaFormat mediaFormat;
     bool UseChunkMerger = false;
+    bool chunkMergerTryRemux = true;
     std::wstring chunksPath;
     std::wstring chunksGuid;
     std::wstring targetRecordPath;
