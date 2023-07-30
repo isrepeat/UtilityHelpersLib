@@ -10,7 +10,7 @@
 #include <libhelpers/HTime.h>
 #include <memcpy.h>
 #include <mfapi.h>
-#include <cassert>
+#include <spdlog/LoggerWrapper.h>
 
 // encoder restrictions can be found here : https://msdn.microsoft.com/en-us/library/windows/desktop/dd742785(v=vs.85).aspx
 const uint32_t MediaRecorder::AllowedNumChannels[] = { 1 , 2 };
@@ -87,6 +87,7 @@ void MediaRecorder::StartRecord() {
 
     hr = this->sinkWriter->BeginWriting();
     H::System::ThrowIfFailed(hr);
+    LOG_DEBUG("MediaRecorder::StartRecord started recording");
 }
 
 // TODO: Add guard for case when EndRecord called from other thread during record
@@ -821,6 +822,7 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::GetBestOutputType(
     }
 
     if (!outType) {
+        LOG_DEBUG("MediaRecorder::GetBestOutputType can't find best output type, using default");
         outType = defaultType;
     }
 
@@ -931,8 +933,10 @@ void MediaRecorder::FinalizeRecord(bool useRecordEventCallback) {
     samplesNumber = 0;
     chunkAudioPtsHns = 0;
     chunkVideoPtsHns = 0;
+    LOG_DEBUG("MediaRecorder::FinalizeRecord started");
     hr = this->sinkWriter->Finalize();
     if (hr != MF_E_SINK_NO_SAMPLES_PROCESSED) { // occured when was called BeginWritting but not calls WriteSample yet
+        LOG_DEBUG("MediaRecorder::FinalizeRecord error occured during finalization");
         H::System::ThrowIfFailed(hr);
     }
 
@@ -960,6 +964,7 @@ void MediaRecorder::FinalizeRecord(bool useRecordEventCallback) {
         eventArgs.remainingTime = remainingTime;
         recordEventCallback->call(eventArgs);
     }
+    LOG_DEBUG("MediaRecorder::FinalizeRecord done");
 }
 
 void MediaRecorder::MergeChunks(IMFByteStream* outputStream, std::vector<std::wstring>&& chunks)

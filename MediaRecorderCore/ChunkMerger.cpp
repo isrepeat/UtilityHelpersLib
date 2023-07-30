@@ -5,6 +5,7 @@
 #include "MediaFormat/MediaFormatCodecsSupport.h"
 #include "Platform/PlatformClassFactory.h"
 #include "FinalizedWithWarningException.h"
+#include <spdlog/LoggerWrapper.h>
 
 // NOTE: Merging takes longer than just writing bytes into a stream. Maybe optimize somehow?
 ChunkMerger::ChunkMerger(IMFByteStream* outputStream,
@@ -144,7 +145,7 @@ void ChunkMerger::Merge() {
 	HRESULT hr = S_OK;
 	// if true then Finalize == S_OK but when merging chunks in try{} there was exception(maybe in WriteInner)
 	bool finalizedWithWarning = false;
-
+	LOG_DEBUG("ChunkMerger::Merge started merging chunks");
 	try {
 		for (const auto& file : filesToMerge) {
 			Microsoft::WRL::ComPtr<IMFSourceReader> reader = ChunkMerger::CreateSourceReader(file);
@@ -203,6 +204,7 @@ void ChunkMerger::Merge() {
 			finalizedWithWarning = true;
 		}
 		else {
+			LOG_ERROR("ChunkMerger::Merge exception thrown: {}", ex.GetHRESULT());
 			throw;
 		}
 	}
@@ -213,6 +215,7 @@ void ChunkMerger::Merge() {
 	}
 
 	if (finalizedWithWarning) {
+		LOG_ERROR("ChunkMerger::Merge exception during finalization");
 		throw FinalizedWithWarningException();
 	}
 }

@@ -39,6 +39,11 @@
     <ClInclude Include="MediaRecorderCore\Platform\MP3CodecFactory.h" />
     <ClInclude Include="MediaRecorderCore\Platform\Wma8CodecFactory.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\3rdParty\spdlog\spdlog\spdlog.vcxproj">
+      <Project>{4ab35171-9952-4a89-9589-8a63e8be47e9}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E803EAAA-CE04-446F-85B5-8B29A5F1A338}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
