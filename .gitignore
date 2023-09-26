@@ -3,6 +3,10 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Visual Studio shaders generated files
+*.h_vs
+*.h_ps
+
 # User-specific files
 *.suo
 *.user

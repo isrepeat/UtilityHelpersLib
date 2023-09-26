@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <ItemsProjectGuid>{a3451486-ab38-4360-b752-94680b491792}</ItemsProjectGuid>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectCapability Include="SourceItemsFromImports" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\BIOS.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\CancellationToken.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\Channel.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\Concurrency.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\Conversion.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\CrashHandler.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\FileSystem.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\Gate.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\Helpers.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\Input.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\IpTranslator.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\MediaFoundation\MFUser.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\PackageProvider.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\ObjectLocker.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\Logger.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\RegistryManager.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\StackTrace.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\String.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\System.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\Thread.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\Time.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\UniqueHandle.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\AlignedAllocator.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Backtrace.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Bimap.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\BIOS.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\CancellationToken.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Channel.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Concurrency.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\ConcurrentQueue.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Container.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Conversion.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\CoUniquePtr.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\CrashHandler.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Event.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\FileSystem.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\framework.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\FunctionTraits.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Gate.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\GetAddressOf.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Filesystem.inl" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Helpers.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Input.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\IpTranslator.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\LocalPtr.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Macros.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\MediaFoundation\MFInclude.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\MediaFoundation\MFLibs.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\MediaFoundation\MFUser.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\PackageProvider.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Passkey.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Rational.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\RegistryManager.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Scope.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Signal.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\ObjectLocker.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Logger.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Singleton.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\StackTrace.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\String.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\System.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\SystemDataProvider.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Thread.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\ThreadSafeObject.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\ThreadWaiter.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Time.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\UniqueHandle.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\HWindows.h" />
+  </ItemGroup>
+</Project>
