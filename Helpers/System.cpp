@@ -1,7 +1,6 @@
 #include "System.h"
 #include "Logger.h"
 #include "Backtrace.h"
-#include "StackTrace.h"
 
 
 namespace H {
@@ -12,11 +11,16 @@ namespace H {
             , errorMessage{message}
             , errorCode{hr}
         {
-            LOG_ERROR_D("Com exception = [{:#08x}] {}", static_cast<unsigned int>(hr), H::WStrToStr(message));
+            LOG_ERROR_D(L"Com exception = [{:#08x}] {}", static_cast<unsigned int>(hr), message);
         }
 
         const std::shared_ptr<Backtrace>& ComException::GetBacktrace() const {
             return backtrace;
+        }
+
+        void ComException::LogBacktrace() const {
+            LOG_ERROR_D(L"Com exception = [{:#08x}] {}", static_cast<unsigned int>(errorCode), errorMessage);
+            LOG_ERROR_D(L"\n\Backtrace: \n{}", backtrace->GetBacktraceStr());
         }
 
         std::wstring ComException::ErrorMessage() const {
@@ -25,20 +29,6 @@ namespace H {
 
         HRESULT ComException::ErrorCode() const {
             return errorCode;
-        }
-
-
-        std::wstring ComException::GetStacktrace() const {
-            if (stacktrace.size()) {
-                return stacktrace;
-            }
-
-            return stacktrace = H::System::BuildStacktrace(backtrace);
-        }
-
-        void ComException::LogStacktrace() const {
-            LOG_ERROR_D("Com exception = [{:#08x}] {}", static_cast<unsigned int>(errorCode), H::WStrToStr(errorMessage));
-            LOG_ERROR_D(L"\n\nStacktrace: \n{}", this->GetStacktrace());
         }
     }
 }

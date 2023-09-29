@@ -30,9 +30,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Logger.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\StackTrace.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\System.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
@@ -108,9 +105,6 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Time.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\StackTrace.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\ObjectLocker.h">
