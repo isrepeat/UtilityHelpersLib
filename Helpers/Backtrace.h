@@ -1,20 +1,24 @@
 #pragma once
-#include <StacktraceRestorer\StacktraceRestorer.h>
+#include <CrashHandling/CrashHandling.h>
 
 namespace H {
 	namespace System {
 		class Backtrace {
 		public:
 			Backtrace(int skipFrames = 0)
-				: backtrace{ StacktraceRestorer::BackTrace(skipFrames) }
+				: backtrace{ CrashHandling::GetBacktrace(skipFrames) }
 			{}
 
-			StacktraceRestorer::Backtrace GetBacktrace() const {
+			CrashHandling::Backtrace GetBacktrace() const {
 				return backtrace;
 			}
 
+			std::wstring GetBacktraceStr() const {
+				return CrashHandling::BacktraceToString(backtrace);
+			}
+
 		private:
-			StacktraceRestorer::Backtrace backtrace;
+			CrashHandling::Backtrace backtrace;
 		};
 	}
 }

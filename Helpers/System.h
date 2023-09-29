@@ -23,15 +23,13 @@ namespace H {
             NO_MOVE(ComException); // std::exception not support move Ctor
 
             const std::shared_ptr<Backtrace>& GetBacktrace() const;
+            void LogBacktrace() const;
+
             std::wstring ErrorMessage() const;
             HRESULT ErrorCode() const;
 
-            std::wstring GetStacktrace() const;
-            void LogStacktrace() const;
-
         private:
             std::shared_ptr<Backtrace> backtrace;
-            mutable std::wstring stacktrace;
             std::wstring errorMessage;
             HRESULT errorCode = S_OK;
         };

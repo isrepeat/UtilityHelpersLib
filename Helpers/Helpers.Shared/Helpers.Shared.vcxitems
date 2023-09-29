@@ -30,7 +30,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\ObjectLocker.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Logger.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\RegistryManager.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\StackTrace.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\String.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\System.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Thread.cpp" />
@@ -74,7 +73,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\ObjectLocker.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Logger.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Singleton.hpp" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\StackTrace.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\String.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\System.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\SystemDataProvider.h" />
