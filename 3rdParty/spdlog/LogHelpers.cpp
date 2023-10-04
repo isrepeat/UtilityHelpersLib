@@ -14,6 +14,7 @@ namespace lg {
     enum class Pattern {
         Default,
         Debug,
+        Func,
         Time,
         Raw,
     };
@@ -21,6 +22,7 @@ namespace lg {
     const std::unordered_map<Pattern, std::string> patterns = {
         {Pattern::Default, "[%l] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!} %v"},
         {Pattern::Debug, "[dbg] [%t] {%s:%# %!} %v"},
+        {Pattern::Func, "[%l] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!} @@@ %v"},
         {Pattern::Time, "%d.%m.%Y %H:%M:%S:%e  %v"},
         {Pattern::Raw, "%v"},
     };
@@ -73,15 +75,14 @@ namespace lg {
     }
 
     void DefaultLoggers::Init(const std::wstring& logFilePath, bool truncate, bool appendNewSessionMsg) {
-#ifdef _DEBUG
         static std::set<std::wstring> initedLoggers;
         if (initedLoggers.count(logFilePath) > 0) {
-            assert(false && " ---> the logger on this path has already been initialized");
+            TimeLogger()->warn("the logger on this path has already been initialized");
+            return;
         }
         else {
             initedLoggers.insert(logFilePath);
         }
-#endif
 
         if (!std::filesystem::exists(logFilePath)) {
             appendNewSessionMsg = false; // don't append new session message at first created log file
@@ -109,6 +110,11 @@ namespace lg {
         _this.fileSinkTime->set_pattern(patterns.at(Pattern::Time));
         _this.fileSinkTime->set_level(spdlog::level::trace);
 
+        _this.fileSinkFunc = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, truncate);
+        _this.fileSinkFunc->set_pattern(patterns.at(Pattern::Func));
+        _this.fileSinkFunc->set_level(spdlog::level::trace);
+
+
         _this.logger = std::make_shared<spdlog::logger>("logger", spdlog::sinks_init_list{ _this.fileSink });
         _this.logger->set_level(spdlog::level::trace);
         _this.logger->flush_on(spdlog::level::trace);
@@ -120,6 +126,10 @@ namespace lg {
         _this.timeLogger = std::make_shared<spdlog::logger>("time_logger", spdlog::sinks_init_list{ _this.fileSinkTime });
         _this.timeLogger->set_level(spdlog::level::trace);
         _this.timeLogger->flush_on(spdlog::level::trace);
+
+        _this.funcLogger = std::make_shared<spdlog::logger>("func_logger", spdlog::sinks_init_list{ _this.fileSinkFunc });
+        _this.funcLogger->set_level(spdlog::level::trace);
+        _this.funcLogger->flush_on(spdlog::level::trace);
 
 #ifdef _DEBUG
         _this.debugLogger = std::make_shared<spdlog::logger>("debug_logger", spdlog::sinks_init_list{ _this.debugSink, _this.fileSink });
@@ -161,6 +171,15 @@ namespace lg {
             return TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
         }
         return GetInstance().timeLogger;
+    }
+
+    std::shared_ptr<spdlog::logger> DefaultLoggers::FuncLogger() {
+        auto& _this = GetInstance();
+
+        if (TokenSingleton<DefaultLoggers>::IsExpired() || !_this.funcLogger) {
+            return TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+        }
+        return GetInstance().funcLogger;
     }
 
     std::shared_ptr<spdlog::logger> DefaultLoggers::DebugLogger() {

@@ -24,16 +24,19 @@ namespace lg {
         static std::shared_ptr<spdlog::logger> Logger();
         static std::shared_ptr<spdlog::logger> RawLogger();
         static std::shared_ptr<spdlog::logger> TimeLogger();
+        static std::shared_ptr<spdlog::logger> FuncLogger();
         static std::shared_ptr<spdlog::logger> DebugLogger();
 
     private:
         std::shared_ptr<spdlog::logger> logger;
         std::shared_ptr<spdlog::logger> rawLogger;
         std::shared_ptr<spdlog::logger> timeLogger;
+        std::shared_ptr<spdlog::logger> funcLogger;
 
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSink;
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkRaw;
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkTime;
+        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkFunc;
 
 #ifdef _DEBUG
         std::shared_ptr<spdlog::logger> debugLogger;
@@ -68,3 +71,5 @@ namespace lg {
 #define LOG_DEBUG_D(...) SPDLOG_LOGGER_CALL(lg::DefaultLoggers::DebugLogger(), spdlog::level::debug, __VA_ARGS__)
 #define LOG_ERROR_D(...) SPDLOG_LOGGER_CALL(lg::DefaultLoggers::DebugLogger(), spdlog::level::err, __VA_ARGS__)
 #define LOG_WARNING_D(...) SPDLOG_LOGGER_CALL(lg::DefaultLoggers::DebugLogger(), spdlog::level::warn, __VA_ARGS__)
+
+#define LOG_FUNCTION_ENTER(...) SPDLOG_LOGGER_CALL(lg::DefaultLoggers::FuncLogger(), spdlog::level::debug, __VA_ARGS__)
