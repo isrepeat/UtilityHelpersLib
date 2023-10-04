@@ -7,7 +7,7 @@
 
 // TODO: rewrite this without blocking current thread
 PipeConnectionStatus WaitConnectPipe(IN HANDLE hPipe, const std::atomic<bool>& stop, int timeout) {
-	LOG_FUNCTION_ENTER("WaitConnectPipe(timeout = {}) ...", timeout);
+	LOG_FUNCTION_ENTER("WaitConnectPipe(timeout = {})", timeout);
 
 	H::Timer timer;
 	std::atomic<bool> timeoutSignal = false;
@@ -67,7 +67,7 @@ PipeConnectionStatus WaitConnectPipe(IN HANDLE hPipe, const std::atomic<bool>& s
 
 
 PipeConnectionStatus WaitOpenPipe(OUT HANDLE& hPipe, const std::wstring& pipeName, const std::atomic<bool>& stop, int timeout) {
-	LOG_FUNCTION_ENTER("WaitOpenPipe(timeout = {}) ...", timeout);
+	LOG_FUNCTION_ENTER("WaitOpenPipe(timeout = {})", timeout);
 
 	H::Timer timer;
 	std::atomic<bool> timeoutSignal = false;

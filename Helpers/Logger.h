@@ -10,9 +10,6 @@
 		LOG_ERROR_D(EXPAND_1_VA_ARGS_(message, __VA_ARGS__));                                                                 \
 	}
 
-// TODO: customize to be different from other logs
-#define LOG_FUNCTION_ENTER(...) LOG_DEBUG_D(__VA_ARGS__)
-
 
 // undefine this macros in some module if you need disable verbose logging
 #define LOG_DEBUG_VERBOSE(...) LOG_DEBUG_D(__VA_ARGS__)

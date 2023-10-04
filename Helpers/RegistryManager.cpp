@@ -6,7 +6,7 @@
 
 namespace H {
 	bool RegistryManager::HasRegValue(const std::string& path, const std::string& keyName) {
-		LOG_FUNCTION_ENTER("HasRegValue({}, {}) ...", path, keyName);
+		LOG_FUNCTION_ENTER("HasRegValue({}, {})", path, keyName);
 
 		std::vector<char> buff(255);
 		DWORD sz = buff.size();
@@ -21,7 +21,7 @@ namespace H {
 	}
 
 	std::string RegistryManager::GetRegValue(const std::string& path, const std::string& keyName) {
-		LOG_FUNCTION_ENTER("GetRegValue({}, {}) ...", path, keyName);
+		LOG_FUNCTION_ENTER("GetRegValue({}, {})", path, keyName);
 
 		std::vector<char> buff(255);
 		DWORD sz = buff.size();
@@ -37,7 +37,7 @@ namespace H {
 
 	// TODO: rewrite with wstring (be careful with double length of character)
 	void RegistryManager::SetRegValue(const std::string& path, const std::string& keyName, const std::string& value) {
-		LOG_FUNCTION_ENTER("SetRegValue({}, {}) ...", path, keyName);
+		LOG_FUNCTION_ENTER("SetRegValue({}, {})", path, keyName);
 
 		auto status = RegSetKeyValueA(HKEY_CURRENT_USER, path.c_str(), keyName.c_str(), REG_SZ, value.c_str(), value.size());
 		if (status != S_OK) {
