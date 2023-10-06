@@ -1,4 +1,5 @@
 #pragma once
+#ifndef __HELPERS_RAW__
 #include "HWindows.h"
 #include "Singleton.hpp"
 #include <functional>
@@ -23,3 +24,4 @@ namespace H {
 	
 	using CrashHandlerSingleton = SingletonScoped<CrashHandler, std::wstring, std::wstring, std::wstring>;
 }
+#endif // __HELPERS_RAW__

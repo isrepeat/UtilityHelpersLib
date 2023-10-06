@@ -10,6 +10,9 @@
     <Filter Include="MediaFoundation">
       <UniqueIdentifier>{05a802ad-a301-4c84-a13b-7664fdef8e2d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Headers\CLR">
+      <UniqueIdentifier>{dd52f1ce-fdf6-41f6-b46b-7ee1c00b035d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\CancellationToken.cpp">
@@ -73,6 +76,9 @@
       <Filter>Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\FileSystem.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\CrashInfo.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
   </ItemGroup>
@@ -210,6 +216,18 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Filesystem.inl">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Callback.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\config.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Callback_CLR.hpp">
+      <Filter>Headers\CLR</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\CrashInfo.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

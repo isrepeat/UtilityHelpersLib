@@ -1,3 +1,4 @@
+#ifndef __HELPERS_RAW__
 #include "CrashHandler.h"
 #include <CrashHandling/CrashHandling.h>
 #include "Logger.h"
@@ -88,3 +89,4 @@ namespace H {
 		this->crashCallback = crashCallback;
 	}
 }
+#endif // __HELPERS_RAW__
