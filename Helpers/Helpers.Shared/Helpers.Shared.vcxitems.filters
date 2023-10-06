@@ -78,6 +78,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\FileSystem.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\CrashInfo.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CancellationToken.h">
@@ -223,6 +226,9 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Callback_CLR.hpp">
       <Filter>Headers\CLR</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\CrashInfo.h">
+      <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

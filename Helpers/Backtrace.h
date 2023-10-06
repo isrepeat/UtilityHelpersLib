@@ -1,4 +1,5 @@
 #pragma once
+#ifndef __HELPERS_RAW__
 #include <CrashHandling/CrashHandling.h>
 
 namespace H {
@@ -22,3 +23,4 @@ namespace H {
 		};
 	}
 }
+#endif // __HELPERS_RAW__

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Define macros -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>__HELPERS_RAW__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  
+  <PropertyGroup>
+    <PublicIncludeDirectories>$(ProjectDir)..\..\;$(PublicIncludeDirectories)</PublicIncludeDirectories>
+    <!-- 3rd party dirs -->
+    <PublicIncludeDirectories>$(ProjectDir)..\..\3rdParty;$(PublicIncludeDirectories)</PublicIncludeDirectories>
+    <PublicIncludeDirectories>$(ProjectDir)..\..\3rdParty\spdlog;$(PublicIncludeDirectories)</PublicIncludeDirectories>
+    <PublicIncludeDirectories>$(ProjectDir)..\..\3rdParty\MagicEnum;$(PublicIncludeDirectories)</PublicIncludeDirectories>
+  </PropertyGroup>
+</Project>

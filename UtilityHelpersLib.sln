@@ -19,8 +19,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Helpers", "Helpers\Helpers\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ComAPI", "ComAPI\ComAPI.vcxproj", "{D2F14F8E-303B-4AE6-A98B-B789CD19981D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Helpers.Raw", "Helpers\Helpers.Raw\Helpers.Raw.vcxproj", "{298AB331-24AA-4F41-916E-2206023F8085}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Helpers\Helpers.Shared\Helpers.Shared.vcxitems*{298ab331-24aa-4f41-916e-2206023f8085}*SharedItemsImports = 4
 		Helpers\Helpers.Shared\Helpers.Shared.vcxitems*{a3451486-ab38-4360-b752-94680b491792}*SharedItemsImports = 9
 		Helpers\Helpers.Shared\Helpers.Shared.vcxitems*{a6a390c3-171d-47b9-b50c-39764ba0bd68}*SharedItemsImports = 4
 	EndGlobalSection
@@ -83,6 +86,16 @@ Global
 		{D2F14F8E-303B-4AE6-A98B-B789CD19981D}.Release|x64.Build.0 = Release|x64
 		{D2F14F8E-303B-4AE6-A98B-B789CD19981D}.Release|x86.ActiveCfg = Release|Win32
 		{D2F14F8E-303B-4AE6-A98B-B789CD19981D}.Release|x86.Build.0 = Release|Win32
+		{298AB331-24AA-4F41-916E-2206023F8085}.Debug|ARM.ActiveCfg = Debug|Win32
+		{298AB331-24AA-4F41-916E-2206023F8085}.Debug|x64.ActiveCfg = Debug|x64
+		{298AB331-24AA-4F41-916E-2206023F8085}.Debug|x64.Build.0 = Debug|x64
+		{298AB331-24AA-4F41-916E-2206023F8085}.Debug|x86.ActiveCfg = Debug|Win32
+		{298AB331-24AA-4F41-916E-2206023F8085}.Debug|x86.Build.0 = Debug|Win32
+		{298AB331-24AA-4F41-916E-2206023F8085}.Release|ARM.ActiveCfg = Release|Win32
+		{298AB331-24AA-4F41-916E-2206023F8085}.Release|x64.ActiveCfg = Release|x64
+		{298AB331-24AA-4F41-916E-2206023F8085}.Release|x64.Build.0 = Release|x64
+		{298AB331-24AA-4F41-916E-2206023F8085}.Release|x86.ActiveCfg = Release|Win32
+		{298AB331-24AA-4F41-916E-2206023F8085}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -93,6 +106,7 @@ Global
 		{4AB35171-9952-4A89-9589-8A63E8BE47E9} = {7A0CA0F0-0BE7-4EBD-AB3F-F62F26E5B398}
 		{A3451486-AB38-4360-B752-94680B491792} = {4A5644B4-23EF-48F7-8F3E-45A0EBE5C607}
 		{A6A390C3-171D-47B9-B50C-39764BA0BD68} = {4A5644B4-23EF-48F7-8F3E-45A0EBE5C607}
+		{298AB331-24AA-4F41-916E-2206023F8085} = {4A5644B4-23EF-48F7-8F3E-45A0EBE5C607}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A114CB48-500F-4E4B-BC01-3ACE75DCCC4F}

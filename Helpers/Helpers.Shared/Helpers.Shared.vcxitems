@@ -20,6 +20,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Concurrency.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Conversion.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\CrashHandler.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\CrashInfo.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\FileSystem.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Gate.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Helpers.cpp" />
@@ -52,6 +53,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Conversion.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CoUniquePtr.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CrashHandler.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\CrashInfo.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Event.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\FileSystem.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\framework.h" />
