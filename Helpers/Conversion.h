@@ -7,13 +7,30 @@
 
 namespace H {
 	template<typename T>
-	T HexFromString(const std::string& hexString) {
-		T hexValue;
+	std::string HexToString(T hexValue) {
 		std::stringstream ss;
+		ss << "0x" << std::hex << std::setw(sizeof(hexValue) * 2) << std::setfill('0') << hexValue;
+		return ss.str();
+	}
+
+    template<typename T>
+    T HexFromStringA(const std::string& hexString) {
+        T hexValue;
+        std::stringstream ss;
+        ss << std::hex << hexString;
+        ss >> hexValue;
+        return hexValue;
+    }
+
+	template<typename T>
+	T HexFromStringW(const std::wstring& hexString) {
+		T hexValue;
+		std::wstringstream ss;
 		ss << std::hex << hexString;
 		ss >> hexValue;
 		return hexValue;
 	}
+
 
     template<typename T>
     std::vector<uint8_t> NumToBytes(T src) {
@@ -45,8 +62,10 @@ namespace H {
         return num;
     }
 
+#if _HAS_CXX20
     // Convert some array's byte to hex
     std::span<char>::iterator HexByte(unsigned char byte, std::span<char>::iterator arrIt, const std::span<char>::iterator arrItEnd);
+#endif
 
     std::string VectorBytesToHexString(const std::vector<uint8_t>& data);
 }

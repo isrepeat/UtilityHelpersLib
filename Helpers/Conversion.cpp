@@ -3,6 +3,7 @@
 #include <format>
 
 namespace H {
+#if _HAS_CXX20
     std::span<char>::iterator HexByte(unsigned char byte, std::span<char>::iterator arrIt, const std::span<char>::iterator arrItEnd) {
         static const char* digits{ "0123456789ABCDEF" }; // NOTE: byte must be unsigned value
 
@@ -12,6 +13,7 @@ namespace H {
         }
         return arrIt;
     }
+#endif
 
     std::string VectorBytesToHexString(const std::vector<uint8_t>& data) {
         std::stringstream ss;
