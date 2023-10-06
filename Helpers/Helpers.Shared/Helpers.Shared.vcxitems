@@ -41,10 +41,13 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Backtrace.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Bimap.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\BIOS.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Callback.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Callback_CLR.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CancellationToken.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Channel.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Concurrency.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\ConcurrentQueue.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\config.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Container.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Conversion.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CoUniquePtr.h" />
