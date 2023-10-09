@@ -1,49 +1,49 @@
 #pragma once
 #include <memory>
+#include <cassert>
+#include "TokenContext.hpp"
 
 template<class... Types>
 class ICallback {
 public:
 	ICallback() {}
-	virtual ~ICallback() {}
+	virtual ~ICallback() = default;
 
 	virtual void Invoke(Types... args) = 0;
-	virtual ICallback *Clone() const = 0;
+	virtual ICallback* Clone() const = 0;
 };
 
-template<class T, class... Types>
-class GenericCallback : public ICallback<Types...>{
+
+template<typename T, typename... Types>
+class GenericCallback : public ICallback<Types...> {
 public:
-	GenericCallback(const T &data, void(*callbackFn)(const T &data, Types... args))
-		: data(data), callbackFn(callbackFn)
+
+	GenericCallback(TokenContextWeak<T> ctx, void(*callbackFn)(typename TokenContextWeak<T>::Data_t* data, Types... args))
+		: ctx(ctx)
+		, callbackFn(callbackFn)
 	{
 	}
 
-	GenericCallback(const GenericCallback &other) 
-		: data(other.data), callbackFn(other.callbackFn)
+	GenericCallback(const GenericCallback& other)
+		: ctx(other.ctx)
+		, callbackFn(other.callbackFn)
 	{
 	}
 
-	GenericCallback(GenericCallback &&other)
-		: data(std::move(other.data)), 
-		callbackFn(std::move(other.callbackFn))
-	{
-	}
+	virtual ~GenericCallback() = default;
 
-	virtual ~GenericCallback() {}
-
-	GenericCallback &operator=(const GenericCallback &other) {
+	GenericCallback& operator=(const GenericCallback& other) {
 		if (this != &other) {
-			this->data = other.data;
+			this->ctx = other.ctx;
 			this->callbackFn = other.callbackFn;
 		}
 
 		return *this;
 	}
 
-	GenericCallback &operator=(GenericCallback &&other) {
+	GenericCallback& operator=(GenericCallback&& other) {
 		if (this != &other) {
-			this->data = std::move(other.data);
+			this->ctx = std::move(other.ctx);
 			this->callbackFn = std::move(other.callbackFn);
 		}
 
@@ -51,17 +51,21 @@ public:
 	}
 
 	void Invoke(Types... args) override {
-		this->callbackFn(this->data, std::forward<Types>(args)...);
+		if (this->ctx.token.expired()) {
+			return;
+		}
+
+		this->callbackFn(this->ctx.data, std::forward<Types>(args)...);
 	}
 
 	ICallback<Types...>* Clone() const override {
-		GenericCallback *clone = new GenericCallback(*this);
+		GenericCallback* clone = new GenericCallback(*this);
 		return clone;
 	}
 
 private:
-	T data;
-	void(*callbackFn)(const T &data, Types... args);
+	TokenContextWeak<T> ctx;
+	void(*callbackFn)(typename TokenContextWeak<T>::Data_t* data, Types... args);
 };
 
 template<class... Types>
@@ -71,30 +75,30 @@ public:
 	{
 	}
 
-	Callback(std::unique_ptr<ICallback<Types...>> &&callback)
+	Callback(std::unique_ptr<ICallback<Types...>>&& callback)
 		: callback(std::move(callback))
 	{
 	}
 
-	Callback(const Callback &other) 
-		: callback(std::unique_ptr<ICallback<Types...>>(other.callback->Clone()))
+	Callback(const Callback& other)
+		: callback(other.callback ? std::unique_ptr<ICallback<Types...>>(other.callback->Clone()) : nullptr)
 	{
 	}
 
-	Callback(Callback &&other)
+	Callback(Callback&& other)
 		: callback(std::move(other.callback))
 	{
 	}
 
-	Callback &operator=(const Callback &other) {
+	Callback& operator=(const Callback& other) {
 		if (this != &other) {
-			this->callback = std::unique_ptr<ICallback<Types...>>(other.callback->Clone());
+			this->callback = other.callback ? std::unique_ptr<ICallback<Types...>>(other.callback->Clone()) : nullptr;
 		}
 
 		return *this;
 	}
 
-	Callback &operator=(Callback &&other) {
+	Callback& operator=(Callback&& other) {
 		if (this != &other) {
 			this->callback = std::move(other.callback);
 		}
@@ -103,6 +107,10 @@ public:
 	}
 
 	void operator()(Types... args) {
+		if (!this->callback) {
+			assert(false && " --> callback is empty!");
+			return;
+		}
 		this->callback->Invoke(args...);
 	}
 
@@ -114,8 +122,9 @@ private:
 	std::unique_ptr<ICallback<Types...>> callback;
 };
 
-template<class T, class... Types>
-Callback<Types...> MakeCallback(const T &data, void(*callbackFn)(const T &data, Types... args)) {
-	auto icallback = std::make_unique<GenericCallback<T, Types...>>(data, callbackFn);
+
+template<typename T, typename... Types>
+Callback<Types...> MakeCallback(TokenContextWeak<T> ctx, void(*callbackFn)(typename TokenContextWeak<T>::Data_t* data, Types... args)) {
+	auto icallback = std::make_unique<GenericCallback<T, Types...>>(ctx, callbackFn);
 	return Callback<Types...>(std::move(icallback));
 }
