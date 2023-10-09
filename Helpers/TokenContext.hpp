@@ -17,7 +17,7 @@ class TokenContext { // place as class member
 public:
 	using Data_t = T;
 
-	TokenContextWeak<T> GetWeak() {
+	TokenContextWeak<T> GetWeak() const {
 		return { data, token };
 	};
 
