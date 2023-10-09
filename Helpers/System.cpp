@@ -1,6 +1,6 @@
 #include "System.h"
 #include "Logger.h"
-#ifndef __HELPERS_RAW__
+#ifdef CRASH_HANDLING_NUGET
 #include "Backtrace.h"
 #endif
 
@@ -9,7 +9,7 @@ namespace H {
     namespace System {
         ComException::ComException(HRESULT hr, const std::wstring& message)
             : std::exception(H::WStrToStr(message).c_str())
-#ifndef __HELPERS_RAW__
+#ifdef CRASH_HANDLING_NUGET
             , backtrace{ std::make_shared<Backtrace>() }
 #endif
             , errorMessage{message}
@@ -18,7 +18,7 @@ namespace H {
             LOG_ERROR_D(L"Com exception = [{:#08x}] {}", static_cast<unsigned int>(hr), message);
         }
 
-#ifndef __HELPERS_RAW__
+#ifdef CRASH_HANDLING_NUGET
         const std::shared_ptr<Backtrace>& ComException::GetBacktrace() const {
             return backtrace;
         }

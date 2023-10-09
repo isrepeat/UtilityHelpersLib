@@ -9,7 +9,7 @@
 
 namespace H {
     namespace System {
-#ifndef __HELPERS_RAW__
+#ifdef CRASH_HANDLING_NUGET
         // NOTE: For unqie_ptr over pipmpl you need define Dtor (even default) in .cpp file
         class Backtrace;
 #endif
@@ -24,7 +24,7 @@ namespace H {
 
             NO_MOVE(ComException); // std::exception not support move Ctor
 
-#ifndef __HELPERS_RAW__
+#ifdef CRASH_HANDLING_NUGET
             const std::shared_ptr<Backtrace>& GetBacktrace() const;
             void LogBacktrace() const;
 #endif
@@ -33,7 +33,7 @@ namespace H {
             HRESULT ErrorCode() const;
 
         private:
-#ifndef __HELPERS_RAW__
+#ifdef CRASH_HANDLING_NUGET
             std::shared_ptr<Backtrace> backtrace;
 #endif
             std::wstring errorMessage;

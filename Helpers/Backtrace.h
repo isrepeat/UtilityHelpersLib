@@ -1,5 +1,5 @@
 #pragma once
-#ifndef __HELPERS_RAW__
+#ifdef CRASH_HANDLING_NUGET
 #include <CrashHandling/CrashHandling.h>
 
 namespace H {
@@ -23,4 +23,4 @@ namespace H {
 		};
 	}
 }
-#endif // __HELPERS_RAW__
+#endif // v

@@ -130,6 +130,11 @@
   <ItemGroup>
     <ClCompile Include="LogHelpers.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Helpers\Helpers.Includes\Helpers.Includes.vcxproj">
+      <Project>{0a91eb2b-8ebc-43b6-be7b-73df089cbfa4}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
