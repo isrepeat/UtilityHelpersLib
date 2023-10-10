@@ -16,61 +16,6 @@ public:
 };
 
 
-template<typename T, typename R, typename... Ts>
-class GenericCallback : public ICallback<R, Ts...> {
-public:
-
-	GenericCallback(TokenContextWeak<T> ctx, R(*callbackFn)(typename TokenContextWeak<T>::Data_t* data, Ts... args))
-		: ctx(ctx)
-		, callbackFn(callbackFn)
-	{
-	}
-
-	GenericCallback(const GenericCallback& other)
-		: ctx(other.ctx)
-		, callbackFn(other.callbackFn)
-	{
-	}
-
-	virtual ~GenericCallback() = default;
-
-	GenericCallback& operator=(const GenericCallback& other) {
-		if (this != &other) {
-			this->ctx = other.ctx;
-			this->callbackFn = other.callbackFn;
-		}
-
-		return *this;
-	}
-
-	GenericCallback& operator=(GenericCallback&& other) {
-		if (this != &other) {
-			this->ctx = std::move(other.ctx);
-			this->callbackFn = std::move(other.callbackFn);
-		}
-
-		return *this;
-	}
-
-	H::Result_t<R> Invoke(Ts... args) override {
-		if (this->ctx.token.expired()) {
-			return {};
-		}
-		return H::InvokeHelper(this->callbackFn, this->ctx.data, std::forward<Ts>(args)...);
-	}
-
-	ICallback<R, Ts...>* Clone() const override {
-		GenericCallback* clone = new GenericCallback(*this);
-		return clone;
-	}
-
-
-private:
-	TokenContextWeak<T> ctx;
-	R(*callbackFn)(typename TokenContextWeak<T>::Data_t* data, Ts... args);
-};
-
-
 template<typename R, typename... Ts>
 class Callback {
 public:
@@ -126,6 +71,60 @@ private:
 	std::unique_ptr<ICallback<R, Ts...>> callback;
 };
 
+
+template<typename T, typename R, typename... Ts>
+class GenericCallback : public ICallback<R, Ts...> {
+public:
+
+	GenericCallback(TokenContextWeak<T> ctx, R(*callbackFn)(typename TokenContextWeak<T>::Data_t* data, Ts... args))
+		: ctx(ctx)
+		, callbackFn(callbackFn)
+	{
+	}
+
+	GenericCallback(const GenericCallback& other)
+		: ctx(other.ctx)
+		, callbackFn(other.callbackFn)
+	{
+	}
+
+	virtual ~GenericCallback() = default;
+
+	GenericCallback& operator=(const GenericCallback& other) {
+		if (this != &other) {
+			this->ctx = other.ctx;
+			this->callbackFn = other.callbackFn;
+		}
+
+		return *this;
+	}
+
+	GenericCallback& operator=(GenericCallback&& other) {
+		if (this != &other) {
+			this->ctx = std::move(other.ctx);
+			this->callbackFn = std::move(other.callbackFn);
+		}
+
+		return *this;
+	}
+
+	H::Result_t<R> Invoke(Ts... args) override {
+		if (this->ctx.token.expired()) {
+			return {};
+		}
+		return H::InvokeHelper(this->callbackFn, this->ctx.data, std::forward<Ts>(args)...);
+	}
+
+	ICallback<R, Ts...>* Clone() const override {
+		GenericCallback* clone = new GenericCallback(*this);
+		return clone;
+	}
+
+
+private:
+	TokenContextWeak<T> ctx;
+	R(*callbackFn)(typename TokenContextWeak<T>::Data_t* data, Ts... args);
+};
 
 template<typename T, typename R, typename... Ts>
 Callback<R, Ts...> MakeCallback(TokenContextWeak<T> ctx, R(*callbackFn)(typename TokenContextWeak<T>::Data_t* data, Ts... args)) {
