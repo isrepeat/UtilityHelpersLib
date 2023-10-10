@@ -22,7 +22,7 @@
     <None Include="Helpers.Includes_PublicDirs.targets" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Library.cpp" />
+    <ClCompile Include="Helpers.Includes_Lib.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

@@ -1,5 +1,4 @@
 #include "ComAPI.h"
-#include <Helpers\String.h>
 #include <Windows.Services.Store.h>
 #include <condition_variable>
 #include <windows.storage.h>
@@ -103,8 +102,6 @@ namespace ComApi {
 #if _HAS_CXX20 == 1
 		return std::format(L"{}.{}.{}.{}", major, minor, build, revision);
 #else
-		//auto res = H::StringFormat("%d.%d.%d.%d", major, minor, build, revision);
-		//return H::StringFormat(L"%d.%d.%d.%d", major, minor, build, revision);
 		return std::to_wstring(major) + L"." + std::to_wstring(minor) + L"." + std::to_wstring(build) + L"." + std::to_wstring(revision);
 #endif
 	}
