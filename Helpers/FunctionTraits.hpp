@@ -1,4 +1,5 @@
 #pragma once
+#include "config.h"
 #include <tuple>
 #include <type_traits>
 
@@ -41,6 +42,13 @@ namespace H {
     struct FunctionTraits<R(*)(A...)> : public _FunctionTraitsBase<R, void, A...>
     {};
 
+#ifdef __CLR__
+    // For C-style functions CLR
+    template <typename R, typename... A>
+    struct FunctionTraits<R(__clrcall*)(A...)> : public _FunctionTraitsBase<R, void, A...>
+    {};
+#endif
+
 
     struct nothing {};
 
@@ -58,13 +66,13 @@ namespace H {
     using Result_t = typename Result<T>::type;
 
     template<typename Fn, typename... Args>
-    Result_t<typename FunctionTraits<Fn>::Ret> InvokeHelper(Fn fn, Args... args) {
+    Result_t<typename FunctionTraits<Fn>::Ret> InvokeHelper(Fn fn, Args&&... args) {
         if constexpr (std::is_same_v<typename FunctionTraits<Fn>::Ret, void>) {
-            fn(std::forward<Args>(args)...);
+            fn(std::forward<Args&&>(args)...);
             return Result_t<void>{};
         }
         else {
-            return fn(std::forward<Args>(args)...);
+            return fn(std::forward<Args&&>(args)...);
         }
     }
 }

@@ -5,11 +5,12 @@
 #include "Callback.hpp"
 #include <msclr\auto_gcroot.h>
 
-template<class T, class... Types>
-class GenericWeakGCRootCallback : public ICallback<Types...> {
+template<typename T, typename R, typename... Ts>
+class GenericWeakGCRootCallback : public ICallback<R, Ts...> {
 public:
-    GenericWeakGCRootCallback(T data, void(__clrcall* callbackFn)(T data, Types... args))
-        : data(gcnew System::WeakReference(data)), callbackFn(callbackFn)
+    GenericWeakGCRootCallback(T data, R(__clrcall* callbackFn)(T data, Ts... args))
+        : data(gcnew System::WeakReference(data))
+        , callbackFn(callbackFn)
     {
     }
 
@@ -24,8 +25,8 @@ public:
     }
 
     GenericWeakGCRootCallback(GenericWeakGCRootCallback&& other)
-        : data(std::move(other.data)),
-        callbackFn(std::move(other.callbackFn))
+        : data(std::move(other.data))
+        , callbackFn(std::move(other.callbackFn))
     {
     }
 
@@ -55,16 +56,18 @@ public:
         return *this;
     }
 
-    void Invoke(Types... args) override {
+    H::Result_t<R> Invoke(Ts... args) override {
         System::WeakReference^ weakRef = this->data.get();
 
         if (weakRef) {
             T tmp = dynamic_cast<T>(weakRef->Target);
 
             if (tmp) {
-                this->callbackFn(tmp, std::forward<Types>(args)...);
+                return H::InvokeHelper(this->callbackFn, tmp, std::forward<Ts>(args)...);
             }
         }
+
+        return {};
     }
 
     ICallback* Clone() const override {
@@ -74,14 +77,14 @@ public:
 
 private:
     msclr::auto_gcroot<System::WeakReference^> data;
-    void(__clrcall* callbackFn)(T data, Types... args);
+    R(__clrcall* callbackFn)(T data, Ts... args);
 };
 
 // <data> will be wrapped into WeakReference
-template<class T, class... Types>
-Callback<Types...> MakeWeakGCRootCallback(T data, void(__clrcall* callbackFn)(T data, Types... args)) {
-    auto ptr = new GenericWeakGCRootCallback<T, Types...>(data, callbackFn);
-    auto icallback = std::unique_ptr<GenericWeakGCRootCallback<T, Types...>>(ptr);
-    return Callback<Types...>(std::move(icallback));
+template<typename T, typename R, typename... Ts>
+Callback<R, Ts...> MakeWeakGCRootCallback(T data, R(__clrcall* callbackFn)(T data, Ts... args)) {
+    auto ptr = new GenericWeakGCRootCallback<T, R, Ts...>(data, callbackFn);
+    auto icallback = std::unique_ptr<GenericWeakGCRootCallback<T, R, Ts...>>(ptr);
+    return Callback<R, Ts...>(std::move(icallback));
 }
 #endif // __CLR__
