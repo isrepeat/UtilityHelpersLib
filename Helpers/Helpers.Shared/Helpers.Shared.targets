@@ -6,6 +6,7 @@
   </PropertyGroup>
   
   <ItemGroup>
+    <HelpersCommonHeaders Include="$(HelpersDirectory)\config.h" />
     <HelpersCommonHeaders Include="$(HelpersDirectory)\HWindows.h" />
     <HelpersCommonHeaders Include="$(HelpersDirectory)\Callback.hpp" />
     <HelpersCommonHeaders Include="$(HelpersDirectory)\Callback_CLR.hpp" />

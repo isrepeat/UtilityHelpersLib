@@ -57,7 +57,7 @@ public:
 	R operator()(Ts... args) {
 		if (!this->callback) {
 			assert(false && " --> callback is empty!");
-			returnR();
+			return R();
 		}
 
 		return this->callback->Invoke(args...);
