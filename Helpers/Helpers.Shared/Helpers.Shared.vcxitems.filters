@@ -237,4 +237,7 @@
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />
+  </ItemGroup>
 </Project>

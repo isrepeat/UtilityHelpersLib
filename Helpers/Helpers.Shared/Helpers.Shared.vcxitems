@@ -90,4 +90,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\UniqueHandle.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\HWindows.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />
+  </ItemGroup>
+  <!-- Custom targets -->
+  <Import Project="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />
 </Project>
