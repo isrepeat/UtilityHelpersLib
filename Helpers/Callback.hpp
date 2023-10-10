@@ -11,7 +11,7 @@ public:
 	ICallback() {}
 	virtual ~ICallback() = default;
 
-	virtual H::Result_t<R> Invoke(Ts... args) = 0;
+	virtual R Invoke(Ts... args) = 0;
 	virtual ICallback* Clone() const = 0;
 };
 
@@ -54,7 +54,7 @@ public:
 		return *this;
 	}
 
-	H::Result_t<R> operator()(Ts... args) {
+	R operator()(Ts... args) {
 		if (!this->callback) {
 			assert(false && " --> callback is empty!");
 			return {};
@@ -108,11 +108,11 @@ public:
 		return *this;
 	}
 
-	H::Result_t<R> Invoke(Ts... args) override {
+	R Invoke(Ts... args) override {
 		if (this->ctx.token.expired()) {
 			return {};
 		}
-		return H::InvokeHelper(this->callbackFn, this->ctx.data, std::forward<Ts>(args)...);
+		return this->callbackFn(this->ctx.data, std::forward<Ts>(args)...);
 	}
 
 	ICallback<R, Ts...>* Clone() const override {

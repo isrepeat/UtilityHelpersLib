@@ -56,7 +56,7 @@ public:
         return *this;
     }
 
-    H::Result_t<R> Invoke(Ts... args) override {
+    R Invoke(Ts... args) override {
         System::WeakReference^ weakRef = this->data.get();
 
         if (weakRef) {
