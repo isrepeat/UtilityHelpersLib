@@ -85,7 +85,14 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\ThreadSafeObject.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\ThreadWaiter.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Time.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\TokenContext.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\TokenSingleton.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\UniqueHandle.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\HWindows.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />
+  </ItemGroup>
+  <!-- Custom targets -->
+  <Import Project="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />
 </Project>
