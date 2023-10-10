@@ -63,7 +63,7 @@ public:
             T tmp = dynamic_cast<T>(weakRef->Target);
 
             if (tmp) {
-                return H::InvokeHelper(this->callbackFn, tmp, std::forward<Ts>(args)...);
+                return this->callbackFn(tmp, std::forward<Ts>(args)...);
             }
         }
 
