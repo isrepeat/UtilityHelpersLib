@@ -67,7 +67,7 @@ public:
             }
         }
 
-        return {};
+        return R();
     }
 
     ICallback* Clone() const override {

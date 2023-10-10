@@ -57,7 +57,7 @@ public:
 	R operator()(Ts... args) {
 		if (!this->callback) {
 			assert(false && " --> callback is empty!");
-			return {};
+			returnR();
 		}
 
 		return this->callback->Invoke(args...);
@@ -110,7 +110,7 @@ public:
 
 	R Invoke(Ts... args) override {
 		if (this->ctx.token.expired()) {
-			return {};
+			return R();
 		}
 		return this->callbackFn(this->ctx.data, std::forward<Ts>(args)...);
 	}
