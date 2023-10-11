@@ -3,25 +3,29 @@
 #include "Helpers.h"
 #include "Macros.h"
 
+#if !defined(DISABLE_ERROR_LOGGING)
 #define LogLastError LOG_ERROR_D(L"Last error: {}", H::GetLastErrorAsString())
 #define LOG_ASSERT(assertion, message, ...)                                                                                   \
 	if (!assertion) {                                                                                                         \
 		assert(assertion && " --> " message);                                                                                 \
 		LOG_ERROR_D(EXPAND_1_VA_ARGS_(message, __VA_ARGS__));                                                                 \
 	}
+#else
+#define LogLastError
+#define LOG_ASSERT(assertion, message, ...)
+#endif
 
 
-// undefine this macros in some module if you need disable verbose logging
+#if !defined(DISABLE_VERBOSE_LOGGING)
 #define LOG_DEBUG_VERBOSE(...) LOG_DEBUG_D(__VA_ARGS__)
 #define LOG_ERROR_VERBOSE(...) LOG_ERROR_D(__VA_ARGS__)
+#else
+#define LOG_DEBUG_VERBOSE(...)
+#define LOG_ERROR_VERBOSE(...)
+#endif
 
 
-#define ENABLE_CLASS_FULLNAME_LOGGING 1
-#if ENABLE_CLASS_FULLNAME_LOGGING == 1
-
-
-
-
+#if !defined(DISABLE_CLASS_FULLNAME_LOGGING)
 #define CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(className)                                                               \
 	private:                                                                                                                  \
 		std::string className##_fullClassNameA = ""#className;                                                                \
@@ -62,12 +66,12 @@
 #define LogWarningWithFullClassNameW(format, ...)                                                                              \
 	LOG_WARNING_D(std::wstring(L"[{}] ") + format, EXPAND_1_VA_ARGS_(this->GetFullClassNameW() , __VA_ARGS__))
 
-
 #else
-#define LogDebugWithFullClassName(formatStr, ...)
-#define LogErrorWithFullClassName(formatStr, ...)
-#define LogWarningWithFullClassName(formatStr, ...)
-#define CLASS_FULLNAME_LOGGING_DECLARATION(className)
-#define CLASS_FULLNAME_LOGGING_IMPLEMENTATION(className)
 #define CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(className)
+#define LogDebugWithFullClassNameA(formatStr, ...)
+#define LogErrorWithFullClassNameA(formatStr, ...)
+#define LogWarningWithFullClassNameA(formatStr, ...)
+#define LogDebugWithFullClassNameW(formatStr, ...)
+#define LogErrorWithFullClassNameW(formatStr, ...)
+#define LogWarningWithFullClassNameW(formatStr, ...)
 #endif
