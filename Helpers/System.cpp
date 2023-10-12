@@ -1,7 +1,7 @@
 #include "System.h"
 #include "Logger.h"
 #ifdef CRASH_HANDLING_NUGET
-#include "Backtrace.h"
+#include <CrashHandling/CrashHandling.h>
 #endif
 
 
@@ -10,7 +10,7 @@ namespace H {
         ComException::ComException(HRESULT hr, const std::wstring& message)
             : std::exception(H::WStrToStr(message).c_str())
 #ifdef CRASH_HANDLING_NUGET
-            , backtrace{ std::make_shared<Backtrace>() }
+            , backtrace{ std::make_shared<CrashHandling::Backtrace>() }
 #endif
             , errorMessage{message}
             , errorCode{hr}
@@ -18,16 +18,22 @@ namespace H {
             LOG_ERROR_D(L"Com exception = [{:#08x}] {}", static_cast<unsigned int>(hr), message);
         }
 
+        const std::shared_ptr<CrashHandling::Backtrace>& ComException::GetBacktrace() const throw(NugetNotFoundException) {
 #ifdef CRASH_HANDLING_NUGET
-        const std::shared_ptr<Backtrace>& ComException::GetBacktrace() const {
             return backtrace;
+#else
+            throw NugetNotFoundException();
+#endif
         }
 
-        void ComException::LogBacktrace() const {
+        void ComException::LogBacktrace() const throw(NugetNotFoundException) {
+#ifdef CRASH_HANDLING_NUGET
             LOG_ERROR_D(L"Com exception = [{:#08x}] {}", static_cast<unsigned int>(errorCode), errorMessage);
             LOG_ERROR_D(L"\n\Backtrace: \n{}", backtrace->GetBacktraceStr());
-        }
+#else
+            throw NugetNotFoundException();
 #endif
+        }
 
         std::wstring ComException::ErrorMessage() const {
             return errorMessage;
