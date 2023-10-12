@@ -57,7 +57,7 @@ namespace lg {
 #error LOG_... macros already defined
 #endif
 
-
+#if !defined(DISABLE_COMMON_LOGGING)
 #define LOG_RAW(...) SPDLOG_LOGGER_CALL(lg::DefaultLoggers::RawLogger(), spdlog::level::trace, __VA_ARGS__)
 
 #define LOG_TIME(...) SPDLOG_LOGGER_CALL(lg::DefaultLoggers::TimeLogger(), spdlog::level::trace, __VA_ARGS__)
@@ -73,3 +73,16 @@ namespace lg {
 #define LOG_WARNING_D(...) SPDLOG_LOGGER_CALL(lg::DefaultLoggers::DebugLogger(), spdlog::level::warn, __VA_ARGS__)
 
 #define LOG_FUNCTION_ENTER(...) SPDLOG_LOGGER_CALL(lg::DefaultLoggers::FuncLogger(), spdlog::level::debug, __VA_ARGS__)
+#else
+#define LOG_RAW(...)
+#define LOG_TIME(...)
+#define LOG_INFO(...)
+#define LOG_DEBUG(...)
+#define LOG_ERROR(...)
+#define LOG_WARNING(...)
+#define LOG_INFO_D(...)
+#define LOG_DEBUG_D(...)
+#define LOG_ERROR_D(...)
+#define LOG_WARNING_D(...)
+#define LOG_FUNCTION_ENTER(...)
+#endif
