@@ -9,7 +9,6 @@ enum class HKey {
 };
 
 namespace H {
-    // [HKEY_CURRENT_USER; REG_SZ]
     class RegistryManager {
     public:
         static bool HasRegValue(HKey hKey, const std::string& path, const std::string& keyName);

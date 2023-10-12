@@ -1,7 +1,8 @@
-#ifdef CRASH_HANDLING_NUGET
 #include "CrashHandler.h"
-#include <CrashHandling/CrashHandling.h>
 #include "Logger.h"
+
+#ifdef CRASH_HANDLING_NUGET
+#include <CrashHandling/CrashHandling.h>
 
 static CrashHandling::AdditionalInfo additionalInfo;
 
@@ -87,6 +88,20 @@ namespace H {
 
 	void CrashHandler::SetCrashCallback(std::function<void()> crashCallback) {
 		this->crashCallback = crashCallback;
+	}
+}
+#else // CRASH_HANDLING_NUGET
+#include "Exception.h"
+
+namespace H {
+	CrashHandler::CrashHandler(std::wstring runProtocol, std::wstring appCenterId, std::wstring appUuid) {
+		throw NugetNotFoundException();
+	}
+	void CrashHandler::SetProtocolCommandArgs(std::vector<std::pair<std::wstring, std::wstring>> protocolCommandArgs) {
+		throw NugetNotFoundException();
+	}
+	void CrashHandler::SetCrashCallback(std::function<void()> crashCallback) {
+		throw NugetNotFoundException();
 	}
 }
 #endif // CRASH_HANDLING_NUGET

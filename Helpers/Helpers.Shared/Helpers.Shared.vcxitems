@@ -39,7 +39,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\AlignedAllocator.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Backtrace.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Bimap.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\BIOS.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Callback.hpp" />
@@ -55,6 +54,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CrashHandler.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CrashInfo.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Event.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Exception.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\FileSystem.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\framework.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\FunctionTraits.hpp" />

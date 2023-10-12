@@ -1,5 +1,4 @@
 #pragma once
-#ifdef CRASH_HANDLING_NUGET
 #include "HWindows.h"
 #include "Singleton.hpp"
 #include <functional>
@@ -24,4 +23,3 @@ namespace H {
 	
 	using CrashHandlerSingleton = SingletonScoped<CrashHandler, std::wstring, std::wstring, std::wstring>;
 }
-#endif // CRASH_HANDLING_NUGET

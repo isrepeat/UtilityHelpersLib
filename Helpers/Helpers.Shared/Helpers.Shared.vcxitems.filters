@@ -122,9 +122,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\PackageProvider.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Backtrace.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Signal.h">
       <Filter>Headers</Filter>
     </ClInclude>
@@ -234,6 +231,9 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\TokenContext.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Exception.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
