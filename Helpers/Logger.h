@@ -47,6 +47,9 @@
 		}
 
 
+#define LogFuncWithFullClassNameA(format, ...)                                                                                \
+	LOG_FUNCTION_ENTER(std::string("[{}] ") + format, EXPAND_1_VA_ARGS_(this->GetFullClassNameA(), __VA_ARGS__))
+
 #define LogDebugWithFullClassNameA(format, ...)                                                                                \
 	LOG_DEBUG_D(std::string("[{}] ") + format, EXPAND_1_VA_ARGS_(this->GetFullClassNameA(), __VA_ARGS__))
 
@@ -56,6 +59,9 @@
 #define LogWarningWithFullClassNameA(format, ...)                                                                              \
 	LOG_WARNING_D(std::string("[{}] ") + format, EXPAND_1_VA_ARGS_(this->GetFullClassNameA() , __VA_ARGS__))
 
+
+#define LogFuncWithFullClassNameW(format, ...)                                                                                \
+	LOG_DEBUG_D(std::wstring(L"[{}] ") + format, EXPAND_1_VA_ARGS_(this->GetFullClassNameW() , __VA_ARGS__))
 
 #define LogDebugWithFullClassNameW(format, ...)                                                                                \
 	LOG_DEBUG_D(std::wstring(L"[{}] ") + format, EXPAND_1_VA_ARGS_(this->GetFullClassNameW() , __VA_ARGS__))
@@ -68,10 +74,12 @@
 
 #else
 #define CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(className)
+#define LogFuncWithFullClassNameA(formatStr, ...)
+#define LogFuncWithFullClassNameW(formatStr, ...)
 #define LogDebugWithFullClassNameA(formatStr, ...)
-#define LogErrorWithFullClassNameA(formatStr, ...)
-#define LogWarningWithFullClassNameA(formatStr, ...)
 #define LogDebugWithFullClassNameW(formatStr, ...)
+#define LogErrorWithFullClassNameA(formatStr, ...)
 #define LogErrorWithFullClassNameW(formatStr, ...)
+#define LogWarningWithFullClassNameA(formatStr, ...)
 #define LogWarningWithFullClassNameW(formatStr, ...)
 #endif
