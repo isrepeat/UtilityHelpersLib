@@ -130,7 +130,13 @@ namespace H {
 };
 
 #ifdef _DEBUG
-#define MEASURE_TIME H::MeasureTime t;
+// https://stackoverflow.com/questions/1597007/creating-c-macro-with-and-line-token-concatenation-with-positioning-macr
+#define MEASURE_TIME_TOKENPASTE(x, y) x ## y
+// use it with __LINE__ to fix "hides declaration of the same name in outer scope"
+#define MEASURE_TIME_TOKENPASTE2(x, y) MEASURE_TIME_TOKENPASTE(x, y)
+#define MEASURE_TIME H::MeasureTime MEASURE_TIME_TOKENPASTE2(_measureTimeScoped, __LINE__);
+#define MEASURE_TIME_WITH_CALLBACK(callback) H::MeasureTimeScoped MEASURE_TIME_TOKENPASTE2(_measureTimeScoped, __LINE__)(callback);
 #else
 #define MEASURE_TIME
+#define MEASURE_TIME_WITH_CALLBACK(callback)
 #endif
