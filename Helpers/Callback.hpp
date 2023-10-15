@@ -75,8 +75,7 @@ private:
 template<typename T, typename R, typename... Ts>
 class GenericCallback : public ICallback<R, Ts...> {
 public:
-
-	GenericCallback(TokenContextWeak<T> ctx, R(*callbackFn)(typename TokenContextWeak<T>::Data_t* data, Ts... args))
+	GenericCallback(TokenContext<T>::Weak ctx, R(*callbackFn)(typename TokenContext<T>::Data_t* data, Ts... args))
 		: ctx(ctx)
 		, callbackFn(callbackFn)
 	{
@@ -108,11 +107,11 @@ public:
 		return *this;
 	}
 
-	R Invoke(Ts... args) override {
+	H::Result_t<R> Invoke(Ts... args) override {
 		if (this->ctx.token.expired()) {
-			return R();
+			return {};
 		}
-		return this->callbackFn(this->ctx.data, std::forward<Ts>(args)...);
+		return H::InvokeHelper(this->callbackFn, this->ctx.data, std::forward<Ts>(args)...);
 	}
 
 	ICallback<R, Ts...>* Clone() const override {
@@ -122,12 +121,19 @@ public:
 
 
 private:
-	TokenContextWeak<T> ctx;
-	R(*callbackFn)(typename TokenContextWeak<T>::Data_t* data, Ts... args);
+	TokenContext<T>::Weak ctx;
+	R(*callbackFn)(typename TokenContext<T>::Data_t* data, Ts... args);
 };
 
+
 template<typename T, typename R, typename... Ts>
-Callback<R, Ts...> MakeCallback(TokenContextWeak<T> ctx, R(*callbackFn)(typename TokenContextWeak<T>::Data_t* data, Ts... args)) {
+Callback<R, Ts...> MakeCallback_impl(typename TokenContext<T>::Weak ctx, R(*callbackFn)(typename TokenContext<T>::Data_t* data, Ts... args)) {
 	auto icallback = std::make_unique<GenericCallback<T, R, Ts...>>(ctx, callbackFn);
 	return Callback<R, Ts...>(std::move(icallback));
+}
+
+
+template<typename TknWeak, typename R, typename... Ts, typename T = TknWeak::parent_t::Data_t>
+Callback<R, Ts...> MakeCallback(TknWeak ctx, R(*callbackFn)(typename TokenContext<T>::Data_t* data, Ts... args)) {
+	return MakeCallback_impl<T, R, Ts...>(ctx, callbackFn);
 }
