@@ -1,7 +1,7 @@
 #pragma once
 #include "config.h"
 #include <tuple>
-#include <type_traits>
+#include "TypeTraits.hpp"
 
 namespace H {
 
@@ -49,8 +49,6 @@ namespace H {
     {};
 #endif
 
-
-    struct nothing {};
 
     template <typename T>
     struct Result {

@@ -64,4 +64,8 @@ namespace H {
 	const std::wstring& ThreadNameHelper::GetThreadName() {
 		return threadName;
 	}
+
+	size_t GetThreadId() {
+		return static_cast<size_t>(::GetCurrentThreadId());
+	}
 }

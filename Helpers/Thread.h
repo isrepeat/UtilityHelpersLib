@@ -46,5 +46,7 @@ namespace H {
 
 	private:
 		static thread_local std::wstring threadName;
-	};	
+	};
+
+	size_t GetThreadId();
 }

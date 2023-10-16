@@ -29,7 +29,7 @@ namespace H {
         void ComException::LogBacktrace() const throw(NugetNotFoundException) {
 #ifdef CRASH_HANDLING_NUGET
             LOG_ERROR_D(L"Com exception = [{:#08x}] {}", static_cast<unsigned int>(errorCode), errorMessage);
-            LOG_ERROR_D(L"\n\Backtrace: \n{}", backtrace->GetBacktraceStr());
+            LOG_ERROR_D(L"\nBacktrace: \n{}", backtrace->GetBacktraceStr());
 #else
             throw NugetNotFoundException();
 #endif
