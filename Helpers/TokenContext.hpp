@@ -1,8 +1,6 @@
 #pragma once
 #include <memory>
 
-// NOTE: The TokenContextWeak not reside inside the TokenContext class to avoid "non-deduced cotext" in template functions
-
 template <typename T>
 class TokenContext { // place as class member
 public:

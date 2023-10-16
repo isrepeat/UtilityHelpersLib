@@ -2,7 +2,6 @@
 #include <memory>
 #include <cassert>
 #include "TokenContext.hpp"
-#include "FunctionTraits.hpp"
 
 
 template<typename R, typename... Ts>
@@ -107,11 +106,11 @@ public:
 		return *this;
 	}
 
-	H::Result_t<R> Invoke(Ts... args) override {
+	R Invoke(Ts... args) override {
 		if (this->ctx.token.expired()) {
-			return {};
+			return R();
 		}
-		return H::InvokeHelper(this->callbackFn, this->ctx.data, std::forward<Ts>(args)...);
+		return this->callbackFn(this->ctx.data, std::forward<Ts>(args)...);
 	}
 
 	ICallback<R, Ts...>* Clone() const override {
