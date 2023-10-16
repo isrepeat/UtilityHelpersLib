@@ -171,7 +171,7 @@ public:
 
     // Make security attributes to connect admin & user pipe
     void CreateForAdmin(const std::wstring& pipeName, std::function<bool(ReadFunc, WriteFunc)> listenHandler, int timeout = 0) {
-        LogDebugWithFullClassNameW(L"CreateForAdmin(pipeName = {}, ...) ...", pipeName);
+        LOG_DEBUG(L"CreateForAdmin(pipeName = {}, ...) ...", pipeName);
 
         auto pSecurityDescriptor = std::make_unique<SECURITY_DESCRIPTOR>();
         InitializeSecurityDescriptor(pSecurityDescriptor.get(), SECURITY_DESCRIPTOR_REVISION);
@@ -183,7 +183,7 @@ public:
 
     // Make security attributes to connect UWP & desktop apps
     void CreateForUWP(const std::wstring& pipeName, std::function<bool(ReadFunc, WriteFunc)> listenHandler, HANDLE hProcessUWP, int timeout = 0) {
-        LogDebugWithFullClassNameW(L"CreateForUWP(pipeName = {}, ...) ...", pipeName);
+        LOG_DEBUG(L"CreateForUWP(pipeName = {}, ...) ...", pipeName);
 
         pSecurityAttributes = std::make_unique<SECURITY_ATTRIBUTES>(SECURITY_ATTRIBUTES{ sizeof(SECURITY_ATTRIBUTES), NULL, FALSE });
 
@@ -215,7 +215,7 @@ public:
     }
 
     void Create(const std::wstring& pipeName, std::function<bool(ReadFunc, WriteFunc)> listenHandler, int timeout = 0) {
-        LogDebugWithFullClassNameW(L"Create(pipeName = {}, listenHandler, timeout = {}) ...", pipeName, timeout);
+        LOG_DEBUG(L"Create(pipeName = {}, listenHandler, timeout = {}) ...", pipeName, timeout);
 
         hNamedPipe = CreateNamedPipeW(
             pipeName.c_str(),
@@ -230,12 +230,12 @@ public:
 
         closeChannel = false;
         threadChannel = std::thread([this, listenHandler, timeout, pipeName] {
-            H::ThreadNameHelper::SetThreadName(pipeName + L" Create thread");
+            LOG_THREAD(pipeName + L" Create thread");
 
             while (!closeChannel) {
-                LogDebugWithFullClassNameA("Waiting for connect...");
+                LOG_DEBUG("Waiting for connect...");
                 auto status = WaitConnectPipe(hNamedPipe, closeChannel, timeout);
-                LogDebugWithFullClassNameA("WaitConnectPipe status = {}", magic_enum::enum_name(status));
+                LOG_DEBUG("WaitConnectPipe status = {}", magic_enum::enum_name(status));
 
                 switch (status) {
                 case PipeConnectionStatus::Connected: {
@@ -259,11 +259,11 @@ public:
 
 
     void Open(const std::wstring& pipeName, std::function<bool(ReadFunc, WriteFunc)> listenHandler, int timeout = 10'000) {
-        LogDebugWithFullClassNameA("Open() ...");
+        LOG_DEBUG("Open() ...");
 
         closeChannel = false;
         auto status = WaitOpenPipe(hNamedPipe, pipeName, closeChannel, timeout);
-        LogDebugWithFullClassNameA("WaitOpenPipe status = {}", magic_enum::enum_name(status));
+        LOG_DEBUG("WaitOpenPipe status = {}", magic_enum::enum_name(status));
 
         switch (status) {
         case PipeConnectionStatus::Connected: {
@@ -277,14 +277,14 @@ public:
         }
 
         threadChannel = std::thread([this, listenHandler, pipeName] {
-            H::ThreadNameHelper::SetThreadName(pipeName + L" Open thread");
+            LOG_THREAD(pipeName + L" Open thread");
             ListenRoutine(listenHandler);
             });
     }
 
 
     void StopChannel() {
-        LogDebugWithFullClassNameA("StopChannel() ...");
+        LOG_DEBUG("StopChannel() ...");
 
         connected = false;
         stopSignal = true;
@@ -311,13 +311,13 @@ public:
 
 
     void ClearPendingMessages() {
-        LogDebugWithFullClassNameA("ClearPendingMessages() ...");
+        LOG_DEBUG("ClearPendingMessages() ...");
         std::lock_guard lk{ mxWrite };
         pendingMessages.clear();
     }
 
     void WritePendingMessages() {
-        LogDebugWithFullClassNameA("WritePendingMessages() ...");
+        LOG_DEBUG("WritePendingMessages() ...");
         std::lock_guard lk{ mxWrite };
         try {
             for (auto& message : pendingMessages) {
@@ -332,7 +332,7 @@ public:
             switch (error)
             {
             case PipeError::WriteError:
-                LogErrorWithFullClassNameA("Write error! Stop channel.");
+                LOG_ERROR_D("Write error! Stop channel.");
                 break;
             };
             stopSignal = true;
@@ -359,7 +359,7 @@ public:
             switch (error)
             {
             case PipeError::WriteError:
-                LogErrorWithFullClassNameA("Write error! Stop channel.");
+                LOG_ERROR_D("Write error! Stop channel.");
                 break;
             };
             stopSignal = true;
@@ -380,7 +380,7 @@ public:
 
 private:
     void ListenRoutine(std::function<bool(ReadFunc, WriteFunc)> listenHandler) {
-        LogDebugWithFullClassNameA("ListenRoutine() ...");
+        LOG_DEBUG("ListenRoutine() ...");
 
         connected = true;
         stopSignal = false;
@@ -396,7 +396,7 @@ private:
                 stopSignal = true;
             }
         }
-        LogDebugWithFullClassNameA("stopSignal = true");
+        LOG_DEBUG("stopSignal = true");
 
         threadInterrupt = std::thread([this] { // Not block current thread to avoid deadlock
             interruptHandler();
@@ -419,7 +419,7 @@ private:
             switch (error)
             {
             case PipeError::ReadError:
-                LogErrorWithFullClassNameA("Write error! Stop channel.");
+                LOG_ERROR_D("Write error! Stop channel.");
                 break;
             };
             stopSignal = true;

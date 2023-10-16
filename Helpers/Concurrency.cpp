@@ -4,14 +4,14 @@
 
 namespace H {
     TaskChain::~TaskChain() {
-        LogDebugWithFullClassNameA("~TaskChain() ...");
+        LOG_DEBUG("~TaskChain() ...");
         CancelAndWait();
     }
 
     bool TaskChain::Reset() {
         std::lock_guard lk{ mx };
         if (!canReset) {
-            LogWarningWithFullClassNameA("can't reset task chain");
+            LOG_WARNING_D("can't reset task chain");
             return false;
         }
         ResetInternal();
@@ -20,7 +20,7 @@ namespace H {
 
     void TaskChain::Append(std::function<void()> taskLambda) {
         std::lock_guard lk{ mx };
-        LogDebugWithFullClassNameA("append new task lambda");
+        LOG_DEBUG("append new task lambda");
         task = task.then(taskLambda); // when completion event set all previous and next tasks execute immediatly
     }
 
@@ -31,7 +31,7 @@ namespace H {
 
         canReset = false;
 
-        LogDebugWithFullClassNameA("start executing task chain");
+        LOG_DEBUG("start executing task chain");
         taskCompletedEvent.set(); // at this point tasks start executing in some thread via task scheduler
     }
 
@@ -40,9 +40,9 @@ namespace H {
         if (!executing.exchange(false))
             return; // return if previous value == false
 
-        LogDebugWithFullClassNameA("cancel and wait task chain");
+        LOG_DEBUG("cancel and wait task chain");
         if (task.is_done()) {
-            LogWarningWithFullClassNameA("no wait, last task already completed");
+            LOG_WARNING_D("no wait, last task already completed");
         }
 
         cancelationToken.cancel();
@@ -51,10 +51,10 @@ namespace H {
             task.wait();
         }
         catch (const std::exception& ex) {
-            LogErrorWithFullClassNameA("task std exception: {}", ex.what());
+            LOG_ERROR_D("task std exception: {}", ex.what());
         }
         catch (...) {
-            LogErrorWithFullClassNameA("task unrecognized exception !!!");
+            LOG_ERROR_D("task unrecognized exception !!!");
         }
 
         ResetInternal();
@@ -62,7 +62,7 @@ namespace H {
     }
 
     void TaskChain::ResetInternal() {
-        LogDebugWithFullClassNameA("reset tasks chain");
+        LOG_DEBUG("reset tasks chain");
         cancelationToken = {};
         taskCompletedEvent = {};
         task = Concurrency::task<void>(taskCompletedEvent, cancelationToken.get_token());
