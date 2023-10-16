@@ -69,6 +69,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\MediaFoundation\MFInclude.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\MediaFoundation\MFLibs.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\MediaFoundation\MFUser.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\TypeTraits.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\PackageProvider.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Passkey.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Rational.h" />
@@ -79,6 +80,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Logger.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Singleton.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\String.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\String.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\System.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\SystemDataProvider.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Thread.h" />

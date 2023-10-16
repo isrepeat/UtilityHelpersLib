@@ -2,7 +2,6 @@
 #include <memory>
 #include <cassert>
 #include "TokenContext.hpp"
-#include "FunctionTraits.hpp"
 
 
 template<typename R, typename... Ts>
@@ -75,8 +74,7 @@ private:
 template<typename T, typename R, typename... Ts>
 class GenericCallback : public ICallback<R, Ts...> {
 public:
-
-	GenericCallback(TokenContextWeak<T> ctx, R(*callbackFn)(typename TokenContextWeak<T>::Data_t* data, Ts... args))
+	GenericCallback(TokenContext<T>::Weak ctx, R(*callbackFn)(typename TokenContext<T>::Data_t* data, Ts... args))
 		: ctx(ctx)
 		, callbackFn(callbackFn)
 	{
@@ -122,12 +120,19 @@ public:
 
 
 private:
-	TokenContextWeak<T> ctx;
-	R(*callbackFn)(typename TokenContextWeak<T>::Data_t* data, Ts... args);
+	TokenContext<T>::Weak ctx;
+	R(*callbackFn)(typename TokenContext<T>::Data_t* data, Ts... args);
 };
 
+
 template<typename T, typename R, typename... Ts>
-Callback<R, Ts...> MakeCallback(TokenContextWeak<T> ctx, R(*callbackFn)(typename TokenContextWeak<T>::Data_t* data, Ts... args)) {
+Callback<R, Ts...> MakeCallback_impl(typename TokenContext<T>::Weak ctx, R(*callbackFn)(typename TokenContext<T>::Data_t* data, Ts... args)) {
 	auto icallback = std::make_unique<GenericCallback<T, R, Ts...>>(ctx, callbackFn);
 	return Callback<R, Ts...>(std::move(icallback));
+}
+
+
+template<typename TknWeak, typename R, typename... Ts, typename T = TknWeak::parent_t::Data_t>
+Callback<R, Ts...> MakeCallback(TknWeak ctx, R(*callbackFn)(typename TokenContext<T>::Data_t* data, Ts... args)) {
+	return MakeCallback_impl<T, R, Ts...>(ctx, callbackFn);
 }

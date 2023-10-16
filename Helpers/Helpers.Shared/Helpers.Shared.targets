@@ -13,4 +13,14 @@
     <HelpersCommonHeaders Include="$(HelpersDirectory)\TokenContext.hpp" />
     <HelpersCommonHeaders Include="$(HelpersDirectory)\FunctionTraits.hpp" />
   </ItemGroup>
+
+  <!-- Define macros -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>
+        INSIDE_HELPERS_PROJECT;
+        %(PreprocessorDefinitions)
+      </PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
 </Project>

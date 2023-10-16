@@ -1,7 +1,9 @@
 #pragma once
 #include <spdlog/LogHelpers.h>
 #include "Helpers.h"
+#include "Thread.h"
 #include "Macros.h"
+#include "Scope.h"
 
 #if !defined(DISABLE_ERROR_LOGGING)
 #define LogLastError LOG_ERROR_D(L"Last error: {}", H::GetLastErrorAsString())
@@ -19,59 +21,22 @@
 #if !defined(DISABLE_VERBOSE_LOGGING)
 #define LOG_DEBUG_VERBOSE(...) LOG_DEBUG_D(__VA_ARGS__)
 #define LOG_ERROR_VERBOSE(...) LOG_ERROR_D(__VA_ARGS__)
+
+#define LOG_DEBUG_VERBOSE_S(_This, ...) LOG_DEBUG_S(_This, __VA_ARGS__)
+#define LOG_ERROR_VERBOSE_S(_This, ...) LOG_ERROR_S(_This, __VA_ARGS__)
 #else
 #define LOG_DEBUG_VERBOSE(...)
 #define LOG_ERROR_VERBOSE(...)
+
+#define LOG_DEBUG_VERBOSE_S(_This, ...)
+#define LOG_ERROR_VERBOSE_S(_This, ...)
 #endif
 
 
-#if !defined(DISABLE_CLASS_FULLNAME_LOGGING)
-#define CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(className)                                                               \
-	private:                                                                                                                  \
-		std::string className##_fullClassNameA = ""#className;                                                                \
-		std::wstring className##_fullClassNameW = L""#className;                                                              \
-                                                                                                                              \
-	public:                                                                                                                   \
-        void SetFullClassName(std::wstring name) {                                                                            \
-            LOG_DEBUG_D(L"Full class name = {}", name);                                                                       \
-            this->className##_fullClassNameA = H::WStrToStr(name);                                                            \
-            this->className##_fullClassNameW = name;                                                                          \
-        }                                                                                                                     \
-                                                                                                                              \
-		const std::string& GetFullClassNameA() {                                                                              \
-			return this->className##_fullClassNameA;                                                                          \
-		}                                                                                                                     \
-                                                                                                                              \
-		const std::wstring& GetFullClassNameW() {                                                                             \
-			return this->className##_fullClassNameW;                                                                          \
-		}
-
-
-#define LogDebugWithFullClassNameA(format, ...)                                                                                \
-	LOG_DEBUG_D(std::string("[{}] ") + format, EXPAND_1_VA_ARGS_(this->GetFullClassNameA(), __VA_ARGS__))
-
-#define LogErrorWithFullClassNameA(format, ...)                                                                                \
-	LOG_ERROR_D(std::string("[{}] ") + format, EXPAND_1_VA_ARGS_(this->GetFullClassNameA() , __VA_ARGS__))
-
-#define LogWarningWithFullClassNameA(format, ...)                                                                              \
-	LOG_WARNING_D(std::string("[{}] ") + format, EXPAND_1_VA_ARGS_(this->GetFullClassNameA() , __VA_ARGS__))
-
-
-#define LogDebugWithFullClassNameW(format, ...)                                                                                \
-	LOG_DEBUG_D(std::wstring(L"[{}] ") + format, EXPAND_1_VA_ARGS_(this->GetFullClassNameW() , __VA_ARGS__))
-
-#define LogErrorWithFullClassNameW(format, ...)                                                                                \
-	LOG_ERROR_D(std::wstring(L"[{}] ") + format, EXPAND_1_VA_ARGS_(this->GetFullClassNameW() , __VA_ARGS__))
-
-#define LogWarningWithFullClassNameW(format, ...)                                                                              \
-	LOG_WARNING_D(std::wstring(L"[{}] ") + format, EXPAND_1_VA_ARGS_(this->GetFullClassNameW() , __VA_ARGS__))
-
-#else
-#define CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(className)
-#define LogDebugWithFullClassNameA(formatStr, ...)
-#define LogErrorWithFullClassNameA(formatStr, ...)
-#define LogWarningWithFullClassNameA(formatStr, ...)
-#define LogDebugWithFullClassNameW(formatStr, ...)
-#define LogErrorWithFullClassNameW(formatStr, ...)
-#define LogWarningWithFullClassNameW(formatStr, ...)
-#endif
+#define LOG_THREAD(name)                                                                                                     \
+	LOG_DEBUG_D(L"Thread START '" + std::wstring(name) + L"'");                                                              \
+	H::ThreadNameHelper::SetThreadName(name);                                                                                \
+                                                                                                                             \
+	auto threadFinishLogScoped = H::MakeScope([&] {                                                                          \
+		LOG_DEBUG_D(L"Thread END '" + std::wstring(name) + L"'");                                                            \
+		});

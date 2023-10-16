@@ -195,3 +195,7 @@ namespace lg {
 #endif
     }
 }
+
+H::nothing* __LgCtx() {
+    return nullptr;
+}
