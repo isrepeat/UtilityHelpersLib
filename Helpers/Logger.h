@@ -34,9 +34,9 @@
 
 
 #define LOG_THREAD(name)                                                                                                     \
-	LOG_DEBUG_D(L"Thread START '" + std::wstring(name) + L"'");                                                              \
+	LOG_DEBUG_D(L"Thread START '{}'", std::wstring(name));                                                                   \
 	H::ThreadNameHelper::SetThreadName(name);                                                                                \
                                                                                                                              \
 	auto threadFinishLogScoped = H::MakeScope([&] {                                                                          \
-		LOG_DEBUG_D(L"Thread END '" + std::wstring(name) + L"'");                                                            \
+		LOG_DEBUG_D(L"Thread END '{}'", std::wstring(name));                                                                 \
 		});

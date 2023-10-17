@@ -20,13 +20,37 @@ namespace lg {
     };
 
     const std::unordered_map<Pattern, std::string> patterns = {
-        {Pattern::Default, "[%l] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!} %v"},
-        {Pattern::Debug, "[dbg] [%t] {%s:%# %!} %v"},
+        {Pattern::Default, "[%l] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q %v"},
+        {Pattern::Debug, "[dbg] [%t] {%s:%# %!}%q %v"},
         {Pattern::Func, "[%l] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!} @@@ %v"},
         {Pattern::Time, "%d.%m.%Y %H:%M:%S:%e  %v"},
         {Pattern::Raw, "%v"},
     };
 
+    // Free letter falgs: 'j', 'k', 'q', 'w'
+
+    class custom_prefix_flag : public spdlog::custom_flag_formatter {
+    public:
+        explicit custom_prefix_flag(std::function<std::wstring()> fn)
+            : prefixCallback{ fn }
+        {}
+
+        void format(const spdlog::details::log_msg&, const std::tm&, spdlog::memory_buf_t& dest) override {
+            std::wstring prefix = std::wstring(padinfo_.width_, ' ') + prefixCallback();
+            dest.append(prefix.data(), prefix.data() + prefix.size());
+        }
+
+        spdlog::details::padding_info get_padding_info() {
+            return padinfo_;
+        }
+
+        std::unique_ptr<custom_flag_formatter> clone() const override {
+            return spdlog::details::make_unique<custom_prefix_flag>(prefixCallback);
+        }
+
+    private:
+        std::function<std::wstring()> prefixCallback;
+    };
 
 
 
@@ -61,11 +85,19 @@ namespace lg {
         : debugSink{ std::make_shared<spdlog::sinks::msvc_sink_mt>() }
 #endif
     {
+        prefixCallback = [this] {
+            return className;
+            };
+
 #ifdef _DEBUG
         debugSink->set_level(spdlog::level::trace);
-        debugSink->set_pattern(patterns.at(Pattern::Debug));
+        auto formatterDebug = std::make_unique<spdlog::pattern_formatter>();
+        formatterDebug->add_flag<custom_prefix_flag>('q', prefixCallback).set_pattern(patterns.at(Pattern::Debug));
+        debugSink->set_formatter(std::move(formatterDebug));
 #endif
-        TokenSingleton<DefaultLoggers>::SetToken(Passkey<DefaultLoggers>{}, this->token);
+
+        // DefaultLoggers::UnscopedData is created inside singleton
+        TokenSingleton<DefaultLoggers>::SetToken(Passkey<DefaultLoggers>{}, this->token); 
     }
 
 
@@ -99,7 +131,9 @@ namespace lg {
         auto& _this = GetInstance();
 
         _this.fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, truncate);
-        _this.fileSink->set_pattern(patterns.at(Pattern::Default));
+        auto formatterDefault = std::make_unique<spdlog::pattern_formatter>();
+        formatterDefault->add_flag<custom_prefix_flag>('q', _this.prefixCallback).set_pattern(patterns.at(Pattern::Default));
+        _this.fileSink->set_formatter(std::move(formatterDefault));
         _this.fileSink->set_level(spdlog::level::trace);
 
         _this.fileSinkRaw = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, truncate);
