@@ -42,33 +42,19 @@ namespace lg {
         static std::shared_ptr<spdlog::logger> FuncLogger();
         static std::shared_ptr<spdlog::logger> DebugLogger();
 
-        // Use _impl to deduct T in std::basic_string<T>
-        template<typename TClass, typename T, typename... Args>
-        static void Log_impl(
-            TClass* classPtr,
-            std::shared_ptr<spdlog::logger> logger,
-            spdlog::source_loc location, spdlog::level::level_enum level, std::basic_string<T> format, Args&&... args)
-        {
-            if constexpr (has_member(std::remove_reference_t<decltype(std::declval<TClass>())>, __ClassFullnameLogging)) {
-                if constexpr (std::is_same_v<T, char>) {
-                    (logger)->log(location, level, "[{}] " + format, classPtr->GetFullClassNameA(), std::forward<Args&&>(args)...);
-                }
-                else {
-                    (logger)->log(location, level, L"[{}] " + format, classPtr->GetFullClassNameW(), std::forward<Args&&>(args)...);
-                }
-                return;
-            }
-            (logger)->log(location, level, format, std::forward<Args&&>(args)...);
-        }
-
-        template<typename TClass, typename TFormat, typename... Args>
+        template<typename T, typename TClass, typename... Args>
         static void Log(
             TClass* classPtr,
             std::shared_ptr<spdlog::logger> logger,
-            spdlog::source_loc location, spdlog::level::level_enum level, TFormat format, Args&&... args)
+            spdlog::source_loc location, spdlog::level::level_enum level, fmt::basic_format_string<T, std::type_identity_t<Args>...> format, Args&&... args)
         {
-            using T = typename decltype(H::StringDeductor(format))::type;
-            Log_impl<TClass, T, Args...>(classPtr, logger, location, level, format, std::forward<Args&&>(args)...);
+            if constexpr (has_member(std::remove_reference_t<decltype(std::declval<TClass>())>, __ClassFullnameLogging)) {
+                GetInstance().className = L" [" + classPtr->GetFullClassNameW() + L"]";
+            }
+            else {
+                GetInstance().className = L"";
+            }
+            (logger)->log(location, level, format, std::forward<Args&&>(args)...);
         }
 
     private:
@@ -86,6 +72,11 @@ namespace lg {
         std::shared_ptr<spdlog::logger> debugLogger;
         const std::shared_ptr<spdlog::sinks::msvc_sink_mt> debugSink;
 #endif
+
+        // Custom prefix
+        std::wstring className = L"";
+        std::function<std::wstring()> prefixCallback = nullptr;
+
         std::shared_ptr<int> token = std::make_shared<int>();
     };
 
@@ -110,34 +101,35 @@ H::nothing* __LgCtx(); // may be overwritten as class method that returned "this
 #if !defined(DISABLE_COMMON_LOGGING)
 #define LOG_CTX spdlog::source_loc{__FILE__, __LINE__, SPDLOG_FUNCTION}
 
-#define LOG_RAW(...) lg::DefaultLoggers::Log(__LgCtx(), lg::DefaultLoggers::RawLogger(), LOG_CTX, spdlog::level::trace, __VA_ARGS__)
-#define LOG_TIME(...) lg::DefaultLoggers::Log(__LgCtx(), lg::DefaultLoggers::TimeLogger(), LOG_CTX, spdlog::level::trace, __VA_ARGS__)
+#define LOG_RAW(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::RawLogger(), LOG_CTX, spdlog::level::trace, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_TIME(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::TimeLogger(), LOG_CTX, spdlog::level::trace, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 
-#define LOG_INFO(...) lg::DefaultLoggers::Log(__LgCtx(), lg::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::info, __VA_ARGS__)
-#define LOG_DEBUG(...) lg::DefaultLoggers::Log(__LgCtx(), lg::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::debug, __VA_ARGS__)
-#define LOG_ERROR(...) lg::DefaultLoggers::Log(__LgCtx(), lg::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::err, __VA_ARGS__)
-#define LOG_WARNING(...) lg::DefaultLoggers::Log(__LgCtx(), lg::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::warn, __VA_ARGS__)
+#define LOG_INFO(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::info, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_DEBUG(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_ERROR(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::err, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_WARNING(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::warn, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 
-#define LOG_INFO_D(...) lg::DefaultLoggers::Log(__LgCtx(), lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::info, __VA_ARGS__)
-#define LOG_DEBUG_D(...) lg::DefaultLoggers::Log(__LgCtx(), lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::debug, __VA_ARGS__)
-#define LOG_ERROR_D(...) lg::DefaultLoggers::Log(__LgCtx(), lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::err, __VA_ARGS__)
-#define LOG_WARNING_D(...) lg::DefaultLoggers::Log(__LgCtx(), lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::warn, __VA_ARGS__)
-
+#define LOG_INFO_D(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::info, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_DEBUG_D(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_ERROR_D(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::err, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_WARNING_D(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::warn, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+//
 // Use it inside static functions or with custom context:
-#define LOG_INFO_S(_This, ...) lg::DefaultLoggers::Log(_This, lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::info, __VA_ARGS__)
-#define LOG_DEBUG_S(_This, ...) lg::DefaultLoggers::Log(_This, lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::debug, __VA_ARGS__)
-#define LOG_ERROR_S(_This, ...) lg::DefaultLoggers::Log(_This, lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::err, __VA_ARGS__)
-#define LOG_WARNING_S(_This, ...) lg::DefaultLoggers::Log(_This, lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::warn, __VA_ARGS__)
+#define LOG_INFO_S(_This, fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::info, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_DEBUG_S(_This, fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_ERROR_S(_This, fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::err, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_WARNING_S(_This, fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::warn, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 
 
-#define LOG_FUNCTION_ENTER(...) lg::DefaultLoggers::Log(lg::nullctx, lg::DefaultLoggers::FuncLogger(), LOG_CTX, spdlog::level::debug, __VA_ARGS__)
+#define LOG_FUNCTION_ENTER(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(lg::nullctx, lg::DefaultLoggers::FuncLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 
-#define LOG_FUNCTION_SCOPE(format, ...)                                                                                      \
-	LOG_FUNCTION_ENTER(EXPAND_1_VA_ARGS_(format, __VA_ARGS__));                                                              \
-                                                                                                                             \
-	auto functionFinishLogScoped = H::MakeScope([&] {                                                                        \
-		LOG_FUNCTION_ENTER(std::string("~") + format); /* TODO: add suppoort for wstr */                                     \
-		});
+// TODO: solve problem with "std::string("~") + fmt" it is must be constexpr value
+//#define LOG_FUNCTION_SCOPE(fmt, ...)                                                                                      \
+//	LOG_FUNCTION_ENTER(EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__));                                                              \
+//                                                                                                                             \
+//	auto functionFinishLogScoped = H::MakeScope([&] {                                                                        \
+//		LOG_FUNCTION_ENTER(std::string("~") + fmt); /* TODO: add suppoort for wstr */                                     \
+//		});
 
 #else
 #define LOG_CTX
@@ -171,7 +163,7 @@ H::nothing* __LgCtx(); // may be overwritten as class method that returned "this
 	                                                                                                                          \
         void SetFullClassName(std::wstring name) {                                                                            \
             LOG_DEBUG_D(L"Full class name = {}", name);                                                                       \
-            this->className##_fullClassNameA = H::WStrToStr(name);                                                            \
+            /*this->className##_fullClassNameA = H::WStrToStr(name);*/                                                            \
             this->className##_fullClassNameW = name;                                                                          \
         }                                                                                                                     \
                                                                                                                               \

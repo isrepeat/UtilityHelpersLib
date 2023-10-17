@@ -57,5 +57,7 @@ namespace H {
 	}
 }
 
+#define INNER_TYPE_STR(str) decltype(H::StringDeductor(str))::type
+
 #define MAKE_STRING_T(T, str) H::GetStringByType<T>(str, L""#str)
 #define MAKE_STRING_VIEW_T(T, str) H::GetStringViewByType<T>(str, L""#str)

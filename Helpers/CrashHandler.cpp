@@ -70,7 +70,7 @@ namespace H {
 			auto backtraceStr = CrashHandling::BacktraceToString(backtrace);
 
 			LOG_ERROR(L"{} [{}]", exceptionMsg, pExceptionPtrs->ExceptionRecord->ExceptionCode);
-			LOG_ERROR(L"\n\n Backtrace:\n" + backtraceStr);
+			LOG_ERROR(L"\n\n Backtrace:\n{}", backtraceStr);
 
 			if (this->crashCallback) {
 				this->crashCallback();
