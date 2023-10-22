@@ -1,6 +1,6 @@
 #pragma once
 // define these macros before first include spdlog headers
-#define SPDLOG_WCHAR_TO_UTF8_SUPPORT 
+#define SPDLOG_WCHAR_TO_ANSI_SUPPORT
 #define SPDLOG_WCHAR_FILENAMES
 #include <spdlog/spdlog.h>
 #include <spdlog/logger.h>
@@ -20,6 +20,31 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
+
+
+#ifdef QT_CORE_LIB
+#include <QString>
+
+template<>
+struct fmt::formatter<QString, char> {
+    constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+        return ctx.end();
+    }
+    auto format(const QString& qtString, format_context& ctx) -> decltype(ctx.out()) {
+        return fmt::format_to(ctx.out(), "{}", qtString.toStdString());
+    }
+};
+
+template<>
+struct fmt::formatter<QString, wchar_t> {
+    constexpr auto parse(wformat_parse_context& ctx) -> decltype(ctx.begin()) {
+        return ctx.end();
+    }
+    auto format(const QString& qtString, wformat_context& ctx) -> decltype(ctx.out()) {
+        return fmt::format_to(ctx.out(), L"{}", qtString.toStdWString());
+    }
+};
+#endif
 
 
 namespace lg {
@@ -163,7 +188,7 @@ H::nothing* __LgCtx(); // may be overwritten as class method that returned "this
 	                                                                                                                          \
         void SetFullClassName(std::wstring name) {                                                                            \
             LOG_DEBUG_D(L"Full class name = {}", name);                                                                       \
-            /*this->className##_fullClassNameA = H::WStrToStr(name);*/                                                            \
+            this->className##_fullClassNameA = H::WStrToStr(name);                                                            \
             this->className##_fullClassNameW = name;                                                                          \
         }                                                                                                                     \
                                                                                                                               \
