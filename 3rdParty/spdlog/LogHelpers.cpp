@@ -19,15 +19,16 @@ namespace lg {
         Raw,
     };
 
+    // %q - optional prefix msg
     const std::unordered_map<Pattern, std::string> patterns = {
         {Pattern::Default, "[%l] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q %v"},
         {Pattern::Debug, "[dbg] [%t] {%s:%# %!}%q %v"},
-        {Pattern::Func, "[%l] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!} @@@ %v"},
+        {Pattern::Func, "[%l] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q @@@ %v"},
         {Pattern::Time, "%d.%m.%Y %H:%M:%S:%e  %v"},
         {Pattern::Raw, "%v"},
     };
 
-    // Free letter falgs: 'j', 'k', 'q', 'w'
+    // Free letter flags: 'j', 'k', 'q', 'w'
 
     class custom_prefix_flag : public spdlog::custom_flag_formatter {
     public:

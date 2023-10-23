@@ -147,6 +147,8 @@ H::nothing* __LgCtx(); // may be overwritten as class method that returned "this
 
 
 #define LOG_FUNCTION_ENTER(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(lg::nullctx, lg::DefaultLoggers::FuncLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_FUNCTION_ENTER_C(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::FuncLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_FUNCTION_ENTER_S(_This, fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::FuncLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 
 // TODO: solve problem with "std::string("~") + fmt" it is must be constexpr value
 //#define LOG_FUNCTION_SCOPE(fmt, ...)                                                                                      \
