@@ -67,6 +67,16 @@ namespace lg {
         static std::shared_ptr<spdlog::logger> FuncLogger();
         static std::shared_ptr<spdlog::logger> DebugLogger();
 
+        // NOTE: overload for std::basic_string_view<T>
+        //template<typename T, typename TClass, typename... Args>
+        //static void Log_sv(
+        //    TClass* classPtr,
+        //    std::shared_ptr<spdlog::logger> logger,
+        //    spdlog::source_loc location, spdlog::level::level_enum level, std::basic_string_view<T> formatSv, Args&&... args)
+        //{
+        //    Log<T, TClass, Args...>(classPtr, logger, location, level, formatSv, std::forward<Args>(args)...);
+        //}
+
         template<typename T, typename TClass, typename... Args>
         static void Log(
             TClass* classPtr,
@@ -134,27 +144,34 @@ H::nothing* __LgCtx(); // may be overwritten as class method that returned "this
 #define LOG_ERROR(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::err, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 #define LOG_WARNING(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::warn, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 
-#define LOG_INFO_D(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::info, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
-#define LOG_DEBUG_D(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
-#define LOG_ERROR_D(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::err, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
-#define LOG_WARNING_D(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::warn, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
-//
 // Use it inside static functions or with custom context:
 #define LOG_INFO_S(_This, fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::info, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 #define LOG_DEBUG_S(_This, fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 #define LOG_ERROR_S(_This, fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::err, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 #define LOG_WARNING_S(_This, fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::warn, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 
+#define LOG_INFO_D(fmt, ...) LOG_INFO_S(__LgCtx(), fmt, __VA_ARGS__)
+#define LOG_DEBUG_D(fmt, ...) LOG_DEBUG_S(__LgCtx(), fmt, __VA_ARGS__)
+#define LOG_ERROR_D(fmt, ...) LOG_ERROR_S(__LgCtx(), fmt, __VA_ARGS__)
+#define LOG_WARNING_D(fmt, ...) LOG_WARNING_S(__LgCtx(), fmt, __VA_ARGS__)
 
-#define LOG_FUNCTION_ENTER(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(lg::nullctx, lg::DefaultLoggers::FuncLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 
-// TODO: solve problem with "std::string("~") + fmt" it is must be constexpr value
-//#define LOG_FUNCTION_SCOPE(fmt, ...)                                                                                      \
-//	LOG_FUNCTION_ENTER(EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__));                                                              \
-//                                                                                                                             \
-//	auto functionFinishLogScoped = H::MakeScope([&] {                                                                        \
-//		LOG_FUNCTION_ENTER(std::string("~") + fmt); /* TODO: add suppoort for wstr */                                     \
-//		});
+#define LOG_FUNCTION_ENTER_S(_This, fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::FuncLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_FUNCTION_ENTER_C(fmt, ...) LOG_FUNCTION_ENTER_S(__LgCtx(), fmt, __VA_ARGS__)
+#define LOG_FUNCTION_ENTER(fmt, ...) LOG_FUNCTION_ENTER_S(lg::nullctx, fmt, __VA_ARGS__)
+
+
+#define LOG_FUNCTION_SCOPE_S(_This, fmt, ...)                                                                                                                                          \
+    auto __fnCtx = LOG_CTX;                                                                                                                                                            \
+	lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::FuncLogger(), __fnCtx, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__));                         \
+                                                                                                                                                                                       \
+	auto __functionFinishLogScoped = H::MakeScope([&] {                                                                                                                                \
+		lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::FuncLogger(), __fnCtx, spdlog::level::debug, EXPAND_1_VA_ARGS_(JOIN_STRING("<= ", fmt), __VA_ARGS__)); \
+		});
+
+#define LOG_FUNCTION_SCOPE_C(fmt, ...) LOG_FUNCTION_SCOPE_S(__LgCtx(), fmt, __VA_ARGS__)
+#define LOG_FUNCTION_SCOPE(fmt, ...) LOG_FUNCTION_SCOPE_S(lg::nullctx, fmt, __VA_ARGS__)
+
 
 #else
 #define LOG_CTX
