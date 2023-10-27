@@ -61,10 +61,13 @@ namespace lg {
             , defaultLogger{ std::make_shared<spdlog::logger>("default_logger", spdlog::sinks_init_list{ defaultSink }) }
         {
             // CHECK: mb need set defaultSink level/patter before init defaultLogger?
+            auto formatterDefault = std::make_unique<spdlog::pattern_formatter>();
+            formatterDefault->add_flag<custom_prefix_flag>('q', defaultPrefixCallback).set_pattern(patterns.at(Pattern::Debug));
+            defaultSink->set_formatter(std::move(formatterDefault));
             defaultSink->set_level(spdlog::level::trace);
-            defaultSink->set_pattern(patterns.at(Pattern::Debug));
-            defaultLogger->set_level(spdlog::level::trace);
+
             defaultLogger->flush_on(spdlog::level::trace);
+            defaultLogger->set_level(spdlog::level::trace);
         }
         ~UnscopedData() {
             assert(false && "Unexpected call Dtor");
@@ -77,6 +80,7 @@ namespace lg {
     private:
         const std::shared_ptr<spdlog::sinks::msvc_sink_mt> defaultSink;
         const std::shared_ptr<spdlog::logger> defaultLogger;
+        std::function<std::wstring()> defaultPrefixCallback = [] { return L""; };
     };
 
 
@@ -91,10 +95,10 @@ namespace lg {
             };
 
 #ifdef _DEBUG
-        debugSink->set_level(spdlog::level::trace);
         auto formatterDebug = std::make_unique<spdlog::pattern_formatter>();
         formatterDebug->add_flag<custom_prefix_flag>('q', prefixCallback).set_pattern(patterns.at(Pattern::Debug));
         debugSink->set_formatter(std::move(formatterDebug));
+        debugSink->set_level(spdlog::level::trace);
 #endif
 
         // DefaultLoggers::UnscopedData is created inside singleton
@@ -153,25 +157,25 @@ namespace lg {
 
 
         _this.logger = std::make_shared<spdlog::logger>("logger", spdlog::sinks_init_list{ _this.fileSink });
-        _this.logger->set_level(spdlog::level::trace);
         _this.logger->flush_on(spdlog::level::trace);
+        _this.logger->set_level(spdlog::level::trace);
 
         _this.rawLogger = std::make_shared<spdlog::logger>("raw_logger", spdlog::sinks_init_list{ _this.fileSinkRaw });
-        _this.rawLogger->set_level(spdlog::level::trace);
         _this.rawLogger->flush_on(spdlog::level::trace);
+        _this.rawLogger->set_level(spdlog::level::trace);
 
         _this.timeLogger = std::make_shared<spdlog::logger>("time_logger", spdlog::sinks_init_list{ _this.fileSinkTime });
-        _this.timeLogger->set_level(spdlog::level::trace);
         _this.timeLogger->flush_on(spdlog::level::trace);
+        _this.timeLogger->set_level(spdlog::level::trace);
 
         _this.funcLogger = std::make_shared<spdlog::logger>("func_logger", spdlog::sinks_init_list{ _this.fileSinkFunc });
-        _this.funcLogger->set_level(spdlog::level::trace);
         _this.funcLogger->flush_on(spdlog::level::trace);
+        _this.funcLogger->set_level(spdlog::level::trace);
 
 #ifdef _DEBUG
         _this.debugLogger = std::make_shared<spdlog::logger>("debug_logger", spdlog::sinks_init_list{ _this.debugSink, _this.fileSink });
-        _this.debugLogger->set_level(spdlog::level::trace);
         _this.debugLogger->flush_on(spdlog::level::trace);
+        _this.debugLogger->set_level(spdlog::level::trace);
 #endif
 
         if (appendNewSessionMsg) {
