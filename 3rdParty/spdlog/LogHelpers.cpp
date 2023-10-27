@@ -146,7 +146,9 @@ namespace lg {
         _this.fileSinkTime->set_level(spdlog::level::trace);
 
         _this.fileSinkFunc = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, truncate);
-        _this.fileSinkFunc->set_pattern(patterns.at(Pattern::Func));
+        auto formatterFunc = std::make_unique<spdlog::pattern_formatter>();
+        formatterFunc->add_flag<custom_prefix_flag>('q', _this.prefixCallback).set_pattern(patterns.at(Pattern::Func));
+        _this.fileSinkFunc->set_formatter(std::move(formatterFunc));
         _this.fileSinkFunc->set_level(spdlog::level::trace);
 
 
