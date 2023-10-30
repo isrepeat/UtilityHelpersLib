@@ -74,7 +74,7 @@ private:
 template<typename T, typename R, typename... Ts>
 class GenericCallback : public ICallback<R, Ts...> {
 public:
-	GenericCallback(TokenContext<T>::Weak ctx, R(*callbackFn)(typename TokenContext<T>::Data_t* data, Ts... args))
+	GenericCallback(typename TokenContext<T>::Weak ctx, R(*callbackFn)(typename TokenContext<T>::Data_t* data, Ts... args))
 		: ctx(ctx)
 		, callbackFn(callbackFn)
 	{
@@ -120,7 +120,7 @@ public:
 
 
 private:
-	TokenContext<T>::Weak ctx;
+	typename TokenContext<T>::Weak ctx;
 	R(*callbackFn)(typename TokenContext<T>::Data_t* data, Ts... args);
 };
 
