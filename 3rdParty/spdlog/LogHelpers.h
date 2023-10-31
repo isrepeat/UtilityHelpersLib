@@ -10,11 +10,13 @@
 #include "Scope.h"
 #include "Macros.h"
 #include "String.hpp"
+#include "Singleton.hpp"
 #include "TypeTraits.hpp"
 #else
 #include <Helpers/Scope.h>
 #include <Helpers/Macros.h>
 #include <Helpers/String.hpp>
+#include <Helpers/Singleton.hpp>
 #include <Helpers/TypeTraits.hpp>
 #endif
 #include <unordered_map>
@@ -51,11 +53,13 @@ namespace lg {
     // define a "__classFullnameLogging" "member checker" class
     define_has_member(__ClassFullnameLogging);
 
-    // TODO: rewrite singleton as shared_ptr to destroy it after all others singletons
-    class DefaultLoggers {
+
+    class DefaultLoggers : public _Singleton<class DefaultLoggers> {
     private:
+        using _MyBase = _Singleton<DefaultLoggers>;
+        friend _MyBase; // to have access to private Ctor DefaultLoggers()
+
         DefaultLoggers();
-        static DefaultLoggers& GetInstance();
     public:
         ~DefaultLoggers() = default;
         struct UnscopedData;
@@ -83,6 +87,7 @@ namespace lg {
             std::shared_ptr<spdlog::logger> logger,
             spdlog::source_loc location, spdlog::level::level_enum level, fmt::basic_format_string<T, std::type_identity_t<Args>...> format, Args&&... args)
         {
+            std::unique_lock lk{ GetInstance().mx }; // guard for 'className'
             if constexpr (has_member(std::remove_reference_t<decltype(std::declval<TClass>())>, __ClassFullnameLogging)) {
                 GetInstance().className = L" [" + classPtr->GetFullClassNameW() + L"]";
             }
@@ -109,6 +114,7 @@ namespace lg {
 #endif
 
         // Custom prefix
+        std::mutex mx;
         std::wstring className = L"";
         std::function<std::wstring()> prefixCallback = nullptr;
 
