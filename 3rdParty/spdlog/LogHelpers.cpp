@@ -5,12 +5,9 @@
 #include <set>
 
 
-// TODO: add support logging wstr and str at one time
-namespace {
-    const uintmax_t maxSizeLogFile = 1 * 1024 * 1024; // 1 MB (~ 10'000 rows)
-}
-
 namespace lg {
+    constexpr uintmax_t maxSizeLogFile = 1 * 1024 * 1024; // 1 MB (~ 10'000 rows)
+
     enum class Pattern {
         Default,
         Debug,
@@ -19,22 +16,28 @@ namespace lg {
         Raw,
     };
 
+
     // %q - optional prefix msg
-    const std::unordered_map<Pattern, std::string> patterns = {
-        {Pattern::Default, "[%l] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q %v"},
-        {Pattern::Debug, "[dbg] [%t] {%s:%# %!}%q %v"},
-        {Pattern::Func, "[%l] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q @@@ %v"},
-        {Pattern::Time, "%d.%m.%Y %H:%M:%S:%e  %v"},
-        {Pattern::Raw, "%v"},
-    };
+    const std::string GetPattern(Pattern value) {
+        const std::unordered_map<Pattern, std::string> patterns = {
+            {Pattern::Default, "[%l] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q %v"},
+            {Pattern::Debug, "[dbg] [%t] {%s:%# %!}%q %v"},
+            {Pattern::Func, "[%l] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q @@@ %v"},
+            {Pattern::Time, "%d.%m.%Y %H:%M:%S:%e  %v"},
+            {Pattern::Raw, "%v"},
+        };
+        return patterns.at(value);
+    }
+
 
     // Free letter flags: 'j', 'k', 'q', 'w'
-
     class custom_prefix_flag : public spdlog::custom_flag_formatter {
     public:
         explicit custom_prefix_flag(std::function<std::wstring()> fn)
             : prefixCallback{ fn }
-        {}
+        {
+            assert(prefixCallback != nullptr && "Prefix callback must not be empty");
+        }
 
         void format(const spdlog::details::log_msg&, const std::tm&, spdlog::memory_buf_t& dest) override {
             std::wstring prefix = std::wstring(padinfo_.width_, ' ') + prefixCallback();
@@ -60,9 +63,8 @@ namespace lg {
             : defaultSink{ std::make_shared<spdlog::sinks::msvc_sink_mt>() }
             , defaultLogger{ std::make_shared<spdlog::logger>("default_logger", spdlog::sinks_init_list{ defaultSink }) }
         {
-            // CHECK: mb need set defaultSink level/patter before init defaultLogger?
             auto formatterDefault = std::make_unique<spdlog::pattern_formatter>();
-            formatterDefault->add_flag<custom_prefix_flag>('q', defaultPrefixCallback).set_pattern(patterns.at(Pattern::Debug));
+            formatterDefault->add_flag<custom_prefix_flag>('q', defaultPrefixCallback).set_pattern(GetPattern(Pattern::Debug));
             defaultSink->set_formatter(std::move(formatterDefault));
             defaultSink->set_level(spdlog::level::trace);
 
@@ -96,7 +98,7 @@ namespace lg {
 
 #ifdef _DEBUG
         auto formatterDebug = std::make_unique<spdlog::pattern_formatter>();
-        formatterDebug->add_flag<custom_prefix_flag>('q', prefixCallback).set_pattern(patterns.at(Pattern::Debug));
+        formatterDebug->add_flag<custom_prefix_flag>('q', prefixCallback).set_pattern(GetPattern(Pattern::Debug));
         debugSink->set_formatter(std::move(formatterDebug));
         debugSink->set_level(spdlog::level::trace);
 #endif
@@ -105,11 +107,6 @@ namespace lg {
         TokenSingleton<DefaultLoggers>::SetToken(Passkey<DefaultLoggers>{}, this->token); 
     }
 
-
-    DefaultLoggers& DefaultLoggers::GetInstance() {
-        static DefaultLoggers instance;
-        return instance;
-    }
 
     void DefaultLoggers::Init(const std::wstring& logFilePath, bool truncate, bool appendNewSessionMsg) {
         static std::set<std::wstring> initedLoggers;
@@ -137,21 +134,21 @@ namespace lg {
 
         _this.fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, truncate);
         auto formatterDefault = std::make_unique<spdlog::pattern_formatter>();
-        formatterDefault->add_flag<custom_prefix_flag>('q', _this.prefixCallback).set_pattern(patterns.at(Pattern::Default));
+        formatterDefault->add_flag<custom_prefix_flag>('q', _this.prefixCallback).set_pattern(GetPattern(Pattern::Default));
         _this.fileSink->set_formatter(std::move(formatterDefault));
         _this.fileSink->set_level(spdlog::level::trace);
 
         _this.fileSinkRaw = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, truncate);
-        _this.fileSinkRaw->set_pattern(patterns.at(Pattern::Raw));
+        _this.fileSinkRaw->set_pattern(GetPattern(Pattern::Raw));
         _this.fileSinkRaw->set_level(spdlog::level::trace);
 
         _this.fileSinkTime = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, truncate);
-        _this.fileSinkTime->set_pattern(patterns.at(Pattern::Time));
+        _this.fileSinkTime->set_pattern(GetPattern(Pattern::Time));
         _this.fileSinkTime->set_level(spdlog::level::trace);
 
         _this.fileSinkFunc = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, truncate);
         auto formatterFunc = std::make_unique<spdlog::pattern_formatter>();
-        formatterFunc->add_flag<custom_prefix_flag>('q', _this.prefixCallback).set_pattern(patterns.at(Pattern::Func));
+        formatterFunc->add_flag<custom_prefix_flag>('q', _this.prefixCallback).set_pattern(GetPattern(Pattern::Func));
         _this.fileSinkFunc->set_formatter(std::move(formatterFunc));
         _this.fileSinkFunc->set_level(spdlog::level::trace);
 

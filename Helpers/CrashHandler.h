@@ -21,5 +21,5 @@ namespace H {
 		std::vector<std::pair<std::wstring, std::wstring>> protocolCommandArgs;
 	};
 	
-	using CrashHandlerSingleton = SingletonScoped<CrashHandler, std::wstring, std::wstring, std::wstring>;
+	using CrashHandlerSingleton = Singleton<CrashHandler>;
 }
