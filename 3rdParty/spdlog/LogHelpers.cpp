@@ -19,7 +19,7 @@ namespace lg {
 
     // %q - optional prefix msg
     const std::string GetPattern(Pattern value) {
-        const std::unordered_map<Pattern, std::string> patterns = {
+        static const std::unordered_map<Pattern, std::string> patterns = {
             {Pattern::Default, "[%l] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q %v"},
             {Pattern::Debug, "[dbg] [%t] {%s:%# %!}%q %v"},
             {Pattern::Func, "[%l] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q @@@ %v"},
