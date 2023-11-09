@@ -13,6 +13,9 @@
     <Filter Include="Headers\CLR">
       <UniqueIdentifier>{dd52f1ce-fdf6-41f6-b46b-7ee1c00b035d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="FileSystem">
+      <UniqueIdentifier>{f68605e2-851f-41c4-8260-3bf8c51d26ed}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\CancellationToken.cpp">
@@ -57,9 +60,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Gate.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\BIOS.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\MediaFoundation\MFUser.cpp">
       <Filter>MediaFoundation</Filter>
     </ClCompile>
@@ -75,11 +75,20 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\RegistryManager.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\FileSystem.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\CrashInfo.cpp">
       <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\FileSystem.cpp">
+      <Filter>FileSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\BIOS.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\FilesCollection.cpp">
+      <Filter>FileSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\DiscFilesCollection.cpp">
+      <Filter>FileSystem</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -164,9 +173,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Macros.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\BIOS.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Rational.h">
       <Filter>Headers</Filter>
     </ClInclude>
@@ -209,12 +215,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Passkey.hpp">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\FileSystem.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Filesystem.inl">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Callback.hpp">
       <Filter>Headers</Filter>
     </ClInclude>
@@ -239,7 +239,27 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\String.hpp">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\TypeTraits.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\TypeTraits.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\FilesObserver.h">
+      <Filter>FileSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Filesystem.inl">
+      <Filter>FileSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\FileSystem.h">
+      <Filter>FileSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\BIOS.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\FilesCollection.h">
+      <Filter>FileSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\DiscFilesCollection.h">
+      <Filter>FileSystem</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />
