@@ -21,6 +21,8 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Conversion.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\CrashHandler.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\CrashInfo.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\DiscFilesCollection.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\FilesCollection.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\FileSystem.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Gate.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Helpers.cpp" />
@@ -53,8 +55,11 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CoUniquePtr.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CrashHandler.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CrashInfo.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\DiscFilesCollection.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Event.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Exception.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\FilesCollection.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\FilesObserver.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\FileSystem.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\framework.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\FunctionTraits.hpp" />
