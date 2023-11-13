@@ -104,7 +104,7 @@ void ReadFileAsync(HANDLE hFile, const std::atomic<bool>& stop, std::vector<T>& 
 
     case StatusIO::Completed:
         if (outBufferOldSize + dwBytesRead == 0) {
-            throw std::exception("Zero data was read");
+            throw std::exception("Zero data was read: 'outBufferOldSize + dwBytesRead == 0'");
         }
     }
 
@@ -174,7 +174,7 @@ void WriteFileAsync(HANDLE hFile, const std::atomic<bool>& stop, std::span<T> wr
 
     case StatusIO::Completed: // mb unreachable
         if (cbWritten == 0) {
-            throw std::exception("Zero bytes written");
+            throw std::exception("Zero bytes written: 'cbWritten == 0'");
         }
     }
 }
@@ -185,7 +185,8 @@ void ReadFromPipeAsync(HANDLE hNamedPipe, const std::atomic<bool>& stop, std::ve
     try {
         return ReadFileAsync<T>(hNamedPipe, stop, outBuffer);
     }
-    catch (...) {
+    catch (const std::exception& ex) {
+        LOG_ERROR_D("Catch ReadFileAsync exception = {}", ex.what());
         throw PipeError::ReadError;
     }
 }
@@ -198,7 +199,8 @@ void WriteToPipeAsync(HANDLE hNamedPipe, const std::atomic<bool>& stop, std::spa
     try {
         return WriteFileAsync<T>(hNamedPipe, stop, writeData);
     }
-    catch (...) {
+    catch (const std::exception& ex) {
+        LOG_ERROR_D("Catch WriteFileAsync exception = {}", ex.what());
         throw PipeError::WriteError;
     }
 }
@@ -386,8 +388,7 @@ public:
     void NotifyAboutStop() override {
         LOG_FUNCTION_ENTER_C("NotifyAboutStop()");
 
-        connected = false;
-        stopSignal = true;
+        StopListening();
         closeChannel = true;
     }
 
@@ -401,6 +402,7 @@ public:
 
         if (hNamedPipe) {
             CloseHandle(hNamedPipe);
+            hNamedPipe = nullptr;
         }
     }
 
@@ -472,13 +474,15 @@ public:
             return true;
         }
         catch (PipeError error) {
+            LOG_ERROR_D("Catch PipeError = {}", magic_enum::enum_name(error));
+
             switch (error) {
             case PipeError::WriteError:
                 LOG_ERROR_D("Write error! Stop channel.");
                 break;
             };
 
-            stopSignal = true;
+            StopListening();
             return false;
         }
     }
@@ -502,6 +506,7 @@ private:
 
         connected = true;
         stopSignal = false;
+        messagesQueue->StartWork();
 
         threadConnect = std::thread([this] { // Not block current thread to avoid deadlock (TODO: replace on std::async)
             LOG_THREAD(this->pipeName + L" threadConnect");
@@ -515,14 +520,17 @@ private:
             ReadRoutine();
             });
 
-        while (!stopSignal && messagesQueue->IsWorking()) {
-            if (auto msg = messagesQueue->Pop()) {
-                if (listenHandler(msg, bindedWriteFunc) == false) {
-                    stopSignal = true;
+        while (!stopSignal) {
+            if (messagesQueue->IsWorking()) {
+                if (auto msg = messagesQueue->Pop()) {
+                    if (listenHandler(msg, bindedWriteFunc) == false) {
+                        StopListening();
+                        LOG_DEBUG_D("listenHandler returned 'false', stop listening.");
+                    }
                 }
             }
         }
-        LOG_DEBUG("stopSignal = true");
+        LOG_DEBUG_D("Finish ListenRoutine");
 
         threadInterrupt = std::thread([this] { // Not block current thread to avoid deadlock
             LOG_THREAD(this->pipeName + L" threadInterrupt");
@@ -565,13 +573,14 @@ private:
             }
         }
         catch (PipeError error) {
-            switch (error)
-            {
+            LOG_ERROR_D("Catch PipeError = {}", magic_enum::enum_name(error));
+
+            switch (error) {
             case PipeError::ReadError:
-                LOG_ERROR_D("Write error! Stop channel.");
+                LOG_ERROR_D("Read error! Stop channel.");
                 break;
             };
-            stopSignal = true;
+            StopListening();
         }
     }
 
@@ -611,6 +620,12 @@ private:
         return true;
     }
 
+
+    void StopListening() {
+        LOG_FUNCTION_ENTER_C("StopListening()");
+        stopSignal = true;
+        messagesQueue->StopWork();
+    }
 
     void StopSecondThreads() {
         if (threadConnect.joinable())
