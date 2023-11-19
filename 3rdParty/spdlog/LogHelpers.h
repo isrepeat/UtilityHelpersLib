@@ -19,34 +19,10 @@
 #include <Helpers/Singleton.hpp>
 #include <Helpers/TypeTraits.hpp>
 #endif
+#include "CustomTypeSpecialization.h"
 #include <unordered_map>
 #include <string>
 #include <memory>
-
-
-#ifdef QT_CORE_LIB
-#include <QString>
-
-template<>
-struct fmt::formatter<QString, char> {
-    constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
-        return ctx.end();
-    }
-    auto format(const QString& qtString, format_context& ctx) -> decltype(ctx.out()) {
-        return fmt::format_to(ctx.out(), "{}", qtString.toStdString());
-    }
-};
-
-template<>
-struct fmt::formatter<QString, wchar_t> {
-    constexpr auto parse(wformat_parse_context& ctx) -> decltype(ctx.begin()) {
-        return ctx.end();
-    }
-    auto format(const QString& qtString, wformat_context& ctx) -> decltype(ctx.out()) {
-        return fmt::format_to(ctx.out(), L"{}", qtString.toStdWString());
-    }
-};
-#endif
 
 
 namespace lg {
@@ -65,11 +41,15 @@ namespace lg {
         struct UnscopedData;
 
         static void Init(const std::wstring& logFilePath, bool truncate = false, bool appendNewSessionMsg = true);
+        static std::string GetLastMessage();
+
         static std::shared_ptr<spdlog::logger> Logger();
         static std::shared_ptr<spdlog::logger> RawLogger();
         static std::shared_ptr<spdlog::logger> TimeLogger();
         static std::shared_ptr<spdlog::logger> FuncLogger();
         static std::shared_ptr<spdlog::logger> DebugLogger();
+        static std::shared_ptr<spdlog::logger> ExtendLogger();
+
 
         // NOTE: overload for std::basic_string_view<T>
         //template<typename T, typename TClass, typename... Args>
@@ -87,7 +67,7 @@ namespace lg {
             std::shared_ptr<spdlog::logger> logger,
             spdlog::source_loc location, spdlog::level::level_enum level, fmt::basic_format_string<T, std::type_identity_t<Args>...> format, Args&&... args)
         {
-            std::unique_lock lk{ GetInstance().mx }; // guard for 'className'
+            std::unique_lock lk{ GetInstance().mxCustomFlagHandlers };
             if constexpr (has_member(std::remove_reference_t<decltype(std::declval<TClass>())>, __ClassFullnameLogging)) {
                 GetInstance().className = L" [" + classPtr->GetFullClassNameW() + L"]";
             }
@@ -102,39 +82,54 @@ namespace lg {
         std::shared_ptr<spdlog::logger> rawLogger;
         std::shared_ptr<spdlog::logger> timeLogger;
         std::shared_ptr<spdlog::logger> funcLogger;
+        std::shared_ptr<spdlog::logger> extendLogger;
 
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSink;
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkRaw;
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkTime;
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkFunc;
+        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkExtend;
 
 #ifdef _DEBUG
         std::shared_ptr<spdlog::logger> debugLogger;
         const std::shared_ptr<spdlog::sinks::msvc_sink_mt> debugSink;
 #endif
 
-        // Custom prefix
-        std::mutex mx;
-        std::wstring className = L"";
-        std::function<std::wstring()> prefixCallback = nullptr;
+        std::mutex mxCustomFlagHandlers;
+        std::string lastMessage; // spdlog converts all msg to char
+        std::wstring className;
+        std::function<const std::wstring& ()> prefixCallback = nullptr;
+        std::function<void(const std::string&)> postfixCallback = nullptr;
 
         std::shared_ptr<int> token = std::make_shared<int>();
     };
 
-    constexpr H::nothing* nullctx = nullptr; // explicilty pass null ctx for logger
+    constexpr H::nothing* nullctx = nullptr; // used to pass null ctx for logger explicilty
 }
 
 // TODO: find better solution to detect class context
 H::nothing* __LgCtx(); // may be overwritten as class method that returned "this" (throught class fullname logging macro)
 
 
-#if defined(LOG_RAW)
+#if defined(LOG_CTX)
 #error LOG_... macros already defined
 #endif
-#if defined(LOG_INFO) || defined(LOG_DEBUG) || defined(LOG_ERROR) || defined(LOG_WARNING)
+#if defined(LOG_RAW) || defined(LOG_TIME)
 #error LOG_... macros already defined
 #endif
-#if defined(LOG_INFO_D) || defined(LOG_DEBUG_D) || defined(LOG_ERROR_D) || defined(LOG_WARNING_D)
+#if defined(LOG_DEBUG) || defined(LOG_ERROR) || defined(LOG_WARNING)
+#error LOG_... macros already defined
+#endif
+#if defined(LOG_DEBUG_S) || defined(LOG_ERROR_S) || defined(LOG_WARNING_S)
+#error LOG_... macros already defined
+#endif
+#if defined(LOG_DEBUG_D) || defined(LOG_ERROR_D) || defined(LOG_WARNING_D)
+#error LOG_... macros already defined
+#endif
+#if defined(LOG_FUNCTION_ENTER_S) || defined(LOG_FUNCTION_ENTER_C) || defined(LOG_FUNCTION_ENTER)
+#error LOG_... macros already defined
+#endif
+#if defined(LOG_FUNCTION_SCOPE_S) || defined(LOG_FUNCTION_SCOPE_C) || defined(LOG_FUNCTION_SCOPE)
 #error LOG_... macros already defined
 #endif
 
@@ -145,21 +140,22 @@ H::nothing* __LgCtx(); // may be overwritten as class method that returned "this
 #define LOG_RAW(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::RawLogger(), LOG_CTX, spdlog::level::trace, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 #define LOG_TIME(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::TimeLogger(), LOG_CTX, spdlog::level::trace, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 
-#define LOG_INFO(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::info, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 #define LOG_DEBUG(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 #define LOG_ERROR(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::err, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 #define LOG_WARNING(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::warn, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 
 // Use it inside static functions or with custom context:
-#define LOG_INFO_S(_This, fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::info, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 #define LOG_DEBUG_S(_This, fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 #define LOG_ERROR_S(_This, fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::err, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 #define LOG_WARNING_S(_This, fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::warn, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 
-#define LOG_INFO_D(fmt, ...) LOG_INFO_S(__LgCtx(), fmt, __VA_ARGS__)
 #define LOG_DEBUG_D(fmt, ...) LOG_DEBUG_S(__LgCtx(), fmt, __VA_ARGS__)
 #define LOG_ERROR_D(fmt, ...) LOG_ERROR_S(__LgCtx(), fmt, __VA_ARGS__)
 #define LOG_WARNING_D(fmt, ...) LOG_WARNING_S(__LgCtx(), fmt, __VA_ARGS__)
+
+// Extend logger save last message
+#define LOG_DEBUG_EX(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::ExtendLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_ERROR_EX(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::ExtendLogger(), LOG_CTX, spdlog::level::err, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 
 
 #define LOG_FUNCTION_ENTER_S(_This, fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::FuncLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
@@ -178,21 +174,30 @@ H::nothing* __LgCtx(); // may be overwritten as class method that returned "this
 #define LOG_FUNCTION_SCOPE_C(fmt, ...) LOG_FUNCTION_SCOPE_S(__LgCtx(), fmt, __VA_ARGS__)
 #define LOG_FUNCTION_SCOPE(fmt, ...) LOG_FUNCTION_SCOPE_S(lg::nullctx, fmt, __VA_ARGS__)
 
-
 #else
 #define LOG_CTX
-#define LOG_RAW(...)
-#define LOG_TIME(...)
-#define LOG_INFO(...)
-#define LOG_DEBUG(...)
-#define LOG_ERROR(...)
-#define LOG_WARNING(...)
-#define LOG_INFO_D(...)
-#define LOG_DEBUG_D(...)
-#define LOG_ERROR_D(...)
-#define LOG_WARNING_D(...)
-#define LOG_FUNCTION_ENTER(...)
-#define LOG_FUNCTION_SCOPE(format, ...)
+#define LOG_RAW(fmt, ...)
+#define LOG_TIME(fmt, ...)
+
+#define LOG_DEBUG(fmt, ...)
+#define LOG_ERROR(fmt, ...)
+#define LOG_WARNING(fmt, ...)
+
+#define LOG_DEBUG_S(_This, fmt, ...)
+#define LOG_ERROR_S(_This, fmt, ...)
+#define LOG_WARNING_S(_This, fmt, ...)
+
+#define LOG_DEBUG_D(fmt, ...)
+#define LOG_ERROR_D(fmt, ...)
+#define LOG_WARNING_D(fmt, ...)
+
+#define LOG_FUNCTION_ENTER_S(_This, fmt, ...)
+#define LOG_FUNCTION_ENTER_C(fmt, ...)
+#define LOG_FUNCTION_ENTER(fmt, ...)
+
+#define LOG_FUNCTION_SCOPE_S(_This, fmt, ...)
+#define LOG_FUNCTION_SCOPE_C(fmt, ...)
+#define LOG_FUNCTION_SCOPE(fmt, ...)
 #endif
 
 
