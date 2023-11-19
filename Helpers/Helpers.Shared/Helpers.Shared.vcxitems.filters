@@ -245,9 +245,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\FilesObserver.h">
       <Filter>FileSystem</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Filesystem.inl">
-      <Filter>FileSystem</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\FileSystem.h">
       <Filter>FileSystem</Filter>
     </ClInclude>
@@ -258,6 +255,9 @@
       <Filter>FileSystem</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\DiscFilesCollection.h">
+      <Filter>FileSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\FileSystem_inline.h">
       <Filter>FileSystem</Filter>
     </ClInclude>
   </ItemGroup>

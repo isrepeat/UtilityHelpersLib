@@ -197,4 +197,15 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\..\packages\CrashHandling.1.1.18\build\native\CrashHandling.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\CrashHandling.1.1.18\build\native\CrashHandling.targets'))" />
   </Target>
+  <ItemGroup>
+    <ClInclude Update="D:\WORK\Workspaces\TeamRemoteDesktop\UtilityHelpersLib\Helpers\Helpers.Shared\..\Filesystem.hinl">
+      <FileType>Document</FileType>
+    </ClInclude>
+    <ClInclude Update="D:\WORK\Workspaces\TeamRemoteDesktop\UtilityHelpersLib\Helpers\Helpers.Shared\..\Filesystem.in">
+      <FileType>Document</FileType>
+    </ClInclude>
+    <ClInclude Update="D:\WORK\Workspaces\TeamRemoteDesktop\UtilityHelpersLib\Helpers\Helpers.Shared\..\Filesystem.inl">
+      <FileType>Document</FileType>
+    </ClInclude>
+  </ItemGroup>
 </Project>

@@ -1,87 +1,16 @@
 #include "Helpers.h"
 #include "System.h"
 #include "Logger.h"
+
+#include <filesystem>
+#include <shellapi.h>
 #include <Shlobj.h>
 #include <codecvt>
 #include <locale>
-#include <shellapi.h>
-#include <filesystem>
 #include <regex>
 
 
 namespace H {
-    namespace FS {
-        void CorrectPathWithBackslashes(std::wstring& path) {
-            std::replace(path.begin(), path.end(), L'/', L'\\');
-        }
-        void CorrectPathWithBackslashes(std::vector<std::wstring>& pathes) {
-            for (auto& path : pathes) {
-                std::replace(path.begin(), path.end(), L'/', L'\\');
-            }
-        }
-
-        std::wstring GetFilenameFromPathW(std::wstring filePath) {
-            int n = filePath.rfind(L"\\");
-            if (n == std::wstring::npos)
-                return filePath;
-
-            return filePath.substr(n + 1);
-        }
-        std::string GetFilenameFromPathA(std::string filePath) {
-            int n = filePath.rfind("\\");
-            if (n == std::string::npos)
-                return filePath;
-
-            return filePath.substr(n + 1);
-        }
-
-        std::vector<std::wstring> GetAllLogicalDrives()
-        {
-            std::wstring disks;
-            auto endSize = GetLogicalDriveStringsW(0, nullptr);
-            disks.resize(endSize);
-            GetLogicalDriveStringsW(disks.size(), const_cast<wchar_t*>(disks.c_str()));
-
-            auto result = std::vector<std::wstring>();
-            std::size_t currentLen = 0;
-            for (std::size_t i = 0; i < endSize; ++i) {
-                if (disks.c_str()[i] == L'\0' && currentLen > 0) {
-                    result.push_back(disks.substr(i - currentLen, currentLen));
-                    currentLen = 0;
-                    continue;
-                }
-                ++currentLen;
-            }
-            return result;
-        }
-
-        void CopyFirstItem(const std::wstring& fromDir, const std::wstring& toDir, const std::wstring& prefix) {
-            if (!std::filesystem::exists(toDir)) {
-                std::filesystem::create_directory(toDir);
-            }
-
-            auto it = std::filesystem::directory_iterator(fromDir);
-            const auto& entryPath = it->path();
-            std::filesystem::copy(entryPath, toDir + L"\\" + prefix + entryPath.filename().wstring(), std::filesystem::copy_options::overwrite_existing);
-        }
-
-        void CopyDirContentTo(const std::wstring& fromDir, const std::wstring& toDir) {
-            if (!std::filesystem::exists(fromDir)) {
-                assert(false && " ---> fromDir not exist");
-                LOG_ERROR_D("fromDir not exist");
-                return;
-            }
-
-            if (!std::filesystem::exists(toDir)) {
-                std::filesystem::create_directory(toDir);
-            }
-
-            // NOTE: if you also want to copy subfolder add flag std::filesystem::copy_options::recursive
-            std::filesystem::copy(fromDir, toDir, std::filesystem::copy_options::overwrite_existing);
-        }
-    } // namespace FS
-
-
     std::vector<std::string> split(std::string str, const std::string& delim) {
         std::vector<std::string> result;
         int pos = 0;

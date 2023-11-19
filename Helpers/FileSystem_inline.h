@@ -7,18 +7,6 @@
 
 namespace H {
     namespace FS {
-        inline uintmax_t Filesize(const std::filesystem::path& filepath) { // TODO: remove it and use std::filesystem::file_size()
-            std::ifstream fs(filepath, std::ios::binary);
-            if (!fs.is_open())
-                return 0;
-
-            fs.seekg(0, std::ios::end);
-            uintmax_t filesize = fs.tellg();
-            fs.seekg(0, std::ios::beg);
-
-            return filesize;
-        }
-
         inline bool RemoveBytesFromStart(const std::filesystem::path& filepath, uintmax_t countRemovedBytes, std::function<void(std::ofstream&)> beginWriteHandler = nullptr) {
             std::vector<char> fileData;
             {

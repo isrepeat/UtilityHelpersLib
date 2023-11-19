@@ -1,30 +1,21 @@
 #pragma once
 #include "HWindows.h"
-#include <map>
-#include <vector>
-#include <string>
-#include <variant>
-#include <memory>
-#include <chrono>
+#include <KnownFolders.h>
+#include <filesystem>
+#include <tlhelp32.h>
+#include <guiddef.h>
 #include <algorithm>
 #include <tchar.h>
-#include <tlhelp32.h>
 #include <utility>
-#include <guiddef.h>
-#include <KnownFolders.h>
+#include <variant>
+#include <vector>
+#include <string>
+#include <memory>
+#include <chrono>
+#include <map>
 
 
 namespace H {
-    namespace FS {
-        void CorrectPathWithBackslashes(std::wstring& path);
-        void CorrectPathWithBackslashes(std::vector<std::wstring>& pathes);
-        std::wstring GetFilenameFromPathW(std::wstring filePath);
-        std::string GetFilenameFromPathA(std::string filePath);
-        std::vector<std::wstring> GetAllLogicalDrives();
-        void CopyFirstItem(const std::wstring& fromDir, const std::wstring& toDir, const std::wstring& prefix = L"");
-        void CopyDirContentTo(const std::wstring& fromDir, const std::wstring& toDir);
-    }
-
     std::vector<std::string> split(std::string str, const std::string& delim);
     std::vector<std::wstring> split(std::wstring str, const std::wstring& delim);
     
@@ -51,6 +42,7 @@ namespace H {
     std::wstring GetAppDataPath();
     std::wstring GetKnownFolder(GUID knownFolderGUID);
 
+    // TODO: add WSAGetLastError()
     std::wstring GetLastErrorAsString();
 
     int GetProcessBitDepth(std::wstring processName);
