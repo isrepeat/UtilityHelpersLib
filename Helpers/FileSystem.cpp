@@ -68,9 +68,7 @@ namespace H {
             std::ifstream inFile;
             inFile.open(filename, std::ios::binary);
 
-            inFile.seekg(0, std::ios::end);
-            uint64_t fileSize = inFile.tellg();
-            inFile.seekg(0, std::ios::beg);
+            uint64_t fileSize = std::filesystem::file_size(filename);
 
             if (fileSize <= chunkSize) {
                 std::vector<std::vector<uint8_t>> vecChunks(1, std::vector<uint8_t>(fileSize));
@@ -92,9 +90,8 @@ namespace H {
 
 
         void WriteFileWithHeader(FileHeader fileHeader, const std::vector<uint8_t>& fileData) {
-
             if (!std::filesystem::exists(fileHeader.fileItem))
-                std::filesystem::create_directories(fileHeader.fileItem);
+                std::filesystem::create_directories(fileHeader.fileItem.parent_path());
 
             std::ofstream outFile;
             outFile.open(fileHeader.fileItem, std::ios::binary);
