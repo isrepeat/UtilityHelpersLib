@@ -45,7 +45,6 @@ namespace lg {
         Default,
         Extend,
         Debug,
-        Error,
         Func,
         Time,
         Raw,
