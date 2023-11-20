@@ -67,12 +67,14 @@ namespace lg {
             std::shared_ptr<spdlog::logger> logger,
             spdlog::source_loc location, spdlog::level::level_enum level, fmt::basic_format_string<T, std::type_identity_t<Args>...> format, Args&&... args)
         {
-            std::unique_lock lk{ GetInstance().mxCustomFlagHandlers };
+            auto& _this = GetInstance();
+            std::unique_lock lk{ _this.mxCustomFlagHandlers };
+
             if constexpr (has_member(std::remove_reference_t<decltype(std::declval<TClass>())>, __ClassFullnameLogging)) {
-                GetInstance().className = L" [" + classPtr->GetFullClassNameW() + L"]";
+                _this.className = L" [" + classPtr->GetFullClassNameW() + L"]";
             }
             else {
-                GetInstance().className = L"";
+                _this.className = L"";
             }
             (logger)->log(location, level, format, std::forward<Args&&>(args)...);
         }

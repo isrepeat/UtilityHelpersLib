@@ -33,8 +33,8 @@ namespace lg {
         }
 
     private:
-        std::function<std::wstring()> prefixCallback;
-        std::function<void(std::string)> postfixCallback;
+        std::function<const std::wstring& ()> prefixCallback;
+        std::function<void(const std::string&)> postfixCallback;
     };
 
 
@@ -95,16 +95,17 @@ namespace lg {
 
 
     DefaultLoggers::DefaultLoggers()
-        : prefixCallback{ [this] {
-            return className;
-            }}
-        , postfixCallback{ [this](const std::string& logMsg) {
-                lastMessage = logMsg;
-            }}
 #ifdef _DEBUG
-        , debugSink{ std::make_shared<spdlog::sinks::msvc_sink_mt>() }
+        : debugSink{ std::make_shared<spdlog::sinks::msvc_sink_mt>() }
 #endif
     {
+        prefixCallback = [this] {
+            return className;
+        };
+        postfixCallback = [this](const std::string& logMsg) {
+            lastMessage = logMsg;
+        };
+
 #ifdef _DEBUG
         auto formatterDebug = std::make_unique<spdlog::pattern_formatter>();
         formatterDebug->add_flag<CustomMsgCallbackFlag>(CustomMsgCallbackFlag::flag, prefixCallback).set_pattern(GetPattern(Pattern::Debug));
