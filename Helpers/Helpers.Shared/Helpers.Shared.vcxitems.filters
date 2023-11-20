@@ -87,9 +87,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\FilesCollection.cpp">
       <Filter>FileSystem</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\DiscFilesCollection.cpp">
-      <Filter>FileSystem</Filter>
-    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\MappedFilesCollection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CancellationToken.h">
@@ -245,9 +243,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\FilesObserver.h">
       <Filter>FileSystem</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Filesystem.inl">
-      <Filter>FileSystem</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\FileSystem.h">
       <Filter>FileSystem</Filter>
     </ClInclude>
@@ -257,9 +252,10 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\FilesCollection.h">
       <Filter>FileSystem</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\DiscFilesCollection.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\FileSystem_inline.h">
       <Filter>FileSystem</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\MappedFilesCollection.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />

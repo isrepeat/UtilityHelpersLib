@@ -7,6 +7,9 @@
 
 namespace H {
     namespace FS {
+        /* ------------------- */
+        /*     Read / Write    */
+        /* ------------------- */
         bool RemoveFile(const std::wstring& filename) {
             return std::filesystem::remove(filename);
         }
@@ -15,7 +18,7 @@ namespace H {
             return std::filesystem::rename(oldFilename, newFilename);
         }
 
-        std::vector<uint8_t> ReadFile(const std::wstring& filename) {
+        std::vector<uint8_t> ReadFile(const std::filesystem::path& filename) {
             // TODO: add auto find filesize
             std::vector<uint8_t> buff(512, '\0');
             std::ifstream inFile;
@@ -26,7 +29,7 @@ namespace H {
             return std::move(buff);
         }
 
-        void WriteFile(const std::wstring& filename, const std::vector<uint8_t>& fileData) {
+        void WriteFile(const std::filesystem::path& filename, const std::vector<uint8_t>& fileData) {
             std::ofstream outFile;
             outFile.open(filename, std::ios::binary);
             outFile.write((char*)fileData.data(), fileData.size());
@@ -34,9 +37,7 @@ namespace H {
         }
 
 
-        FileHeader ReadFileHeader(std::wstring filename) {
-            std::replace(filename.begin(), filename.end(), L'/', L'\\');
-
+        FileHeader ReadFileHeader(const std::filesystem::path& filename) {
             HANDLE hFile = ::CreateFileW(filename.c_str(),
                 GENERIC_READ,
                 FILE_SHARE_READ,
@@ -45,41 +46,27 @@ namespace H {
                 0,
                 NULL);
 
-            if (hFile == INVALID_HANDLE_VALUE)
-                throw std::exception(("Can't open file: " + H::WStrToStr(filename)).c_str());
+            auto closeFileHandleScoped = H::MakeScope([hFile] {
+                ::CloseHandle(hFile);
+                });
+
+            if (hFile == INVALID_HANDLE_VALUE) {
+                LOG_THROW_STD_EXCEPTION("Can't open file = {}", filename);
+            }
 
             FILE_BASIC_INFO basicInfo;
-            if (GetFileInformationByHandleEx(hFile, FileBasicInfo, &basicInfo, sizeof(basicInfo)) == 0)
-                throw std::exception(("Can't get FileBasicInfo: " + H::WStrToStr(filename)).c_str());
+            if (GetFileInformationByHandleEx(hFile, FileBasicInfo, &basicInfo, sizeof(basicInfo)) == FALSE) {
+                LOG_THROW_STD_EXCEPTION("Can't get FileBasicInfo: {}", filename);
+            }
 
-            ::CloseHandle(hFile);
-
-
-            int dir = filename.rfind(L"\\");
-            std::wstring path = filename.substr(0, dir + 1);
-            std::wstring name = filename.substr(dir + 1);
-
-            std::ifstream inFile;
-            inFile.open(filename.c_str(), std::ios::binary);
-
-            inFile.seekg(0, std::ios::end);
-            uint64_t fileSize = inFile.tellg();
-            inFile.seekg(0, std::ios::beg);
-
-            inFile.close();
-            return FileHeader{ path, name, fileSize, basicInfo };
+            uint64_t fileSize = std::filesystem::file_size(filename);
+            return FileHeader{ filename, basicInfo, fileSize };
         }
 
 
-        std::vector<std::vector<uint8_t>> ReadFileChunks(std::wstring filename, int chunkSize) {
-            std::replace(filename.begin(), filename.end(), L'/', L'\\');
-
-            int dir = filename.rfind(L"\\");
-            std::wstring path = filename.substr(0, dir);
-            std::wstring name = filename.substr(dir + 1);
-
+        std::vector<std::vector<uint8_t>> ReadFileChunks(const std::filesystem::path& filename, int chunkSize) {
             std::ifstream inFile;
-            inFile.open(filename.c_str(), std::ios::binary);
+            inFile.open(filename, std::ios::binary);
 
             inFile.seekg(0, std::ios::end);
             uint64_t fileSize = inFile.tellg();
@@ -104,20 +91,17 @@ namespace H {
         }
 
 
-
         void WriteFileWithHeader(FileHeader fileHeader, const std::vector<uint8_t>& fileData) {
+
+            if (!std::filesystem::exists(fileHeader.fileItem))
+                std::filesystem::create_directories(fileHeader.fileItem);
+
             std::ofstream outFile;
-
-            if (!std::filesystem::exists(fileHeader.path))
-                std::filesystem::create_directories(fileHeader.path);
-
-            std::wstring filename = fileHeader.path + fileHeader.name;
-
-            outFile.open(filename, std::ios::binary);
+            outFile.open(fileHeader.fileItem, std::ios::binary);
             outFile.write((char*)fileData.data(), fileData.size());
             outFile.close();
 
-            HANDLE hFile = ::CreateFileW(filename.c_str(),
+            HANDLE hFile = ::CreateFileW(fileHeader.fileItem.c_str(),
                 GENERIC_READ | GENERIC_WRITE,
                 0, // exclusive access
                 NULL,
@@ -125,18 +109,80 @@ namespace H {
                 0,
                 NULL);
 
+            auto closeFileHandleScoped = H::MakeScope([hFile] {
+                ::CloseHandle(hFile);
+                });
+
             if (hFile == INVALID_HANDLE_VALUE) {
-                LOG_DEBUG(L"Can't open file = {}", filename);
+                LOG_DEBUG(L"Can't open file = {}", fileHeader.fileItem);
                 LogLastError;
                 return;
             }
 
             if (SetFileInformationByHandle(hFile, FileBasicInfo, &fileHeader.basicInfo, sizeof(FILE_BASIC_INFO)) == 0) {
-                LOG_DEBUG(L"Can't set FileBasicInfo for file = {}", filename);
+                LOG_DEBUG(L"Can't set FileBasicInfo for file = {}", fileHeader.fileItem);
                 LogLastError;
+                return;
+            }
+        }
+
+        /* ------------------- */
+        /*     Path helpers    */
+        /* ------------------- */
+        void ConvertPathsWithPreferredSlashes(std::vector<std::filesystem::path>& paths) {
+            for (auto& path : paths) {
+                path.make_preferred();
+            }
+        }
+
+        /* ------------------- */
+        /*    Copy / Replace   */
+        /* ------------------- */
+        void CopyFirstItem(const std::wstring& fromDir, const std::wstring& toDir, const std::wstring& prefix) {
+            if (!std::filesystem::exists(toDir)) {
+                std::filesystem::create_directory(toDir);
             }
 
-            ::CloseHandle(hFile);
+            auto it = std::filesystem::directory_iterator(fromDir);
+            const auto& entryPath = it->path();
+            std::filesystem::copy(entryPath, toDir + L"\\" + prefix + entryPath.filename().wstring(), std::filesystem::copy_options::overwrite_existing);
+        }
+
+        void CopyDirContentTo(const std::wstring& fromDir, const std::wstring& toDir) {
+            if (!std::filesystem::exists(fromDir)) {
+                assert(false && " ---> fromDir not exist");
+                LOG_ERROR_D("fromDir not exist");
+                return;
+            }
+
+            if (!std::filesystem::exists(toDir)) {
+                std::filesystem::create_directory(toDir);
+            }
+
+            // NOTE: if you also want to copy subfolder add flag std::filesystem::copy_options::recursive
+            std::filesystem::copy(fromDir, toDir, std::filesystem::copy_options::overwrite_existing);
+        }
+
+        /* ------------------- */
+        /*   Filesystem info   */
+        /* ------------------- */
+        std::vector<std::filesystem::path> GetAllLogicalDrives() {
+            auto endSize = GetLogicalDriveStringsW(0, nullptr);
+            std::wstring disksStr;
+            disksStr.resize(endSize);
+            GetLogicalDriveStringsW(disksStr.size(), const_cast<wchar_t*>(disksStr.c_str()));
+
+            std::vector<std::filesystem::path> result;
+            std::size_t currentLen = 0;
+            for (std::size_t i = 0; i < endSize; ++i) {
+                if (disksStr[i] == L'\0' && currentLen > 0) {
+                    result.push_back(disksStr.substr(i - currentLen, currentLen));
+                    currentLen = 0;
+                    continue;
+                }
+                ++currentLen;
+            }
+            return result;
         }
     }
 }

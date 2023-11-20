@@ -323,6 +323,9 @@
     <ClInclude Include="spdlog\cfg\helpers-inl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CustomTypeSpecialization.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LogHelpers.cpp">
