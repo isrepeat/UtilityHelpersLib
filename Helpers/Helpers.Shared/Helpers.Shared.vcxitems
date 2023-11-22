@@ -29,8 +29,8 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Input.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\IpTranslator.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\MediaFoundation\MFUser.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\MultithreadMutex.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\PackageProvider.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\ObjectLocker.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Logger.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\RegistryManager.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\String.cpp" />
@@ -74,6 +74,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\MediaFoundation\MFInclude.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\MediaFoundation\MFLibs.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\MediaFoundation\MFUser.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\MultithreadMutex.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\TypeTraits.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\PackageProvider.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Passkey.hpp" />
@@ -81,7 +82,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\RegistryManager.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Scope.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Signal.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\ObjectLocker.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Logger.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Singleton.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\String.h" />
