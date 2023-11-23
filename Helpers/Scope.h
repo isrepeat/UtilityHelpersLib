@@ -1,5 +1,6 @@
 #pragma once
 #include <utility>
+#include "MoveLambda.hpp"
 
 namespace H {
 	template<class Fn>
@@ -55,8 +56,14 @@ namespace H {
 		Fn m_fn;
 	};
 
+
 	template<class Fn>
 	Scope<Fn> MakeScope(Fn fn) {
 		return Scope<Fn>(std::move(fn));
+	}
+
+	template<class T, class F>
+	Scope<movable_function<void()>> MakeScope(move_lambda<T, F> movedLambda) {
+		return Scope<movable_function<void()>>(std::move(movedLambda));
 	}
 }

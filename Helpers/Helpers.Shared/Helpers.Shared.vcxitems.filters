@@ -39,9 +39,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\System.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\ObjectLocker.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Time.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
@@ -90,6 +87,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\MappedFilesCollection.cpp">
       <Filter>FileSystem</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\MultithreadMutex.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CancellationToken.h">
@@ -120,9 +120,6 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Time.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\ObjectLocker.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Bimap.hpp">
@@ -259,6 +256,15 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\MappedFilesCollection.h">
       <Filter>FileSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\MultithreadMutex.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Flags.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\MoveLambda.hpp">
+      <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
