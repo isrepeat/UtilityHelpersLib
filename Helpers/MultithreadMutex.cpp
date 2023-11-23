@@ -3,11 +3,9 @@
 namespace H {
 	void MultithreadMutex::lock() {
 		std::unique_lock<std::mutex> lk(mx);
-		if (locked) {
-			cvLocker.wait(lk, [this] {
-				return static_cast<bool>(!locked);
-				});
-		}
+		cvLocker.wait(lk, [this] {
+			return !locked;
+			});
 		locked = true;
 	}
 

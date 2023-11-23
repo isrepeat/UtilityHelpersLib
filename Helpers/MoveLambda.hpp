@@ -25,7 +25,7 @@ namespace H {
 		move_lambda& operator=(move_lambda&& other) = default;
 
 		template<class... Args>
-		auto operator()(Args&& ...args) -> decltype(this->f_(moved_value<T>(this->val), std::forward<Args>(args)...)) {
+		auto operator()(Args&& ...args) -> decltype(this->fn(moved_value<T>(this->val), std::forward<Args>(args)...)) {
 			moved_value<T> mv(val);
 			return fn(mv, std::forward<Args>(args)...);
 		}
@@ -47,6 +47,7 @@ namespace H {
 	template< class ReturnType, class... ParamTypes>
 	struct movable_function_base {
 		virtual ReturnType callFunc(ParamTypes&&... p) = 0;
+		virtual ~movable_function_base() = default;
 	};
 
 
@@ -56,7 +57,9 @@ namespace H {
 		virtual ReturnType callFunc(ParamTypes&&... p) {
 			return fn(std::forward<ParamTypes>(p)...);
 		}
-		explicit movable_function_imp(F&& f) :f_(std::move(f)) {};
+		explicit movable_function_imp(F&& f) 
+			: fn(std::move(f)) 
+		{};
 
 		movable_function_imp() = delete;
 		movable_function_imp(const movable_function_imp&) = delete;
@@ -73,7 +76,7 @@ namespace H {
 
 		template<class F>
 		/*explicit*/ movable_function(F&& f)
-			: ptr(new movable_function_imp<F, ReturnType, ParamTypes...>(std::move(f)))
+			: ptr(std::make_unique<movable_function_imp<F, ReturnType, ParamTypes...>>(std::move(f)))
 		{}
 
 		movable_function(movable_function&& other) = default;
@@ -82,6 +85,10 @@ namespace H {
 		template<class... Args>
 		auto operator()(Args&& ...args) -> ReturnType {
 			return ptr->callFunc(std::forward<Args>(args)...);
+		}
+
+		explicit operator bool() const {
+			return static_cast<bool>(this->ptr);
 		}
 
 		movable_function() = default; // delete;
