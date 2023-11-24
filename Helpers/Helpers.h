@@ -42,8 +42,8 @@ namespace H {
     std::wstring GetAppDataPath();
     std::wstring GetKnownFolder(GUID knownFolderGUID);
 
-    // TODO: add WSAGetLastError()
     std::wstring GetLastErrorAsString();
+    std::wstring GetWSALastErrorAsString(); // return last sockets error
 
     int GetProcessBitDepth(std::wstring processName);
     DWORD GetProcessID(const std::wstring& processName);

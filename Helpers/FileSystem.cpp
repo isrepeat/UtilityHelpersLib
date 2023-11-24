@@ -147,8 +147,7 @@ namespace H {
 
         void CopyDirContentTo(const std::wstring& fromDir, const std::wstring& toDir) {
             if (!std::filesystem::exists(fromDir)) {
-                assert(false && " ---> fromDir not exist");
-                LOG_ERROR_D("fromDir not exist");
+                LOG_DEBUG_D(L"fromDir not exist [{}], return", fromDir);
                 return;
             }
 

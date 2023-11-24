@@ -12,7 +12,7 @@ namespace H {
 		Flags(int i) : i(i) {}
 		Flags(const Enum& enm) : i((UnderlyingType)enm) {}
 
-		Flags operator |= (Enum enm) const {
+		Flags operator |= (Enum enm) {
 			i |= (UnderlyingType)enm; 
 			return *this;
 		}

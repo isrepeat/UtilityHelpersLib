@@ -218,10 +218,7 @@ namespace H {
     }
 
 
-
-    std::wstring GetLastErrorAsString() {
-        //Get the error message ID, if any.
-        DWORD errorMessageID = ::GetLastError();
+    std::wstring GetFormatedLastErrorMessage(DWORD errorMessageID) {
         if (errorMessageID == 0) {
             return L""; //No error message has been recorded
         }
@@ -243,6 +240,13 @@ namespace H {
     }
 
 
+    std::wstring GetLastErrorAsString() {
+        return GetFormatedLastErrorMessage(::GetLastError());
+    }
+
+    std::wstring GetWSALastErrorAsString() {
+        return GetFormatedLastErrorMessage(::WSAGetLastError());
+    }
 
     BOOL IsWow64(HANDLE process) {
         BOOL bIsWow64 = FALSE;

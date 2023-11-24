@@ -23,13 +23,34 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
+#include <array>
 
 
 namespace lg {
     // define a "__classFullnameLogging" "member checker" class
     define_has_member(__ClassFullnameLogging);
 
+   
+    struct StandardLoggers {
+        std::shared_ptr<spdlog::logger> logger;
+        std::shared_ptr<spdlog::logger> rawLogger;
+        std::shared_ptr<spdlog::logger> timeLogger;
+        std::shared_ptr<spdlog::logger> funcLogger;
+        std::shared_ptr<spdlog::logger> extendLogger;
 
+        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSink;
+        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkRaw;
+        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkTime;
+        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkFunc;
+        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkExtend;
+
+#ifdef _DEBUG
+        std::shared_ptr<spdlog::logger> debugLogger;
+#endif
+    };
+
+
+    // mb rename?
     class DefaultLoggers : public _Singleton<class DefaultLoggers> {
     private:
         using _MyBase = _Singleton<DefaultLoggers>;
@@ -40,15 +61,19 @@ namespace lg {
         ~DefaultLoggers() = default;
         struct UnscopedData;
 
+        static constexpr uintmax_t maxSizeLogFile = 1 * 1024 * 1024; // 1 MB (~ 10'000 rows)
+        static constexpr size_t maxLoggers = 2;
+
         static void Init(const std::wstring& logFilePath, bool truncate = false, bool appendNewSessionMsg = true);
+        static void InitForId(uint8_t loggerId, const std::wstring& logFilePath, bool truncate = false, bool appendNewSessionMsg = true);
         static std::string GetLastMessage();
 
-        static std::shared_ptr<spdlog::logger> Logger();
-        static std::shared_ptr<spdlog::logger> RawLogger();
-        static std::shared_ptr<spdlog::logger> TimeLogger();
-        static std::shared_ptr<spdlog::logger> FuncLogger();
-        static std::shared_ptr<spdlog::logger> DebugLogger();
-        static std::shared_ptr<spdlog::logger> ExtendLogger();
+        static std::shared_ptr<spdlog::logger> Logger(uint8_t id = 0);
+        static std::shared_ptr<spdlog::logger> RawLogger(uint8_t id = 0);
+        static std::shared_ptr<spdlog::logger> TimeLogger(uint8_t id = 0);
+        static std::shared_ptr<spdlog::logger> FuncLogger(uint8_t id = 0);
+        static std::shared_ptr<spdlog::logger> DebugLogger(uint8_t id = 0);
+        static std::shared_ptr<spdlog::logger> ExtendLogger(uint8_t id = 0);
 
 
         // NOTE: overload for std::basic_string_view<T>
@@ -80,20 +105,8 @@ namespace lg {
         }
 
     private:
-        std::shared_ptr<spdlog::logger> logger;
-        std::shared_ptr<spdlog::logger> rawLogger;
-        std::shared_ptr<spdlog::logger> timeLogger;
-        std::shared_ptr<spdlog::logger> funcLogger;
-        std::shared_ptr<spdlog::logger> extendLogger;
-
-        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSink;
-        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkRaw;
-        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkTime;
-        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkFunc;
-        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkExtend;
-
+        std::array<StandardLoggers, maxLoggers> standardLoggersList;
 #ifdef _DEBUG
-        std::shared_ptr<spdlog::logger> debugLogger;
         const std::shared_ptr<spdlog::sinks::msvc_sink_mt> debugSink;
 #endif
 
