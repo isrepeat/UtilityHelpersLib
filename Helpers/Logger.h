@@ -9,11 +9,12 @@
 #define LogLastError LOG_ERROR_D(L"Last error: {}", H::GetLastErrorAsString())
 #define LogWSALastError LOG_ERROR_D(L"WSA Last error: {}", H::GetWSALastErrorAsString())
 
-#define LOG_ASSERT(expression, message, ...)                                                                                  \
-	if (!(expression)) {                                                                                                      \
-		assertm(expression, message);                                                                                         \
-		LOG_ERROR_D(message, __VA_ARGS__);                                                                                    \
-	}
+// NOTE: 
+// - use comma statement "|| (..., false)" to execute next expression
+// - invert result to use it like "if (LOG_ASSERT(...))"
+#define LOG_ASSERT(expression, message, ...)  !(																									\
+	!!(expression) || (LOG_ERROR_D(L" " message L"  {" _CRT_WIDE(#expression) L"}", __VA_ARGS__), false) || (assertm(expression, message), false)	\
+)
 
 // NOTE: use comma instead semicolon
 #define LOG_THROW_STD_EXCEPTION(fmt, ...)                                                                                     \
@@ -23,8 +24,9 @@
 
 #else
 #define LogLastError
+#define LogWSALastError
 #define LOG_ASSERT(expression, message, ...)
-#define LOG_STD_EXCEPTION(...)
+#define LOG_THROW_STD_EXCEPTION(...)
 #endif
 
 
