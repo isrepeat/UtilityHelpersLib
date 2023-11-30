@@ -396,7 +396,7 @@ void MediaRecorder::InitializeSinkWriter(IMFByteStream *outputStream, bool useCP
         Microsoft::WRL::ComPtr<IMFMediaType> typeOut, typeIn;
 
         typeIn = MediaRecorder::CreateVideoInMediaType(settings, nv12VideoSamples);
-        typeOut = MediaRecorder::CreateVideoOutMediaType(settings, this->params.mediaFormat.GetMediaContainerType());
+        typeOut = MediaRecorder::CreateVideoOutMediaType(settings, this->params.mediaFormat.GetMediaContainerType(), params.UseChunkMerger);
 
         hr = this->sinkWriter->AddStream(typeOut.Get(), &this->videoStreamIdx);
         H::System::ThrowIfFailed(hr);
@@ -697,7 +697,7 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateVideoInMediaType(
 }
 
 Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateVideoOutMediaType(
-    const IVideoCodecSettings *settings, MediaContainerType containerType)
+    const IVideoCodecSettings *settings, MediaContainerType containerType, bool useChunkMerger)
 {
     if (settings == nullptr)
         return nullptr;
@@ -711,7 +711,7 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateVideoOutMediaType(
     hr = mediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
     H::System::ThrowIfFailed(hr);
 
-    if (containerType == MediaContainerType::MP4) {
+    if (useChunkMerger && containerType == MediaContainerType::MP4) {
         hr = mediaType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264); // WORKAROUND for merging HEVC [see ChangeMerger notes]
         H::System::ThrowIfFailed(hr);
     }
@@ -974,7 +974,7 @@ void MediaRecorder::MergeChunks(IMFByteStream* outputStream, std::vector<std::ws
         MediaRecorder::CreateAudioInMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits),
         MediaRecorder::CreateAudioOutMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits),
         MediaRecorder::CreateVideoInMediaType(this->params.mediaFormat.GetVideoCodecSettings(), nv12Textures),
-        MediaRecorder::CreateVideoOutMediaType(this->params.mediaFormat.GetVideoCodecSettings(), this->params.mediaFormat.GetMediaContainerType()),
+        MediaRecorder::CreateVideoOutMediaType(this->params.mediaFormat.GetVideoCodecSettings(), this->params.mediaFormat.GetMediaContainerType(), params.UseChunkMerger),
         this->params.mediaFormat.GetVideoCodecSettings(),
         std::move(chunks),
         containerExt,

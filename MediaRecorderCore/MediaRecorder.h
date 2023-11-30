@@ -72,7 +72,7 @@ public:
     static Microsoft::WRL::ComPtr<IMFMediaType> CreateVideoInMediaType(
         const IVideoCodecSettings* settings, bool nv12VideoSamples);
     static Microsoft::WRL::ComPtr<IMFMediaType> CreateVideoOutMediaType(
-        const IVideoCodecSettings* settings, MediaContainerType containerType);
+        const IVideoCodecSettings* settings, MediaContainerType containerType, bool useChunkMerger);
 
     static const wchar_t* GetContainerExt(const MediaRecorderParams &params);
     static MediaContainerType GetContainerType(const std::wstring &containerExt);
