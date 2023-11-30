@@ -113,7 +113,7 @@ namespace lg {
         std::mutex mxCustomFlagHandlers;
         std::string lastMessage; // spdlog converts all msg to char
         std::wstring className;
-        std::function<const std::wstring& ()> prefixCallback = nullptr;
+        std::function<std::wstring()> prefixCallback = nullptr;
         std::function<void(const std::string&)> postfixCallback = nullptr;
 
         std::shared_ptr<int> token = std::make_shared<int>();

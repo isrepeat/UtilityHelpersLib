@@ -12,7 +12,7 @@ namespace lg {
     public:
         static const char flag = 'q';
 
-        explicit CustomMsgCallbackFlag(std::function<const std::wstring& ()> prefixFn, std::function<void(const std::string&)> postfixFn = nullptr)
+        explicit CustomMsgCallbackFlag(std::function<std::wstring()> prefixFn, std::function<void(const std::string&)> postfixFn = nullptr)
             : prefixCallback{ prefixFn }
             , postfixCallback{ postfixFn }
         {
@@ -33,7 +33,7 @@ namespace lg {
         }
 
     private:
-        std::function<const std::wstring& ()> prefixCallback;
+        std::function<std::wstring()> prefixCallback;
         std::function<void(const std::string&)> postfixCallback;
     };
 
