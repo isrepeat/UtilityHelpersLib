@@ -8,7 +8,7 @@ namespace H {
 	public:
 		ThreadWaiter() = default;
 		~ThreadWaiter() {
-			LOG_DEBUG_D("--- ~ThreadWaiter() ---");
+			LOG_FUNCTION_ENTER("~ThreadWaiter()");
 			if (!stop) { // If the owner of this class not use ThreadsFinishHelper so finish threads manually
 				NotifyAboutStop();
 				WaitingFinishThreads();
@@ -53,17 +53,15 @@ namespace H {
 		void NotifyAboutStop() override {
 			stop = true;
 			cv.notify_all();
-			LOG_DEBUG_D("--- Notified about stop ---");
 		}
 
 		void WaitingFinishThreads() override {
-			LOG_DEBUG_D("--- Waiting finish threads ... ---");
+			LOG_FUNCTION_SCOPE("WaitingFinishThreads()");
 			for (auto& thread : threads) {
 				if (thread.joinable())
 					thread.join();
 			}
 			threads.clear();
-			LOG_DEBUG_D("--- All threads finished ---");
 		}
 
 	private:

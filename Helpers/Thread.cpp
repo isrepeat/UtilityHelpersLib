@@ -21,17 +21,17 @@ namespace H {
 			return;
 
 		Visit([](std::shared_ptr<IThread> threadClass, const std::wstring& className) {
-			LOG_DEBUG_D(L"Notify about stop [{}]", className);
+			LOG_DEBUG_D(L"[{}] Notify about stop", className);
 			threadClass->NotifyAboutStop();
-			LOG_DEBUG_D(L"Notified [{}]", className);
+			LOG_DEBUG_D(L"[{}] Notified", className);
 			});
 
 		LOG_DEBUG_D(L"--- All Registered classes notified aboud stop ---");
 
 		Visit([](std::shared_ptr<IThread> threadClass, const std::wstring& className) {
-			LOG_DEBUG_D(L"Waiting finish threads [{}]", className);
+			LOG_DEBUG_D(L"[{}] Waiting finish threads", className);
 			threadClass->WaitingFinishThreads();
-			LOG_DEBUG_D(L"Finished [{}]", className);
+			LOG_DEBUG_D(L"[{}] Finished", className);
 			});
 
 		LOG_DEBUG_D(L"--- All Registered classes finished own threads ---");
