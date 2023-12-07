@@ -10,7 +10,9 @@
 #include <libhelpers/HTime.h>
 #include <memcpy.h>
 #include <mfapi.h>
+#if SPDLOG_ENABLED
 #include <spdlog/LoggerWrapper.h>
+#endif
 
 // encoder restrictions can be found here : https://msdn.microsoft.com/en-us/library/windows/desktop/dd742785(v=vs.85).aspx
 const uint32_t MediaRecorder::AllowedNumChannels[] = { 1 , 2 };
@@ -87,7 +89,9 @@ void MediaRecorder::StartRecord() {
 
     hr = this->sinkWriter->BeginWriting();
     H::System::ThrowIfFailed(hr);
+#if SPDLOG_ENABLED
     LOG_DEBUG("MediaRecorder::StartRecord started recording");
+#endif
 }
 
 // TODO: Add guard for case when EndRecord called from other thread during record
@@ -822,7 +826,9 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::GetBestOutputType(
     }
 
     if (!outType) {
+#if SPDLOG_ENABLED
         LOG_DEBUG("MediaRecorder::GetBestOutputType can't find best output type, using default");
+#endif
         outType = defaultType;
     }
 
@@ -914,6 +920,10 @@ void MediaRecorder::DefineContainerType() {
 }
 
 IMFByteStream* MediaRecorder::StartNewChunk() {
+#if HAVE_WINRT
+    H::System::ThrowIfFailed(E_NOTIMPL);
+    return nullptr;
+#else
     if (!params.UseChunkMerger) {
         assert(false);
         return nullptr;
@@ -923,8 +933,9 @@ IMFByteStream* MediaRecorder::StartNewChunk() {
 
     auto hr = MFCreateFile(MF_ACCESSMODE_READWRITE, MF_OPENMODE_DELETE_IF_EXIST, MF_FILEFLAGS_NONE, chunkFile.c_str(), currentOutputStream.GetAddressOf());
     H::System::ThrowIfFailed(hr);
-    
+
     return currentOutputStream.Get();
+#endif
 }
 
 void MediaRecorder::FinalizeRecord(bool useRecordEventCallback) {
@@ -933,10 +944,14 @@ void MediaRecorder::FinalizeRecord(bool useRecordEventCallback) {
     samplesNumber = 0;
     chunkAudioPtsHns = 0;
     chunkVideoPtsHns = 0;
+#if SPDLOG_ENABLED
     LOG_DEBUG("MediaRecorder::FinalizeRecord started");
+#endif
     hr = this->sinkWriter->Finalize();
     if (hr != MF_E_SINK_NO_SAMPLES_PROCESSED) { // occured when was called BeginWritting but not calls WriteSample yet
+#if SPDLOG_ENABLED
         LOG_DEBUG("MediaRecorder::FinalizeRecord error occured during finalization");
+#endif
         H::System::ThrowIfFailed(hr);
     }
 
@@ -964,7 +979,9 @@ void MediaRecorder::FinalizeRecord(bool useRecordEventCallback) {
         eventArgs.remainingTime = remainingTime;
         recordEventCallback->call(eventArgs);
     }
+#if SPDLOG_ENABLED
     LOG_DEBUG("MediaRecorder::FinalizeRecord done");
+#endif
 }
 
 void MediaRecorder::MergeChunks(IMFByteStream* outputStream, std::vector<std::wstring>&& chunks)
