@@ -26,29 +26,6 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="MediaRecorderCore\Platform\AacCodecFactory.cpp" />
-    <ClCompile Include="MediaRecorderCore\Platform\AlacCodecFactory.cpp" />
-    <ClCompile Include="MediaRecorderCore\Platform\AmrNbCodecFactory.cpp" />
-    <ClCompile Include="MediaRecorderCore\Platform\DolbyAC3CodecFactory.cpp" />
-    <ClCompile Include="MediaRecorderCore\Platform\EncoderEnumerator.cpp" />
-    <ClCompile Include="MediaRecorderCore\Platform\FlacCodecFactory.cpp" />
-    <ClCompile Include="MediaRecorderCore\Platform\MP3CodecFactory.cpp" />
-    <ClCompile Include="MediaRecorderCore\Platform\PlatformClassFactory.cpp" />
-    <ClCompile Include="MediaRecorderCore\Platform\PlatformHelpers.cpp" />
-    <ClCompile Include="MediaRecorderCore\Platform\Wma8CodecFactory.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="MediaRecorderCore\Platform\AacCodecFactory.h" />
-    <ClInclude Include="MediaRecorderCore\Platform\AlacCodecFactory.h" />
-    <ClInclude Include="MediaRecorderCore\Platform\AmrNbCodecFactory.h" />
-    <ClInclude Include="MediaRecorderCore\Platform\DolbyAC3CodecFactory.h" />
-    <ClInclude Include="MediaRecorderCore\Platform\EncoderEnumerator.h" />
-    <ClInclude Include="MediaRecorderCore\Platform\FlacCodecFactory.h" />
-    <ClInclude Include="MediaRecorderCore\Platform\MP3CodecFactory.h" />
-    <ClInclude Include="MediaRecorderCore\Platform\PlatformHelpers.h" />
-    <ClInclude Include="MediaRecorderCore\Platform\Wma8CodecFactory.h" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0429d5ce-1aaa-4141-83d3-b4329c7cb48e}</ProjectGuid>
     <Keyword>StaticLibrary</Keyword>
@@ -104,6 +81,7 @@
   </ImportGroup>
   <ImportGroup Label="Shared">
     <Import Project="..\MediaRecorderCore\MediaRecorderCore.vcxitems" Label="Shared" />
+    <Import Project="..\MediaRecorderCore.Shared.UWP\MediaRecorderCore.Shared.UWP.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
