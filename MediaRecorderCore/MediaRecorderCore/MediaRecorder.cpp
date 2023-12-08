@@ -8,7 +8,6 @@
 #include <libhelpers/HSystem.h>
 #include <libhelpers/HMathCP.h>
 #include <libhelpers/HTime.h>
-#include <memcpy.h>
 #include <mfapi.h>
 #if SPDLOG_ENABLED
 #include <spdlog/LoggerWrapper.h>
@@ -322,11 +321,11 @@ void MediaRecorder::Write(const void *videoData, size_t rowPitch, int64_t hns, i
             auto dst = bufferData;
 
             for (uint32_t y = 0; y < basicSettings->height; y++, src += rowPitch, dst += basicSettings->height * 4) {
-                memcpy(dst, src, basicSettings->width * 4);
+                std::memcpy(dst, src, basicSettings->width * 4);
             }
         }
         else {
-            memcpy(bufferData, videoData, basicSettings->width * basicSettings->height * 4);
+            std::memcpy(bufferData, videoData, basicSettings->width * basicSettings->height * 4);
         }
     }
 
