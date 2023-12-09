@@ -1,6 +1,5 @@
 #pragma once
 #include "FunctionTraits.hpp"
-#include "Logger.h"
 #include <functional>
 #include <ppltasks.h>
 #include <chrono>
@@ -72,29 +71,4 @@ namespace H {
         // if we here so eather Predicate(nullptr) returned true or waitTime expired (CV::WAIT or CV::NO_WAIT)
         return CvExecuteCallbackAfterWaitWithPredicateInternal<Callback, Result>(Predicate, userCallback, executeCallbackInPredicate);
     }
-
-    class TaskChain {
-    public:
-        CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(TaskChain);
-
-        TaskChain() = default;
-        ~TaskChain();
-
-        bool Reset();
-        void Append(std::function<void()> taskLambda);
-        void StartExecuting();
-        void CancelAndWait();
-
-    private:
-        void ResetInternal();
-
-    private:
-        std::mutex mx;
-        std::atomic<bool> canReset = true;
-        std::atomic<bool> executing = false;
-
-        Concurrency::cancellation_token_source cancelationToken;
-        Concurrency::task_completion_event<void> taskCompletedEvent;
-        Concurrency::task<void> task = Concurrency::task<void>(taskCompletedEvent, cancelationToken.get_token()); // must be created after completionEvent and token
-    };
 }

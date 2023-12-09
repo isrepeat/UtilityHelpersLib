@@ -17,7 +17,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\BIOS.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\CancellationToken.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Channel.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\Concurrency.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Conversion.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\CrashHandler.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\CrashInfo.cpp" />
@@ -79,6 +78,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\MoveLambda.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\MultithreadMutex.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\SystemInfo.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\TaskChain.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\TypeTraits.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\PackageProvider.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Passkey.hpp" />
