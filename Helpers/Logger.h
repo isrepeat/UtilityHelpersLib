@@ -12,8 +12,8 @@
 // NOTE: 
 // - use comma statement "|| (..., false)" to execute next expression
 // - invert result to use it like "if (LOG_ASSERT(...))"
-#define LOG_ASSERT(expression, message, ...)  !(																									\
-	!!(expression) || (LOG_ERROR_D(L" " message L"  {" _CRT_WIDE(#expression) L"}", __VA_ARGS__), false) || (assertm(expression, message), false)	\
+#define LOG_ASSERT(expression, message, ...)  !(																										\
+	(bool)(expression) || (LOG_ERROR_D(L" " message L"  {" _CRT_WIDE(#expression) L"}", __VA_ARGS__), false) || (assertm(expression, message), false)	\
 )
 
 // NOTE: use comma instead semicolon
@@ -25,7 +25,7 @@
 #else
 #define LogLastError
 #define LogWSALastError
-#define LOG_ASSERT(expression, message, ...)
+#define LOG_ASSERT(expression, message, ...) !((bool)(expression))
 #define LOG_THROW_STD_EXCEPTION(...)
 #endif
 

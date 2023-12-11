@@ -1,10 +1,17 @@
 #pragma once
+#include "Concurrency.h"
+#include "Logger.h"
+
+#include <condition_variable>
 #include <queue>
 #include <mutex>
-#include <condition_variable>
-#include "Concurrency.h"
 
 namespace H {
+	struct TaskItemWithDescription {
+		std::string descrtiption;
+		std::function<void()> task;
+	};
+
 	enum class ConcurrentQueueBehaviour {
 		WaitWhenQueueSizeGreaterThanOrEqualBuffer,
 		SkipWhenQueueSizeGreaterThanOrEqualBuffer,
@@ -12,6 +19,8 @@ namespace H {
 
 	template<class T>
 	class ConcurrentQueue {
+		CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(ConcurrentQueue);
+
 	public:
 		ConcurrentQueue() = default;
 		~ConcurrentQueue() = default;
@@ -24,6 +33,10 @@ namespace H {
 		}
 
 		void Push(const T& item) {
+			if constexpr (std::is_same_v<T, TaskItemWithDescription>) {
+				LOG_FUNCTION_ENTER_C("Push(item) <{}>", item.descrtiption);
+			}
+
 			auto pushPredicate = [this](std::function<void()> callback) {
 				if (working) {
 					if (IsQueueBufferExceeded()) {
@@ -72,13 +85,17 @@ namespace H {
 					return CV::NO_WAIT;
 				}
 			};
-
+			
 			std::unique_lock lk(mx);
 			T res = H::CvExecuteCallbackAfterWaitWithPredicate(lk, cv, popPredicate, [this] { // if callback not executed it return default T{}
 				auto item = std::move(items.front());
 				items.pop();
 				return item;
 				});
+
+			if constexpr (std::is_same_v<T, TaskItemWithDescription>) {
+				LOG_FUNCTION_ENTER_C("Pop() <{}>", res.descrtiption);
+			}
 
 			cv.notify_one(); // signal to can push 1 or more items if queue was overflow before
 			return res;
