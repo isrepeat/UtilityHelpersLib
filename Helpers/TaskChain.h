@@ -123,8 +123,10 @@ namespace H {
         }
 
         const T& GetStartResult() {
+            static T defaultResult;
+
             if (LOG_ASSERT(startResult, "startResult is nullptr")) {
-                return T();
+                return defaultResult;
             }
             return *startResult;
         }
