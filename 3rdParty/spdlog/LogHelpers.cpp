@@ -2,8 +2,26 @@
 #include <Helpers/TokenSingleton.hpp>
 #include <Helpers/FileSystem_inline.h>
 #include <Helpers/Macros.h>
+#include <ComAPI/ComAPI.h>
 #include <set>
 
+// NOTE: PackageProvider is a Helpers library class.
+// TODO: To avoid cyclic links (when use ref to Helpers) separate Helpers or move PackageProvider to ComAPI or somewhere else 
+namespace H {
+    #include <appmodel.h>
+
+    class PackageProvider {
+    public:
+        static bool IsRunningUnderPackage() {
+            UINT32 length = 0;
+            LONG rc = GetCurrentPackageFamilyName(&length, NULL);
+            if (rc == APPMODEL_ERROR_NO_PACKAGE) {
+                return false;
+            }
+            return true;
+        }
+    };
+}
 
 namespace lg {
     // Free letter flags: 'j', 'k', 'w' 
@@ -118,13 +136,17 @@ namespace lg {
 
 
 
-    void DefaultLoggers::Init(const std::wstring& logFilePath, bool truncate, bool appendNewSessionMsg) {
-        GetInstance().InitForId(0, logFilePath, truncate, appendNewSessionMsg);
+    void DefaultLoggers::Init(std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags) {
+        GetInstance().InitForId(0, logFilePath, initFlags);
     }
 
-    void DefaultLoggers::InitForId(uint8_t loggerId, const std::wstring& logFilePath, bool truncate, bool appendNewSessionMsg) {
+    void DefaultLoggers::InitForId(uint8_t loggerId, std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags) {
         assertm(loggerId < maxLoggers, "loggerId out of bound");
         static std::set<std::wstring> initedLoggers;
+
+        if (initFlags.Has(InitFlags::CreateInPackageFolder) && H::PackageProvider::IsRunningUnderPackage()) {
+            logFilePath = ComApi::GetPackageFolder() / logFilePath.filename();
+        }
 
         if (initedLoggers.count(logFilePath) > 0) {
             TimeLogger(loggerId)->warn("the logger on this path has already been initialized");
@@ -135,10 +157,10 @@ namespace lg {
         }
 
         if (!std::filesystem::exists(logFilePath)) {
-            appendNewSessionMsg = false; // don't append new session message at first created log file
+            initFlags &= ~InitFlags::AppendNewSessionMsg; // don't append new session message at first created log file
         }
         else {
-            if (!truncate && std::filesystem::file_size(logFilePath) > maxSizeLogFile) {
+            if (!initFlags.Has(InitFlags::Truncate) && std::filesystem::file_size(logFilePath) > maxSizeLogFile) {
                 H::FS::RemoveBytesFromStart(logFilePath, maxSizeLogFile / 2, [](std::ofstream& file) {
                     std::string header = "... [truncated] \n\n";
                     file.write(header.data(), header.size());
@@ -148,27 +170,27 @@ namespace lg {
 
         auto& _this = GetInstance();
 
-        _this.standardLoggersList[loggerId].fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, truncate);
+        _this.standardLoggersList[loggerId].fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, initFlags.Has(InitFlags::Truncate));
         auto formatterDefault = std::make_unique<spdlog::pattern_formatter>();
         formatterDefault->add_flag<CustomMsgCallbackFlag>(CustomMsgCallbackFlag::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::Default));
         _this.standardLoggersList[loggerId].fileSink->set_formatter(std::move(formatterDefault));
         _this.standardLoggersList[loggerId].fileSink->set_level(spdlog::level::trace);
 
-        _this.standardLoggersList[loggerId].fileSinkRaw = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, truncate);
+        _this.standardLoggersList[loggerId].fileSinkRaw = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, initFlags.Has(InitFlags::Truncate));
         _this.standardLoggersList[loggerId].fileSinkRaw->set_pattern(GetPattern(Pattern::Raw));
         _this.standardLoggersList[loggerId].fileSinkRaw->set_level(spdlog::level::trace);
 
-        _this.standardLoggersList[loggerId].fileSinkTime = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, truncate);
+        _this.standardLoggersList[loggerId].fileSinkTime = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, initFlags.Has(InitFlags::Truncate));
         _this.standardLoggersList[loggerId].fileSinkTime->set_pattern(GetPattern(Pattern::Time));
         _this.standardLoggersList[loggerId].fileSinkTime->set_level(spdlog::level::trace);
 
-        _this.standardLoggersList[loggerId].fileSinkFunc = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, truncate);
+        _this.standardLoggersList[loggerId].fileSinkFunc = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, initFlags.Has(InitFlags::Truncate));
         auto formatterFunc = std::make_unique<spdlog::pattern_formatter>();
         formatterFunc->add_flag<CustomMsgCallbackFlag>(CustomMsgCallbackFlag::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::Func));
         _this.standardLoggersList[loggerId].fileSinkFunc->set_formatter(std::move(formatterFunc));
         _this.standardLoggersList[loggerId].fileSinkFunc->set_level(spdlog::level::trace);
 
-        _this.standardLoggersList[loggerId].fileSinkExtend = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, truncate);
+        _this.standardLoggersList[loggerId].fileSinkExtend = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, initFlags.Has(InitFlags::Truncate));
         auto formatterExtend = std::make_unique<spdlog::pattern_formatter>();
         formatterExtend->add_flag<CustomMsgCallbackFlag>(CustomMsgCallbackFlag::flag, _this.prefixCallback, _this.postfixCallback).set_pattern(GetPattern(Pattern::Default));
         _this.standardLoggersList[loggerId].fileSinkExtend->set_formatter(std::move(formatterExtend));
@@ -208,7 +230,7 @@ namespace lg {
         _this.standardLoggersList[loggerId].extendLogger->set_level(spdlog::level::trace);
 
 
-        if (appendNewSessionMsg) {
+        if (initFlags.Has(InitFlags::AppendNewSessionMsg)) {
             _this.standardLoggersList[loggerId].rawLogger->info("\n");
             // whitespaces are selected by design
             _this.standardLoggersList[loggerId].rawLogger->info("==========================================================================================================");

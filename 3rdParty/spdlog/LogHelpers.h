@@ -7,12 +7,14 @@
 #include "spdlog/sinks/msvc_sink.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #ifdef INSIDE_HELPERS_PROJECT
+#include "Flags.h"
 #include "Scope.h"
 #include "Macros.h"
 #include "String.hpp"
 #include "Singleton.hpp"
 #include "TypeTraits.hpp"
 #else
+#include <Helpers/Flags.h>
 #include <Helpers/Scope.h>
 #include <Helpers/Macros.h>
 #include <Helpers/String.hpp>
@@ -21,6 +23,7 @@
 #endif
 #include "CustomTypeSpecialization.h"
 #include <unordered_map>
+#include <filesystem>
 #include <string>
 #include <memory>
 #include <array>
@@ -54,6 +57,13 @@ namespace lg {
     };
 
 
+    enum InitFlags { // declare without 'class' to simplify flags concatenation
+        None = 0x00,
+        Truncate = 0x01,
+        AppendNewSessionMsg = 0x02,
+        CreateInPackageFolder = 0x04,
+    };
+
     // mb rename?
     class LOGGER_API DefaultLoggers : public _Singleton<class DefaultLoggers> {
     private:
@@ -68,8 +78,8 @@ namespace lg {
         static constexpr uintmax_t maxSizeLogFile = 1 * 1024 * 1024; // 1 MB (~ 10'000 rows)
         static constexpr size_t maxLoggers = 2;
 
-        static void Init(const std::wstring& logFilePath, bool truncate = false, bool appendNewSessionMsg = true);
-        static void InitForId(uint8_t loggerId, const std::wstring& logFilePath, bool truncate = false, bool appendNewSessionMsg = true);
+        static void Init(std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags = InitFlags::AppendNewSessionMsg);
+        static void InitForId(uint8_t loggerId, std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags = InitFlags::AppendNewSessionMsg);
         static std::string GetLastMessage();
 
         static std::shared_ptr<spdlog::logger> Logger(uint8_t id = 0);
