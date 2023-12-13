@@ -3,6 +3,7 @@
   <!-- Make sure this file are imported in .vcxitems -->
   <PropertyGroup>
     <HelpersDirectory>$(MSBuildThisFileDirectory)..</HelpersDirectory>
+    <ThirdPartyDirectory>$(MSBuildThisFileDirectory)..\..\3rdParty</ThirdPartyDirectory>
   </PropertyGroup>
   
   <ItemGroup>

@@ -7,12 +7,14 @@
 #include "spdlog/sinks/msvc_sink.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #ifdef INSIDE_HELPERS_PROJECT
+#include "Flags.h"
 #include "Scope.h"
 #include "Macros.h"
 #include "String.hpp"
 #include "Singleton.hpp"
 #include "TypeTraits.hpp"
 #else
+#include <Helpers/Flags.h>
 #include <Helpers/Scope.h>
 #include <Helpers/Macros.h>
 #include <Helpers/String.hpp>
@@ -21,17 +23,22 @@
 #endif
 #include "CustomTypeSpecialization.h"
 #include <unordered_map>
+#include <filesystem>
 #include <string>
 #include <memory>
 #include <array>
 
+
+#ifndef LOGGER_API
+#define LOGGER_API __declspec(dllexport) // Compile this static library with "dllexport" to export symbols through dll
+#endif
 
 namespace lg {
     // define a "__classFullnameLogging" "member checker" class
     define_has_member(__ClassFullnameLogging);
 
    
-    struct StandardLoggers {
+    struct LOGGER_API StandardLoggers {
         std::shared_ptr<spdlog::logger> logger;
         std::shared_ptr<spdlog::logger> rawLogger;
         std::shared_ptr<spdlog::logger> timeLogger;
@@ -50,8 +57,15 @@ namespace lg {
     };
 
 
+    enum InitFlags { // declare without 'class' to simplify flags concatenation
+        None = 0x00,
+        Truncate = 0x01,
+        AppendNewSessionMsg = 0x02,
+        CreateInPackageFolder = 0x04,
+    };
+
     // mb rename?
-    class DefaultLoggers : public _Singleton<class DefaultLoggers> {
+    class LOGGER_API DefaultLoggers : public _Singleton<class DefaultLoggers> {
     private:
         using _MyBase = _Singleton<DefaultLoggers>;
         friend _MyBase; // to have access to private Ctor DefaultLoggers()
@@ -64,8 +78,8 @@ namespace lg {
         static constexpr uintmax_t maxSizeLogFile = 1 * 1024 * 1024; // 1 MB (~ 10'000 rows)
         static constexpr size_t maxLoggers = 2;
 
-        static void Init(const std::wstring& logFilePath, bool truncate = false, bool appendNewSessionMsg = true);
-        static void InitForId(uint8_t loggerId, const std::wstring& logFilePath, bool truncate = false, bool appendNewSessionMsg = true);
+        static void Init(std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags = InitFlags::AppendNewSessionMsg);
+        static void InitForId(uint8_t loggerId, std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags = InitFlags::AppendNewSessionMsg);
         static std::string GetLastMessage();
 
         static std::shared_ptr<spdlog::logger> Logger(uint8_t id = 0);
@@ -123,7 +137,7 @@ namespace lg {
 }
 
 // TODO: find better solution to detect class context
-H::nothing* __LgCtx(); // may be overwritten as class method that returned "this" (throught class fullname logging macro)
+LOGGER_API H::nothing* __LgCtx(); // may be overwritten as class method that returned "this" (throught class fullname logging macro)
 
 
 #if defined(LOG_CTX)

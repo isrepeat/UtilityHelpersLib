@@ -12,26 +12,45 @@ namespace H {
 		Flags(int i) : i(i) {}
 		Flags(const Enum& enm) : i((UnderlyingType)enm) {}
 
-		Flags operator |= (Enum enm) {
-			i |= (UnderlyingType)enm; 
+
+		Flags operator |= (UnderlyingType mask) {
+			i |= mask;
 			return *this;
 		}
-		Flags operator | (Enum enm) const {
-			return Flags(i | (UnderlyingType)enm);
+		Flags operator &= (UnderlyingType mask) {
+			i &= mask;
+			return *this;
 		}
-		Flags operator & (Enum enm) const {
-			return Flags(i & (UnderlyingType)enm);
+		Flags operator |= (Enum enm) {
+			return this |= (UnderlyingType)enm;
+		}
+		Flags operator &= (Enum enm) {
+			return this &= (UnderlyingType)enm;
+		}
+
+		Flags operator | (UnderlyingType mask) const {
+			return Flags(i | mask);
 		}
 		Flags operator & (UnderlyingType mask) const {
 			return Flags(i & mask);
 		}
-
+		Flags operator | (Enum enm) const {
+			return this | enm;
+		}
+		Flags operator & (Enum enm) const {
+			return this & enm;
+		}
+		
 		operator UnderlyingType() const {
 			return i;
 		}
 		//operator bool() const { // for compare with boolean values (anyway need explicitly cast with boolean compare, so you need override boolean operators ==, != ...)
 		//	return (bool)i;
 		//}
+
+		bool Has(UnderlyingType mask) const {
+			return i & mask;
+		}
 
 	private:
 		UnderlyingType i = 0;
