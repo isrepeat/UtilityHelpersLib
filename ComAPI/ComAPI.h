@@ -1,12 +1,13 @@
 #pragma once
+#include <Windows.h>
 #include <functional>
-#include <windows.h>
+#include <filesystem>
 #include <string>
 #pragma comment(lib, "RuntimeObject.lib")
 
-extern "C" {
+//extern "C" {
 	namespace ComApi {
-		std::wstring GetPackageFolder();
+		std::filesystem::path GetPackageFolder(); // Absolute path to the App package LocalState folder
 		std::wstring WindowsVersion();
 	}
-}
+//}
