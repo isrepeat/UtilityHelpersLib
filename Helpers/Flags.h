@@ -22,10 +22,10 @@ namespace H {
 			return *this;
 		}
 		Flags operator |= (Enum enm) {
-			return this |= (UnderlyingType)enm;
+			return *this |= (UnderlyingType)enm;
 		}
 		Flags operator &= (Enum enm) {
-			return this &= (UnderlyingType)enm;
+			return *this &= (UnderlyingType)enm;
 		}
 
 		Flags operator | (UnderlyingType mask) const {
@@ -35,10 +35,10 @@ namespace H {
 			return Flags(i & mask);
 		}
 		Flags operator | (Enum enm) const {
-			return this | enm;
+			return *this | (UnderlyingType)enm;
 		}
 		Flags operator & (Enum enm) const {
-			return this & enm;
+			return *this & (UnderlyingType)enm;
 		}
 		
 		operator UnderlyingType() const {
