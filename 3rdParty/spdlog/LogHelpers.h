@@ -26,12 +26,16 @@
 #include <array>
 
 
+#ifndef LOGGER_API
+#define LOGGER_API __declspec(dllexport) // Compile this static library with "dllexport" to export symbols through dll
+#endif
+
 namespace lg {
     // define a "__classFullnameLogging" "member checker" class
     define_has_member(__ClassFullnameLogging);
 
    
-    struct StandardLoggers {
+    struct LOGGER_API StandardLoggers {
         std::shared_ptr<spdlog::logger> logger;
         std::shared_ptr<spdlog::logger> rawLogger;
         std::shared_ptr<spdlog::logger> timeLogger;
@@ -51,7 +55,7 @@ namespace lg {
 
 
     // mb rename?
-    class DefaultLoggers : public _Singleton<class DefaultLoggers> {
+    class LOGGER_API DefaultLoggers : public _Singleton<class DefaultLoggers> {
     private:
         using _MyBase = _Singleton<DefaultLoggers>;
         friend _MyBase; // to have access to private Ctor DefaultLoggers()
@@ -123,7 +127,7 @@ namespace lg {
 }
 
 // TODO: find better solution to detect class context
-H::nothing* __LgCtx(); // may be overwritten as class method that returned "this" (throught class fullname logging macro)
+LOGGER_API H::nothing* __LgCtx(); // may be overwritten as class method that returned "this" (throught class fullname logging macro)
 
 
 #if defined(LOG_CTX)

@@ -281,6 +281,6 @@ namespace lg {
     }
 }
 
-H::nothing* __LgCtx() {
+LOGGER_API H::nothing* __LgCtx() {
     return nullptr;
 }
