@@ -1,27 +1,10 @@
 #include "LogHelpers.h"
-#include <Helpers/TokenSingleton.hpp>
 #include <Helpers/FileSystem_inline.h>
+#include <Helpers/PackageProvider.h> // need link with Helpers.lib
+#include <Helpers/TokenSingleton.hpp>
 #include <Helpers/Macros.h>
 #include <ComAPI/ComAPI.h>
 #include <set>
-
-// NOTE: PackageProvider is a Helpers library class.
-// TODO: To avoid cyclic links (when use ref to Helpers) separate Helpers or move PackageProvider to ComAPI or somewhere else 
-namespace H {
-    #include <appmodel.h>
-
-    class PackageProvider {
-    public:
-        static bool IsRunningUnderPackage() {
-            UINT32 length = 0;
-            LONG rc = GetCurrentPackageFamilyName(&length, NULL);
-            if (rc == APPMODEL_ERROR_NO_PACKAGE) {
-                return false;
-            }
-            return true;
-        }
-    };
-}
 
 namespace lg {
     // Free letter flags: 'j', 'k', 'w' 

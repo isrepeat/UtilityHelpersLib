@@ -54,9 +54,8 @@ namespace H {
 						return CV::NO_WAIT;
 					}
 				}
-				else {
-					return CV::NO_WAIT;
-				}
+				
+				return CV::NO_WAIT;
 			};
 
 			// Use cv wait helper to avoid double checking for pushing (poping)
@@ -81,9 +80,8 @@ namespace H {
 						return CV::WAIT;
 					}
 				}
-				else {
-					return CV::NO_WAIT;
-				}
+
+				return CV::NO_WAIT;
 			};
 			
 			std::unique_lock lk(mx);
