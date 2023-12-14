@@ -62,8 +62,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\VideoCodecSimpleSettings.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecLosslessSettings.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecCompressedSettings.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\VideoCodecSettings.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecSettings.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\MediaFormatCodecs.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\MediaFormatCodecsEnumerator.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\MediaFormatFactory.cpp" />

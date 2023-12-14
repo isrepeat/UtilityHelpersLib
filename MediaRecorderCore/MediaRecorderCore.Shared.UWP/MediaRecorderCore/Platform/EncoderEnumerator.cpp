@@ -5,46 +5,8 @@
 #include "MediaFormat/MediaFormatFactory.h"
 
 #include <algorithm>
+#include <libhelpers/as_optional.h>
 #include <libhelpers/HSystem.h>
-
-class EncoderEnumeratorAudioSettings : public IAudioCodecSettings {
-public:
-    EncoderEnumeratorAudioSettings(AudioCodecType codecType)
-        : IAudioCodecSettings(codecType)
-    {
-        this->basicSettings.numChannels = PlatformHelpers::DefaultAudioNumChannels;
-        this->basicSettings.sampleRate = PlatformHelpers::DefaultAudioSampleRate;
-        this->bitrateSettings.bitrate = PlatformHelpers::DefaultAudioBitrate;
-    }
-
-    const AudioCodecBasicSettings *GetBasicSettings() const override {
-        return &this->basicSettings;
-    }
-
-    void SetBasicSettings(const AudioCodecBasicSettings &v) override {
-        this->basicSettings = v;
-    }
-
-    const AudioCodecBitrateSettings *GetBitrateSettings() const {
-        return &this->bitrateSettings;
-    }
-
-    void SetBitrateSettings(const AudioCodecBitrateSettings &v) {
-        this->bitrateSettings = v;
-    }
-
-    std::unique_ptr<IAudioCodecSettings> Clone() override {
-        return std::make_unique<EncoderEnumeratorAudioSettings>(*this);
-    }
-
-    std::shared_ptr<IAudioCodecSettings> CloneShared() override {
-        return std::make_shared<EncoderEnumeratorAudioSettings>(*this);
-    }
-
-private:
-    AudioCodecBasicSettings basicSettings;
-    AudioCodecBitrateSettings bitrateSettings;
-};
 
 class EncoderEnumeratorVideoSettings : public IVideoCodecSettings {
 public:
@@ -57,7 +19,7 @@ public:
         this->basicSettings.bitrate = 1024 * 1024;
     }
 
-    const VideoCodecBasicSettings *GetBasicSettings() const override {
+    const VideoCodecBasicSettings* GetBasicSettings() const override {
         return &this->basicSettings;
     }
 
@@ -105,24 +67,30 @@ void EncoderEnumerator::EnumAudio(std::function<void(const GUID &)> fn) {
                     auto settingVals = mediaFormatFactory.GetSettingsValues(codecType);
                     auto audioSettings = params.mediaFormat.GetAudioCodecSettings();
 
-                    if (audioSettings->HasBasicSettings()) {
-                        assert(!settingVals.NumChannels.empty());
-                        assert(!settingVals.SampleRate.empty());
-                        auto settings = *audioSettings->GetBasicSettings();
-
-                        settings.numChannels = settingVals.NumChannels[0];
-                        settings.sampleRate = settingVals.SampleRate[0];
-
-                        audioSettings->SetBasicSettings(settings);
+                    if (settingVals.empty()) {
+                        // may be logic error in GetSettingsValues
+                        assert(false);
+                        continue;
                     }
 
-                    if (audioSettings->HasBitrateSettings()) {
-                        assert(!settingVals.Bitrate.empty());
-                        auto settings = *audioSettings->GetBitrateSettings();
+                    if (auto settings = audioSettings->GetBasicSettings(); settings && settingVals[0].basicSettings) {
+                        audioSettings->SetBasicSettings(*settingVals[0].basicSettings);
+                    }
+                    else {
+                        // all audio codecs must have basic settings
+                        assert(false);
+                        continue;
+                    }
 
-                        settings.bitrate = settingVals.Bitrate[0];
-
-                        audioSettings->SetBitrateSettings(settings);
+                    if (auto settings = audioSettings->GetBitrateSettings(); settings && settingVals[0].bitrateSettings) {
+                        audioSettings->SetBitrateSettings(*settingVals[0].bitrateSettings);
+                    }
+                    else {
+                        if (settings && !settingVals[0].bitrateSettings) {
+                            // check why mediaFormat.GetAudioCodecSettings() have bitrate and GetSettingsValues does not have
+                            assert(false);
+                            continue;
+                        }
                     }
 
                     // try to create recorder in order to check codec support

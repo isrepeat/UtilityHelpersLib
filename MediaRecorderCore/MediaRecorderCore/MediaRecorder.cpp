@@ -110,11 +110,11 @@ void MediaRecorder::Record(const Microsoft::WRL::ComPtr<IMFSample> &sample, bool
     if (params.UseChunkMerger) {
         if (audio) {
             //https://stackoverflow.com/questions/33401149/ffmpeg-adding-0-05-seconds-of-silence-to-transcoded-aac-file
-            if (samplesNumber > params.mediaFormat.GetAudioCodecSettings()->GetBasicSettings()->sampleRate * 10 && samplesNumber % 1024 == 0) {
+            if (samplesNumber > (int)params.mediaFormat.GetAudioCodecSettings()->GetBasicSettings()->sampleRate * 10 && samplesNumber % 1024 == 0) {
                 ResetSinkWriterOnNewChunk();
             }
         } else {
-            if (framesNumber > params.mediaFormat.GetVideoCodecSettings()->GetBasicSettings()->fps * 5) {
+            if (framesNumber > (int)params.mediaFormat.GetVideoCodecSettings()->GetBasicSettings()->fps * 5) {
                 ResetSinkWriterOnNewChunk();
             }
         }
@@ -135,7 +135,7 @@ void MediaRecorder::Record(const Microsoft::WRL::ComPtr<IMFSample> &sample, bool
       
         DWORD len;
         hr = mediaBuffer->GetCurrentLength(&len);
-        auto samples = len / (audioSampleBits/8 * params.mediaFormat.GetAudioCodecSettings()->GetBasicSettings()->numChannels);
+        auto samples = len / (AudioSampleBits / 8 * params.mediaFormat.GetAudioCodecSettings()->GetBasicSettings()->numChannels);
 
         samplesNumber += samples;
         streamIdx = this->audioStreamIdx;
@@ -373,7 +373,7 @@ void MediaRecorder::InitializeSinkWriter(IMFByteStream *outputStream, bool useCP
         auto settings = this->params.mediaFormat.GetAudioCodecSettings();
         Microsoft::WRL::ComPtr<IMFMediaType> typeOut, typeIn;
 
-        typeIn = MediaRecorder::CreateAudioInMediaType(settings, audioSampleBits);
+        typeIn = MediaRecorder::CreateAudioInMediaType(settings, AudioSampleBits);
         
         switch (settings->GetCodecType()) {
         case AudioCodecType::AAC:
@@ -381,11 +381,11 @@ void MediaRecorder::InitializeSinkWriter(IMFByteStream *outputStream, bool useCP
             break;
 
         default:
-            typeOut = CreateAudioOutMediaType(settings, audioSampleBits);
+            typeOut = CreateAudioOutMediaType(settings, AudioSampleBits);
         }
         
         //typeOut = CreateAudioFlacOutMediaType();
-        //typeOut = MediaRecorder::CreateAudioInMediaType(settings, audioSampleBits);
+        //typeOut = MediaRecorder::CreateAudioInMediaType(settings, AudioSampleBits);
 
         hr = this->sinkWriter->AddStream(typeOut.Get(), &this->audioStreamIdx);
         H::System::ThrowIfFailed(hr);
@@ -434,10 +434,9 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateAudioInMediaType(
     hr = mediaType->SetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, bitsPerSample);
     H::System::ThrowIfFailed(hr);
 
-    if (settings->HasBasicSettings()) {
-        auto tmp = settings->GetBasicSettings();
-        auto numChannels = tmp->numChannels;
-        auto sampleRate = tmp->sampleRate;
+    if (auto basicSettings = settings->GetBasicSettings()) {
+        auto numChannels = basicSettings->numChannels;
+        auto sampleRate = basicSettings->sampleRate;
 
         hr = mediaType->SetUINT32(MF_MT_AUDIO_NUM_CHANNELS, numChannels);
         H::System::ThrowIfFailed(hr);
@@ -638,16 +637,16 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateAudioFlacOutMediaType(
         hr = mediaType->SetUINT32(MF_MT_AUDIO_NUM_CHANNELS, basicSettings->numChannels);
         H::System::ThrowIfFailed(hr);
 
-        hr = mediaType->SetUINT32(MF_MT_AUDIO_BLOCK_ALIGNMENT, (audioSampleBits / 8) * basicSettings->numChannels);
+        hr = mediaType->SetUINT32(MF_MT_AUDIO_BLOCK_ALIGNMENT, (AudioSampleBits / 8) * basicSettings->numChannels);
         H::System::ThrowIfFailed(hr);
 
-        hr = mediaType->SetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, audioSampleBits);
+        hr = mediaType->SetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, AudioSampleBits);
         H::System::ThrowIfFailed(hr);
 
         hr = mediaType->SetUINT32(MF_MT_AUDIO_SAMPLES_PER_SECOND, basicSettings->sampleRate);
         H::System::ThrowIfFailed(hr);
 
-        hr = mediaType->SetUINT32(MF_MT_AUDIO_AVG_BYTES_PER_SECOND, (audioSampleBits / 8) * basicSettings->numChannels * basicSettings->sampleRate);
+        hr = mediaType->SetUINT32(MF_MT_AUDIO_AVG_BYTES_PER_SECOND, (AudioSampleBits / 8) * basicSettings->numChannels * basicSettings->sampleRate);
         H::System::ThrowIfFailed(hr);
     }
     
@@ -972,7 +971,7 @@ void MediaRecorder::FinalizeRecord(bool useRecordEventCallback) {
         }
 
         auto dtSecCreatedChunk = (H::Time::GetCurrentLibTime() - this->lastChunkCreatedTime) / H::Time::HNSResolution;
-        int remainingTime = (float)freeSpaceAfterWriteChunks / lastChunkSize * dtSecCreatedChunk;
+        int remainingTime = (int)((float)freeSpaceAfterWriteChunks / lastChunkSize * dtSecCreatedChunk);
 
         eventArgs.message = Native::MediaRecorderMessageEnum::RemainingTime;
         eventArgs.remainingTime = remainingTime;
@@ -987,8 +986,8 @@ void MediaRecorder::MergeChunks(IMFByteStream* outputStream, std::vector<std::ws
 {
     ChunkMerger merger{
         outputStream,
-        MediaRecorder::CreateAudioInMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits),
-        MediaRecorder::CreateAudioOutMediaType(this->params.mediaFormat.GetAudioCodecSettings(), audioSampleBits),
+        MediaRecorder::CreateAudioInMediaType(this->params.mediaFormat.GetAudioCodecSettings(), AudioSampleBits),
+        MediaRecorder::CreateAudioOutMediaType(this->params.mediaFormat.GetAudioCodecSettings(), AudioSampleBits),
         MediaRecorder::CreateVideoInMediaType(this->params.mediaFormat.GetVideoCodecSettings(), nv12Textures),
         MediaRecorder::CreateVideoOutMediaType(this->params.mediaFormat.GetVideoCodecSettings(), this->params.mediaFormat.GetMediaContainerType(), params.UseChunkMerger),
         this->params.mediaFormat.GetVideoCodecSettings(),

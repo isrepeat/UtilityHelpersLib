@@ -4,8 +4,6 @@
 #include <cstdint>
 
 struct AudioCodecBasicSettings {
-    uint32_t numChannels;
-    uint32_t sampleRate;
-
-    AudioCodecBasicSettings();
+    uint32_t numChannels = 0;
+    uint32_t sampleRate = 0;
 };

@@ -7,17 +7,10 @@
 class IVideoCodecSettings : public ICloneable<IVideoCodecSettings> {
 public:
     IVideoCodecSettings(VideoCodecType codecType);
-    IVideoCodecSettings(const IVideoCodecSettings&) = default;
-    IVideoCodecSettings(IVideoCodecSettings&&) = default;
-    virtual ~IVideoCodecSettings();
+    virtual ~IVideoCodecSettings() = default;
 
-    IVideoCodecSettings &operator=(const IVideoCodecSettings&) = default;
-    IVideoCodecSettings &operator=(IVideoCodecSettings&&) = default;
-
-    virtual const VideoCodecBasicSettings *GetBasicSettings() const = 0;
+    virtual const VideoCodecBasicSettings* GetBasicSettings() const = 0;
     virtual void SetBasicSettings(const VideoCodecBasicSettings &v) = 0;
-
-    bool HasBasicSettings() const;
 
     VideoCodecType GetCodecType() const;
 

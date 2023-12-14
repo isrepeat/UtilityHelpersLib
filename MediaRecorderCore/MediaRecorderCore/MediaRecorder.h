@@ -13,6 +13,8 @@
 // default profile of H264 can fail on sink->Finalize with video bitrate > 80 mbits.
 class MediaRecorder : public MFUser, public IMediaRecorder {
 public:
+    static constexpr uint32_t AudioSampleBits = 16;
+
     NO_COPY(MediaRecorder);
 
     static const uint32_t AllowedNumChannels[2];
@@ -80,7 +82,6 @@ public:
 private:
     Microsoft::WRL::ComPtr<IMFByteStream> stream;
     const MediaRecorderParams params;
-    const uint32_t audioSampleBits = 16;
 
     DWORD audioStreamIdx;
     DWORD videoStreamIdx;

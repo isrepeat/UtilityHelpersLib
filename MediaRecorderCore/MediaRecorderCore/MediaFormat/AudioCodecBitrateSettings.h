@@ -3,7 +3,5 @@
 #include <cstdint>
 
 struct AudioCodecBitrateSettings {
-    uint32_t bitrate;
-
-    AudioCodecBitrateSettings();
+    uint32_t bitrate = 0;
 };

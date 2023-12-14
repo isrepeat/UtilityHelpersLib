@@ -1,20 +1,17 @@
 #pragma once
 #include "MediaFormat.h"
+#include "AudioCodecSettingsItem.h"
 
 #include <vector>
 #include <cstdint>
 #include <memory>
+#include <libhelpers\MediaFoundation\MFInclude.h>
 
-struct AudioCodecSettingsValues {
-    std::vector<uint32_t> NumChannels;
-    std::vector<uint32_t> SampleRate;
-    std::vector<uint32_t> Bitrate;
-};
+using AudioCodecSettingsValues = std::vector<AudioCodecSettingsItem>;
 
+// encoder restrictions can be found here : https://msdn.microsoft.com/en-us/library/windows/desktop/dd742785(v=vs.85).aspx
 class MediaFormatFactory {
 public:
-    MediaFormatFactory();
-
     MediaFormat CreateMediaFormat(MediaContainerType container, AudioCodecType audioCodec);
     MediaFormat CreateMediaFormat(MediaContainerType container, VideoCodecType videoCodec);
     MediaFormat CreateMediaFormat(
@@ -23,13 +20,10 @@ public:
         VideoCodecType videoCodec);
 
     AudioCodecSettingsValues GetSettingsValues(AudioCodecType codec) const;
+    AudioCodecSettingsValues GetClosestSettingsValues(const IAudioCodecSettings& audioCodecSettings) const;
 
 private:
-    AudioCodecSettingsValues unknownAudioSettings;
-    AudioCodecSettingsValues aacSettingsValues;
-    AudioCodecSettingsValues mp3SettingsValues;
-    AudioCodecSettingsValues amrNbSettingsValues;
-    AudioCodecSettingsValues losslessSettingsValues;
+    const AudioCodecSettingsValues pcmSettingsValues = MediaFormatFactory::CreatePcmSettingsValues();
 
     std::unique_ptr<IAudioCodecSettings> CreateAudioCodecSettings(AudioCodecType codec) const;
     std::unique_ptr<IVideoCodecSettings> CreateVideoCodecSettings(VideoCodecType codec) const;
@@ -38,4 +32,9 @@ private:
         MediaContainerType container,
         AudioCodecType audioCodec,
         VideoCodecType videoCodec);
+
+    static std::optional<AudioCodecBasicSettings> GetAudioCodecBasicSettings(IMFMediaType& type);
+    static std::optional<AudioCodecBitrateSettings> GetAudioCodecBitrateSettings(IMFMediaType& type);
+
+    static AudioCodecSettingsValues CreatePcmSettingsValues();
 };

@@ -5,27 +5,11 @@
 #include "VideoCodecSimpleSettings.h"
 #include "MediaFormatCodecsSupport.h"
 #include "Platform/PlatformClassFactory.h"
+#include "AudioCodecSettingsItemSort\AudioCodecSettingsItemCmp.h"
 
+#include <cassert>
 #include <algorithm>
-
-MediaFormatFactory::MediaFormatFactory() {
-    // encoder restrictions can be found here : https://msdn.microsoft.com/en-us/library/windows/desktop/dd742785(v=vs.85).aspx
-    this->aacSettingsValues.NumChannels = { 1, 2 };
-    this->aacSettingsValues.SampleRate = { 44100, 48000 };
-    this->aacSettingsValues.Bitrate = { 12000 * 8, 16000 * 8, 20000 * 8, 24000 * 8 };
-
-    this->mp3SettingsValues.NumChannels = this->aacSettingsValues.NumChannels;
-    this->mp3SettingsValues.SampleRate = this->aacSettingsValues.SampleRate;
-    this->mp3SettingsValues.Bitrate = { 12000 * 8, 16000 * 8, 20000 * 8, 24000 * 8, 40000 * 8 };
-
-    this->amrNbSettingsValues.NumChannels = { 1 };
-    this->amrNbSettingsValues.SampleRate = { 8000 };
-    this->amrNbSettingsValues.Bitrate = { 1525 * 8 };
-
-    // no bitrate settings
-    this->losslessSettingsValues.NumChannels = this->aacSettingsValues.NumChannels;
-    this->losslessSettingsValues.SampleRate = this->aacSettingsValues.SampleRate;
-}
+#include <libhelpers\as_optional.h>
 
 MediaFormat MediaFormatFactory::CreateMediaFormat(MediaContainerType container, AudioCodecType audioCodec) {
     return this->CreateMediaFormat(container, audioCodec, VideoCodecType::Unknown);
@@ -57,8 +41,6 @@ MediaFormat MediaFormatFactory::CreateMediaFormat(
 }
 
 AudioCodecSettingsValues MediaFormatFactory::GetSettingsValues(AudioCodecType codec) const {
-    AudioCodecSettingsValues settings;
-
     Microsoft::WRL::ComPtr<IMFTransform> transform;
     Microsoft::WRL::ComPtr<IMFMediaType> type;
     Microsoft::WRL::ComPtr<IMFSinkWriter> writer;
@@ -88,20 +70,21 @@ AudioCodecSettingsValues MediaFormatFactory::GetSettingsValues(AudioCodecType co
         transform = PlatformClassFactory::Instance()->CreateAlacCodecFactory()->CreateIMFTransform();
         break;
     case AudioCodecType::PCM:
-        return this->losslessSettingsValues;
+        return this->pcmSettingsValues;
     default:
-        return this->unknownAudioSettings;
+        return {};
     }
 
     if (!transform) {
         throw std::exception();
     }
 
+    AudioCodecSettingsValues settings;
     auto codecSupport = MediaFormatCodecsSupport::Instance();
     auto subtypeGuid = codecSupport->MapAudioCodec(codec);
 
     while (true) {
-        hr = transform->GetOutputAvailableType(0, typeIdx, type.GetAddressOf());
+        hr = transform->GetOutputAvailableType(0, typeIdx, &type);
         typeIdx++;
 
         if (hr == MF_E_NO_MORE_TYPES) {
@@ -111,26 +94,65 @@ AudioCodecSettingsValues MediaFormatFactory::GetSettingsValues(AudioCodecType co
             continue;
         }
 
-        uint32_t channels;
-        uint32_t bitRate;
-        uint32_t sampleRate;
-        GUID curSubtype;
+        if (!type) {
+            // check logic and hr result handling
+            assert(false);
+            throw std::exception();
+        }
+
+        GUID curSubtype = GUID_NULL;
 
         hr = type->GetGUID(MF_MT_SUBTYPE, &curSubtype);
         if (hr != S_OK || curSubtype != subtypeGuid) {
             continue;
         }
 
-        type->GetUINT32(MF_MT_AUDIO_NUM_CHANNELS, &channels);
-        type->GetUINT32(MF_MT_AUDIO_AVG_BYTES_PER_SECOND, &bitRate);
-        type->GetUINT32(MF_MT_AUDIO_SAMPLES_PER_SECOND, &sampleRate);
+        AudioCodecSettingsItem item;
 
-        settings.NumChannels.push_back(channels);
-        settings.Bitrate.push_back(bitRate * 8);
-        settings.SampleRate.push_back(sampleRate);
+        item.basicSettings = MediaFormatFactory::GetAudioCodecBasicSettings(*type.Get());
+        item.bitrateSettings = MediaFormatFactory::GetAudioCodecBitrateSettings(*type.Get());
+
+        if (!item.basicSettings) {
+            // basicSettings must be present for all IMFMediaType
+            assert(false);
+            hr = E_FAIL;
+        }
+
+        if (!item.bitrateSettings) {
+            // maybe assert and E_FAIL not needed, for lossless bitrate is optional
+            assert(false);
+            hr = E_FAIL;
+        }
+
+        if (hr == S_OK) {
+            settings.push_back(std::move(item));
+        }
+        else {
+            // check logic
+            assert(false);
+        }
     }
 
     return settings;
+}
+
+AudioCodecSettingsValues MediaFormatFactory::GetClosestSettingsValues(const IAudioCodecSettings& audioCodecSettings) const {
+    auto values = this->GetSettingsValues(audioCodecSettings.GetCodecType());
+
+    AudioCodecSettingsItem settingsItem;
+
+    settingsItem.basicSettings = as_optional(audioCodecSettings.GetBasicSettings());
+    if (!settingsItem.basicSettings) {
+        // check logic
+        assert(false);
+        return values;
+    }
+
+    settingsItem.bitrateSettings = as_optional(audioCodecSettings.GetBitrateSettings());
+
+    std::sort(values.begin(), values.end(), AudioCodecSettingsItemCmp::Make(settingsItem));
+
+    return values;
 }
 
 std::unique_ptr<IAudioCodecSettings> MediaFormatFactory::CreateAudioCodecSettings(AudioCodecType codec) const {
@@ -187,4 +209,55 @@ void MediaFormatFactory::CheckCodecs(
             throw std::exception("Video codec is not supported by this container");
         }
     }
+}
+
+std::optional<AudioCodecBasicSettings> MediaFormatFactory::GetAudioCodecBasicSettings(IMFMediaType& type) {
+    HRESULT hr = S_OK;
+    AudioCodecBasicSettings basicSettings;
+
+    hr = type.GetUINT32(MF_MT_AUDIO_NUM_CHANNELS, &basicSettings.numChannels);
+    if (FAILED(hr)) {
+        return {};
+    }
+
+    hr = type.GetUINT32(MF_MT_AUDIO_SAMPLES_PER_SECOND, &basicSettings.sampleRate);
+    if (FAILED(hr)) {
+        return {};
+    }
+
+    return basicSettings;
+}
+
+std::optional<AudioCodecBitrateSettings> MediaFormatFactory::GetAudioCodecBitrateSettings(IMFMediaType& type) {
+    HRESULT hr = S_OK;
+    AudioCodecBitrateSettings bitrateSettings;
+
+    hr = type.GetUINT32(MF_MT_AUDIO_AVG_BYTES_PER_SECOND, &bitrateSettings.bitrate);
+    if (FAILED(hr)) {
+        return {};
+    }
+
+    return bitrateSettings;
+}
+
+AudioCodecSettingsValues MediaFormatFactory::CreatePcmSettingsValues() {
+    // encoder restrictions can be found here : https://msdn.microsoft.com/en-us/library/windows/desktop/dd742785(v=vs.85).aspx
+    AudioCodecSettingsValues pcmSettingsValues;
+
+    for (uint32_t numChannels : { 1, 2 }) {
+        for (uint32_t sampleRate : { 44100, 48000 }) {
+            AudioCodecSettingsItem item;
+
+            item.basicSettings.emplace();
+            item.basicSettings->numChannels = numChannels;
+            item.basicSettings->sampleRate = sampleRate;
+
+            // no bitrate settings
+            // pcm is lossless, it doesn't have bitrate settings
+
+            pcmSettingsValues.push_back(std::move(item));
+        }
+    }
+
+    return pcmSettingsValues;
 }
