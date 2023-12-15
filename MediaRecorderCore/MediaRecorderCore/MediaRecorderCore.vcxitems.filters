@@ -48,6 +48,12 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)FinalizedWithWarningException.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderMessageEnum.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderMessageEnumDef.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecSettingsItem.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecSettingsItemSort\AbsOptionalDistance.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecSettingsItemSort\AudioCodecSettingsItemCmp.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecSettingsItemSort\AudioCodecSettingsItemCmpDetails.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecSettingsItemSort\AudioCodecSettingsItemSortHelpers.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecSettingsItemSort\CmpOrder.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)pch.cpp">
@@ -70,5 +76,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\IAudioCodecSettings.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ChunkMerger.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)FinalizedWithWarningException.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecSettingsItemSort\AudioCodecSettingsItemCmp.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecSettingsItemSort\AudioCodecSettingsItemSortHelpers.cpp" />
   </ItemGroup>
 </Project>

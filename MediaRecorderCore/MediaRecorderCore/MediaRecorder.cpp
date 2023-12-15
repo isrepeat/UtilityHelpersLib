@@ -588,10 +588,6 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateAudioAACOutMediaType()
     hr = mediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio);
     H::System::ThrowIfFailed(hr);
 
-    auto codecSup = MediaFormatCodecsSupport::Instance();
-
-
-
     hr = mediaType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_AAC);
     H::System::ThrowIfFailed(hr);
 
@@ -624,8 +620,6 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateAudioFlacOutMediaType(
 
     hr = mediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio);
     H::System::ThrowIfFailed(hr);
-
-    auto codecSup = MediaFormatCodecsSupport::Instance();
 
     hr = mediaType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_FLAC);
     H::System::ThrowIfFailed(hr);
@@ -721,6 +715,7 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateVideoOutMediaType(
         auto codecSup = MediaFormatCodecsSupport::Instance();
         auto vcodecId = codecSup->MapVideoCodec(settings->GetCodecType());
         hr = mediaType->SetGUID(MF_MT_SUBTYPE, vcodecId);
+        H::System::ThrowIfFailed(hr);
     }
 
     // default profile of H264 can fail on sink->Finalize with video bitrate > 80 mbits.
