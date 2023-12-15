@@ -7,10 +7,11 @@
 
 #include <vector>
 #include <memory>
+#include <string>
 
 class MediaFormat {
 public:
-    MediaFormat();
+    MediaFormat() = default;
     MediaFormat(
         MediaContainerType containerType,
         std::unique_ptr<IAudioCodecSettings> audioCodecSettings,
@@ -22,6 +23,7 @@ public:
     MediaFormat &operator=(MediaFormat other);
 
     MediaContainerType GetMediaContainerType() const;
+    const std::wstring& GetMediaContainerFileExtension() const;
 
     IAudioCodecSettings *GetAudioCodecSettings();
     IVideoCodecSettings *GetVideoCodecSettings();
@@ -32,7 +34,7 @@ public:
     friend void swap(MediaFormat &a, MediaFormat &b) noexcept;
 
 private:
-    MediaContainerType containerType;
+    MediaContainerType containerType = MediaContainerType::Unknown;
     std::unique_ptr<IAudioCodecSettings> audioCodecSettings;
     std::unique_ptr<IVideoCodecSettings> videoCodecSettings;
 };

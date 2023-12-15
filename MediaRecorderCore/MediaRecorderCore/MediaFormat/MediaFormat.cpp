@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "MediaFormat.h"
-
-MediaFormat::MediaFormat()
-{}
+#include "MediaContainerExtension.h"
 
 MediaFormat::MediaFormat(
     MediaContainerType containerType,
@@ -34,6 +32,10 @@ MediaFormat &MediaFormat::operator=(MediaFormat other) {
 
 MediaContainerType MediaFormat::GetMediaContainerType() const {
     return this->containerType;
+}
+
+const std::wstring& MediaFormat::GetMediaContainerFileExtension() const {
+    return MediaContainerExtension::Instance().GetFileExtension(this->containerType);
 }
 
 IAudioCodecSettings *MediaFormat::GetAudioCodecSettings() {

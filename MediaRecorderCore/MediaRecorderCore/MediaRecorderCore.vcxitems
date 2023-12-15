@@ -42,6 +42,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecBasicSettings.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecBitrateSettings.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecTypeDef.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\MediaContainerExtension.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\MediaContainerType.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\MediaContainerTypeDef.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\MediaFormatCodecs.h" />
@@ -84,6 +85,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecSettingsItemSort\AudioCodecSettingsItemSortHelpers.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\IAudioCodecSettings.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\IVideoCodecSettings.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\MediaContainerExtension.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\MediaFormat.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\MediaFormatCodecs.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\MediaFormatCodecsEnumerator.cpp" />

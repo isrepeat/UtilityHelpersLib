@@ -18,32 +18,26 @@ const uint32_t MediaRecorder::AllowedNumChannels[] = { 1 , 2 };
 const uint32_t MediaRecorder::AllowedSampleRate[] = { 44100, 48000 };
 const uint32_t MediaRecorder::AllowedBytesPerSecond[] = { 12000, 16000, 20000, 24000 };
 
-MediaRecorder::MediaRecorder() {}
-
 MediaRecorder::MediaRecorder(
     IMFByteStream* outputStream,
     MediaRecorderParams params,
     bool useCPUForEncoding,
     bool nv12VideoSamples,
     std::shared_ptr<IEvent<Native::MediaRecorderEventArgs>> recordEventCallback)
-    : stream(outputStream), params(std::move(params))
-    , audioStreamIdx((std::numeric_limits<DWORD>::max)())
-    , videoStreamIdx((std::numeric_limits<DWORD>::max)()), audioPtsHns(0)
-    , videoPtsHns(0), cpuEncoding{ useCPUForEncoding }, nv12Textures{ nv12VideoSamples }, recordEventCallback{ recordEventCallback }
+    : stream(outputStream)
+    , params(std::move(params))
+    , cpuEncoding{ useCPUForEncoding }
+    , nv12Textures{ nv12VideoSamples }
+    , containerExt{ this->params.mediaFormat.GetMediaContainerFileExtension() }
+    , lastChunkCreatedTime{ H::Time::GetCurrentLibTime() }
+    , recordEventCallback{ recordEventCallback }
 {
     if (this->params.UseChunkMerger) {
         targetRecordDisk = H::HardDrive::GetDiskLetterFromPath(this->params.targetRecordPath);
     }
 
-    DefineContainerType();
     auto newStream = this->params.UseChunkMerger ? StartNewChunk() : this->stream.Get();
-    lastChunkCreatedTime = H::Time::GetCurrentLibTime();
-
     this->InitializeSinkWriter(newStream, useCPUForEncoding, nv12VideoSamples);
-}
-
-MediaRecorder::~MediaRecorder() {
-
 }
 
 bool MediaRecorder::IsChunkMergerEnabled() {
@@ -51,12 +45,12 @@ bool MediaRecorder::IsChunkMergerEnabled() {
 }
 
 bool MediaRecorder::HasAudio() const {
-    bool has = this->audioStreamIdx != (std::numeric_limits<DWORD>::max)();
+    bool has = this->audioStreamIdx != MediaRecorder::GetInvalidStreamIdx();
     return has;
 }
 
 bool MediaRecorder::HasVideo() const {
-    bool has = this->videoStreamIdx != (std::numeric_limits<DWORD>::max)();
+    bool has = this->videoStreamIdx != MediaRecorder::GetInvalidStreamIdx();
     return has;
 }
 
@@ -361,9 +355,6 @@ void MediaRecorder::InitializeSinkWriter(IMFByteStream *outputStream, bool useCP
     if (this->params.DxBufferFactory) {
         this->params.DxBufferFactory->SetAttributes(sinkAttr.Get());
     }
-
-    //const wchar_t *containerExt = nullptr;
-    //containerExt ;
 
     hr = MFCreateSinkWriterFromURL(containerExt.c_str(), byteStream.Get(), sinkAttr.Get(), this->sinkWriter.GetAddressOf());
     H::System::ThrowIfFailed(hr);
@@ -877,41 +868,6 @@ int64_t MediaRecorder::GetDefaultVideoFrameDuration() const {
     return hns;
 }
 
-const wchar_t* MediaRecorder::GetContainerExt(const MediaRecorderParams& params)
-{
-    auto containerType = params.mediaFormat.GetMediaContainerType();
-
-    switch (containerType) {
-    case MediaContainerType::MP4: return L".mp4";
-    case MediaContainerType::WMV: return L".wmv";
-    case MediaContainerType::MP3: return L".mp3";
-    case MediaContainerType::M4A: return L".m4a";
-    case MediaContainerType::FLAC: return L".flac";
-    case MediaContainerType::WMA: return L".wma";
-    case MediaContainerType::WAV: return L".wav";
-    case MediaContainerType::ThreeGPP: return L".3gpp";
-    default:
-        return L"";
-    }
-}
-
-MediaContainerType MediaRecorder::GetContainerType(const std::wstring& ext)
-{
-    if (ext == L".mp4") return MediaContainerType::MP4;
-    if (ext == L".wmv") return MediaContainerType::WMV;
-    if (ext == L".mp3") return MediaContainerType::MP3;
-    if (ext == L".m4a") return MediaContainerType::M4A;
-    if (ext == L".flac") return MediaContainerType::FLAC;
-    if (ext == L".wma") return MediaContainerType::WMA;
-    if (ext == L".wav") return MediaContainerType::WAV;
-    if (ext == L".3gpp") return MediaContainerType::ThreeGPP;
-    return MediaContainerType::Unknown;
-}
-
-void MediaRecorder::DefineContainerType() {
-    containerExt = GetContainerExt(this->params);
-}
-
 IMFByteStream* MediaRecorder::StartNewChunk() {
 #if HAVE_WINRT
     H::System::ThrowIfFailed(E_NOTIMPL);
@@ -1006,4 +962,8 @@ void MediaRecorder::ResetSinkWriterOnNewChunk() {
     lastChunkCreatedTime = H::Time::GetCurrentLibTime();
     this->InitializeSinkWriter(newStream, cpuEncoding, nv12Textures);
     StartRecord();
+}
+
+constexpr DWORD MediaRecorder::GetInvalidStreamIdx() {
+    return (std::numeric_limits<DWORD>::max)();
 }

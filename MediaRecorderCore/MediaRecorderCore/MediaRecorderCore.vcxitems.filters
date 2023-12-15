@@ -54,6 +54,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecSettingsItemSort\AudioCodecSettingsItemCmpDetails.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecSettingsItemSort\AudioCodecSettingsItemSortHelpers.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecSettingsItemSort\CmpOrder.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\MediaContainerExtension.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)pch.cpp">
@@ -78,5 +79,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)FinalizedWithWarningException.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecSettingsItemSort\AudioCodecSettingsItemCmp.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecSettingsItemSort\AudioCodecSettingsItemSortHelpers.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\MediaContainerExtension.cpp" />
   </ItemGroup>
 </Project>

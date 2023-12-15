@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <array>
+#include <limits>
 #include <libhelpers\Event.hpp>
 #include <libhelpers\Macros.h>
 #include <libhelpers\MediaFoundation\MFUser.h>
@@ -21,7 +22,7 @@ public:
     static const uint32_t AllowedSampleRate[2];
     static const uint32_t AllowedBytesPerSecond[4];
 
-    MediaRecorder();
+    MediaRecorder() = default;
     MediaRecorder(
         IMFByteStream* outputStream,
         MediaRecorderParams params,
@@ -30,7 +31,6 @@ public:
         std::shared_ptr<IEvent<Native::MediaRecorderEventArgs>> recordEventCallback = nullptr);
 
     MediaRecorder(MediaRecorder&&) = default;
-    ~MediaRecorder();
 
     MediaRecorder &operator=(MediaRecorder&&) = default;
 
@@ -76,25 +76,22 @@ public:
     static Microsoft::WRL::ComPtr<IMFMediaType> CreateVideoOutMediaType(
         const IVideoCodecSettings* settings, MediaContainerType containerType, bool useChunkMerger);
 
-    static const wchar_t* GetContainerExt(const MediaRecorderParams &params);
-    static MediaContainerType GetContainerType(const std::wstring &containerExt);
-
 private:
     Microsoft::WRL::ComPtr<IMFByteStream> stream;
     const MediaRecorderParams params;
 
-    DWORD audioStreamIdx;
-    DWORD videoStreamIdx;
+    DWORD audioStreamIdx = MediaRecorder::GetInvalidStreamIdx();
+    DWORD videoStreamIdx = MediaRecorder::GetInvalidStreamIdx();
     Microsoft::WRL::ComPtr<IMFSinkWriter> sinkWriter;
 
-    int64_t audioPtsHns;
-    int64_t videoPtsHns;
+    int64_t audioPtsHns = 0;
+    int64_t videoPtsHns = 0;
     
-    bool cpuEncoding;
-    bool nv12Textures;
-    std::wstring containerExt;
-    int64_t chunkAudioPtsHns;
-    int64_t chunkVideoPtsHns;
+    bool cpuEncoding = false;
+    bool nv12Textures = false;
+    const std::wstring containerExt;
+    int64_t chunkAudioPtsHns = 0;
+    int64_t chunkVideoPtsHns = 0;
     int samplesNumber = 0;
     int framesNumber = 0;
     bool recordingErrorOccured = false;
@@ -129,11 +126,11 @@ private:
 
     int64_t GetDefaultVideoFrameDuration() const;
 
-    void DefineContainerType();
-
     IMFByteStream* StartNewChunk();
     void ResetSinkWriterOnNewChunk();
     void FinalizeRecord(bool useRecordEventCallback);
     void MergeChunks(IMFByteStream* outputStream, std::vector<std::wstring>&& chunks);
     std::wstring GetChunkFilePath(size_t chunkIndex);
+
+    static constexpr DWORD GetInvalidStreamIdx();
 };
