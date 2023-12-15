@@ -237,6 +237,9 @@ std::optional<AudioCodecBitrateSettings> MediaFormatFactory::GetAudioCodecBitrat
         return {};
     }
 
+    // MF_MT_AUDIO_AVG_BYTES_PER_SECOND - byte rate, convert to bits by * 8
+    bitrateSettings.bitrate *= 8;
+
     return bitrateSettings;
 }
 
