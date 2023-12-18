@@ -118,12 +118,6 @@ AudioCodecSettingsValues MediaFormatFactory::GetSettingsValues(AudioCodecType co
             hr = E_FAIL;
         }
 
-        if (!item.bitrateSettings) {
-            // maybe assert and E_FAIL not needed, for lossless bitrate is optional
-            assert(false);
-            hr = E_FAIL;
-        }
-
         if (hr == S_OK) {
             settings.push_back(std::move(item));
         }
