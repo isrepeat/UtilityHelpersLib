@@ -102,7 +102,7 @@ private:
     uint64_t recordedChunksSize = 0;
     uint64_t lastChunkCreatedTime = 0;
 
-    int32_t chunkNumber = 0;
+    uint32_t chunkNumber = 0;
     Microsoft::WRL::ComPtr<IMFByteStream> currentOutputStream;
 
     Microsoft::WRL::ComPtr<IMFMediaType> videoTypeOut, videoTypeIn;

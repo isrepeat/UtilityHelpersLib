@@ -16,7 +16,8 @@ const std::wstring& MediaContainerExtension::GetFileExtension(MediaContainerType
         });
 
     if (it == this->extensionInfo.end()) {
-        return {};
+        const static std::wstring emptyStr;
+        return emptyStr;
     }
 
     return it->fileExtension;
