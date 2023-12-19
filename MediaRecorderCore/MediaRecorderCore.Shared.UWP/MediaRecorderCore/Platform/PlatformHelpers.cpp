@@ -15,7 +15,7 @@ Microsoft::WRL::ComPtr<IMFSinkWriter> PlatformHelpers::CreateMemorySinkWriter(co
     Microsoft::WRL::ComPtr<IMFSinkWriter> sinkWriter;
     HRESULT hr = S_OK;
 
-    hr = MFCreateSinkWriterFromURL(url, mfStream.Get(), nullptr, sinkWriter.GetAddressOf());
+    hr = MFCreateSinkWriterFromURL(url, mfStream.Get(), attr, sinkWriter.GetAddressOf());
     H::System::ThrowIfFailed(hr);
 
     return sinkWriter;

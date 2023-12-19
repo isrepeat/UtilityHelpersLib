@@ -120,7 +120,7 @@ void MediaRecorder::Record(const Microsoft::WRL::ComPtr<IMFSample> &sample, bool
     hr = sample->GetSampleDuration(&sampleDuration);
     H::System::ThrowIfFailed(hr);
 
-    DWORD streamIdx = -1;
+    DWORD streamIdx = (DWORD)-1;
     int64_t *ptsPtr = nullptr;
 
     if (audio) {
@@ -188,9 +188,9 @@ void MediaRecorder::EndRecord() {
         std::vector<std::wstring> chunks;
         chunks.reserve(chunkNumber);
         for (size_t i = 0; i < chunkNumber; ++i) {
-            auto chunkFile = GetChunkFilePath(i);
-            if (std::filesystem::file_size(chunkFile) > 0)
-                chunks.push_back(std::move(chunkFile));
+            auto chunkFilePath = GetChunkFilePath(i);
+            if (std::filesystem::file_size(chunkFilePath) > 0)
+                chunks.push_back(std::move(chunkFilePath));
         }
 
         if (chunks.empty()) {
@@ -472,10 +472,6 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateAudioOutMediaType(
     auto codecType = settings->GetCodecType();
     auto acodecId = codecSup->MapAudioCodec(codecType);
 
-    if (codecType == AudioCodecType::AMR_NB) {
-        int stop = 423;
-    }
-
     hr = mediaType->SetGUID(MF_MT_SUBTYPE, acodecId);
     H::System::ThrowIfFailed(hr);
 
@@ -616,7 +612,6 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateAudioFlacOutMediaType(
     H::System::ThrowIfFailed(hr);
 
     auto basicSettings = this->params.mediaFormat.GetAudioCodecSettings()->GetBasicSettings();
-    auto bitrateSettings = this->params.mediaFormat.GetAudioCodecSettings()->GetBitrateSettings();
     
     if (basicSettings) {
         hr = mediaType->SetUINT32(MF_MT_AUDIO_NUM_CHANNELS, basicSettings->numChannels);

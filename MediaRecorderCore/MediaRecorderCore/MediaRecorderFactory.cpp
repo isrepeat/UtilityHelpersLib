@@ -29,15 +29,6 @@ std::vector<uint32_t> MediaRecorderFactory::GetAvailableAudioNumChannels() {
     return params;
 }
 
-std::vector<wchar_t> MediaRecorderFactory::GetAvailibleCodecs()
-{
-    HRESULT hr = S_OK;
-    std::vector<wchar_t> CodecsVector;
-
-
-    return CodecsVector;
-}
-
 std::vector<uint32_t> MediaRecorderFactory::GetAvailableAudioSampleRate() {
     // As for now the implementation uses static fields but it may be changed if more audio codecs will be added to <MediaRecorder>
     auto params = std::vector<uint32_t>(std::begin(MediaRecorder::AllowedSampleRate), std::end(MediaRecorder::AllowedSampleRate));

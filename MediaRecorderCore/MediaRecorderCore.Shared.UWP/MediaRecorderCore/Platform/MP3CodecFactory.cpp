@@ -2,6 +2,8 @@
 #include "MP3CodecFactory.h"
 #include "PlatformHelpers.h"
 
+#include <limits>
+#include <cassert>
 #include <libhelpers/HSystem.h>
 
 Microsoft::WRL::ComPtr<IMFTransform> MP3CodecFactory::CreateIMFTransform() {
@@ -16,7 +18,7 @@ Microsoft::WRL::ComPtr<IMFMediaType> MP3CodecFactory::CreateOutType(
     uint32_t typeIndex,
     uint32_t numChannels,
     uint32_t sampleRate,
-    uint32_t bitsPerSample)
+    uint32_t /*bitsPerSample*/)
 {
     if (typeIndex >= 2) {
         return nullptr;
@@ -79,12 +81,32 @@ Microsoft::WRL::ComPtr<IMFMediaType> MP3CodecFactory::CreateOutType(
 
         if (mpeg1) {
             // 1152 / 8 = 144
-            mp3wavefmt.nBlockSize = 144 * bitrate / sampleRate;
+            uint32_t blockSize = 144 * bitrate / sampleRate;
+
+            if (blockSize > (std::numeric_limits<WORD>::max)()) {
+                // check logic
+                assert(false);
+                H::System::ThrowIfFailed(E_FAIL);
+            }
+
+            mp3wavefmt.nBlockSize = (WORD)blockSize;
+        }
+        else if(mpeg2 || mpeg25) {
+            // 576 / 8 = 72
+            uint32_t blockSize = 72 * bitrate / sampleRate;
+
+            if (blockSize > (std::numeric_limits<WORD>::max)()) {
+                // check logic
+                assert(false);
+                H::System::ThrowIfFailed(E_FAIL);
+            }
+
+            mp3wavefmt.nBlockSize = (WORD)blockSize;
         }
         else {
-            // mpeg2 or mpeg25
-            // 576 / 8 = 72
-            mp3wavefmt.nBlockSize = 72 * bitrate / sampleRate;
+            // check logic
+            assert(false);
+            H::System::ThrowIfFailed(E_FAIL);
         }
 
         const auto userDataExpectedSize = (sizeof MPEGLAYER3WAVEFORMAT - sizeof WAVEFORMATEX);

@@ -46,12 +46,12 @@ private:
 	std::vector<std::wstring> filesToMerge;
 	Microsoft::WRL::ComPtr<IMFSinkWriter> writer;
 
-	DWORD videoStreamIndexToWrite = -1;
-	DWORD audioStreamIndexToWrite = -1;
+	DWORD videoStreamIndexToWrite = (DWORD)-1;
+	DWORD audioStreamIndexToWrite = (DWORD)-1;
 
 	bool audioRemuxUsed = false;
 
-	bool WriteInner(Microsoft::WRL::ComPtr<IMFSinkWriter> writer, Microsoft::WRL::ComPtr<IMFSourceReader> reader, DWORD readFrom, DWORD writeTo, bool audio);
+	bool WriteInner(Microsoft::WRL::ComPtr<IMFSinkWriter> writerArg, Microsoft::WRL::ComPtr<IMFSourceReader> reader, DWORD readFrom, DWORD writeTo, bool audio);
 
 	bool TryInitVideoRemux(IMFSourceReader* chunkReader);
 	bool TryInitAudioRemux(IMFSourceReader* chunkReader, MediaContainerType containerType);

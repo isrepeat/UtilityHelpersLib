@@ -12,7 +12,7 @@ AvDxgiBufferFactory::AvDxgiBufferFactory(
 AvDxgiBufferFactory::~AvDxgiBufferFactory() {
 }
 
-Microsoft::WRL::ComPtr<IMFMediaBuffer> AvDxgiBufferFactory::CreateBuffer(ID3D11DeviceContext *d3dCtx, ID3D11Texture2D *tex) {
+Microsoft::WRL::ComPtr<IMFMediaBuffer> AvDxgiBufferFactory::CreateBuffer(ID3D11DeviceContext */*d3dCtx*/, ID3D11Texture2D *tex) {
     HRESULT hr = S_OK;
     D3D11_TEXTURE2D_DESC texDesc;
     Microsoft::WRL::ComPtr<IMFMediaBuffer> buffer;
