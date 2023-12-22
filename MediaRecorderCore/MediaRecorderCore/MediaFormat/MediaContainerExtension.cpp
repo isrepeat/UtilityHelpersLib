@@ -46,6 +46,7 @@ std::vector<MediaContainerExtension::ExtensionInfo> MediaContainerExtension::Mak
         ExtensionInfo{ MediaContainerType::M4A, L".m4a" },
         ExtensionInfo{ MediaContainerType::FLAC, L".flac" },
         ExtensionInfo{ MediaContainerType::WAV, L".wav" },
+        ExtensionInfo{ MediaContainerType::WMA, L".wma" },
         ExtensionInfo{ MediaContainerType::ThreeGPP, L".3gpp" },
     };
 
