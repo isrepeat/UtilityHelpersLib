@@ -6,6 +6,7 @@
 #include <spdlog/logger.h>
 #include "spdlog/sinks/msvc_sink.h"
 #include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
 #ifdef INSIDE_HELPERS_PROJECT
 #include "Flags.h"
 #include "Scope.h"
@@ -44,16 +45,15 @@ namespace lg {
         std::shared_ptr<spdlog::logger> timeLogger;
         std::shared_ptr<spdlog::logger> funcLogger;
         std::shared_ptr<spdlog::logger> extendLogger;
+#ifdef _DEBUG
+        std::shared_ptr<spdlog::logger> debugLogger;
+#endif
 
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSink;
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkRaw;
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkTime;
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkFunc;
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkExtend;
-
-#ifdef _DEBUG
-        std::shared_ptr<spdlog::logger> debugLogger;
-#endif
     };
 
 
@@ -62,6 +62,9 @@ namespace lg {
         Truncate = 0x01,
         AppendNewSessionMsg = 0x02,
         CreateInPackageFolder = 0x04,
+        EnableLogToStdout = 0x08,
+
+        DefaultFlags = AppendNewSessionMsg,
     };
 
     // mb rename?
@@ -72,14 +75,15 @@ namespace lg {
 
         DefaultLoggers();
     public:
-        ~DefaultLoggers() = default;
+        ~DefaultLoggers();
+
         struct UnscopedData;
 
         static constexpr uintmax_t maxSizeLogFile = 1 * 1024 * 1024; // 1 MB (~ 10'000 rows)
         static constexpr size_t maxLoggers = 2;
 
-        static void Init(std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags = InitFlags::AppendNewSessionMsg);
-        static void InitForId(uint8_t loggerId, std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags = InitFlags::AppendNewSessionMsg);
+        static void Init(std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags = InitFlags::DefaultFlags);
+        static void InitForId(uint8_t loggerId, std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags = InitFlags::DefaultFlags);
         static std::string GetLastMessage();
 
         static std::shared_ptr<spdlog::logger> Logger(uint8_t id = 0);
@@ -119,10 +123,12 @@ namespace lg {
         }
 
     private:
-        std::array<StandardLoggers, maxLoggers> standardLoggersList;
 #ifdef _DEBUG
         const std::shared_ptr<spdlog::sinks::msvc_sink_mt> debugSink;
 #endif
+        std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> stdoutColorSink;
+
+        std::array<StandardLoggers, maxLoggers> standardLoggersList;
 
         std::mutex mxCustomFlagHandlers;
         std::string lastMessage; // spdlog converts all msg to char

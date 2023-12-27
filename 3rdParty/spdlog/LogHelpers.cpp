@@ -117,6 +117,10 @@ namespace lg {
         TokenSingleton<DefaultLoggers>::SetToken(Passkey<DefaultLoggers>{}, this->token); 
     }
 
+    DefaultLoggers::~DefaultLoggers() {
+        standardLoggersList = {}; // clear loggers to release sinks
+    }
+
 
 
     void DefaultLoggers::Init(std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags) {
@@ -179,39 +183,63 @@ namespace lg {
         _this.standardLoggersList[loggerId].fileSinkExtend->set_formatter(std::move(formatterExtend));
         _this.standardLoggersList[loggerId].fileSinkExtend->set_level(spdlog::level::trace);
 
+        if (initFlags.Has(InitFlags::EnableLogToStdout)) {
+            _this.stdoutColorSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+            auto formatterDebug = std::make_unique<spdlog::pattern_formatter>();
+            formatterDebug->add_flag<CustomMsgCallbackFlag>(CustomMsgCallbackFlag::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::Debug));
+            _this.stdoutColorSink->set_formatter(std::move(formatterDebug));
+            _this.stdoutColorSink->set_level(spdlog::level::trace);
+        }
+
+
+
+        spdlog::sinks_init_list loggerSinks = { _this.standardLoggersList[loggerId].fileSink };
+        spdlog::sinks_init_list rawLoggerSinks = { _this.standardLoggersList[loggerId].fileSinkRaw };
+        spdlog::sinks_init_list timeLoggerSinks = { _this.standardLoggersList[loggerId].fileSinkTime };
+        spdlog::sinks_init_list funcLoggerSinks = { _this.standardLoggersList[loggerId].fileSinkFunc };
+        spdlog::sinks_init_list extendLoggerSinks = { _this.standardLoggersList[loggerId].fileSinkExtend };
+
+        if (initFlags.Has(InitFlags::EnableLogToStdout)) {
+            loggerSinks = { _this.stdoutColorSink, _this.standardLoggersList[loggerId].fileSink };
+            funcLoggerSinks = { _this.stdoutColorSink, _this.standardLoggersList[loggerId].fileSinkFunc };
+        }
+
+#ifdef _DEBUG
+        extendLoggerSinks = { _this.debugSink, _this.standardLoggersList[loggerId].fileSinkExtend };
+
+        spdlog::sinks_init_list debugLoggerSinks = { _this.debugSink, _this.standardLoggersList[loggerId].fileSink };
+        if (initFlags.Has(InitFlags::EnableLogToStdout)) {
+            debugLoggerSinks = { _this.debugSink, _this.stdoutColorSink, _this.standardLoggersList[loggerId].fileSink };
+        }
+#endif
 
         std::string nameId = loggerId > 0 ? "_" + std::to_string(loggerId) : "";
 
-        _this.standardLoggersList[loggerId].logger = std::make_shared<spdlog::logger>("logger" + nameId, spdlog::sinks_init_list{ _this.standardLoggersList[loggerId].fileSink });
+        _this.standardLoggersList[loggerId].logger = std::make_shared<spdlog::logger>("logger" + nameId, loggerSinks);
         _this.standardLoggersList[loggerId].logger->flush_on(spdlog::level::trace);
         _this.standardLoggersList[loggerId].logger->set_level(spdlog::level::trace);
 
-        _this.standardLoggersList[loggerId].rawLogger = std::make_shared<spdlog::logger>("raw_logger" + nameId, spdlog::sinks_init_list{ _this.standardLoggersList[loggerId].fileSinkRaw });
+        _this.standardLoggersList[loggerId].rawLogger = std::make_shared<spdlog::logger>("raw_logger" + nameId, rawLoggerSinks);
         _this.standardLoggersList[loggerId].rawLogger->flush_on(spdlog::level::trace);
         _this.standardLoggersList[loggerId].rawLogger->set_level(spdlog::level::trace);
 
-        _this.standardLoggersList[loggerId].timeLogger = std::make_shared<spdlog::logger>("time_logger" + nameId, spdlog::sinks_init_list{ _this.standardLoggersList[loggerId].fileSinkTime });
+        _this.standardLoggersList[loggerId].timeLogger = std::make_shared<spdlog::logger>("time_logger" + nameId, timeLoggerSinks);
         _this.standardLoggersList[loggerId].timeLogger->flush_on(spdlog::level::trace);
         _this.standardLoggersList[loggerId].timeLogger->set_level(spdlog::level::trace);
 
-        _this.standardLoggersList[loggerId].funcLogger = std::make_shared<spdlog::logger>("func_logger" + nameId, spdlog::sinks_init_list{ _this.standardLoggersList[loggerId].fileSinkFunc });
+        _this.standardLoggersList[loggerId].funcLogger = std::make_shared<spdlog::logger>("func_logger" + nameId, funcLoggerSinks);
         _this.standardLoggersList[loggerId].funcLogger->flush_on(spdlog::level::trace);
         _this.standardLoggersList[loggerId].funcLogger->set_level(spdlog::level::trace);
 
-#ifdef _DEBUG
-        _this.standardLoggersList[loggerId].debugLogger = std::make_shared<spdlog::logger>("debug_logger" + nameId, spdlog::sinks_init_list{ _this.debugSink, _this.standardLoggersList[loggerId].fileSink });
-        _this.standardLoggersList[loggerId].debugLogger->flush_on(spdlog::level::trace);
-        _this.standardLoggersList[loggerId].debugLogger->set_level(spdlog::level::trace);
-#endif
-
-#ifdef _DEBUG
-        _this.standardLoggersList[loggerId].extendLogger = std::make_shared<spdlog::logger>("extend_logger" + nameId, spdlog::sinks_init_list{ _this.debugSink, _this.standardLoggersList[loggerId].fileSinkExtend });
-#else
-        _this.standardLoggersList[loggerId].extendLogger = std::make_shared<spdlog::logger>("extend_logger" + nameId, spdlog::sinks_init_list{ _this.standardLoggersList[loggerId].fileSinkExtend });
-#endif
+        _this.standardLoggersList[loggerId].extendLogger = std::make_shared<spdlog::logger>("extend_logger" + nameId, extendLoggerSinks);
         _this.standardLoggersList[loggerId].extendLogger->flush_on(spdlog::level::trace);
         _this.standardLoggersList[loggerId].extendLogger->set_level(spdlog::level::trace);
 
+#ifdef _DEBUG
+        _this.standardLoggersList[loggerId].debugLogger = std::make_shared<spdlog::logger>("debug_logger" + nameId, debugLoggerSinks);
+        _this.standardLoggersList[loggerId].debugLogger->flush_on(spdlog::level::trace);
+        _this.standardLoggersList[loggerId].debugLogger->set_level(spdlog::level::trace);
+#endif
 
         if (initFlags.Has(InitFlags::AppendNewSessionMsg)) {
             _this.standardLoggersList[loggerId].rawLogger->info("\n");
