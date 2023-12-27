@@ -62,7 +62,9 @@ public:
     Microsoft::WRL::ComPtr<IMFMediaType> CreateAudioFlacOutMediaType();
 
     void Write(const float *audioSamples, size_t valuesCount, int64_t hns = -1);
+    // without sample allocator it can cause memory leak
     void Write(ID3D11DeviceContext *d3dCtx, ID3D11Texture2D *tex, int64_t hns = -1, int64_t durationHns = -1);
+    // without sample allocator it can cause memory leak
     void Write(const void *videoData, size_t rowPitch, int64_t hns = -1, int64_t durationHns = -1);
 
     static Microsoft::WRL::ComPtr<IMFMediaType> CreateAudioInMediaType(

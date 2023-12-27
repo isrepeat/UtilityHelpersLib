@@ -389,6 +389,14 @@ void MediaRecorder::InitializeSinkWriter(IMFByteStream *outputStream, bool useCP
         auto settings = this->params.mediaFormat.GetVideoCodecSettings();
         Microsoft::WRL::ComPtr<IMFMediaType> typeOut, typeIn;
 
+        if (auto basicSettings = settings->GetBasicSettings()) {
+            if (!nv12VideoSamples && basicSettings->height > 1080 && settings->GetCodecType() == VideoCodecType::HEVC) {
+                // TODO check why crash with nv12VideoSamples == false and >1080(2k, 4k) HEVC
+                assert(false);
+                H::System::ThrowIfFailed(E_FAIL);
+            }
+        }
+
         typeIn = MediaRecorder::CreateVideoInMediaType(settings, nv12VideoSamples);
         typeOut = MediaRecorder::CreateVideoOutMediaType(settings, this->params.mediaFormat.GetMediaContainerType(), params.UseChunkMerger);
 
