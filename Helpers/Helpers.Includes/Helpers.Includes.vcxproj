@@ -28,7 +28,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{0A91EB2B-8EBC-43B6-BE7B-73DF089CBFA4}</ProjectGuid>
-    <RootNamespace>Helpers_Raw</RootNamespace>
+    <RootNamespace>Helpers_Includes</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
