@@ -38,6 +38,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\System.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\SystemInfo.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Thread.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\ThreadEx.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Time.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\UniqueHandle.cpp" />
   </ItemGroup>
@@ -82,6 +83,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Socket.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\SystemInfo.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\TaskChain.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\ThreadEx.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\TypeTraits.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\PackageProvider.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Passkey.hpp" />

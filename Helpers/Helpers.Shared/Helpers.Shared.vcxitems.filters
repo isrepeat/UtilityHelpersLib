@@ -102,6 +102,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Gate.cpp">
       <Filter>Thread</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\ThreadEx.cpp">
+      <Filter>Thread</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CancellationToken.h">
@@ -286,6 +289,9 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Action.h">
       <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\ThreadEx.h">
+      <Filter>Thread</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
