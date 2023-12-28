@@ -1,82 +1,82 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Headers">
-      <UniqueIdentifier>{94881117-0062-4ba2-b449-c3a4f5bd5d67}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Sources">
-      <UniqueIdentifier>{0acf4eff-0e53-40e7-a31b-9f22cd2b0efc}</UniqueIdentifier>
-    </Filter>
     <Filter Include="MediaFoundation">
       <UniqueIdentifier>{05a802ad-a301-4c84-a13b-7664fdef8e2d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Headers\CLR">
-      <UniqueIdentifier>{dd52f1ce-fdf6-41f6-b46b-7ee1c00b035d}</UniqueIdentifier>
     </Filter>
     <Filter Include="FileSystem">
       <UniqueIdentifier>{f68605e2-851f-41c4-8260-3bf8c51d26ed}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Thread">
+      <UniqueIdentifier>{937e7ea6-fcac-45b3-9685-a1962a34274a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Concurrency">
+      <UniqueIdentifier>{f7c052a7-9d4f-4cfb-8051-84a54f8fa954}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CLR">
+      <UniqueIdentifier>{dd52f1ce-fdf6-41f6-b46b-7ee1c00b035d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="_Headers">
+      <UniqueIdentifier>{94881117-0062-4ba2-b449-c3a4f5bd5d67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="_Sources">
+      <UniqueIdentifier>{0acf4eff-0e53-40e7-a31b-9f22cd2b0efc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\CancellationToken.cpp">
-      <Filter>Sources</Filter>
+      <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Channel.cpp">
-      <Filter>Sources</Filter>
+      <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Helpers.cpp">
-      <Filter>Sources</Filter>
+      <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Input.cpp">
-      <Filter>Sources</Filter>
+      <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\IpTranslator.cpp">
-      <Filter>Sources</Filter>
+      <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Logger.cpp">
-      <Filter>Sources</Filter>
+      <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\System.cpp">
-      <Filter>Sources</Filter>
+      <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Time.cpp">
-      <Filter>Sources</Filter>
+      <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\PackageProvider.cpp">
-      <Filter>Sources</Filter>
+      <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\String.cpp">
-      <Filter>Sources</Filter>
+      <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\CrashHandler.cpp">
-      <Filter>Sources</Filter>
+      <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Conversion.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\Gate.cpp">
-      <Filter>Sources</Filter>
+      <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\MediaFoundation\MFUser.cpp">
       <Filter>MediaFoundation</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\Thread.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\UniqueHandle.cpp">
-      <Filter>Sources</Filter>
+      <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\RegistryManager.cpp">
-      <Filter>Sources</Filter>
+      <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\CrashInfo.cpp">
-      <Filter>Sources</Filter>
+      <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\FileSystem.cpp">
       <Filter>FileSystem</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\BIOS.cpp">
-      <Filter>Sources</Filter>
+      <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\FilesCollection.cpp">
       <Filter>FileSystem</Filter>
@@ -84,100 +84,103 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\MappedFilesCollection.cpp">
       <Filter>FileSystem</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\MultithreadMutex.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\SystemInfo.cpp">
-      <Filter>Sources</Filter>
+      <Filter>_Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\Socket.cpp">
+      <Filter>_Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\MultithreadMutex.cpp">
+      <Filter>Thread</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\Thread.cpp">
+      <Filter>Thread</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\Action.cpp">
+      <Filter>_Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\Gate.cpp">
+      <Filter>Thread</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\ThreadEx.cpp">
+      <Filter>Thread</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CancellationToken.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Channel.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\framework.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Helpers.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Input.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\IpTranslator.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Logger.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\System.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\SystemDataProvider.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Time.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Bimap.hpp">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\PackageProvider.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Signal.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Event.hpp">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\String.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CrashHandler.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Conversion.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Singleton.hpp">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\ThreadWaiter.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Gate.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Scope.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\FunctionTraits.hpp">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Concurrency.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\LocalPtr.hpp">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Macros.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Rational.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\AlignedAllocator.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CoUniquePtr.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\GetAddressOf.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\MediaFoundation\MFInclude.h">
       <Filter>MediaFoundation</Filter>
@@ -188,53 +191,47 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\MediaFoundation\MFUser.h">
       <Filter>MediaFoundation</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Thread.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\UniqueHandle.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Container.hpp">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\ThreadSafeObject.hpp">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\RegistryManager.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\HWindows.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Passkey.hpp">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Callback.hpp">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\config.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Callback_CLR.hpp">
-      <Filter>Headers\CLR</Filter>
+      <Filter>CLR</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CrashInfo.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\TokenSingleton.hpp">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\TokenContext.hpp">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Exception.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\String.hpp">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\TypeTraits.hpp">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\FilesObserver.h">
       <Filter>FileSystem</Filter>
@@ -243,7 +240,7 @@
       <Filter>FileSystem</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\BIOS.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\FilesCollection.h">
       <Filter>FileSystem</Filter>
@@ -254,23 +251,47 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\MappedFilesCollection.h">
       <Filter>FileSystem</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\MultithreadMutex.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Flags.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\MoveLambda.hpp">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\SystemInfo.h">
-      <Filter>Headers</Filter>
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Socket.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Thread.h">
+      <Filter>Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\ThreadSafeObject.hpp">
+      <Filter>Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\ThreadWaiter.h">
+      <Filter>Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\MultithreadMutex.h">
+      <Filter>Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Concurrency.h">
+      <Filter>Concurrency</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\ConcurrentQueue.h">
-      <Filter>Headers</Filter>
+      <Filter>Concurrency</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\TaskChain.h">
-      <Filter>Headers</Filter>
+      <Filter>Concurrency</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Gate.h">
+      <Filter>Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Action.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\ThreadEx.h">
+      <Filter>Thread</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

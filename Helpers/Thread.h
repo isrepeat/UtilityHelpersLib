@@ -1,10 +1,11 @@
 #pragma once
-#include <mutex>
-#include <memory>
-#include <vector>
-#include <string>
-#include <utility>
+#include "ThreadEx.h"
 #include <functional>
+#include <utility>
+#include <memory>
+#include <string>
+#include <vector>
+#include <mutex>
 
 namespace H {
 	// Interface to manage lifetime internal class threads outside
