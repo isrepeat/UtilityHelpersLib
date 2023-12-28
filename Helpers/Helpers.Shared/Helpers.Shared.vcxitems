@@ -20,6 +20,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\Conversion.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\CrashHandler.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\CrashInfo.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\Action.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\MappedFilesCollection.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\FilesCollection.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\FileSystem.cpp" />
@@ -57,6 +58,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CrashHandler.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CrashInfo.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Flags.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Action.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\MappedFilesCollection.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Event.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Exception.h" />
