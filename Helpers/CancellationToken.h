@@ -3,7 +3,6 @@
 
 class CancellationToken {
 public:
-
 	CancellationToken() = default;
 	~CancellationToken() = default;
 	CancellationToken(CancellationToken&&) = default;
@@ -17,8 +16,5 @@ public:
 	void Reset();
 
 private:
-
 	std::atomic<bool> cancelled = false;
-
 };
-

@@ -64,7 +64,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\FilesObserver.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\FileSystem.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\FileSystem_inline.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\framework.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\FunctionTraits.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Gate.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\GetAddressOf.h" />
