@@ -4,6 +4,8 @@
 
 namespace H {
 	// Wrapper over std::thread that notify you if was exception
+	// NOTE: Move operator deleted because otherwise "this" can point to deleted ThreadEx object.
+	//       So use std::unique_ptr / shared_ptr.
 	class ThreadEx : public std::thread {
 	public:
 		ThreadEx() = default;
@@ -13,8 +15,8 @@ namespace H {
 
 		explicit ThreadEx(std::function<void()> exceptionCallback, std::function<void()> lambda);
 
-		ThreadEx(ThreadEx&&) = default;
-		ThreadEx& operator=(ThreadEx&&) = default;
+		ThreadEx(ThreadEx&&) = delete;
+		ThreadEx& operator=(ThreadEx&&) = delete;
 
 		ThreadEx(const ThreadEx&) = delete;
 		ThreadEx& operator=(const ThreadEx&) = delete;
@@ -26,6 +28,5 @@ namespace H {
 
 	private:
 		std::exception_ptr exceptionPtr;
-		std::thread workThread;
 	};
 }
