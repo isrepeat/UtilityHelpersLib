@@ -1,4 +1,5 @@
 #pragma once
+#include "File.h"
 #include <functional>
 #include <future>
 #include <mutex>
@@ -12,24 +13,21 @@ namespace H {
         StdRedirection();
         ~StdRedirection();
 
+        static bool ReAllocConsole();
+
         void BeginRedirect(std::function<void(std::vector<char>)> readCallback);
         void EndRedirect();
 
     private:
-        enum PipeStream {
-            READ,
-            WRITE
-        };
-
         const int PIPE_BUFFER_SIZE = 65536;
-        const int OUTPUT_BUFFER_SIZE = 260; // MAX_PATH
+        const int OUTPUT_BUFFER_SIZE = MAX_PATH;
 
         std::mutex mx;
-
-        int ioPipes[2];
-        int oldStdOut;
+        int fdWritePipe = -1;
+        int fdPrevStdOut = -1;
+        HANDLE hReadPipe = nullptr;
+        HANDLE hWritePipe = nullptr;
         std::vector<char> outputBuffer;
-
         std::atomic<bool> redirectInProcess;
         std::future<void> listeningRoutine;
     };

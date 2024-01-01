@@ -5,13 +5,29 @@
 #include <io.h>
 
 namespace H {
+    bool StdRedirection::ReAllocConsole() {
+        BOOL bResult;
+        if (!FreeConsole()) {
+            LogLastError;
+            return false;
+        }
+        if (!AllocConsole()) {
+            LogLastError;
+            return false;
+        }
+
+        FILE* fDummy;
+        if (freopen_s(&fDummy, "CONOUT$", "w", stdout) != 0) {
+            return false;
+        }
+        return true;
+    }
+
+
     StdRedirection::StdRedirection()
-        : ioPipes{ -1, -1 } // initialize with default values to suppress compiler warning
-        , oldStdOut{ -1 }
-        , redirectInProcess{ false }
+        : redirectInProcess{ false }
     {
         LOG_FUNCTION_ENTER("StdRedirection()");
-        setvbuf(stdout, NULL, _IONBF, 0); // set "no buffer" for stdout (no need fflush manually)
     }
 
     StdRedirection::~StdRedirection() {
@@ -30,36 +46,30 @@ namespace H {
             return;
         }
 
-        oldStdOut = _dup(_fileno(stdout)); // save original stdout descriptor
+        fdPrevStdOut = _dup(_fileno(stdout)); // save original stdout descriptor
 
-        if (_pipe(ioPipes, PIPE_BUFFER_SIZE, O_BINARY) == -1) { // make pipe's descriptors for READ / WRITE streams
-            Dbreak;
-            throw std::exception("_pipe(...) Failed to init ioPipes");
-        }
-        if (_dup2(ioPipes[WRITE], _fileno(stdout)) == -1) { // redirect stdout to the pipe
-            Dbreak;
-            throw std::exception("_dup2(...) Failed redirect stdout to the pipe");
-        }
-        _close(ioPipes[WRITE]); // we no need work with WRITE stream so close it now
+        CreatePipe(&hReadPipe, &hWritePipe, nullptr, PIPE_BUFFER_SIZE);
+        SetStdHandle(STD_OUTPUT_HANDLE, hWritePipe);
 
+        int fdWritePipe = _open_osfhandle((intptr_t)hWritePipe, O_WRONLY); // associate a file descriptor to the file handle
+        if (_dup2(fdWritePipe, _fileno(stdout)) == -1) {
+            Dbreak;
+            throw std::exception("_dup2(...) Failed redirect stdout to hWritePipe");
+        }
+        setvbuf(stdout, NULL, _IONBF, 0); // set "no buffer" for stdout (no need fflush manually)
 
         listeningRoutine = std::async(std::launch::async, [this, readCallback] {
             while (redirectInProcess) {
-                outputBuffer.resize(OUTPUT_BUFFER_SIZE);
-
-                // NOTE: _read(...) block current thread until any data arrives in the ioPipes[READ]
-                int readBytes = _read(ioPipes[READ], outputBuffer.data(), outputBuffer.size());
-                if (readBytes == -1) {
-                    Dbreak;
-                    throw std::exception("_read(...) Failed when read from ipPipe[READ]");
+                try {
+                    outputBuffer.clear(); // ensure that buffer cleared to avoid inserting new data at end
+                    ReadFileAsync<char>(hReadPipe, redirectInProcess, outputBuffer, OUTPUT_BUFFER_SIZE);
+                    if (readCallback) {
+                        readCallback(std::move(outputBuffer));
+                    }
                 }
-                else if (readBytes == 0) { // read end of file
-                    return;
-                }
-
-                outputBuffer.resize(readBytes); // truncate
-                if (readCallback) {
-                    readCallback(std::move(outputBuffer));
+                catch (const std::exception& ex) {
+                    LOG_DEBUG_D("Catch ReadFileAsync exception = {}", ex.what());
+                    LogLastError;
                 }
             }
             });
@@ -74,12 +84,20 @@ namespace H {
             return;
         }
 
-        if (_dup2(oldStdOut, _fileno(stdout)) == -1) { // restore stdout to original (saved) descriptor
+        if (_dup2(fdPrevStdOut, _fileno(stdout)) == -1) { // restore stdout to original (saved) descriptor
             Dbreak;
             throw std::exception("_dup2(...) Failed restore stdout");
         }
-        // after stdout restored the _read(...) return 0  in  listeningRoutine
-        _close(oldStdOut);
+        _close(fdPrevStdOut);
+
+        if (!CloseHandleSafe(hWritePipe)) {
+            LOG_ERROR_D("Failed close hWritePipe");
+            LogLastError;
+        }
+        if (!CloseHandleSafe(hReadPipe)) {
+            LOG_ERROR_D("Failed close hReadPipe");
+            LogLastError;
+        }
 
         if (listeningRoutine.valid())
             listeningRoutine.get(); // May throw exception
