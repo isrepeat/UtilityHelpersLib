@@ -61,6 +61,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CrashInfo.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Flags.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Action.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\File.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\MappedFilesCollection.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Event.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Exception.h" />

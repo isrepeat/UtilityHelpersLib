@@ -299,6 +299,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\StdRedirection.h">
       <Filter>_Headers</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\File.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />
