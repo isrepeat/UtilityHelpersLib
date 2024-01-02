@@ -62,6 +62,7 @@ namespace H {
                     //outputBuffer.clear(); // ensure that buffer cleared to avoid inserting new data at end
                     // If callback is empty all data will append at the end of outputBuffer
                     ReadFileAsync<char>(hReadPipe, redirectInProcess, outputBuffer, OUTPUT_BUFFER_SIZE);
+                    std::unique_lock lk{ mx };
                     if (this->readCallback) {
                         this->readCallback(std::move(outputBuffer));
                     }
