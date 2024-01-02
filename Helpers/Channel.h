@@ -40,7 +40,7 @@ PipeConnectionStatus WaitOpenPipe(OUT HANDLE& hPipe, const std::wstring& pipeNam
 template <typename T = uint8_t>
 void ReadFromPipeAsync(HANDLE hNamedPipe, const std::atomic<bool>& stop, std::vector<T>& outBuffer) {
     try {
-        return ReadFileAsync<T>(hNamedPipe, stop, outBuffer, BUFFER_PIPE);
+        return H::ReadFileAsync<T>(hNamedPipe, stop, outBuffer, BUFFER_PIPE);
     }
     catch (const std::exception& ex) {
         LOG_ERROR_D("Catch ReadFileAsync exception = {}", ex.what());
@@ -54,7 +54,7 @@ void WriteToPipeAsync(HANDLE hNamedPipe, const std::atomic<bool>& stop, std::spa
         return;
 
     try {
-        return WriteFileAsync<T>(hNamedPipe, stop, writeData);
+        return H::WriteFileAsync<T>(hNamedPipe, stop, writeData);
     }
     catch (const std::exception& ex) {
         LOG_ERROR_D("Catch WriteFileAsync exception = {}", ex.what());
