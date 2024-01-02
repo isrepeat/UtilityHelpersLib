@@ -24,9 +24,7 @@ namespace H {
     }
 
 
-    StdRedirection::StdRedirection()
-        : redirectInProcess{ false }
-    {
+    StdRedirection::StdRedirection() {
         LOG_FUNCTION_ENTER("StdRedirection()");
     }
 
@@ -37,8 +35,7 @@ namespace H {
     }
 
     void StdRedirection::BeginRedirect(std::function<void(std::vector<char>)> readCallback) {
-        LOG_FUNCTION_ENTER("BeginRedirect()");
-        LOG_ASSERT(readCallback, "readCallback is empty");
+        LOG_FUNCTION_ENTER("BeginRedirect(readCallback)");
         std::unique_lock lk{ mx };
 
         if (redirectInProcess.exchange(true)) {
@@ -58,21 +55,30 @@ namespace H {
         }
         setvbuf(stdout, NULL, _IONBF, 0); // set "no buffer" for stdout (no need fflush manually)
 
-        listeningRoutine = std::async(std::launch::async, [this, readCallback] {
+        this->readCallback = readCallback;
+        listeningRoutine = std::async(std::launch::async, [this] {
             while (redirectInProcess) {
                 try {
-                    outputBuffer.clear(); // ensure that buffer cleared to avoid inserting new data at end
+                    //outputBuffer.clear(); // ensure that buffer cleared to avoid inserting new data at end
+                    // If callback is empty all data will append at the end of outputBuffer
                     ReadFileAsync<char>(hReadPipe, redirectInProcess, outputBuffer, OUTPUT_BUFFER_SIZE);
-                    if (readCallback) {
-                        readCallback(std::move(outputBuffer));
+                    if (this->readCallback) {
+                        this->readCallback(std::move(outputBuffer));
                     }
                 }
                 catch (const std::exception& ex) {
                     LOG_DEBUG_D("Catch ReadFileAsync exception = {}", ex.what());
                     LogLastError;
+                    return;
                 }
             }
             });
+    }
+
+    void StdRedirection::SetCallback(std::function<void(std::vector<char>)> readCallback) {
+        LOG_FUNCTION_ENTER("SetCallback(readCallback)");
+        std::unique_lock lk{ mx };
+        this->readCallback = readCallback;
     }
 
     void StdRedirection::EndRedirect() {
@@ -100,7 +106,7 @@ namespace H {
         }
 
         if (listeningRoutine.valid())
-            listeningRoutine.get(); // May throw exception
+            listeningRoutine.get();
 
         LOG_DEBUG("Redirection finished");
     }

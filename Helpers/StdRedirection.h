@@ -16,6 +16,7 @@ namespace H {
         static bool ReAllocConsole();
 
         void BeginRedirect(std::function<void(std::vector<char>)> readCallback);
+        void SetCallback(std::function<void(std::vector<char>)> readCallback);
         void EndRedirect();
 
     private:
@@ -23,12 +24,14 @@ namespace H {
         const int OUTPUT_BUFFER_SIZE = MAX_PATH;
 
         std::mutex mx;
-        int fdWritePipe = -1;
         int fdPrevStdOut = -1;
         HANDLE hReadPipe = nullptr;
         HANDLE hWritePipe = nullptr;
+
         std::vector<char> outputBuffer;
-        std::atomic<bool> redirectInProcess;
+        std::function<void(std::vector<char>)> readCallback;
+
+        std::atomic<bool> redirectInProcess = false;
         std::future<void> listeningRoutine;
     };
 }
