@@ -84,26 +84,28 @@ namespace H {
 
     void StdRedirection::EndRedirect() {
         LOG_FUNCTION_ENTER("EndRedirect()");
-        std::unique_lock lk{ mx };
+        {
+            std::unique_lock lk{ mx };
 
-        if (!redirectInProcess.exchange(false)) {
-            LOG_WARNING_D("Redirect already finished, ignore");
-            return;
-        }
+            if (!redirectInProcess.exchange(false)) {
+                LOG_WARNING_D("Redirect already finished, ignore");
+                return;
+            }
 
-        if (_dup2(fdPrevStdOut, _fileno(stdout)) == -1) { // restore stdout to original (saved) descriptor
-            Dbreak;
-            throw std::exception("_dup2(...) Failed restore stdout");
-        }
-        _close(fdPrevStdOut);
+            if (_dup2(fdPrevStdOut, _fileno(stdout)) == -1) { // restore stdout to original (saved) descriptor
+                Dbreak;
+                throw std::exception("_dup2(...) Failed restore stdout");
+            }
+            _close(fdPrevStdOut);
 
-        if (!CloseHandleSafe(hWritePipe)) {
-            LOG_ERROR_D("Failed close hWritePipe");
-            LogLastError;
-        }
-        if (!CloseHandleSafe(hReadPipe)) {
-            LOG_ERROR_D("Failed close hReadPipe");
-            LogLastError;
+            if (!CloseHandleSafe(hWritePipe)) {
+                LOG_ERROR_D("Failed close hWritePipe");
+                LogLastError;
+            }
+            if (!CloseHandleSafe(hReadPipe)) {
+                LOG_ERROR_D("Failed close hReadPipe");
+                LogLastError;
+            }
         }
 
         if (listeningRoutine.valid())
