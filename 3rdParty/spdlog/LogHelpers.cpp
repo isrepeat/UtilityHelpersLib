@@ -55,11 +55,11 @@ namespace lg {
     // %v - log msg
     const std::string GetPattern(Pattern value) {
         static const std::unordered_map<Pattern, std::string> patterns = {
-            {Pattern::Default, "[%l] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q %v"},
-            {Pattern::Extend, "[%l] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q %v"}, // use postfixCallback
-            {Pattern::Debug, "[dbg] [%t] {%s:%# %!}%q %v"},
-            {Pattern::Func, "[%l] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q @@@ %v"},
-            {Pattern::Time, "[%t] %d.%m.%Y %H:%M:%S:%e  %v"},
+            {Pattern::Default, "[%L] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q %v"},
+            {Pattern::Extend, "[%L] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q %v"}, // use postfixCallback
+            {Pattern::Debug, "[%L] [%t] %H:%M:%S:%e {%s:%# %!}%q %v"},
+            {Pattern::Func, "[%L] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q @@@ %v"},
+            {Pattern::Time, "[%L] %d.%m.%Y %H:%M:%S:%e  %v"},
             {Pattern::Raw, "%v"},
         };
         return patterns.at(value);
@@ -202,6 +202,11 @@ namespace lg {
         if (initFlags.Has(InitFlags::EnableLogToStdout)) {
             loggerSinks = { _this.stdoutColorSink, _this.standardLoggersList[loggerId].fileSink };
             funcLoggerSinks = { _this.stdoutColorSink, _this.standardLoggersList[loggerId].fileSinkFunc };
+
+            if (initFlags.Has(InitFlags::RedirectRawTimeLogToStdout)) {
+                rawLoggerSinks = { _this.stdoutColorSink, _this.standardLoggersList[loggerId].fileSinkRaw };
+                timeLoggerSinks = { _this.stdoutColorSink, _this.standardLoggersList[loggerId].fileSinkTime };
+            }
         }
 
 #ifdef _DEBUG
@@ -217,36 +222,36 @@ namespace lg {
 
         _this.standardLoggersList[loggerId].logger = std::make_shared<spdlog::logger>("logger" + nameId, loggerSinks);
         _this.standardLoggersList[loggerId].logger->flush_on(spdlog::level::trace);
-        _this.standardLoggersList[loggerId].logger->set_level(spdlog::level::trace);
+        _this.standardLoggersList[loggerId].logger->set_level(spdlog::level::debug);
 
         _this.standardLoggersList[loggerId].rawLogger = std::make_shared<spdlog::logger>("raw_logger" + nameId, rawLoggerSinks);
         _this.standardLoggersList[loggerId].rawLogger->flush_on(spdlog::level::trace);
-        _this.standardLoggersList[loggerId].rawLogger->set_level(spdlog::level::trace);
+        _this.standardLoggersList[loggerId].rawLogger->set_level(spdlog::level::debug);
 
         _this.standardLoggersList[loggerId].timeLogger = std::make_shared<spdlog::logger>("time_logger" + nameId, timeLoggerSinks);
         _this.standardLoggersList[loggerId].timeLogger->flush_on(spdlog::level::trace);
-        _this.standardLoggersList[loggerId].timeLogger->set_level(spdlog::level::trace);
+        _this.standardLoggersList[loggerId].timeLogger->set_level(spdlog::level::debug);
 
         _this.standardLoggersList[loggerId].funcLogger = std::make_shared<spdlog::logger>("func_logger" + nameId, funcLoggerSinks);
         _this.standardLoggersList[loggerId].funcLogger->flush_on(spdlog::level::trace);
-        _this.standardLoggersList[loggerId].funcLogger->set_level(spdlog::level::trace);
+        _this.standardLoggersList[loggerId].funcLogger->set_level(spdlog::level::debug);
 
         _this.standardLoggersList[loggerId].extendLogger = std::make_shared<spdlog::logger>("extend_logger" + nameId, extendLoggerSinks);
         _this.standardLoggersList[loggerId].extendLogger->flush_on(spdlog::level::trace);
-        _this.standardLoggersList[loggerId].extendLogger->set_level(spdlog::level::trace);
+        _this.standardLoggersList[loggerId].extendLogger->set_level(spdlog::level::debug);
 
 #ifdef _DEBUG
         _this.standardLoggersList[loggerId].debugLogger = std::make_shared<spdlog::logger>("debug_logger" + nameId, debugLoggerSinks);
         _this.standardLoggersList[loggerId].debugLogger->flush_on(spdlog::level::trace);
-        _this.standardLoggersList[loggerId].debugLogger->set_level(spdlog::level::trace);
+        _this.standardLoggersList[loggerId].debugLogger->set_level(spdlog::level::debug);
 #endif
 
         if (initFlags.Has(InitFlags::AppendNewSessionMsg)) {
-            _this.standardLoggersList[loggerId].rawLogger->info("\n");
+            _this.standardLoggersList[loggerId].rawLogger->trace("\n");
             // whitespaces are selected by design
-            _this.standardLoggersList[loggerId].rawLogger->info("==========================================================================================================");
-            _this.standardLoggersList[loggerId].timeLogger->info("                       New session started");
-            _this.standardLoggersList[loggerId].rawLogger->info("==========================================================================================================");
+            _this.standardLoggersList[loggerId].rawLogger->trace("==========================================================================================================");
+            _this.standardLoggersList[loggerId].timeLogger->trace("                       New session started");
+            _this.standardLoggersList[loggerId].rawLogger->trace("==========================================================================================================");
         }
     }
 

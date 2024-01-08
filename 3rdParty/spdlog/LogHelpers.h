@@ -63,6 +63,7 @@ namespace lg {
         AppendNewSessionMsg = 0x02,
         CreateInPackageFolder = 0x04,
         EnableLogToStdout = 0x08,
+        RedirectRawTimeLogToStdout = 0x10,
 
         DefaultFlags = AppendNewSessionMsg,
     };
@@ -79,7 +80,7 @@ namespace lg {
 
         struct UnscopedData;
 
-        static constexpr uintmax_t maxSizeLogFile = 1 * 1024 * 1024; // 1 MB (~ 10'000 rows)
+        static constexpr uintmax_t maxSizeLogFile = 2 * 1024 * 1024; // 2 MB (~ 20'000 rows)
         static constexpr size_t maxLoggers = 2;
 
         static void Init(std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags = InitFlags::DefaultFlags);
@@ -172,8 +173,8 @@ LOGGER_API H::nothing* __LgCtx(); // may be overwritten as class method that ret
 #if !defined(DISABLE_COMMON_LOGGING)
 #define LOG_CTX spdlog::source_loc{__FILE__, __LINE__, SPDLOG_FUNCTION}
 
-#define LOG_RAW(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::RawLogger(), LOG_CTX, spdlog::level::trace, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
-#define LOG_TIME(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::TimeLogger(), LOG_CTX, spdlog::level::trace, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_RAW(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::RawLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_TIME(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::TimeLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 
 #define LOG_DEBUG(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 #define LOG_ERROR(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::err, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
