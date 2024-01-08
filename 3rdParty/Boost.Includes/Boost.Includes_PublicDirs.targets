@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <PublicIncludeDirectories>$(ProjectDir)..\..\;$(PublicIncludeDirectories)</PublicIncludeDirectories>
-    <!-- boost package directory (ensure version is correct) -->
+    <!-- Expose boost package directory (ensure version is correct) -->
     <PublicIncludeDirectories>$(ProjectDir)..\..\packages\boost.1.84.0\lib\native\include;$(PublicIncludeDirectories)</PublicIncludeDirectories>
   </PropertyGroup>
 </Project>
