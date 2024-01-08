@@ -6,6 +6,8 @@
 #include <cmath>
 #include <wrl.h>
 
+#include "Helpers.h"
+
 #ifdef SYSTEMINFOFOROFFICELIB_EXPORTS
 #define SYSTEM_INFO_API __declspec(dllexport)
 #else
@@ -71,12 +73,16 @@ namespace SystemDataProvider
 	void FetchLangInfo() {
 		int ret;
 
-		char tmp[100];
-		ret = GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_SENGLISHCOUNTRYNAME, (LPSTR)tmp,
-			sizeof(tmp) / sizeof(char));
-
-		region = { tmp };
-		char tmpLang[20];
+		std::wstring geoName;
+		int geoNameLen = GetUserDefaultGeoName(nullptr, 0);
+		geoName.resize(geoNameLen);
+		GetUserDefaultGeoName(&geoName[0], geoNameLen);
+		
+		int geoInfoLen = GetGeoInfoEx(geoName.data(), GEO_FRIENDLYNAME, nullptr, 0);
+		std::wstring geoInfo;
+		geoInfo.resize(geoInfoLen);
+		GetGeoInfoEx(geoName.data(), GEO_FRIENDLYNAME, &geoInfo[0], geoInfoLen);
+		region = H::WStrToStr(geoInfo);
 
 		ret = GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_SISO639LANGNAME, (LPSTR)tmpLang,
 			sizeof(tmpLang) / sizeof(char));
