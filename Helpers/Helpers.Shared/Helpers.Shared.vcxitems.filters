@@ -212,9 +212,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Callback.hpp">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\config.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Callback_CLR.hpp">
       <Filter>CLR</Filter>
     </ClInclude>
@@ -300,6 +297,9 @@
       <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\File.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\common.h">
       <Filter>_Headers</Filter>
     </ClInclude>
   </ItemGroup>
