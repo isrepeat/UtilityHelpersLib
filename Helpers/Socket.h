@@ -1,6 +1,7 @@
 #pragma once
+#include "common.h"
 #include <string>
 
-namespace H {
+namespace HELPERS_NS {
 	std::string GetLocalIp(int attempts = 1);
 }

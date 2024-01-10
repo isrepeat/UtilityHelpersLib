@@ -1,6 +1,7 @@
 #pragma once
+#include "common.h"
 
-namespace H {
+namespace HELPERS_NS {
     template <typename T>
     class LocalPtr {
     public:

@@ -10,7 +10,7 @@
 #include <regex>
 
 
-namespace H {
+namespace HELPERS_NS {
     std::vector<std::string> split(std::string str, const std::string& delim) {
         std::vector<std::string> result;
         int pos = 0;
@@ -175,7 +175,7 @@ namespace H {
     std::wstring GetAppDataPath() {
         wchar_t* path = nullptr;
         auto hr = SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, NULL, &path);
-        H::System::ThrowIfFailed(hr);
+        HELPERS_NS::System::ThrowIfFailed(hr);
         auto result = std::wstring(path);
         CoTaskMemFree(path);
 
@@ -209,7 +209,7 @@ namespace H {
         
         
         if (path != nullptr) {
-            H::System::ThrowIfFailed(hr);
+            HELPERS_NS::System::ThrowIfFailed(hr);
             result = std::wstring(path);
             CoTaskMemFree(path);
         }

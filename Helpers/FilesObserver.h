@@ -1,10 +1,11 @@
 #pragma once
+#include "common.h"
 #include <filesystem>
 #include <cassert>
 #include <vector>
 #include <string>
 
-namespace H {
+namespace HELPERS_NS {
     namespace FS {
         struct PathItem {
             enum class Type {

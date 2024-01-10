@@ -6,7 +6,7 @@
 
 static CrashHandling::AdditionalInfo additionalInfo;
 
-namespace H {
+namespace HELPERS_NS {
 	CrashHandler::CrashHandler(std::wstring runProtocol, std::wstring appCenterId, std::wstring appUuid) {
 		additionalInfo.appCenterId = appCenterId;
 		additionalInfo.appVersion = L""; // detect automatically
@@ -93,7 +93,7 @@ namespace H {
 #else // CRASH_HANDLING_NUGET
 #include "Exception.h"
 
-namespace H {
+namespace HELPERS_NS {
 	CrashHandler::CrashHandler(std::wstring runProtocol, std::wstring appCenterId, std::wstring appUuid) {
 		throw NugetNotFoundException();
 	}

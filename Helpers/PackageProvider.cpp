@@ -5,7 +5,7 @@
 #include <Windows.h>
 #include <appmodel.h> // must be included after Windows.h
 
-namespace H {
+namespace HELPERS_NS {
     bool PackageProvider::IsRunningUnderPackage() {
         UINT32 length = 0;
         LONG rc = GetCurrentPackageFamilyName(&length, NULL);
@@ -46,7 +46,7 @@ namespace H {
                 auto minor = pkgInfo.packageId.version.Minor;
                 auto build = pkgInfo.packageId.version.Build;
                 auto revision = pkgInfo.packageId.version.Revision;
-                return H::StringFormat(L"%d.%d.%d.%d", major, minor, build, revision);
+                return HELPERS_NS::StringFormat(L"%d.%d.%d.%d", major, minor, build, revision);
             }
         }
 
@@ -72,7 +72,7 @@ namespace H {
             return L"";
         }
 
-        return H::VecToWStr(familyName);
+        return HELPERS_NS::VecToWStr(familyName);
     }
 
     std::wstring PackageProvider::GetApplicationUserModelId() {
@@ -94,6 +94,6 @@ namespace H {
             return L"";
         }
 
-        return H::VecToWStr(appModelUserId);
+        return HELPERS_NS::VecToWStr(appModelUserId);
     }
 }

@@ -1,10 +1,11 @@
 #pragma once
-#include <vector>
-#include <utility>
+#include "common.h"
 #include <functional>
+#include <utility>
+#include <vector>
 
 
-namespace H {
+namespace HELPERS_NS {
 	class Signal { // Functor
 	public:
 		enum Type {

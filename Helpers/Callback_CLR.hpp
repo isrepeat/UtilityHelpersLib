@@ -1,5 +1,5 @@
 #pragma once
-#include "config.h"
+#include "common.h"
 
 #ifdef __CLR__
 #include "Callback.hpp"

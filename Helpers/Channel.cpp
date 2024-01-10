@@ -9,7 +9,7 @@
 PipeConnectionStatus WaitConnectPipe(IN HANDLE hPipe, const std::atomic<bool>& stop, int timeout) {
 	LOG_FUNCTION_ENTER("WaitConnectPipe(timeout = {})", timeout);
 
-	H::Timer timer;
+	HELPERS_NS::Timer timer;
 	std::atomic<bool> timeoutSignal = false;
 	if (timeout != 0) { // 0 - infinity wait
 		timer.Start(std::chrono::milliseconds{ timeout }, [&timeoutSignal] {
@@ -69,7 +69,7 @@ PipeConnectionStatus WaitConnectPipe(IN HANDLE hPipe, const std::atomic<bool>& s
 PipeConnectionStatus WaitOpenPipe(OUT HANDLE& hPipe, const std::wstring& pipeName, const std::atomic<bool>& stop, int timeout) {
 	LOG_FUNCTION_ENTER("WaitOpenPipe(timeout = {})", timeout);
 
-	H::Timer timer;
+	HELPERS_NS::Timer timer;
 	std::atomic<bool> timeoutSignal = false;
 	if (timeout != 0) { // 0 - infinity wait
 		timer.Start(std::chrono::milliseconds{ timeout }, [&timeoutSignal] {

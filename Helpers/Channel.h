@@ -1,4 +1,5 @@
 #pragma once
+#include "common.h"
 #include "HWindows.h"
 #include <MagicEnum/MagicEnum.h>
 
@@ -40,7 +41,7 @@ PipeConnectionStatus WaitOpenPipe(OUT HANDLE& hPipe, const std::wstring& pipeNam
 template <typename T = uint8_t>
 void ReadFromPipeAsync(HANDLE hNamedPipe, const std::atomic<bool>& stop, std::vector<T>& outBuffer) {
     try {
-        return H::ReadFileAsync<T>(hNamedPipe, stop, outBuffer, BUFFER_PIPE);
+        return HELPERS_NS::ReadFileAsync<T>(hNamedPipe, stop, outBuffer, BUFFER_PIPE);
     }
     catch (const std::exception& ex) {
         LOG_ERROR_D("Catch ReadFileAsync exception = {}", ex.what());
@@ -54,7 +55,7 @@ void WriteToPipeAsync(HANDLE hNamedPipe, const std::atomic<bool>& stop, std::spa
         return;
 
     try {
-        return H::WriteFileAsync<T>(hNamedPipe, stop, writeData);
+        return HELPERS_NS::WriteFileAsync<T>(hNamedPipe, stop, writeData);
     }
     catch (const std::exception& ex) {
         LOG_ERROR_D("Catch WriteFileAsync exception = {}", ex.what());
@@ -64,13 +65,13 @@ void WriteToPipeAsync(HANDLE hNamedPipe, const std::atomic<bool>& stop, std::spa
 
 
 template<typename T>
-H::LocalPtr<T> GetTokenInfo(HANDLE hToken, TOKEN_INFORMATION_CLASS typeInfo) {
+HELPERS_NS::LocalPtr<T> GetTokenInfo(HANDLE hToken, TOKEN_INFORMATION_CLASS typeInfo) {
     DWORD dwSize = 0;
     if (!GetTokenInformation(hToken, typeInfo, NULL, 0, &dwSize) && GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
         return nullptr;
     }
 
-    if (auto pTokenData = H::LocalPtr<T>(LocalAlloc(LPTR, dwSize))) {
+    if (auto pTokenData = HELPERS_NS::LocalPtr<T>(LocalAlloc(LPTR, dwSize))) {
         if (GetTokenInformation(hToken, typeInfo, pTokenData.get(), dwSize, &dwSize)) {
             return pTokenData;
         }
@@ -85,7 +86,7 @@ H::LocalPtr<T> GetTokenInfo(HANDLE hToken, TOKEN_INFORMATION_CLASS typeInfo) {
 // TODO: Add guard for multiple calls pulbic methods and for usage in them in multithreading
 // TODO: fix when interrupt connection -> not process "None" msg (??? CHECK)
 template<typename EnumMsg, typename T = uint8_t>
-class Channel : public H::IThread {
+class Channel : public HELPERS_NS::IThread {
     CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(Channel);
 
 public:
@@ -112,7 +113,7 @@ public:
     using WriteFunc = std::function<void(std::vector<T>&&, EnumMsg)>;
 
     Channel()
-        : messagesQueue{ std::make_shared<H::ConcurrentQueue<Msg_t>>() }
+        : messagesQueue{ std::make_shared<HELPERS_NS::ConcurrentQueue<Msg_t>>() }
     {
         LOG_FUNCTION_ENTER("Channel()");
         readStreamBuffer.reserve(BUFFER_PIPE * 2); // reserve double size
@@ -153,7 +154,7 @@ public:
         if (OpenProcessToken(hProcessUWP, TOKEN_QUERY, &hToken)) {
             if (auto pTokenAppContainerInfo = GetTokenInfo<TOKEN_APPCONTAINER_INFORMATION>(hToken, ::TokenAppContainerSid)) {
                 if (auto pTokenSessingId = GetTokenInfo<ULONG>(hToken, ::TokenSessionId)) {
-                    H::LocalPtr<WCHAR> pStr;
+                    HELPERS_NS::LocalPtr<WCHAR> pStr;
                     if (ConvertSidToStringSidW(pTokenAppContainerInfo->TokenAppContainer, pStr.ReleaseAndGetAdressOf())) {
                         formattedPipeName = L"\\\\?\\pipe\\Sessions\\" + std::to_wstring(*pTokenSessingId) + L"\\AppContainerNamedObjects\\" + pStr.get() + L"\\" + pipeName;
                     }
@@ -518,5 +519,5 @@ private:
 
     const WriteFunc bindedWriteFunc = std::bind(&Channel::Write, this, std::placeholders::_1, std::placeholders::_2);
 
-    std::shared_ptr<H::ConcurrentQueue<Msg_t>> messagesQueue;
+    std::shared_ptr<HELPERS_NS::ConcurrentQueue<Msg_t>> messagesQueue;
 };

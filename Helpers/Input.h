@@ -1,9 +1,10 @@
 #pragma once
+#include "common.h"
 // TODO: remove this file in release. Use UserInputEvent.h/cpp instead
 #include "HWindows.h"
 #include <variant>
 
-namespace H {
+namespace HELPERS_NS {
 	enum class MouseAction {
 		Move,
 		Press,

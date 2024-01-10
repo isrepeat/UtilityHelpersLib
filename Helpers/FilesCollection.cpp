@@ -1,7 +1,7 @@
 #pragma once
 #include "FilesCollection.h"
 
-namespace H {
+namespace HELPERS_NS {
     namespace FS {
         void FilesCollection::ReplaceRootPath(std::wstring newRootPath) {
             for (auto& dir : dirs) {

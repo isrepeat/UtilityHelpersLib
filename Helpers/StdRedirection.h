@@ -1,10 +1,11 @@
 #pragma once
+#include "common.h"
 #include "File.h"
 #include <functional>
 #include <future>
 #include <mutex>
 
-namespace H {
+namespace HELPERS_NS {
     // Use this class before first use ::GetStdHandle(...) to avoid side effects, for example as singleton. 
     // All std HANDLEs that was saved with ::GetStdHandle(...) before redirection will not be redirected.
     // All std HANDLEs that was saved with ::GetStdHandle(...) during redirection will not be restored.

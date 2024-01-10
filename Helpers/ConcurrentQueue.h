@@ -1,4 +1,5 @@
 #pragma once
+#include "common.h"
 #include "Concurrency.h"
 #include "Logger.h"
 
@@ -6,7 +7,7 @@
 #include <queue>
 #include <mutex>
 
-namespace H {
+namespace HELPERS_NS {
 	struct TaskItemWithDescription {
 		std::string descrtiption;
 		std::function<void()> task;
@@ -60,7 +61,7 @@ namespace H {
 
 			// Use cv wait helper to avoid double checking for pushing (poping)
 			std::unique_lock lk(mx);
-			H::CvExecuteCallbackAfterWaitWithPredicate(lk, cv, pushPredicate, [this, &item] {
+			HELPERS_NS::CvExecuteCallbackAfterWaitWithPredicate(lk, cv, pushPredicate, [this, &item] {
 				items.push(item);
 				});
 
@@ -85,7 +86,7 @@ namespace H {
 			};
 			
 			std::unique_lock lk(mx);
-			T res = H::CvExecuteCallbackAfterWaitWithPredicate(lk, cv, popPredicate, [this] { // if callback not executed it return default T{}
+			T res = HELPERS_NS::CvExecuteCallbackAfterWaitWithPredicate(lk, cv, popPredicate, [this] { // if callback not executed it return default T{}
 				auto item = std::move(items.front());
 				items.pop();
 				return item;

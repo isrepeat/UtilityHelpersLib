@@ -20,7 +20,7 @@ namespace {
 	}
 }
 
-namespace H {
+namespace HELPERS_NS {
 	bool RegistryManager::HasRegValue(HKey hKey, const std::string& path, const std::string& keyName) {
 		LOG_FUNCTION_ENTER("HasRegValue({}, {})", path, keyName);
 
@@ -48,7 +48,7 @@ namespace H {
 			return "";
 		}
 		
-		return H::VecToStr(buff);
+		return HELPERS_NS::VecToStr(buff);
 	}
 
 	// TODO: rewrite with wstring (be careful with double length of character)

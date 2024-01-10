@@ -5,7 +5,7 @@
 
 #define INFO_BUFFER_SIZE 32767
 
-namespace H {
+namespace HELPERS_NS {
     std::wstring GetUserNameW() {
         DWORD bufCharCount = INFO_BUFFER_SIZE;
         std::wstring userName(INFO_BUFFER_SIZE, '\0');

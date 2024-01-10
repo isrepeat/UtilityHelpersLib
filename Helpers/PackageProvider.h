@@ -1,7 +1,8 @@
 #pragma once
+#include "common.h"
 #include <string>
 
-namespace H {
+namespace HELPERS_NS {
     class PackageProvider {
     public:
         static bool IsRunningUnderPackage();

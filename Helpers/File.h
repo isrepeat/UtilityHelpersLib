@@ -1,11 +1,12 @@
 #pragma once
+#include "common.h"
 #include "HWindows.h"
 #include "Logger.h"
 #include <vector>
 #include <atomic>
 #include <span>
 
-namespace H {
+namespace HELPERS_NS {
     inline BOOL CloseHandleSafe(HANDLE h) {
         return h && h != INVALID_HANDLE_VALUE ? CloseHandle(h) : TRUE;
     }

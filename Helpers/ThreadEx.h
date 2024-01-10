@@ -1,8 +1,9 @@
 #pragma once
+#include "common.h"
 #include <functional>
 #include <thread>
 
-namespace H {
+namespace HELPERS_NS {
 	// Wrapper over std::thread that notify you if was exception
 	// NOTE: Move operator deleted because otherwise "this" can point to deleted ThreadEx object.
 	//       So use std::unique_ptr / shared_ptr.

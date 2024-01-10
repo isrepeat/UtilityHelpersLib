@@ -2,7 +2,7 @@
 #include <sstream>
 #include <Windows.h>
 
-namespace H {
+namespace HELPERS_NS {
 	MeasureTime::MeasureTime()
 		: start(std::chrono::high_resolution_clock::now())
 	{

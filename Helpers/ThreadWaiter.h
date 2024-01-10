@@ -1,9 +1,10 @@
 #pragma once
+#include "common.h"
 #include "Thread.h"
 #include "Logger.h"
 #include <condition_variable>
 
-namespace H {
+namespace HELPERS_NS {
 	class ThreadWaiter : public IThread {
 	public:
 		ThreadWaiter() = default;

@@ -1,7 +1,7 @@
 //#include "pch.h"
 #include "Input.h"
 
-namespace H {
+namespace HELPERS_NS {
 	const MousePoint operator*(const MousePoint& point, float factor) {
 		return MousePoint{ static_cast<int>(point.x * factor), static_cast<int>(point.y * factor) };
 	}

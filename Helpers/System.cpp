@@ -5,10 +5,10 @@
 #endif
 
 
-namespace H {
+namespace HELPERS_NS {
     namespace System {
         ComException::ComException(HRESULT hr, const std::wstring& message)
-            : std::exception(H::WStrToStr(message).c_str())
+            : std::exception(HELPERS_NS::WStrToStr(message).c_str())
 #ifdef CRASH_HANDLING_NUGET
             , backtrace{ std::make_shared<CrashHandling::Backtrace>() }
 #endif

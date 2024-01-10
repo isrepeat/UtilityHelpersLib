@@ -1,9 +1,10 @@
 #pragma once
-#include <memory>
-#include <string>
+#include "common.h"
 #include <stdexcept>
+#include <string>
+#include <memory>
 
-namespace H {
+namespace HELPERS_NS {
 	template <typename T>
 	struct StringDeductor {
 		template <typename A> StringDeductor(A) {}
@@ -59,7 +60,7 @@ namespace H {
 
 #define JOIN_STRING(A, B) A B // keep space between A and B
 
-#define INNER_TYPE_STR(str) decltype(H::StringDeductor(str))::type
+#define INNER_TYPE_STR(str) decltype(HELPERS_NS::StringDeductor(str))::type
 
-#define MAKE_STRING_T(T, str) H::GetStringByType<T>(str, L""##str)
-#define MAKE_STRING_VIEW_T(T, str) H::GetStringViewByType<T>(str, L""##str)
+#define MAKE_STRING_T(T, str) HELPERS_NS::GetStringByType<T>(str, L""##str)
+#define MAKE_STRING_VIEW_T(T, str) HELPERS_NS::GetStringViewByType<T>(str, L""##str)

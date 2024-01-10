@@ -1,4 +1,5 @@
 #pragma once
+#include "common.h"
 #include "HWindows.h"
 #include <KnownFolders.h>
 #include <filesystem>
@@ -15,7 +16,7 @@
 #include <map>
 
 
-namespace H {
+namespace HELPERS_NS {
     std::vector<std::string> split(std::string str, const std::string& delim);
     std::vector<std::wstring> split(std::wstring str, const std::wstring& delim);
     

@@ -1,4 +1,5 @@
 #pragma once
+#include "common.h"
 #include <cassert>
 #include <memory>
 #include <mutex>

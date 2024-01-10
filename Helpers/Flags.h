@@ -1,7 +1,8 @@
 #pragma once
+#include "common.h"
 #include <type_traits>
 
-namespace H {
+namespace HELPERS_NS {
     // TODO: add other binary operators with flags
 	template <typename Enum>
 	class Flags {

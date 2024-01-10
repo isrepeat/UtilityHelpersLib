@@ -4,7 +4,7 @@
 
 using namespace boost;
 
-namespace H {
+namespace HELPERS_NS {
     std::string GetLocalIp(int attempts) {
         LOG_FUNCTION_ENTER("GetLocalIp()");
 

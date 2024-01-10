@@ -1,7 +1,7 @@
 #pragma once
 #include "MappedFilesCollection.h"
 
-namespace H {
+namespace HELPERS_NS {
     namespace FS {
         MappedFilesCollection::MappedFilesCollection(std::filesystem::path mappedRootPath, Format format)
             : totalSize{ 0 }

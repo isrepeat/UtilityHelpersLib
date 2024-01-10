@@ -1,7 +1,8 @@
 #pragma once
-#include <memory>
-#include <cassert>
+#include "common.h"
 #include "Passkey.hpp"
+#include <cassert>
+#include <memory>
 
 // TODO: add static_assert for T::UnscopedData (mb also add specialization if T not has UnscopedData)
 template<typename T>

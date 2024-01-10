@@ -1,8 +1,8 @@
 #pragma once
-
-#include <memory>
-#include <type_traits>
+#include "common.h"
 #include "HWindows.h"
+#include <type_traits>
+#include <memory>
 
 struct UniqueHandleDeleter {
     void operator()(HANDLE handle) noexcept;

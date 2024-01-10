@@ -1,4 +1,5 @@
 #pragma once
+#include "common.h"
 #include "ThreadEx.h"
 #include <functional>
 #include <utility>
@@ -7,7 +8,7 @@
 #include <vector>
 #include <mutex>
 
-namespace H {
+namespace HELPERS_NS {
 	// Interface to manage lifetime internal class threads outside
 	// - Use it with ThreadsFinishHelper. 
 	// - You can call NotifyAboutStop & WaitingFinishThreads in derived class desctructor explicitly to guarantee that all threads will finished.
