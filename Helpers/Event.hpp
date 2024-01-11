@@ -1,7 +1,8 @@
 #pragma once
-#include <mutex>
-#include <vector>
+#include "common.h"
 #include <functional>
+#include <vector>
+#include <mutex>
 
 template<typename ...Args>
 class Event {

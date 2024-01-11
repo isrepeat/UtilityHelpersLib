@@ -1,4 +1,5 @@
 #pragma once
+#include "common.h"
 #include "FunctionTraits.hpp"
 #include <functional>
 #include <ppltasks.h>
@@ -41,7 +42,7 @@ namespace CV {
     static const bool NO_WAIT = true;
 }
 
-namespace H {
+namespace HELPERS_NS {
     template <typename Callback, typename Result = typename FunctionTraits<Callback>::Ret>
     Result CvExecuteCallbackAfterWaitWithPredicate(
         std::unique_lock<std::mutex>& lk, std::condition_variable& cv,

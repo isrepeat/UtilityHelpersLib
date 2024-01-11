@@ -118,7 +118,7 @@ namespace {
     }
 }
 
-namespace H {
+namespace HELPERS_NS {
     std::string GetBiosUuid() {
         BYTE uuid[16];
         if (biosuuid(uuid)) {

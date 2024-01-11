@@ -2,7 +2,7 @@
 #include "String.h"
 #include <Windows.h>
 
-namespace H {
+namespace HELPERS_NS {
 	void DebugOutput(const std::wstring& msg) {
 		OutputDebugStringW((L"[dbg] " + msg+L"\n").c_str());
 	}

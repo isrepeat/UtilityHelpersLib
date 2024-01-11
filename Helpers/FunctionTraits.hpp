@@ -1,9 +1,9 @@
 #pragma once
-#include "config.h"
-#include <tuple>
+#include "common.h"
 #include "TypeTraits.hpp"
+#include <tuple>
 
-namespace H {
+namespace HELPERS_NS {
     template <typename ReturnType, typename ClassType, typename... Args>
     struct _FunctionTraitsBase {
         enum {

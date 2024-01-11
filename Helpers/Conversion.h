@@ -1,11 +1,12 @@
 #pragma once
-#include <span>
-#include <string>
-#include <vector>
+#include "common.h"
 #include <sstream>
 #include <iomanip>
+#include <string>
+#include <vector>
+#include <span>
 
-namespace H {
+namespace HELPERS_NS {
 	template<typename T>
 	std::string HexToString(T hexValue) {
 		std::stringstream ss;

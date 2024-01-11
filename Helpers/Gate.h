@@ -1,8 +1,9 @@
 #pragma once
+#include "common.h"
 #include <condition_variable>
 #include <mutex>
 
-namespace H {
+namespace HELPERS_NS {
 	class Gate {
 	public:
 		Gate();

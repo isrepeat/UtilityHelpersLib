@@ -1,4 +1,5 @@
 #pragma once
+#include "common.h"
 #include "FunctionTraits.hpp"
 #include "Logger.h"
 
@@ -6,7 +7,7 @@
 #include <ppltasks.h>
 #include <mutex>
 
-namespace H {
+namespace HELPERS_NS {
     // NOTE: DerivedClass must implement BeforeStartCallback(...) and AfterFinishCallback()
     template <typename DerivedClass, typename... Args>
     class _TaskChainBase {

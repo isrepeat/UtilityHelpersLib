@@ -1,4 +1,5 @@
 #pragma once
+#include "common.h"
 #include "HWindows.h"
 #include "Singleton.hpp"
 #include <functional>
@@ -6,7 +7,7 @@
 #include <vector>
 #include <string>
 
-namespace H {
+namespace HELPERS_NS {
 	class CrashHandler {
 	public:
 		~CrashHandler() = default;

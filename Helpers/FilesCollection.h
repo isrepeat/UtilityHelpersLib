@@ -1,7 +1,8 @@
 #pragma once
+#include "common.h"
 #include "FilesObserver.h"
 
-namespace H {
+namespace HELPERS_NS {
     namespace FS {
         class FilesCollection : public IFilesCollection {
         public:

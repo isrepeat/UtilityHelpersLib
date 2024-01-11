@@ -6,7 +6,7 @@
 #include <ComAPI/ComAPI.h>
 #include <set>
 
-namespace lg {
+namespace LOGGER_NS {
     // Free letter flags: 'j', 'k', 'w' 
 
     class CustomMsgCallbackFlag : public spdlog::custom_flag_formatter {
@@ -123,15 +123,15 @@ namespace lg {
 
 
 
-    void DefaultLoggers::Init(std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags) {
+    void DefaultLoggers::Init(std::filesystem::path logFilePath, HELPERS_NS::Flags<InitFlags> initFlags) {
         GetInstance().InitForId(0, logFilePath, initFlags);
     }
 
-    void DefaultLoggers::InitForId(uint8_t loggerId, std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags) {
+    void DefaultLoggers::InitForId(uint8_t loggerId, std::filesystem::path logFilePath, HELPERS_NS::Flags<InitFlags> initFlags) {
         assertm(loggerId < maxLoggers, "loggerId out of bound");
         static std::set<std::wstring> initedLoggers;
 
-        if (initFlags.Has(InitFlags::CreateInPackageFolder) && H::PackageProvider::IsRunningUnderPackage()) {
+        if (initFlags.Has(InitFlags::CreateInPackageFolder) && HELPERS_NS::PackageProvider::IsRunningUnderPackage()) {
             logFilePath = ComApi::GetPackageFolder() / logFilePath.filename();
         }
 
@@ -148,7 +148,7 @@ namespace lg {
         }
         else {
             if (!initFlags.Has(InitFlags::Truncate) && std::filesystem::file_size(logFilePath) > maxSizeLogFile) {
-                H::FS::RemoveBytesFromStart(logFilePath, maxSizeLogFile / 2, [](std::ofstream& file) {
+                HELPERS_NS::FS::RemoveBytesFromStart(logFilePath, maxSizeLogFile / 2, [](std::ofstream& file) {
                     std::string header = "... [truncated] \n\n";
                     file.write(header.data(), header.size());
                     });
@@ -319,6 +319,6 @@ namespace lg {
     }
 }
 
-LOGGER_API H::nothing* __LgCtx() {
+LOGGER_API HELPERS_NS::nothing* __LgCtx() {
     return nullptr;
 }

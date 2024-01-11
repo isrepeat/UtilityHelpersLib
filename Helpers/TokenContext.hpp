@@ -1,4 +1,5 @@
 #pragma once
+#include "common.h"
 #include <memory>
 
 template <typename T>

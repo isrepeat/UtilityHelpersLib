@@ -1,4 +1,5 @@
 #pragma once
+#include "common.h"
 #include <Windows.h>
 #include <vector>
 #include <memory>

@@ -1,7 +1,8 @@
 #pragma once
+#include "common.h"
 #include <condition_variable>
 
-namespace H {
+namespace HELPERS_NS {
 	// NOTE: use "Snake Case" code style to be combatible with std::..._lock
 	class MultithreadMutex {
 	public:

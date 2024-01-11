@@ -1,7 +1,8 @@
 #pragma once
+#include "common.h"
 #include <functional>
 
-namespace H {
+namespace HELPERS_NS {
 	class PerformActionWithAttempts {
 	public:
 		PerformActionWithAttempts(int attempts, std::function<void()> actionCallback);
@@ -10,6 +11,6 @@ namespace H {
 		static void Break(); // throw CompleteException
 	};
 
-// use with H::
+// use with HELPERS_NS::
 #define BreakAction  PerformActionWithAttempts::Break()
 }

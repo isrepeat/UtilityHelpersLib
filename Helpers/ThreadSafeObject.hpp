@@ -1,6 +1,7 @@
 #pragma once
-#include <mutex>
+#include "common.h"
 #include <string_view>
+#include <mutex>
 
 template<class MutexT, class T>
 class ThreadSafeObjectBase {

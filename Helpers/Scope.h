@@ -1,8 +1,9 @@
 #pragma once
-#include <utility>
+#include "common.h"
 #include "MoveLambda.hpp"
+#include <utility>
 
-namespace H {
+namespace HELPERS_NS {
 	template<class Fn>
 	class Scope {
 	public:

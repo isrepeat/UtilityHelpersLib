@@ -3,7 +3,7 @@
 #include "Logger.h"
 
 
-namespace H {
+namespace HELPERS_NS {
 	ThreadsFinishHelper::~ThreadsFinishHelper() {
 		Stop();
 	}

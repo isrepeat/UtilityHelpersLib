@@ -1,10 +1,11 @@
 #pragma once
+#include "common.h"
 #include <type_traits>
 #include <functional>
 #include <utility>
 #include <memory>
 
-namespace H {
+namespace HELPERS_NS {
 	//
 	// move_lambda, movable_function (https://gist.github.com/jbandela/4208898)
 	//

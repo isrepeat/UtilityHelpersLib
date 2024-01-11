@@ -1,4 +1,5 @@
 #pragma once
+#include "common.h"
 #include "HWindows.h"
 #include "Exception.h"
 #include "Helpers.h"
@@ -11,7 +12,7 @@ namespace CrashHandling {
     class Backtrace;
 }
 
-namespace H {
+namespace HELPERS_NS {
     namespace System {
         // NOTE: For unqie_ptr over pipmpl you need define Dtor (even default) in .cpp file
 

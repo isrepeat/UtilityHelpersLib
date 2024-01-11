@@ -51,9 +51,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Callback_CLR.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CancellationToken.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Channel.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\common.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Concurrency.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\ConcurrentQueue.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\config.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Container.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Conversion.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\CoUniquePtr.h" />

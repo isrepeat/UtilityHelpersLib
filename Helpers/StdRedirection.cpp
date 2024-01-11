@@ -4,7 +4,7 @@
 #include <fcntl.h>
 #include <io.h>
 
-namespace H {
+namespace HELPERS_NS {
     bool StdRedirection::ReAllocConsole() {
         BOOL bResult;
         if (!FreeConsole()) {

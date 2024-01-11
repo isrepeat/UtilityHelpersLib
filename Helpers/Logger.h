@@ -1,4 +1,5 @@
 #pragma once
+#include "common.h"
 #include <spdlog/LogHelpers.h>
 #include "Helpers.h"
 #include "Thread.h"
@@ -6,8 +7,8 @@
 #include "Scope.h"
 
 #if !defined(DISABLE_ERROR_LOGGING)
-#define LogLastError LOG_ERROR_D(L"Last error: {}", H::GetLastErrorAsString())
-#define LogWSALastError LOG_ERROR_D(L"WSA Last error: {}", H::GetWSALastErrorAsString())
+#define LogLastError LOG_ERROR_D(L"Last error: {}", HELPERS_NS::GetLastErrorAsString())
+#define LogWSALastError LOG_ERROR_D(L"WSA Last error: {}", HELPERS_NS::GetWSALastErrorAsString())
 
 // NOTE: 
 // - use comma statement "|| (..., false)" to execute next expression
@@ -64,8 +65,8 @@
 
 #define LOG_THREAD(name)                                                                                                     \
 	LOG_DEBUG_D(L"Thread START '{}'", std::wstring(name));                                                                   \
-	H::ThreadNameHelper::SetThreadName(name);                                                                                \
+	HELPERS_NS::ThreadNameHelper::SetThreadName(name);                                                                       \
                                                                                                                              \
-	auto threadFinishLogScoped = H::MakeScope([&] {                                                                          \
+	auto threadFinishLogScoped = HELPERS_NS::MakeScope([&] {                                                                 \
 		LOG_DEBUG_D(L"Thread END '{}'", std::wstring(name));                                                                 \
 		});

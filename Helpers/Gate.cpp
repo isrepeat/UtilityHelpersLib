@@ -1,6 +1,6 @@
 #include "Gate.h"
 
-namespace H {
+namespace HELPERS_NS {
 	Gate::Gate() {
 		Lock();
 	}

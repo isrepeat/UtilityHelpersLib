@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <fstream>
 
-namespace H {
+namespace HELPERS_NS {
     namespace FS {
         /* ------------------- */
         /*     Read / Write    */
@@ -46,7 +46,7 @@ namespace H {
                 0,
                 NULL);
 
-            auto closeFileHandleScoped = H::MakeScope([hFile] {
+            auto closeFileHandleScoped = HELPERS_NS::MakeScope([hFile] {
                 ::CloseHandle(hFile);
                 });
 
@@ -106,7 +106,7 @@ namespace H {
                 0,
                 NULL);
 
-            auto closeFileHandleScoped = H::MakeScope([hFile] {
+            auto closeFileHandleScoped = HELPERS_NS::MakeScope([hFile] {
                 ::CloseHandle(hFile);
                 });
 

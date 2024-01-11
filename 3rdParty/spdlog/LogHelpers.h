@@ -2,6 +2,19 @@
 // define these macros before first include spdlog headers
 #define SPDLOG_WCHAR_TO_ANSI_SUPPORT
 #define SPDLOG_WCHAR_FILENAMES
+
+#ifndef LOGGER_API
+#define LOGGER_API __declspec(dllexport) // Compile this static library with "dllexport" to export symbols through dll
+#endif
+
+#ifndef LOGGER_NS_ALIAS
+#define LOGGER_NS_ALIAS lg
+#endif
+
+#define LOGGER_NS __logger_namespace
+namespace LOGGER_NS {} // create uniq "logger namespace" for this project
+namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger namespace" (defined via macro)
+
 #include <spdlog/spdlog.h>
 #include <spdlog/logger.h>
 #include "spdlog/sinks/msvc_sink.h"
@@ -30,11 +43,7 @@
 #include <array>
 
 
-#ifndef LOGGER_API
-#define LOGGER_API __declspec(dllexport) // Compile this static library with "dllexport" to export symbols through dll
-#endif
-
-namespace lg {
+namespace LOGGER_NS {
     // define a "__classFullnameLogging" "member checker" class
     define_has_member(__ClassFullnameLogging);
 
@@ -83,8 +92,8 @@ namespace lg {
         static constexpr uintmax_t maxSizeLogFile = 2 * 1024 * 1024; // 2 MB (~ 20'000 rows)
         static constexpr size_t maxLoggers = 2;
 
-        static void Init(std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags = InitFlags::DefaultFlags);
-        static void InitForId(uint8_t loggerId, std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags = InitFlags::DefaultFlags);
+        static void Init(std::filesystem::path logFilePath, HELPERS_NS::Flags<InitFlags> initFlags = InitFlags::DefaultFlags);
+        static void InitForId(uint8_t loggerId, std::filesystem::path logFilePath, HELPERS_NS::Flags<InitFlags> initFlags = InitFlags::DefaultFlags);
         static std::string GetLastMessage();
 
         static std::shared_ptr<spdlog::logger> Logger(uint8_t id = 0);
@@ -140,11 +149,11 @@ namespace lg {
         std::shared_ptr<int> token = std::make_shared<int>();
     };
 
-    constexpr H::nothing* nullctx = nullptr; // used to pass null ctx for logger explicilty
+    constexpr HELPERS_NS::nothing* nullctx = nullptr; // used to pass null ctx for logger explicilty
 }
 
 // TODO: find better solution to detect class context
-LOGGER_API H::nothing* __LgCtx(); // may be overwritten as class method that returned "this" (throught class fullname logging macro)
+LOGGER_API HELPERS_NS::nothing* __LgCtx(); // may be overwritten as class method that returned "this" (throught class fullname logging macro)
 
 
 #if defined(LOG_CTX)
@@ -173,42 +182,42 @@ LOGGER_API H::nothing* __LgCtx(); // may be overwritten as class method that ret
 #if !defined(DISABLE_COMMON_LOGGING)
 #define LOG_CTX spdlog::source_loc{__FILE__, __LINE__, SPDLOG_FUNCTION}
 
-#define LOG_RAW(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::RawLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
-#define LOG_TIME(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::TimeLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_RAW(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::RawLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_TIME(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::TimeLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 
-#define LOG_DEBUG(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
-#define LOG_ERROR(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::err, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
-#define LOG_WARNING(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::warn, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_DEBUG(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_ERROR(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::err, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_WARNING(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::warn, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 
 // Use it inside static functions or with custom context:
-#define LOG_DEBUG_S(_This, fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
-#define LOG_ERROR_S(_This, fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::err, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
-#define LOG_WARNING_S(_This, fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::warn, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_DEBUG_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_ERROR_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::err, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_WARNING_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::warn, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 
 #define LOG_DEBUG_D(fmt, ...) LOG_DEBUG_S(__LgCtx(), fmt, __VA_ARGS__)
 #define LOG_ERROR_D(fmt, ...) LOG_ERROR_S(__LgCtx(), fmt, __VA_ARGS__)
 #define LOG_WARNING_D(fmt, ...) LOG_WARNING_S(__LgCtx(), fmt, __VA_ARGS__)
 
 // Extend logger save last message
-#define LOG_DEBUG_EX(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::ExtendLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
-#define LOG_ERROR_EX(fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), lg::DefaultLoggers::ExtendLogger(), LOG_CTX, spdlog::level::err, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_DEBUG_EX(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::ExtendLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_ERROR_EX(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::ExtendLogger(), LOG_CTX, spdlog::level::err, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 
 
-#define LOG_FUNCTION_ENTER_S(_This, fmt, ...) lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::FuncLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
+#define LOG_FUNCTION_ENTER_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::FuncLogger(), LOG_CTX, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__))
 #define LOG_FUNCTION_ENTER_C(fmt, ...) LOG_FUNCTION_ENTER_S(__LgCtx(), fmt, __VA_ARGS__)
-#define LOG_FUNCTION_ENTER(fmt, ...) LOG_FUNCTION_ENTER_S(lg::nullctx, fmt, __VA_ARGS__)
+#define LOG_FUNCTION_ENTER(fmt, ...) LOG_FUNCTION_ENTER_S(LOGGER_NS::nullctx, fmt, __VA_ARGS__)
 
 
 #define LOG_FUNCTION_SCOPE_S(_This, fmt, ...)                                                                                                                                          \
     auto __fnCtx = LOG_CTX;                                                                                                                                                            \
-	lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::FuncLogger(), __fnCtx, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__));                         \
+	LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::FuncLogger(), __fnCtx, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__));                         \
                                                                                                                                                                                        \
-	auto __functionFinishLogScoped = H::MakeScope([&] {                                                                                                                                \
-		lg::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, lg::DefaultLoggers::FuncLogger(), __fnCtx, spdlog::level::debug, EXPAND_1_VA_ARGS_(JOIN_STRING("<= ", fmt), __VA_ARGS__)); \
+	auto __functionFinishLogScoped = HELPERS_NS::MakeScope([&] {                                                                                                                                \
+		LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::FuncLogger(), __fnCtx, spdlog::level::debug, EXPAND_1_VA_ARGS_(JOIN_STRING("<= ", fmt), __VA_ARGS__)); \
 		});
 
 #define LOG_FUNCTION_SCOPE_C(fmt, ...) LOG_FUNCTION_SCOPE_S(__LgCtx(), fmt, __VA_ARGS__)
-#define LOG_FUNCTION_SCOPE(fmt, ...) LOG_FUNCTION_SCOPE_S(lg::nullctx, fmt, __VA_ARGS__)
+#define LOG_FUNCTION_SCOPE(fmt, ...) LOG_FUNCTION_SCOPE_S(LOGGER_NS::nullctx, fmt, __VA_ARGS__)
 
 #else
 #define LOG_CTX
@@ -252,7 +261,7 @@ LOGGER_API H::nothing* __LgCtx(); // may be overwritten as class method that ret
 	                                                                                                                          \
         void SetFullClassName(std::wstring name) {                                                                            \
             LOG_DEBUG_D(L"Full class name = {}", name);                                                                       \
-            this->className##_fullClassNameA = H::WStrToStr(name);                                                            \
+            this->className##_fullClassNameA = HELPERS_NS::WStrToStr(name);                                                            \
             this->className##_fullClassNameW = name;                                                                          \
         }                                                                                                                     \
                                                                                                                               \

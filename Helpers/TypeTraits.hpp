@@ -1,4 +1,5 @@
 #pragma once
+#include "common.h"
 #include <type_traits>
 
 _STD_BEGIN
@@ -16,6 +17,6 @@ using type_identity_t = typename type_identity<_Ty>::type;
 
 _STD_END
 
-namespace H {
+namespace HELPERS_NS {
 	 struct nothing {};
 }

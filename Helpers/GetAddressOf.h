@@ -1,5 +1,5 @@
 #pragma once
-
+#include "common.h"
 #include <memory>
 
 template<template<class T, class ...Types> class PtrType, class T, class ...Types>

@@ -2,7 +2,7 @@
 #include "Conversion.h"
 #include <format>
 
-namespace H {
+namespace HELPERS_NS {
 #if _HAS_CXX20
     std::span<char>::iterator HexByte(unsigned char byte, std::span<char>::iterator arrIt, const std::span<char>::iterator arrItEnd) {
         static const char* digits{ "0123456789ABCDEF" }; // NOTE: byte must be unsigned value

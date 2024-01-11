@@ -1,11 +1,12 @@
 #pragma once
+#include "common.h"
 #include "HWindows.h"
 #include "FileSystem_inline.h"
 #include <functional>
 #include <vector>
 #include <string>
 
-namespace H {
+namespace HELPERS_NS {
     namespace FS {
         struct FileHeader {
             std::filesystem::path fileItem;

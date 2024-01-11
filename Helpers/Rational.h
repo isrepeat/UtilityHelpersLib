@@ -1,4 +1,5 @@
 #pragma once
+#include "common.h"
 
 template<class T>
 class Rational {

@@ -1,4 +1,5 @@
 #pragma once
+#include "common.h"
 #include <string>
 #include <comdef.h>
 #include <Wbemidl.h>
@@ -82,7 +83,7 @@ namespace SystemDataProvider
 		std::wstring geoInfo;
 		geoInfo.resize(geoInfoLen);
 		GetGeoInfoEx(geoName.data(), GEO_FRIENDLYNAME, &geoInfo[0], geoInfoLen);
-		region = H::WStrToStr(geoInfo);
+		region = HELPERS_NS::WStrToStr(geoInfo);
 
 		ret = GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_SISO639LANGNAME, (LPSTR)tmpLang,
 			sizeof(tmpLang) / sizeof(char));

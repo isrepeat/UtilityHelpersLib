@@ -6,7 +6,7 @@ namespace {
 	struct CompleteException {};
 }
 
-namespace H {
+namespace HELPERS_NS {
 	PerformActionWithAttempts::PerformActionWithAttempts(int attempts, std::function<void()> actionCallback) {
 		try {
 			while (attempts-- > 0) {

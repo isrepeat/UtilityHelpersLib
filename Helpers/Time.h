@@ -1,13 +1,14 @@
 #pragma once
-#include <thread>
-#include <chrono>
-#include <future>
-#include <functional>
+#include "common.h"
 #include <condition_variable>
+#include <functional>
+#include <chrono>
+#include <thread>
+#include <future>
 
 using namespace std::chrono_literals;
 
-namespace H {
+namespace HELPERS_NS {
 	class Timer	{
 	public:
 		template <typename Duration>
@@ -134,8 +135,8 @@ namespace H {
 #define MEASURE_TIME_TOKENPASTE(x, y) x ## y
 // use it with __LINE__ to fix "hides declaration of the same name in outer scope"
 #define MEASURE_TIME_TOKENPASTE2(x, y) MEASURE_TIME_TOKENPASTE(x, y)
-#define MEASURE_TIME H::MeasureTime MEASURE_TIME_TOKENPASTE2(_measureTimeScoped, __LINE__);
-#define MEASURE_TIME_WITH_CALLBACK(callback) H::MeasureTimeScoped MEASURE_TIME_TOKENPASTE2(_measureTimeScoped, __LINE__)(callback);
+#define MEASURE_TIME HELPERS_NS::MeasureTime MEASURE_TIME_TOKENPASTE2(_measureTimeScoped, __LINE__);
+#define MEASURE_TIME_WITH_CALLBACK(callback) HELPERS_NS::MeasureTimeScoped MEASURE_TIME_TOKENPASTE2(_measureTimeScoped, __LINE__)(callback);
 #else
 #define MEASURE_TIME
 #define MEASURE_TIME_WITH_CALLBACK(callback)

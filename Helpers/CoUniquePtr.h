@@ -1,6 +1,6 @@
 #pragma once
+#include "common.h"
 #include "GetAddressOf.h"
-
 #include "HWindows.h"
 #include <memory>
 

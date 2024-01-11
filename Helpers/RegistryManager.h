@@ -1,4 +1,5 @@
 #pragma once
+#include "common.h"
 #include <string>
 
 enum class HKey {
@@ -8,7 +9,7 @@ enum class HKey {
     Users,
 };
 
-namespace H {
+namespace HELPERS_NS {
     class RegistryManager {
     public:
         static bool HasRegValue(HKey hKey, const std::string& path, const std::string& keyName);

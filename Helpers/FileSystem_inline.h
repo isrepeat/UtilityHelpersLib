@@ -1,11 +1,12 @@
 #pragma once
+#include "common.h"
 #include <filesystem>
 #include <functional>
 #include <fstream>
 #include <cassert>
 #include <vector>
 
-namespace H {
+namespace HELPERS_NS {
     namespace FS {
         inline bool RemoveBytesFromStart(const std::filesystem::path& filepath, uintmax_t countRemovedBytes, std::function<void(std::ofstream&)> beginWriteHandler = nullptr) {
             std::vector<char> fileData;

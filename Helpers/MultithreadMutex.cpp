@@ -1,6 +1,6 @@
 #include "MultithreadMutex.h"
 
-namespace H {
+namespace HELPERS_NS {
 	void MultithreadMutex::lock() {
 		std::unique_lock<std::mutex> lk(mx);
 		cvLocker.wait(lk, [this] {

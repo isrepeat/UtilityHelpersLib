@@ -1,7 +1,8 @@
 #pragma once
+#include "common.h"
 #include <map>
 
-namespace H {
+namespace HELPERS_NS {
 	template<class Key, class Value>
 	class Bimap {
 	public:

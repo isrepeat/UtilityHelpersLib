@@ -1,7 +1,8 @@
 #pragma once
+#include "common.h"
 #include <deque>
 
-namespace H {
+namespace HELPERS_NS {
     template<class T, class ContainerT>
     class fixed_container : private ContainerT {
     public:

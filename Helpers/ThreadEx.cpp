@@ -2,7 +2,7 @@
 #include "ThreadEx.h"
 #include "Logger.h"
 
-namespace H {
+namespace HELPERS_NS {
 	ThreadEx::ThreadEx(std::function<void()> exceptionCallback, std::function<void()> lambda)
 		: std::thread(std::bind(&ThreadEx::WorkingRoutine, this, std::placeholders::_1, std::placeholders::_2), exceptionCallback, lambda)
 	{
