@@ -247,11 +247,11 @@ namespace LOGGER_NS {
 #endif
 
         if (initFlags.Has(InitFlags::AppendNewSessionMsg)) {
-            _this.standardLoggersList[loggerId].rawLogger->trace("\n");
+            _this.standardLoggersList[loggerId].rawLogger->debug("\n");
             // whitespaces are selected by design
-            _this.standardLoggersList[loggerId].rawLogger->trace("==========================================================================================================");
-            _this.standardLoggersList[loggerId].timeLogger->trace("                       New session started");
-            _this.standardLoggersList[loggerId].rawLogger->trace("==========================================================================================================");
+            _this.standardLoggersList[loggerId].rawLogger->debug("==========================================================================================================");
+            _this.standardLoggersList[loggerId].timeLogger->debug("                       New session started");
+            _this.standardLoggersList[loggerId].rawLogger->debug("==========================================================================================================");
         }
     }
 
