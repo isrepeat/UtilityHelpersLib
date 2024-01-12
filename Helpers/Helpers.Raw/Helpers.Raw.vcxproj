@@ -28,7 +28,7 @@
     <ProjectReference Include="..\..\3rdParty\MagicEnum\MagicEnum.vcxproj">
       <Project>{618d9e1a-89c8-48ff-9a90-a7ed5ed2ea2c}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\3rdParty\spdlog\spdlog.vcxproj">
+    <ProjectReference Include="..\..\3rdParty\Spdlog\Spdlog.Static\Spdlog.Static.vcxproj">
       <Project>{4ab35171-9952-4a89-9589-8a63e8be47e9}</Project>
     </ProjectReference>
   </ItemGroup>

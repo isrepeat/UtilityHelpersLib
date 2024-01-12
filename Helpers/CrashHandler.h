@@ -1,5 +1,6 @@
 #pragma once
 #include "common.h"
+#ifdef CRASH_HANDLING_SUPPORT
 #include "HWindows.h"
 #include "Singleton.hpp"
 #include <functional>
@@ -24,3 +25,4 @@ namespace HELPERS_NS {
 	
 	using CrashHandlerSingleton = Singleton<CrashHandler>;
 }
+#endif

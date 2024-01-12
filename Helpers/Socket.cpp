@@ -1,4 +1,6 @@
 #pragma once
+#include "Socket.h"
+#ifdef BOOST_SUPPORTED
 #include <boost/asio.hpp>
 #include "Logger.h"
 
@@ -52,3 +54,4 @@ namespace HELPERS_NS {
         return "0.0.0.0";
     }
 }
+#endif

@@ -11,3 +11,19 @@ namespace HELPERS_NS_ALIAS = HELPERS_NS; // set your alias for original "helpers
 #if (_MANAGED == 1) || (_M_CEE == 1)
 #define __CLR__
 #endif
+
+
+/* ------------------------------------ */
+/*   Check external includes / nugets   */
+/* ------------------------------------ */
+#if !defined(__has_include)
+#pragma message("'__has_include' directive not found")
+#endif
+
+#if defined(CRASH_HANDLING_NUGET) or __has_include("CrashHandling/CrashHandling.h")
+#define CRASH_HANDLING_SUPPORT
+#endif
+
+#if __has_include("boost/asio.hpp")
+#define BOOST_SUPPORTED
+#endif

@@ -4,7 +4,7 @@
     <PublicIncludeDirectories>$(ProjectDir)..\..\;$(PublicIncludeDirectories)</PublicIncludeDirectories>
     <!-- 3rd party dirs -->
     <PublicIncludeDirectories>$(ProjectDir)..\..\3rdParty;$(PublicIncludeDirectories)</PublicIncludeDirectories>
-    <PublicIncludeDirectories>$(ProjectDir)..\..\3rdParty\spdlog;$(PublicIncludeDirectories)</PublicIncludeDirectories>
     <PublicIncludeDirectories>$(ProjectDir)..\..\3rdParty\MagicEnum;$(PublicIncludeDirectories)</PublicIncludeDirectories>
+    <PublicIncludeDirectories>$(ProjectDir)..\..\3rdParty\Spdlog\Spdlog.Shared;$(PublicIncludeDirectories)</PublicIncludeDirectories>
   </PropertyGroup>
 </Project>
