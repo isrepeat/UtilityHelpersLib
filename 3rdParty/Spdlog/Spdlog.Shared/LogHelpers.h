@@ -17,9 +17,9 @@ namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger na
 
 #include <spdlog/spdlog.h>
 #include <spdlog/logger.h>
-#include "spdlog/sinks/msvc_sink.h"
-#include "spdlog/sinks/basic_file_sink.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
+#include <spdlog/sinks/msvc_sink.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #ifdef INSIDE_HELPERS_PROJECT
 #include "Flags.h"
 #include "Scope.h"
