@@ -56,6 +56,7 @@
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
+    <Import Project="..\ComAPI.Shared\ComAPI.Shared.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -74,25 +75,25 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)\!VS_TMP\Build\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
-    <PublicIncludeDirectories>$(ProjectDir)..\;$(PublicIncludeDirectories);</PublicIncludeDirectories>
+    <PublicIncludeDirectories>$(PublicIncludeDirectories);</PublicIncludeDirectories>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)\!VS_TMP\Build\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
-    <PublicIncludeDirectories>$(ProjectDir)..\;$(PublicIncludeDirectories);</PublicIncludeDirectories>
+    <PublicIncludeDirectories>$(PublicIncludeDirectories);</PublicIncludeDirectories>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)\!VS_TMP\Build\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
-    <PublicIncludeDirectories>$(ProjectDir)..\;$(PublicIncludeDirectories);</PublicIncludeDirectories>
+    <PublicIncludeDirectories>$(PublicIncludeDirectories);</PublicIncludeDirectories>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)\!VS_TMP\Build\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
-    <PublicIncludeDirectories>$(ProjectDir)..\;$(PublicIncludeDirectories);</PublicIncludeDirectories>
+    <PublicIncludeDirectories>$(PublicIncludeDirectories);</PublicIncludeDirectories>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -154,12 +155,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="ComAPI.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="ComAPI.cpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
