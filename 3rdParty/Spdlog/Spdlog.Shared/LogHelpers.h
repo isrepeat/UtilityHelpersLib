@@ -20,21 +20,12 @@ namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger na
 #include <spdlog/sinks/msvc_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-#ifdef INSIDE_HELPERS_PROJECT
-#include "Flags.h"
-#include "Scope.h"
-#include "Macros.h"
-#include "String.hpp"
-#include "Singleton.hpp"
-#include "TypeTraits.hpp"
-#else
 #include <Helpers/Flags.h>
 #include <Helpers/Scope.h>
 #include <Helpers/Macros.h>
 #include <Helpers/String.hpp>
 #include <Helpers/Singleton.hpp>
 #include <Helpers/TypeTraits.hpp>
-#endif
 #include "CustomTypeSpecialization.h"
 #include <unordered_map>
 #include <filesystem>

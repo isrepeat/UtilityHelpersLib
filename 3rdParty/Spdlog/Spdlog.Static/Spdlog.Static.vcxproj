@@ -19,11 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\ComAPI\ComAPI.vcxproj">
+    <ProjectReference Include="..\..\..\Helpers\ComAPI\ComAPI.vcxproj">
       <Project>{d2f14f8e-303b-4ae6-a98b-b789cd19981d}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\Helpers\Helpers.Includes\Helpers.Includes.vcxproj">
-      <Project>{0a91eb2b-8ebc-43b6-be7b-73df089cbfa4}</Project>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -64,6 +61,7 @@
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
+    <Import Project="..\..\..\Helpers\Helpers.Includes\Helpers.Includes.vcxitems" Label="Shared" />
     <Import Project="..\Spdlog.Shared\Spdlog.Shared.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

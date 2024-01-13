@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Make sure this file are imported in .vcxitems -->
+  <PropertyGroup>
+    <HelpersSharedDir>$(MSBuildThisFileDirectory)..\Helpers.Shared</HelpersSharedDir>
+    <!-- Expose Helpers.Shared dir for other projects -->
+    <PublicIncludeDirectories>$(HelpersSharedDir);$(PublicIncludeDirectories)</PublicIncludeDirectories>
+  </PropertyGroup>
+  
+  <!-- Add Helpers.Shared path as additional includes dirs to whoever imports this project -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>
+        $(HelpersSharedDir);
+        %(AdditionalIncludeDirectories)
+      </AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+</Project>
