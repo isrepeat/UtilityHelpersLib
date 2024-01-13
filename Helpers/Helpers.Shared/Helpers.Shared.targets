@@ -2,8 +2,9 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- Make sure this file are imported in .vcxitems -->
   <PropertyGroup>
-    <HelpersDirectory>$(MSBuildThisFileDirectory)..</HelpersDirectory>
+    <HelpersDirectory>$(MSBuildThisFileDirectory)Helpers</HelpersDirectory>
     <ThirdPartyDirectory>$(MSBuildThisFileDirectory)..\..\3rdParty</ThirdPartyDirectory>
+    <PublicIncludeDirectories>$(MSBuildThisFileDirectory);$(PublicIncludeDirectories)</PublicIncludeDirectories>
   </PropertyGroup>
   
   <ItemGroup>
