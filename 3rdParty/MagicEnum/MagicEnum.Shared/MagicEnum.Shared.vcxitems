@@ -14,11 +14,11 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <!-- Custom targets -->
-  <Import Project="$(MSBuildThisFileDirectory)MagicEnum.Shared_PublicDirs.targets" />
-  <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)MagicEnum.Shared_PublicDirs.targets" />
-  </ItemGroup>
+  <Import Project="$(MSBuildThisFileDirectory)MagicEnum.Shared.targets" />
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)MagicEnum\MagicEnum.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)MagicEnum.Shared.targets" />
   </ItemGroup>
 </Project>

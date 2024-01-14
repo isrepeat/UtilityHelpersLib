@@ -2,6 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- Make sure this file are imported in .vcxitems -->
   <PropertyGroup>
+    <SpdlogSourcesDir>$(MSBuildThisFileDirectory)</SpdlogSourcesDir>
     <!-- Expose own dir for other projects -->
     <PublicIncludeDirectories>$(MSBuildThisFileDirectory);$(PublicIncludeDirectories)</PublicIncludeDirectories>
   </PropertyGroup>
@@ -11,6 +12,7 @@
       <PreprocessorDefinitions>
         SPDLOG_SOURCES;
         SPDLOG_WCHAR_FILENAMES;
+        SPDLOG_WCHAR_TO_ANSI_SUPPORT;
         %(PreprocessorDefinitions)
       </PreprocessorDefinitions>
     <LanguageStandard>stdcpp20</LanguageStandard>

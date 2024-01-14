@@ -331,6 +331,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)Spdlog.Shared_PublicDirs.targets" />
+    <None Include="$(MSBuildThisFileDirectory)Spdlog.Shared.targets" />
   </ItemGroup>
 </Project>

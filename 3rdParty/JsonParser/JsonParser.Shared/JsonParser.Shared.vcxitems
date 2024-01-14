@@ -14,14 +14,14 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <!-- Custom targets -->
-  <Import Project="$(MSBuildThisFileDirectory)JsonParser.Shared_PublicDirs.targets" />
-  <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)JsonParser.Shared_PublicDirs.targets" />
-  </ItemGroup>
+  <Import Project="$(MSBuildThisFileDirectory)JsonParser.Shared.targets" />
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)JsonParser\JsonParser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)JsonParser\JsonParser.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)JsonParser.Shared.targets" />
   </ItemGroup>
 </Project>

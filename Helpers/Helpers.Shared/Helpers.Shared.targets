@@ -2,19 +2,18 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- Make sure this file are imported in .vcxitems -->
   <PropertyGroup>
-    <HelpersDirectory>$(MSBuildThisFileDirectory)Helpers</HelpersDirectory>
-    <ThirdPartyDirectory>$(MSBuildThisFileDirectory)..\..\3rdParty</ThirdPartyDirectory>
+    <HelpersSourcesDir>$(MSBuildThisFileDirectory)Helpers</HelpersSourcesDir>
     <!-- Expose own dir for other projects -->
     <PublicIncludeDirectories>$(MSBuildThisFileDirectory);$(PublicIncludeDirectories)</PublicIncludeDirectories>
   </PropertyGroup>
   
   <ItemGroup>
-    <HelpersCommonHeaders Include="$(HelpersDirectory)\config.h" />
-    <HelpersCommonHeaders Include="$(HelpersDirectory)\HWindows.h" />
-    <HelpersCommonHeaders Include="$(HelpersDirectory)\Callback.hpp" />
-    <HelpersCommonHeaders Include="$(HelpersDirectory)\Callback_CLR.hpp" />
-    <HelpersCommonHeaders Include="$(HelpersDirectory)\TokenContext.hpp" />
-    <HelpersCommonHeaders Include="$(HelpersDirectory)\FunctionTraits.hpp" />
+    <HelpersCommonHeaders Include="$(HelpersSourcesDir)\common.h" />
+    <HelpersCommonHeaders Include="$(HelpersSourcesDir)\HWindows.h" />
+    <HelpersCommonHeaders Include="$(HelpersSourcesDir)\Callback.hpp" />
+    <HelpersCommonHeaders Include="$(HelpersSourcesDir)\Callback_CLR.hpp" />
+    <HelpersCommonHeaders Include="$(HelpersSourcesDir)\TokenContext.hpp" />
+    <HelpersCommonHeaders Include="$(HelpersSourcesDir)\FunctionTraits.hpp" />
   </ItemGroup>
 
   <!-- Define macros -->
