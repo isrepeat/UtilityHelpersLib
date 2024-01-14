@@ -3,7 +3,8 @@
   <!-- Make sure this file are imported in .vcxitems -->
   <PropertyGroup>
     <MagicEnumSourcesDir>$(MSBuildThisFileDirectory)MagicEnum</MagicEnumSourcesDir>
+    <MagicEnumIncludeDirs>$(MagicEnumSourcesDir);$(MSBuildThisFileDirectory)</MagicEnumIncludeDirs>
     <!-- Expose own dir for other projects -->
-    <PublicIncludeDirectories>$(MSBuildThisFileDirectory);$(PublicIncludeDirectories)</PublicIncludeDirectories>
+    <PublicIncludeDirectories>$(MagicEnumIncludeDirs);$(PublicIncludeDirectories)</PublicIncludeDirectories>
   </PropertyGroup>
 </Project>
