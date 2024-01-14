@@ -3,7 +3,7 @@
   <PropertyGroup Label="Globals">
     <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     <HasSharedItems>true</HasSharedItems>
-    <ItemsProjectGuid>{301BF8C8-F7CA-429F-8B12-DED615A64508}</ItemsProjectGuid>
+    <ItemsProjectGuid>{8E6397BF-29AE-4D5A-A7E7-87F332256BDA}</ItemsProjectGuid>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -14,8 +14,8 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <!-- Custom targets -->
-  <Import Project="$(MSBuildThisFileDirectory)Helpers.Includes.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)Boost.Includes.targets" />
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)Helpers.Includes.targets" />
+    <None Include="$(MSBuildThisFileDirectory)Boost.Includes.targets" />
   </ItemGroup>
 </Project>
