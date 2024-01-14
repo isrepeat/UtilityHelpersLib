@@ -1,10 +1,6 @@
 #pragma once
+#include <JsonParser/json_struct/json_struct.h>
 #include <vector>
-#if defined(min) || defined(max)
-#undef min
-#undef max
-#endif
-#include <json_struct/json_struct.h>
 
 namespace JS {
     template <typename T>
