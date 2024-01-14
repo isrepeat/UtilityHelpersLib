@@ -19,9 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Helpers.Raw_PublicDirs.targets" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\3rdParty\JsonParser\JsonParser.Static\JsonParser.Static.vcxproj">
       <Project>{4dc532ad-a19b-4ec5-9923-990df8f4a9ab}</Project>
     </ProjectReference>
@@ -189,6 +186,4 @@
     </Lib>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <!--Custom targets-->
-  <Import Project="$(ProjectDir)\Helpers.Raw_PublicDirs.targets" />
 </Project>
