@@ -19,17 +19,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Helpers_PublicDirs.targets" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\3rdParty\Boost.Includes\Boost.Includes.vcxproj">
-      <Project>{4f240080-ef67-45b1-a6de-3ded5fa14e8e}</Project>
+    <ProjectReference Include="..\..\3rdParty\JsonParser\JsonParser.Static\JsonParser.Static.vcxproj">
+      <Project>{4dc532ad-a19b-4ec5-9923-990df8f4a9ab}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\3rdParty\MagicEnum\MagicEnum.vcxproj">
-      <Project>{618d9e1a-89c8-48ff-9a90-a7ed5ed2ea2c}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\3rdParty\spdlog\spdlog.vcxproj">
+    <ProjectReference Include="..\..\3rdParty\Spdlog\Spdlog.Static\Spdlog.Static.vcxproj">
       <Project>{4ab35171-9952-4a89-9589-8a63e8be47e9}</Project>
     </ProjectReference>
   </ItemGroup>
@@ -73,6 +69,8 @@
   <ImportGroup Label="Shared">
     <Import Project="..\Helpers.Shared\Helpers.Shared.vcxitems" Label="Shared" />
     <Import Project="..\..\packages\CrashHandling.1.1.18\build\native\CrashHandling.targets" Condition="Exists('..\..\packages\CrashHandling.1.1.18\build\native\CrashHandling.targets')" />
+    <Import Project="..\..\3rdParty\MagicEnum\MagicEnum.Shared\MagicEnum.Shared.vcxitems" Label="Shared" />
+    <Import Project="..\..\3rdParty\3rdParty_Packages_Includes\Boost.Includes\Boost.Includes.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -192,8 +190,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <!--Custom targets-->
-  <Import Project="$(ProjectDir)\Helpers_PublicDirs.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>

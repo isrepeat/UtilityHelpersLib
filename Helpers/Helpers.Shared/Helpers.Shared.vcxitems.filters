@@ -24,282 +24,279 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\CancellationToken.cpp">
-      <Filter>_Sources</Filter>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Gate.cpp">
+      <Filter>Thread</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\Channel.cpp">
-      <Filter>_Sources</Filter>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\MultithreadMutex.cpp">
+      <Filter>Thread</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\Helpers.cpp">
-      <Filter>_Sources</Filter>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Thread.cpp">
+      <Filter>Thread</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\Input.cpp">
-      <Filter>_Sources</Filter>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\ThreadEx.cpp">
+      <Filter>Thread</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\IpTranslator.cpp">
-      <Filter>_Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\Logger.cpp">
-      <Filter>_Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\System.cpp">
-      <Filter>_Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\Time.cpp">
-      <Filter>_Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\PackageProvider.cpp">
-      <Filter>_Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\String.cpp">
-      <Filter>_Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\CrashHandler.cpp">
-      <Filter>_Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\Conversion.cpp">
-      <Filter>_Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\MediaFoundation\MFUser.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MFUser.cpp">
       <Filter>MediaFoundation</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\UniqueHandle.cpp">
-      <Filter>_Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\RegistryManager.cpp">
-      <Filter>_Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\CrashInfo.cpp">
-      <Filter>_Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\FileSystem.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\FilesCollection.cpp">
       <Filter>FileSystem</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\BIOS.cpp">
-      <Filter>_Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\FilesCollection.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\FileSystem.cpp">
       <Filter>FileSystem</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\MappedFilesCollection.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\MappedFilesCollection.cpp">
       <Filter>FileSystem</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\SystemInfo.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Action.cpp">
       <Filter>_Sources</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\Socket.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\BIOS.cpp">
       <Filter>_Sources</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\MultithreadMutex.cpp">
-      <Filter>Thread</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\Thread.cpp">
-      <Filter>Thread</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\Action.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\CancellationToken.cpp">
       <Filter>_Sources</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\Gate.cpp">
-      <Filter>Thread</Filter>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Channel.cpp">
+      <Filter>_Sources</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\ThreadEx.cpp">
-      <Filter>Thread</Filter>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Conversion.cpp">
+      <Filter>_Sources</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\StdRedirection.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\CrashHandler.cpp">
+      <Filter>_Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\CrashInfo.cpp">
+      <Filter>_Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Helpers.cpp">
+      <Filter>_Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Input.cpp">
+      <Filter>_Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Logger.cpp">
+      <Filter>_Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\PackageProvider.cpp">
+      <Filter>_Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\RegistryManager.cpp">
+      <Filter>_Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Socket.cpp">
+      <Filter>_Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\StdRedirection.cpp">
+      <Filter>_Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\String.cpp">
+      <Filter>_Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\System.cpp">
+      <Filter>_Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\SystemInfo.cpp">
+      <Filter>_Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Time.cpp">
+      <Filter>_Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\UniqueHandle.cpp">
       <Filter>_Sources</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\CancellationToken.h">
-      <Filter>_Headers</Filter>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Gate.h">
+      <Filter>Thread</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Channel.h">
-      <Filter>_Headers</Filter>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MultithreadMutex.h">
+      <Filter>Thread</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Helpers.h">
-      <Filter>_Headers</Filter>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Thread.h">
+      <Filter>Thread</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Input.h">
-      <Filter>_Headers</Filter>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ThreadEx.h">
+      <Filter>Thread</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\IpTranslator.h">
-      <Filter>_Headers</Filter>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ThreadSafeObject.hpp">
+      <Filter>Thread</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Logger.h">
-      <Filter>_Headers</Filter>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ThreadWaiter.h">
+      <Filter>Thread</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\System.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\SystemDataProvider.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Time.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Bimap.hpp">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\PackageProvider.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Signal.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Event.hpp">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\String.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\CrashHandler.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Conversion.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Singleton.hpp">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Scope.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\FunctionTraits.hpp">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\LocalPtr.hpp">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Macros.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Rational.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\AlignedAllocator.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\CoUniquePtr.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\GetAddressOf.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\MediaFoundation\MFInclude.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MFInclude.h">
       <Filter>MediaFoundation</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\MediaFoundation\MFLibs.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MFLibs.h">
       <Filter>MediaFoundation</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\MediaFoundation\MFUser.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MFUser.h">
       <Filter>MediaFoundation</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\UniqueHandle.h">
-      <Filter>_Headers</Filter>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\FilesCollection.h">
+      <Filter>FileSystem</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Container.hpp">
-      <Filter>_Headers</Filter>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\FilesObserver.h">
+      <Filter>FileSystem</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\RegistryManager.h">
-      <Filter>_Headers</Filter>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\FileSystem.h">
+      <Filter>FileSystem</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\HWindows.h">
-      <Filter>_Headers</Filter>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\FileSystem_inline.h">
+      <Filter>FileSystem</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Passkey.hpp">
-      <Filter>_Headers</Filter>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MappedFilesCollection.h">
+      <Filter>FileSystem</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Callback.hpp">
-      <Filter>_Headers</Filter>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Concurrency.h">
+      <Filter>Concurrency</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Callback_CLR.hpp">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ConcurrentQueue.h">
+      <Filter>Concurrency</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TaskChain.h">
+      <Filter>Concurrency</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Callback_CLR.hpp">
       <Filter>CLR</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\CrashInfo.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Action.h">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\TokenSingleton.hpp">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AlignedAllocator.h">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\TokenContext.hpp">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Bimap.hpp">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Exception.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\BIOS.h">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\String.hpp">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Callback.hpp">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\TypeTraits.hpp">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CancellationToken.h">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\FilesObserver.h">
-      <Filter>FileSystem</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\FileSystem.h">
-      <Filter>FileSystem</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\BIOS.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Channel.h">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\FilesCollection.h">
-      <Filter>FileSystem</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\FileSystem_inline.h">
-      <Filter>FileSystem</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\MappedFilesCollection.h">
-      <Filter>FileSystem</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Flags.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\common.h">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\MoveLambda.hpp">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Container.hpp">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\SystemInfo.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Conversion.h">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Socket.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CoUniquePtr.h">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Thread.h">
-      <Filter>Thread</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\ThreadSafeObject.hpp">
-      <Filter>Thread</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\ThreadWaiter.h">
-      <Filter>Thread</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\MultithreadMutex.h">
-      <Filter>Thread</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Concurrency.h">
-      <Filter>Concurrency</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\ConcurrentQueue.h">
-      <Filter>Concurrency</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\TaskChain.h">
-      <Filter>Concurrency</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Gate.h">
-      <Filter>Thread</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\Action.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CrashHandler.h">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\ThreadEx.h">
-      <Filter>Thread</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\StdRedirection.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CrashInfo.h">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\File.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Event.hpp">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\common.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Exception.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\File.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Flags.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\FunctionTraits.hpp">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\GetAddressOf.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Helpers.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\HWindows.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Input.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IpTranslator.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LocalPtr.hpp">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Logger.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Macros.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MoveLambda.hpp">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PackageProvider.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Passkey.hpp">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Rational.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\RegistryManager.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Scope.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Signal.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Singleton.hpp">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Socket.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\String.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\String.hpp">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\System.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SystemDataProvider.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SystemInfo.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StdRedirection.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Time.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TokenContext.hpp">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TokenSingleton.hpp">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TypeTraits.hpp">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\UniqueHandle.h">
       <Filter>_Headers</Filter>
     </ClInclude>
   </ItemGroup>
