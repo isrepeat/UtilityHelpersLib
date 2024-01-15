@@ -1,5 +1,6 @@
 #pragma once
 #include "common.h"
+#if COMPILE_FOR_DESKTOP
 #include <string>
 
 enum class HKey {
@@ -17,3 +18,4 @@ namespace HELPERS_NS {
         static void SetRegValue(HKey hKey, const std::string& path, const std::string& keyName, const std::string& value);
     };
 }
+#endif

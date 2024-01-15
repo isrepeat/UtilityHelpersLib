@@ -1,8 +1,8 @@
 #include "RegistryManager.h"
-#include "HString.h"
-#include <vector>
-#include "Logger.h"
+#if COMPILE_FOR_DESKTOP
 #include "Helpers.h"
+#include "Logger.h"
+#include <vector>
 
 namespace {
 	HKEY ConvertToHKEY(HKey hKey) {
@@ -61,3 +61,4 @@ namespace HELPERS_NS {
 		}
 	}
 }
+#endif

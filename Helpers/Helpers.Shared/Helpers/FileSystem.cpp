@@ -1,4 +1,5 @@
 #include "FileSystem.h"
+#if COMPILE_FOR_DESKTOP
 #include "Helpers.h"
 #include "Logger.h"
 #include <filesystem>
@@ -182,3 +183,4 @@ namespace HELPERS_NS {
         }
     }
 }
+#endif

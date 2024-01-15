@@ -49,10 +49,16 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JsonParser.Shared", "3rdPar
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JsonParser.Static", "3rdParty\JsonParser\JsonParser.Static\JsonParser.Static.vcxproj", "{4DC532AD-A19B-4EC5-9923-990DF8F4A9AB}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Helpers.UWP", "Helpers\Helpers.UWP\Helpers.UWP.vcxproj", "{1F26DD5B-02C2-4192-AC91-06BED3D214F3}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		3rdParty\JsonParser\JsonParser.Shared\JsonParser.Shared.vcxitems*{05dacba7-9f59-4442-a519-d32aa0373c0a}*SharedItemsImports = 9
 		MediaRecorderCore\MediaRecorderCore.Shared.UWP\MediaRecorderCore.Shared.UWP.vcxitems*{17f767e6-631b-4068-a504-810de9e39431}*SharedItemsImports = 9
+		3rdParty\MagicEnum\MagicEnum.Shared\MagicEnum.Shared.vcxitems*{1f26dd5b-02c2-4192-ac91-06bed3d214f3}*SharedItemsImports = 4
+		3rdParty\Spdlog\Spdlog.Shared\Spdlog.Shared.vcxitems*{1f26dd5b-02c2-4192-ac91-06bed3d214f3}*SharedItemsImports = 4
+		Helpers\ComAPI.Shared\ComAPI.Shared.vcxitems*{1f26dd5b-02c2-4192-ac91-06bed3d214f3}*SharedItemsImports = 4
+		Helpers\Helpers.Shared\Helpers.Shared.vcxitems*{1f26dd5b-02c2-4192-ac91-06bed3d214f3}*SharedItemsImports = 4
 		3rdParty\3rdParty_Packages_Includes\Boost.Includes\Boost.Includes.vcxitems*{298ab331-24aa-4f41-916e-2206023f8085}*SharedItemsImports = 4
 		3rdParty\MagicEnum\MagicEnum.Shared\MagicEnum.Shared.vcxitems*{298ab331-24aa-4f41-916e-2206023f8085}*SharedItemsImports = 4
 		Helpers\Helpers.Shared\Helpers.Shared.vcxitems*{298ab331-24aa-4f41-916e-2206023f8085}*SharedItemsImports = 4
@@ -141,6 +147,18 @@ Global
 		{4DC532AD-A19B-4EC5-9923-990DF8F4A9AB}.Release|x64.Build.0 = Release|x64
 		{4DC532AD-A19B-4EC5-9923-990DF8F4A9AB}.Release|x86.ActiveCfg = Release|Win32
 		{4DC532AD-A19B-4EC5-9923-990DF8F4A9AB}.Release|x86.Build.0 = Release|Win32
+		{1F26DD5B-02C2-4192-AC91-06BED3D214F3}.Debug|ARM.ActiveCfg = Debug|ARM
+		{1F26DD5B-02C2-4192-AC91-06BED3D214F3}.Debug|ARM.Build.0 = Debug|ARM
+		{1F26DD5B-02C2-4192-AC91-06BED3D214F3}.Debug|x64.ActiveCfg = Debug|x64
+		{1F26DD5B-02C2-4192-AC91-06BED3D214F3}.Debug|x64.Build.0 = Debug|x64
+		{1F26DD5B-02C2-4192-AC91-06BED3D214F3}.Debug|x86.ActiveCfg = Debug|Win32
+		{1F26DD5B-02C2-4192-AC91-06BED3D214F3}.Debug|x86.Build.0 = Debug|Win32
+		{1F26DD5B-02C2-4192-AC91-06BED3D214F3}.Release|ARM.ActiveCfg = Release|ARM
+		{1F26DD5B-02C2-4192-AC91-06BED3D214F3}.Release|ARM.Build.0 = Release|ARM
+		{1F26DD5B-02C2-4192-AC91-06BED3D214F3}.Release|x64.ActiveCfg = Release|x64
+		{1F26DD5B-02C2-4192-AC91-06BED3D214F3}.Release|x64.Build.0 = Release|x64
+		{1F26DD5B-02C2-4192-AC91-06BED3D214F3}.Release|x86.ActiveCfg = Release|Win32
+		{1F26DD5B-02C2-4192-AC91-06BED3D214F3}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -166,6 +184,7 @@ Global
 		{9119A10A-D27C-4EAF-8EE9-1A3097D8C6F6} = {853963E9-3915-42D1-9F61-D25909CF0CFF}
 		{05DACBA7-9F59-4442-A519-D32AA0373C0A} = {E1A87477-9E41-4151-99A3-3C202225C9C2}
 		{4DC532AD-A19B-4EC5-9923-990DF8F4A9AB} = {E1A87477-9E41-4151-99A3-3C202225C9C2}
+		{1F26DD5B-02C2-4192-AC91-06BED3D214F3} = {4A5644B4-23EF-48F7-8F3E-45A0EBE5C607}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A114CB48-500F-4E4B-BC01-3ACE75DCCC4F}

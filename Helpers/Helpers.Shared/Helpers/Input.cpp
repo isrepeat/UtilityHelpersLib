@@ -1,5 +1,5 @@
-//#include "pch.h"
 #include "Input.h"
+#if COMPILE_FOR_DESKTOP
 
 namespace HELPERS_NS {
 	const MousePoint operator*(const MousePoint& point, float factor) {
@@ -58,3 +58,4 @@ namespace HELPERS_NS {
 		SendInput(1, &input, sizeof(input));
 	}
 }
+#endif

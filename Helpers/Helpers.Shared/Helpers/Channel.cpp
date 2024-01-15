@@ -1,5 +1,6 @@
-#include "Time.h"
 #include "Channel.h"
+#if COMPILE_FOR_DESKTOP
+#include "Time.h"
 #include <assert.h>
 #include <chrono>
 #include <mutex>
@@ -94,3 +95,4 @@ PipeConnectionStatus WaitOpenPipe(OUT HANDLE& hPipe, const std::wstring& pipeNam
 
 	return PipeConnectionStatus::Error; // this place in the code should never be reached
 }
+#endif

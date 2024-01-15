@@ -1,5 +1,6 @@
 #pragma once
 #include "SystemInfo.h"
+#if COMPILE_FOR_DESKTOP
 #include "Helpers.h"
 #include "Logger.h"
 
@@ -30,3 +31,4 @@ namespace HELPERS_NS {
         return cumputerName;
 	}
 }
+#endif

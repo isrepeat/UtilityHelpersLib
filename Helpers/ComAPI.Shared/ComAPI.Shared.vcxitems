@@ -23,5 +23,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)ComAPI\ComAPI.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ComAPI\common.h" />
   </ItemGroup>
 </Project>

@@ -1,5 +1,6 @@
 #pragma once
 #include "common.h"
+#if COMPILE_FOR_DESKTOP
 #include "HWindows.h"
 #include "FileSystem_inline.h"
 #include <functional>
@@ -45,3 +46,4 @@ namespace HELPERS_NS {
         std::vector<std::filesystem::path> GetAllLogicalDrives();
     }
 }
+#endif

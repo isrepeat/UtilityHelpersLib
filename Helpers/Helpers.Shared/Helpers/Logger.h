@@ -1,6 +1,6 @@
 #pragma once
 #include "common.h"
-#include <LogHelpers.h>
+#include <Spdlog/LogHelpers.h>
 #include "Helpers.h"
 #include "Thread.h"
 #include "Macros.h"

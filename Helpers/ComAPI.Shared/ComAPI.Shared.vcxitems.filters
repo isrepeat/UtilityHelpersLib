@@ -17,5 +17,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)ComAPI\ComAPI.h">
       <Filter>ComAPI</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)ComAPI\common.h">
+      <Filter>ComAPI</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

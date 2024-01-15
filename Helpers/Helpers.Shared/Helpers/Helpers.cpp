@@ -171,7 +171,7 @@ namespace HELPERS_NS {
         return std::string{ buffer }.substr(0, pos);
     }
 
-
+#if COMPILE_FOR_DESKTOP
     std::wstring GetAppDataPath() {
         wchar_t* path = nullptr;
         auto hr = SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, NULL, &path);
@@ -216,6 +216,7 @@ namespace HELPERS_NS {
 
         return result;
     }
+#endif
 
 
     std::wstring GetFormatedLastErrorMessage(DWORD errorMessageID) {
@@ -244,6 +245,7 @@ namespace HELPERS_NS {
         return GetFormatedLastErrorMessage(::GetLastError());
     }
 
+#if COMPILE_FOR_DESKTOP
     std::wstring GetWSALastErrorAsString() {
         return GetFormatedLastErrorMessage(::WSAGetLastError());
     }
@@ -356,4 +358,5 @@ namespace HELPERS_NS {
     void OpenLink(std::wstring link) {
         ShellExecuteW(NULL, L"open", link.c_str(), NULL, NULL, SW_HIDE);
     }
+#endif
 }

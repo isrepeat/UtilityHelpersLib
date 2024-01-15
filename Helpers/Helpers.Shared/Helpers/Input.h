@@ -1,5 +1,6 @@
 #pragma once
 #include "common.h"
+#if COMPILE_FOR_DESKTOP
 // TODO: remove this file in release. Use UserInputEvent.h/cpp instead
 #include "HWindows.h"
 #include <variant>
@@ -32,3 +33,4 @@ namespace HELPERS_NS {
 
 	void PerformMouseAction(MouseInput mouseInput);
 }
+#endif

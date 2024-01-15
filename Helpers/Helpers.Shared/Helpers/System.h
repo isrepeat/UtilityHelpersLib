@@ -1,5 +1,6 @@
 #pragma once
 #include "common.h"
+#if COMPILE_FOR_DESKTOP
 #include "HWindows.h"
 #include "Exception.h"
 #include "Helpers.h"
@@ -46,3 +47,4 @@ namespace HELPERS_NS {
         }
     }
 }
+#endif

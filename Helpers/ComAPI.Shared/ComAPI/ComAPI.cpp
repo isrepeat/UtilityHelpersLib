@@ -6,13 +6,12 @@
 #include <Windows.Storage.h>
 
 #include <condition_variable>
-#include <shobjidl_core.h>
 #include <Winerror.h>
-#include <Shlobj.h>
-#include <roapi.h>
 #include <vector>
 #include <format>
 #include <wrl.h>
+
+#pragma comment(lib, "RuntimeObject.lib")
 
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Wrappers;
@@ -26,24 +25,35 @@ using namespace ABI::Windows::ApplicationModel::DataTransfer;
 
 #define CheckHr(hr) do { if (FAILED(hr)) __debugbreak(); } while (false)
 
+#if COMPILE_FOR_DESKTOP
 class CCoInitialize {
-	HRESULT m_hr;
-
 public:
-	CCoInitialize() : m_hr(CoInitialize(NULL)) 
+	CCoInitialize() 
+
+		: m_hr(CoInitialize(NULL)) 
 	{}
+
 	~CCoInitialize() {
-		if (SUCCEEDED(m_hr)) CoUninitialize(); 
+		if (SUCCEEDED(m_hr)) 
+			CoUninitialize(); 
 	}
 	operator HRESULT() const { 
 		return m_hr;
 	}
+
+private:
+	HRESULT m_hr;
 };
+#endif
 
 
 namespace ComApi {
 	std::filesystem::path GetPackageFolder() {
+		// For winrt you also can use:
+		// std::filesystem::path localStateFolder = Windows::Storage::ApplicationData::Current->LocalFolder->Path->Data();
+#if COMPILE_FOR_DESKTOP
 		CCoInitialize tmpComInit;
+#endif
 		ComPtr<IApplicationDataStatics> appDataStatic;
 		auto hr = RoGetActivationFactory(HStringReference(RuntimeClass_Windows_Storage_ApplicationData).Get(), __uuidof(appDataStatic), &appDataStatic);
 		CheckHr(hr);
@@ -62,11 +72,13 @@ namespace ComApi {
 
 		HString pacakgeFolderHstr;
 		item->get_Path(pacakgeFolderHstr.GetAddressOf());
-		return pacakgeFolderHstr.GetRawBuffer(NULL);;
+		return pacakgeFolderHstr.GetRawBuffer(NULL);
 	}
 
 	std::wstring WindowsVersion() {
+#if COMPILE_FOR_DESKTOP
 		CCoInitialize tmpComInit;
+#endif
 		ComPtr<ABI::Windows::System::Profile::IAnalyticsInfoStatics> analyticsInfoStatic;
 		auto hr = RoGetActivationFactory(HStringReference(RuntimeClass_Windows_System_Profile_AnalyticsInfo).Get(), __uuidof(analyticsInfoStatic), &analyticsInfoStatic);
 		CheckHr(hr);

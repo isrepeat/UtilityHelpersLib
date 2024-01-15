@@ -1,5 +1,6 @@
 #pragma once
 #include "common.h"
+#if COMPILE_FOR_DESKTOP
 #include "HWindows.h"
 #include <MagicEnum/MagicEnum.h>
 
@@ -521,3 +522,4 @@ private:
 
     std::shared_ptr<HELPERS_NS::ConcurrentQueue<Msg_t>> messagesQueue;
 };
+#endif

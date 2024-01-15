@@ -39,19 +39,22 @@ namespace HELPERS_NS {
     std::string ExeFullnameA();
     std::wstring ExePathW();
     std::string ExePathA();
-
+#if COMPILE_FOR_DESKTOP
     std::wstring GetAppDataPath();
     std::wstring GetKnownFolder(GUID knownFolderGUID);
+#endif
 
     std::wstring GetLastErrorAsString();
     std::wstring GetWSALastErrorAsString(); // return last sockets error
 
+#if COMPILE_FOR_DESKTOP
     int GetProcessBitDepth(std::wstring processName);
     DWORD GetProcessID(const std::wstring& processName);
     MODULEENTRY32 CheckDllInProcess(DWORD dwPID, std::wstring szDllname);
 
     bool ExecuteCommandLine(std::wstring parameters, bool admin = false, DWORD showFlag = SW_HIDE);
     void OpenLink(std::wstring link);
+#endif
 
     template<typename Duration>
     uint64_t GetCurrentTimestamp() {

@@ -7,9 +7,19 @@
 namespace HELPERS_NS {} // create uniq "helpers namespace" for this project
 namespace HELPERS_NS_ALIAS = HELPERS_NS; // set your alias for original "helpers namespace" (defined via macro)
 
+#include <winapifamily.h>
+
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+#define COMPILE_FOR_DESKTOP 1
+#endif
 
 #if (_MANAGED == 1) || (_M_CEE == 1)
-#define __CLR__
+// COMPILE_FOR_DESKTOP also == 1
+#define COMPILE_FOR_CLR 1
+#else
+#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+#define COMPILE_FOR_WINRT 1
+#endif
 #endif
 
 
