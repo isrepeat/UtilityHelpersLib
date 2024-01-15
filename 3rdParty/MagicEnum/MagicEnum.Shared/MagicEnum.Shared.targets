@@ -7,4 +7,16 @@
     <!-- Expose own dir for other projects -->
     <PublicIncludeDirectories>$(MagicEnumIncludeDirs);$(PublicIncludeDirectories)</PublicIncludeDirectories>
   </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>
+        $(MagicEnumIncludeDirs);
+        %(AdditionalIncludeDirectories)
+      </AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>
+        %(PreprocessorDefinitions)
+      </PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
 </Project>
