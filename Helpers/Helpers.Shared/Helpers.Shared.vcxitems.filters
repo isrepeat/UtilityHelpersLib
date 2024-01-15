@@ -105,6 +105,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\UniqueHandle.cpp">
       <Filter>_Sources</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\SystemDataProvider.cpp">
+      <Filter>_Sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Gate.h">
