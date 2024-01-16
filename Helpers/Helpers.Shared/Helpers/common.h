@@ -30,7 +30,7 @@ namespace HELPERS_NS_ALIAS = HELPERS_NS; // set your alias for original "helpers
 #pragma message("'__has_include' directive not found")
 #endif
 
-#if defined(CRASH_HANDLING_NUGET) or __has_include("CrashHandling/CrashHandling.h")
+#if defined(CRASH_HANDLING_NUGET) || __has_include("CrashHandling/CrashHandling.h")
 #define CRASH_HANDLING_SUPPORT
 #endif
 

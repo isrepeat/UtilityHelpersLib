@@ -36,6 +36,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\StdRedirection.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\String.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\System.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\SystemDataProvider.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\SystemInfo.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Thread.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\ThreadEx.cpp" />

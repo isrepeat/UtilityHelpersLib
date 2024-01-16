@@ -3,4 +3,7 @@
   <!-- Make sure this file are imported in .vcxitems -->
   <!-- Import header-only commonly used projects / packages -->
   <Import Project="$(MSBuildThisFileDirectory)..\Boost.Includes\Boost.Includes.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Spdlog\Spdlog.Shared\Spdlog.Shared.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\MagicEnum\MagicEnum.Shared\MagicEnum.Shared.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\JsonParser\JsonParser.Shared\JsonParser.Shared.targets" />
 </Project>
