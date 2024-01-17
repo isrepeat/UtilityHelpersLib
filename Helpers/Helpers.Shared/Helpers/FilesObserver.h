@@ -4,6 +4,8 @@
 #include <cassert>
 #include <vector>
 #include <string>
+#include <algorithm>
+#include <functional>
 
 namespace HELPERS_NS {
     namespace FS {
@@ -73,7 +75,29 @@ namespace HELPERS_NS {
                     }
                 }
                 filesCollectionInterface.Complete();
-            };
+            }
+
+            template <typename TCollection = FilesCollection>
+            static TCollection GetFilesCollection(const std::vector<std::filesystem::path>& filePaths) {
+                TCollection filesCollection; // TCollection must have default Ctor
+                GetFilesCollection<TCollection>(filePaths, filesCollection);
+                return filesCollection;
+            }
+
+            template<template<class> class TCollection, class... Args>
+            static void RenameDuplicate(
+                std::filesystem::path& path,
+                const TCollection<Args...>& collection,
+                std::function<bool(const typename TCollection<Args...>::value_type&)> predicate
+            ) {
+                auto duplicates = std::count_if(collection.begin(), collection.end(), predicate);
+
+                if (duplicates > 0) {
+                    auto nameSuffix = L" (" + std::to_wstring(duplicates) + L")";
+                    auto ext = path.extension();
+                    path = path.replace_extension().wstring() + nameSuffix + ext.wstring();
+                }
+            }
         };
     }
 }

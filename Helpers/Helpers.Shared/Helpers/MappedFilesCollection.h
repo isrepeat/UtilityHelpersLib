@@ -23,6 +23,9 @@ namespace HELPERS_NS {
             // After copying, internally calls Complete()
             MappedFilesCollection& operator=(const MappedFilesCollection& other);
 
+            void SetPreserveDirectoryStructure(bool preserve);
+            bool IsPreserveDirectoryStructure();
+
             const uint64_t GetSize() const;
             const std::vector<MappedFileItem>& GetDirs() const;
             const std::vector<MappedFileItem>& GetFiles() const;
@@ -40,6 +43,7 @@ namespace HELPERS_NS {
             std::filesystem::path mappedRootPath;
             std::vector<MappedFileItem> dirs;
             std::vector<MappedFileItem> files;
+            bool preserveDirStructure;
         };
     }
 }
