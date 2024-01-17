@@ -41,7 +41,12 @@ std::vector<MediaContainerExtension::ExtensionInfo> MediaContainerExtension::Mak
     std::vector<ExtensionInfo> res =
     {
         ExtensionInfo{ MediaContainerType::MP4, L".mp4" },
+        ExtensionInfo{ MediaContainerType::M4V, L".m4v" },
         ExtensionInfo{ MediaContainerType::WMV, L".wmv" },
+        ExtensionInfo{ MediaContainerType::ASF, L".asf" },
+        ExtensionInfo{ MediaContainerType::MOV, L".mov" },
+        ExtensionInfo{ MediaContainerType::ThreeGP, L".3gp" },
+
         ExtensionInfo{ MediaContainerType::MP3, L".mp3" },
         ExtensionInfo{ MediaContainerType::M4A, L".m4a" },
         ExtensionInfo{ MediaContainerType::FLAC, L".flac" },

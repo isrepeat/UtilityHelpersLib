@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "MediaFormatCodecsEnumerator.h"
-#include "MediaFormatCodecsSupport.h"
 #include "Platform/PlatformClassFactory.h"
 
 #include <libhelpers/HSystem.h>
@@ -8,14 +7,9 @@
 #include <libhelpers/Containers/ComPtrArray.h>
 #include <libhelpers/MediaFoundation/MFInclude.h>
 
-MediaFormatCodecsEnumerator::MediaFormatCodecsEnumerator() {
-}
-
-std::vector<MediaFormatCodecs> MediaFormatCodecsEnumerator::EnumerateMediaFormatCodecs() const {
-    std::vector<AudioCodecType> audioCodecs;
-    std::vector<VideoCodecType> videoCodecs;
-    auto codecSup = MediaFormatCodecsSupport::Instance();
-
+MediaFormatCodecsEnumerator::MediaFormatCodecsEnumerator()
+    : codecSup(MediaFormatCodecsSupport::Instance())
+{
     auto enumerator = PlatformClassFactory::Instance()->CreateEncoderEnumerator();
 
     enumerator->EnumAudio([&](const GUID &codec) {
@@ -40,24 +34,34 @@ std::vector<MediaFormatCodecs> MediaFormatCodecsEnumerator::EnumerateMediaFormat
 
         videoCodecs.push_back(mapped);
     });
+}
 
+MediaFormatCodecs MediaFormatCodecsEnumerator::GetMediaFormatCodecs(MediaContainerType containerType) const {
+    auto sup = codecSup->GetCodecsSupport(containerType);
+
+    auto& supACodecs = sup.GetAudioCodecs();
+    auto& supVCodecs = sup.GetVideoCodecs();
+
+    auto availACodecs = MediaFormatCodecsEnumerator::Intersect(supACodecs, audioCodecs);
+    auto availVCodecs = MediaFormatCodecsEnumerator::Intersect(supVCodecs, videoCodecs);
+
+    if (availACodecs.empty() && availVCodecs.empty()) {
+        return {};
+    }
+
+    MediaFormatCodecs codec(containerType, std::move(availACodecs), std::move(availVCodecs));
+    return codec;
+}
+
+std::vector<MediaFormatCodecs> MediaFormatCodecsEnumerator::EnumerateMediaFormatCodecs() const {
     std::vector<MediaFormatCodecs> codecs;
 
     for (size_t i = 0; i < (size_t)MediaContainerType::Count; i++) {
         auto container = (MediaContainerType)((size_t)MediaContainerType::First + i);
-        auto sup = codecSup->GetCodecsSupport(container);
-
-        auto &supACodecs = sup.GetAudioCodecs();
-        auto &supVCodecs = sup.GetVideoCodecs();
-
-        auto availACodecs = MediaFormatCodecsEnumerator::Intersect(supACodecs, audioCodecs);
-        auto availVCodecs = MediaFormatCodecsEnumerator::Intersect(supVCodecs, videoCodecs);
-
-        if (availACodecs.empty() && availVCodecs.empty()) {
-            continue;
+        auto codec = GetMediaFormatCodecs(container);
+        if (codec.GetMediaContainerType() != MediaContainerType::Unknown) {
+            codecs.push_back(codec);
         }
-
-        codecs.push_back(MediaFormatCodecs(container, std::move(availACodecs), std::move(availVCodecs)));
     }
 
     return codecs;

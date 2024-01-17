@@ -86,21 +86,40 @@ GUID MediaFormatCodecsSupport::MapVideoCodec(VideoCodecType type) const {
 }
 
 MediaFormatCodecsSupport::MediaFormatCodecsSupport() {
-    this->Add(MediaContainerType::MP4, {
-        AudioCodecType::AAC, AudioCodecType::MP3, AudioCodecType::DolbyAC3,
-        AudioCodecType::ALAC,
+    /* Video containers */
+    // H.264-supporting formats
+    std::vector mp4AudioCodecs{
+        AudioCodecType::AAC, AudioCodecType::MP3,
+        AudioCodecType::DolbyAC3, AudioCodecType::ALAC,
         // AudioCodecType::FLAC, (doesn't work in VLC)
-        }, {
+    };
+
+    this->Add(MediaContainerType::MP4, mp4AudioCodecs, {
             VideoCodecType::H264, VideoCodecType::HEVC 
         });
 
-    this->Add(MediaContainerType::WMV, {
-        AudioCodecType::WMAudioV8, AudioCodecType::AAC,
-        AudioCodecType::DolbyAC3, AudioCodecType::PCM, 
+    this->Add(MediaContainerType::M4V, mp4AudioCodecs, {VideoCodecType::H264});
+    this->Add(MediaContainerType::MOV, mp4AudioCodecs, {VideoCodecType::H264});
+    this->Add(MediaContainerType::ThreeGP, {
+        AudioCodecType::AMR_NB, AudioCodecType::AAC
         }, {
-            VideoCodecType::WMV3, VideoCodecType::WMV1 
+            VideoCodecType::H264
         });
 
+    // WMV / ASF
+	std::vector<AudioCodecType> wmvAudioCodecs{
+		AudioCodecType::WMAudioV8, AudioCodecType::AAC,
+		AudioCodecType::DolbyAC3, AudioCodecType::PCM,
+	};
+
+	std::vector<VideoCodecType> wmvVideoCodecs{
+		VideoCodecType::WMV3, VideoCodecType::WMV1
+	};
+
+    this->Add(MediaContainerType::WMV, wmvAudioCodecs, wmvVideoCodecs);
+    this->Add(MediaContainerType::ASF, wmvAudioCodecs, wmvVideoCodecs);
+
+    /* Audio containers */
     this->Add(MediaContainerType::MP3, {
         AudioCodecType::MP3,
         },
