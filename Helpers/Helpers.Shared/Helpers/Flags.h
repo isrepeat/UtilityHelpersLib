@@ -52,6 +52,9 @@ namespace HELPERS_NS {
 		bool Has(UnderlyingType mask) const {
 			return i & mask;
 		}
+		bool Has(Enum mask) const {
+			return Has((UnderlyingType)mask);
+		}
 
 	private:
 		UnderlyingType i = 0;
