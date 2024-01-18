@@ -35,7 +35,7 @@
 #define LogWSALastError
 #define LOG_ASSERT(expression, message, ...) !((bool)(expression))
 #define LOG_THROW_STD_EXCEPTION(fmt, ...) throw std::exception(fmt)
-#define LOG_THROW_IF_FAILED(hr, fmt, ...) HELPERS_NS::System::ThrowIfFailed(hr)
+#define LOG_THROW_IF_FAILED(hr) HELPERS_NS::System::ThrowIfFailed(hr)
 #endif
 
 
