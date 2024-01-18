@@ -2,6 +2,7 @@
 #include "MediaFormatCodecs.h"
 
 #include <vector>
+#include <Windows.h>
 
 class MediaFormatCodecsSupport {
 public:
