@@ -1,7 +1,8 @@
 #pragma once
 #include "common.h"
-#include <functional>
 #include <type_traits>
+#include <functional>
+#include <cassert>
 
 namespace HELPERS_NS {
     // TODO: add other binary operators with flags
@@ -46,9 +47,6 @@ namespace HELPERS_NS {
 		operator UnderlyingType() const {
 			return i;
 		}
-		operator Enum() const {
-			return static_cast<Enum>(i);
-		}
 		//operator bool() const { // for compare with boolean values (anyway need explicitly cast with boolean compare, so you need override boolean operators ==, != ...)
 		//	return (bool)i;
 		//}
@@ -61,7 +59,7 @@ namespace HELPERS_NS {
 		}
 
 		Enum ToEnum() {
-			return operator Enum();
+			return static_cast<Enum>(i);
 		}
 
 		void ProcessAllFlags(std::function<bool(Enum)> handleCallback) {
