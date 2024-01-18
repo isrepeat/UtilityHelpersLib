@@ -1,5 +1,6 @@
 #pragma once
 #include "common.h"
+#include <functional>
 #include <type_traits>
 
 namespace HELPERS_NS {
