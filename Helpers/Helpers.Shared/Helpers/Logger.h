@@ -3,6 +3,7 @@
 #include <Spdlog/LogHelpers.h>
 #include "Helpers.h"
 #include "Thread.h"
+#include "System.h"
 #include "Macros.h"
 #include "Scope.h"
 
@@ -17,17 +18,24 @@
 	(bool)(expression) || (LOG_ERROR_D(L" " message L"  {" _CRT_WIDE(#expression) L"}", __VA_ARGS__), false) || (assertm(expression, message), false)	\
 )
 
-// NOTE: use comma instead semicolon
+// NOTE: use comma instead semicolon to be able use it in "if statement" without braces
 #define LOG_THROW_STD_EXCEPTION(fmt, ...)                                                                                     \
 		LOG_ERROR_EX(fmt, __VA_ARGS__),  /* LOG_ERROR_EX saved last logger message */                                         \
 		LogLastError,                                                                                                         \
 		throw std::exception(lg::DefaultLoggers::GetLastMessage().c_str())                                                   
 
+#define LOG_THROW_IF_FAILED(hr)                                                                                               \
+	if (FAILED(hr)) {                                                                                                         \
+		LogLastError;                                                                                                         \
+		HELPERS_NS::System::ThrowIfFailed(hr);                                                                                \
+	}
+
 #else
 #define LogLastError
 #define LogWSALastError
 #define LOG_ASSERT(expression, message, ...) !((bool)(expression))
-#define LOG_THROW_STD_EXCEPTION(...)
+#define LOG_THROW_STD_EXCEPTION(fmt, ...) throw std::exception(fmt)
+#define LOG_THROW_IF_FAILED(hr, fmt, ...) HELPERS_NS::System::ThrowIfFailed(hr)
 #endif
 
 
