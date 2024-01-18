@@ -45,6 +45,9 @@ namespace HELPERS_NS {
 		operator UnderlyingType() const {
 			return i;
 		}
+		operator Enum() const {
+			return static_cast<Enum>(i);
+		}
 		//operator bool() const { // for compare with boolean values (anyway need explicitly cast with boolean compare, so you need override boolean operators ==, != ...)
 		//	return (bool)i;
 		//}
@@ -54,6 +57,25 @@ namespace HELPERS_NS {
 		}
 		bool Has(Enum mask) const {
 			return Has((UnderlyingType)mask);
+		}
+
+		Enum ToEnum() {
+			return operator Enum();
+		}
+
+		void ProcessAllFlags(std::function<bool(Enum)> handleCallback) {
+			assert(handleCallback);
+			if (!handleCallback)
+				return;
+
+			UnderlyingType currentBitPos = 1;
+			do {
+				if (currentBitPos & i) {
+					if (handleCallback(static_cast<Enum>(currentBitPos))) {
+						return;
+					}
+				}
+			} while ((currentBitPos <<= 1) <= i);
 		}
 
 	private:
