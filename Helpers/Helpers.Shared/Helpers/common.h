@@ -3,7 +3,7 @@
 #define HELPERS_NS_ALIAS H
 #endif
 
-#define HELPERS_NS __helpers_namespace
+#define HELPERS_NS __H_ns
 namespace HELPERS_NS {} // create uniq "helpers namespace" for this project
 namespace HELPERS_NS_ALIAS = HELPERS_NS; // set your alias for original "helpers namespace" (defined via macro)
 

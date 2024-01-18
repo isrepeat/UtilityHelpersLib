@@ -11,7 +11,7 @@
 #define LOGGER_NS_ALIAS lg
 #endif
 
-#define LOGGER_NS __logger_namespace
+#define LOGGER_NS __lg_ns
 namespace LOGGER_NS {} // create uniq "logger namespace" for this project
 namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger namespace" (defined via macro)
 
