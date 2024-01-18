@@ -115,7 +115,9 @@ namespace LOGGER_NS {
             std::unique_lock lk{ _this.mxCustomFlagHandlers };
 
             if constexpr (has_member(std::remove_reference_t<decltype(std::declval<TClass>())>, __ClassFullnameLogging)) {
-                _this.className = L" [" + classPtr->GetFullClassNameW() + L"]";
+                _this.className = L" ["
+                    + (classPtr ? classPtr->GetFullClassNameW() : TClass::GetOriginalClassName() + L"(nullptr)")
+                    + L"]";
             }
             else {
                 _this.className = L"";
@@ -238,6 +240,7 @@ LOGGER_API HELPERS_NS::nothing* __LgCtx(); // may be overwritten as class method
 
 
 #if !defined(DISABLE_CLASS_FULLNAME_LOGGING)
+// Declare at the top of a class
 #define CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(className)                                                               \
 	private:                                                                                                                  \
 		std::string className##_fullClassNameA = ""#className;                                                                \
@@ -252,7 +255,7 @@ LOGGER_API HELPERS_NS::nothing* __LgCtx(); // may be overwritten as class method
 	                                                                                                                          \
         void SetFullClassName(std::wstring name) {                                                                            \
             LOG_DEBUG_D(L"Full class name = {}", name);                                                                       \
-            this->className##_fullClassNameA = HELPERS_NS::WStrToStr(name);                                                            \
+            this->className##_fullClassNameA = HELPERS_NS::WStrToStr(name);                                                   \
             this->className##_fullClassNameW = name;                                                                          \
         }                                                                                                                     \
                                                                                                                               \
@@ -262,7 +265,14 @@ LOGGER_API HELPERS_NS::nothing* __LgCtx(); // may be overwritten as class method
                                                                                                                               \
 		const std::wstring& GetFullClassNameW() {                                                                             \
 			return this->className##_fullClassNameW;                                                                          \
-		}
+		}                                                                                                                     \
+                                                                                                                              \
+        static const std::wstring GetOriginalClassName() {                                                                    \
+			static std::wstring originalClassName = L""#className;                                                            \
+			return originalClassName;                                                                                         \
+		}                                                                                                                     \
+	                                                                                                                          \
+	private: // back default class modifier
 
 #else
 #define CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(className)
