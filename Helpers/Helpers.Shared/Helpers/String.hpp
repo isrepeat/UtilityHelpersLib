@@ -60,7 +60,7 @@ namespace HELPERS_NS {
 
 #define JOIN_STRING(A, B) A B // keep space between A and B
 
-#define INNER_TYPE_STR(str) decltype(HELPERS_NS::StringDeductor(str))::type
+#define INNER_TYPE_STR(str) typename decltype(HELPERS_NS::StringDeductor(str))::type
 
 #define MAKE_STRING_T(T, str) HELPERS_NS::GetStringByType<T>(str, L""##str)
 #define MAKE_STRING_VIEW_T(T, str) HELPERS_NS::GetStringViewByType<T>(str, L""##str)
