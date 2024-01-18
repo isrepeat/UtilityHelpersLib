@@ -1,6 +1,7 @@
 #pragma once
 #include "common.h"
 #include "FilesObserver.h"
+#include <Helpers/Flags.h>
 
 namespace HELPERS_NS {
     namespace FS {
@@ -12,12 +13,16 @@ namespace HELPERS_NS {
 
         class MappedFilesCollection : public IFilesCollection {
         public:
-            enum class Format {
-                Default,
-                RelativeMappedPath,
+            enum Format {
+                None = 0x00,
+                RelativeMappedPath = 0x01,
+                RenameDuplicates = 0x02,
+                Default = None
             };
 
-            MappedFilesCollection(std::filesystem::path mappedRootPath, Format format = Format::Default);
+            MappedFilesCollection(std::filesystem::path mappedRootPath,
+                HELPERS_NS::Flags<Format> formatFlags = Format::Default);
+
             MappedFilesCollection(MappedFilesCollection&) = default;
 
             // After copying, internally calls Complete()
@@ -39,7 +44,7 @@ namespace HELPERS_NS {
 
         private:
             uint64_t totalSize;
-            const Format format;
+            const HELPERS_NS::Flags<Format> formatFlags;
             std::filesystem::path mappedRootPath;
             std::vector<MappedFileItem> dirs;
             std::vector<MappedFileItem> files;

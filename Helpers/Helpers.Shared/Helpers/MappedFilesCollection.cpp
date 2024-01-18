@@ -3,9 +3,9 @@
 
 namespace HELPERS_NS {
     namespace FS {
-        MappedFilesCollection::MappedFilesCollection(std::filesystem::path mappedRootPath, Format format)
+        MappedFilesCollection::MappedFilesCollection(std::filesystem::path mappedRootPath, HELPERS_NS::Flags<Format> formatFlags)
             : totalSize{ 0 }
-            , format{ format }
+            , formatFlags{formatFlags}
             , mappedRootPath{ mappedRootPath }
             , preserveDirStructure{ false }
         {
@@ -63,7 +63,7 @@ namespace HELPERS_NS {
                 basePath = mappedRootPath / pathItem.mainItem.relative_path().remove_filename();
 
                 // Add missing dirs to list
-                std::filesystem::path newDirs(basePath.wstring().substr(mappedRootPath.wstring().length()));
+                auto newDirs = pathItem.mainItem.relative_path().remove_filename();
                 std::filesystem::path currentSubdir;
                 for (auto& subdir : newDirs) {
                     if (subdir.empty()) {
@@ -77,7 +77,7 @@ namespace HELPERS_NS {
                         });
 
                     if (existingDir == dirs.end()) {
-                        dirs.push_back({"", currentSubdir}); // TODO: Source path
+                        dirs.push_back({pathItem.mainItem.root_path() / currentSubdir, currentSubdir});
                     }
                 }
             }
@@ -108,17 +108,19 @@ namespace HELPERS_NS {
 
         void MappedFilesCollection::Complete() {
             // Rename duplicates
-            for (auto collection : {&dirs, &files}) {
-                for (auto itemIt = collection->rbegin(); itemIt != collection->rend(); ++itemIt) {
-                    auto pathTmp = std::move(itemIt->mappedPath); // Temporarily "remove" from list
-                    H::FS::FilesObserver::RenameDuplicate(pathTmp, *collection, [&](const MappedFileItem& item) {
-                        return item.mappedPath == pathTmp;
-                        });
-                    itemIt->mappedPath = pathTmp;
+            if (formatFlags.Has(Format::RenameDuplicates)) {
+                for (auto collection : {&dirs, &files}) {
+                    for (auto itemIt = collection->rbegin(); itemIt != collection->rend(); ++itemIt) {
+                        auto pathTmp = std::move(itemIt->mappedPath); // Temporarily "remove" from list
+                        H::FS::FilesObserver::RenameDuplicate(pathTmp, *collection, [&](const MappedFileItem& item) {
+                            return item.mappedPath == pathTmp;
+                            });
+                        itemIt->mappedPath = pathTmp;
+                    }
                 }
             }
 
-            if (format == Format::RelativeMappedPath) { // remove root path
+            if (formatFlags.Has(Format::RelativeMappedPath)) { // remove root path
                 for (auto& dir : dirs) {
                     dir.mappedPath = dir.mappedPath.relative_path();
                 }
