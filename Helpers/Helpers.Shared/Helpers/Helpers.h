@@ -35,10 +35,8 @@ namespace HELPERS_NS {
     std::string VecToStr(const std::vector<char>& vec);
     std::string VecToStr(const std::vector<char>& vec);
 
-    std::wstring ExeFullnameW();
-    std::string ExeFullnameA();
-    std::wstring ExePathW();
-    std::string ExePathA();
+    std::filesystem::path ExePath();
+    std::filesystem::path ExeFullname();
 #if COMPILE_FOR_DESKTOP
     std::wstring GetAppDataPath();
     std::wstring GetKnownFolder(GUID knownFolderGUID);

@@ -136,26 +136,27 @@ namespace HELPERS_NS {
         /* ------------------- */
         /*    Copy / Replace   */
         /* ------------------- */
-        void CopyFirstItem(const std::wstring& fromDir, const std::wstring& toDir, const std::wstring& prefix) {
-            if (!std::filesystem::exists(toDir)) {
-                std::filesystem::create_directory(toDir);
-            }
-
-            auto it = std::filesystem::directory_iterator(fromDir);
-            const auto& entryPath = it->path();
-            std::filesystem::copy(entryPath, toDir + L"\\" + prefix + entryPath.filename().wstring(), std::filesystem::copy_options::overwrite_existing);
-        }
-
-        void CopyDirContentTo(const std::wstring& fromDir, const std::wstring& toDir) {
+        void CopyFirstItem(const std::filesystem::path& fromDir, const std::filesystem::path& toDir, const std::wstring& prefix) {
             if (!std::filesystem::exists(fromDir)) {
-                LOG_DEBUG_D(L"fromDir not exist [{}], return", fromDir);
+                LOG_ERROR_D(L"fromDir not exist [{}], return", fromDir);
                 return;
             }
-
             if (!std::filesystem::exists(toDir)) {
                 std::filesystem::create_directory(toDir);
             }
+            auto it = std::filesystem::directory_iterator(fromDir);
+            const auto& entryPath = it->path();
+            std::filesystem::copy(entryPath, toDir / (prefix + entryPath.filename().wstring()), std::filesystem::copy_options::overwrite_existing);
+        }
 
+        void CopyDirContentTo(const std::filesystem::path& fromDir, const std::filesystem::path& toDir) {
+            if (!std::filesystem::exists(fromDir)) {
+                LOG_ERROR_D(L"fromDir not exist [{}], return", fromDir);
+                return;
+            }
+            if (!std::filesystem::exists(toDir)) {
+                std::filesystem::create_directory(toDir);
+            }
             // NOTE: if you also want to copy subfolder add flag std::filesystem::copy_options::recursive
             std::filesystem::copy(fromDir, toDir, std::filesystem::copy_options::overwrite_existing);
         }

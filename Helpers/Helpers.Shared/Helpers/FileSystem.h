@@ -37,8 +37,8 @@ namespace HELPERS_NS {
         /* ------------------- */
         /*    Copy / Replace   */
         /* ------------------- */
-        void CopyFirstItem(const std::wstring& fromDir, const std::wstring& toDir, const std::wstring& prefix = L"");
-        void CopyDirContentTo(const std::wstring& fromDir, const std::wstring& toDir);
+        void CopyFirstItem(const std::filesystem::path& fromDir, const std::filesystem::path& toDir, const std::wstring& prefix = L"");
+        void CopyDirContentTo(const std::filesystem::path& fromDir, const std::filesystem::path& toDir);
 
         /* ------------------- */
         /*   Filesystem info   */
