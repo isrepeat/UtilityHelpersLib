@@ -147,28 +147,14 @@ namespace HELPERS_NS {
     }
 
 
-    std::wstring ExeFullnameW() {
-        wchar_t buffer[MAX_PATH] = { 0 };
-        GetModuleFileNameW(NULL, buffer, MAX_PATH);
-        return std::wstring{ buffer };
-    }
-    std::string ExeFullnameA() {
-        char buffer[MAX_PATH] = { 0 };
-        GetModuleFileNameA(NULL, buffer, MAX_PATH);
-        return std::string{ buffer };
+    std::filesystem::path ExePath() {
+        return ExeFullname().parent_path();
     }
 
-    std::wstring ExePathW() {
+    std::filesystem::path ExeFullname() {
         wchar_t buffer[MAX_PATH] = { 0 };
         GetModuleFileNameW(NULL, buffer, MAX_PATH);
-        auto pos = std::wstring{ buffer }.find_last_of(L"\\/");
-        return std::wstring{ buffer }.substr(0, pos);
-    }
-    std::string ExePathA() {
-        char buffer[MAX_PATH] = { 0 };
-        GetModuleFileNameA(NULL, buffer, MAX_PATH);
-        auto pos = std::string{ buffer }.find_last_of("\\/");
-        return std::string{ buffer }.substr(0, pos);
+        return std::filesystem::path{ buffer };
     }
 
 #if COMPILE_FOR_DESKTOP
