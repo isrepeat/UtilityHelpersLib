@@ -64,8 +64,9 @@ namespace LOGGER_NS {
         CreateInPackageFolder = 0x04,
         EnableLogToStdout = 0x08,
         RedirectRawTimeLogToStdout = 0x10,
+        DisableEOLforRawLogger = 0x20, // not append '\n' at the end of line
 
-        DefaultFlags = AppendNewSessionMsg,
+        DefaultFlags = AppendNewSessionMsg
     };
 
     // mb rename?
@@ -122,7 +123,7 @@ namespace LOGGER_NS {
             else {
                 _this.className = L"";
             }
-            (logger)->log(location, level, format, std::forward<Args&&>(args)...);
+            logger->log(location, level, format, std::forward<Args&&>(args)...);
         }
 
     private:
@@ -201,12 +202,12 @@ LOGGER_API HELPERS_NS::nothing* __LgCtx(); // may be overwritten as class method
 #define LOG_FUNCTION_ENTER(fmt, ...) LOG_FUNCTION_ENTER_S(LOGGER_NS::nullctx, fmt, __VA_ARGS__)
 
 
-#define LOG_FUNCTION_SCOPE_S(_This, fmt, ...)                                                                                                                                          \
-    auto __fnCtx = LOG_CTX;                                                                                                                                                            \
-	LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::FuncLogger(), __fnCtx, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__));                         \
-                                                                                                                                                                                       \
-	auto __functionFinishLogScoped = HELPERS_NS::MakeScope([&] {                                                                                                                                \
-		LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::FuncLogger(), __fnCtx, spdlog::level::debug, EXPAND_1_VA_ARGS_(JOIN_STRING("<= ", fmt), __VA_ARGS__)); \
+#define LOG_FUNCTION_SCOPE_S(_This, fmt, ...)                                                                                                                                                         \
+    auto __fnCtx = LOG_CTX;                                                                                                                                                                           \
+	LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::FuncLogger(), __fnCtx, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__));                          \
+                                                                                                                                                                                                      \
+	auto __functionFinishLogScoped = HELPERS_NS::MakeScope([&] {                                                                                                                                      \
+		LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::FuncLogger(), __fnCtx, spdlog::level::debug, EXPAND_1_VA_ARGS_(JOIN_STRING("<= ", fmt), __VA_ARGS__));  \
 		});
 
 #define LOG_FUNCTION_SCOPE_C(fmt, ...) LOG_FUNCTION_SCOPE_S(__LgCtx(), fmt, __VA_ARGS__)

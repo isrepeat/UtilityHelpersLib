@@ -7,7 +7,7 @@
 #include <set>
 
 namespace LOGGER_NS {
-    // Free letter flags: 'j', 'k', 'w' 
+    // Free letter flags: 'J''j', 'K''k', 'Q', 'W''w' 
 
     class CustomMsgCallbackFlag : public spdlog::custom_flag_formatter {
     public:
@@ -30,7 +30,7 @@ namespace LOGGER_NS {
         }
 
         std::unique_ptr<custom_flag_formatter> clone() const override {
-            return spdlog::details::make_unique<CustomMsgCallbackFlag>(prefixCallback);
+            return spdlog::details::make_unique<CustomMsgCallbackFlag>(prefixCallback, postfixCallback);
         }
 
     private:
@@ -164,8 +164,15 @@ namespace LOGGER_NS {
         _this.standardLoggersList[loggerId].fileSink->set_level(spdlog::level::trace);
 
         _this.standardLoggersList[loggerId].fileSinkRaw = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, initFlags.Has(InitFlags::Truncate));
-        _this.standardLoggersList[loggerId].fileSinkRaw->set_pattern(GetPattern(Pattern::Raw));
+        if (initFlags.Has(InitFlags::DisableEOLforRawLogger)) {
+            auto formatterRaw = std::make_unique<spdlog::pattern_formatter>(GetPattern(Pattern::Raw), spdlog::pattern_time_type::local, std::string(""));
+            _this.standardLoggersList[loggerId].fileSinkRaw->set_formatter(std::move(formatterRaw));
+        }
+        else {
+            _this.standardLoggersList[loggerId].fileSinkRaw->set_pattern(GetPattern(Pattern::Raw));
+        }
         _this.standardLoggersList[loggerId].fileSinkRaw->set_level(spdlog::level::trace);
+
 
         _this.standardLoggersList[loggerId].fileSinkTime = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, initFlags.Has(InitFlags::Truncate));
         _this.standardLoggersList[loggerId].fileSinkTime->set_pattern(GetPattern(Pattern::Time));
@@ -190,7 +197,6 @@ namespace LOGGER_NS {
             _this.stdoutColorSink->set_formatter(std::move(formatterDebug));
             _this.stdoutColorSink->set_level(spdlog::level::trace);
         }
-
 
 
         spdlog::sinks_init_list loggerSinks = { _this.standardLoggersList[loggerId].fileSink };
@@ -247,11 +253,15 @@ namespace LOGGER_NS {
 #endif
 
         if (initFlags.Has(InitFlags::AppendNewSessionMsg)) {
-            _this.standardLoggersList[loggerId].rawLogger->debug("\n");
+            std::string rawEOL = "";
+            if (initFlags.Has(InitFlags::DisableEOLforRawLogger)) {
+                rawEOL = "\n";
+            }
             // whitespaces are selected by design
-            _this.standardLoggersList[loggerId].rawLogger->debug("==========================================================================================================");
+            _this.standardLoggersList[loggerId].rawLogger->debug("\n" + rawEOL);
+            _this.standardLoggersList[loggerId].rawLogger->debug("==========================================================================================================" + rawEOL);
             _this.standardLoggersList[loggerId].timeLogger->debug("                       New session started");
-            _this.standardLoggersList[loggerId].rawLogger->debug("==========================================================================================================");
+            _this.standardLoggersList[loggerId].rawLogger->debug("==========================================================================================================" + rawEOL);
         }
     }
 
