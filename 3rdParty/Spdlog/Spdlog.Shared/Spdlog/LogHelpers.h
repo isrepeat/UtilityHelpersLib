@@ -3,8 +3,11 @@
 #define SPDLOG_WCHAR_TO_ANSI_SUPPORT
 #define SPDLOG_WCHAR_FILENAMES
 
+// You can compile static library with "dllexport" to export symbols through dll.
+// WARNING: Client must use "dllimport" if this project compiled as dll otherwise will be problems, for example:
+//          - DefaultLoggers singleton may exist in two instances.
 #ifndef LOGGER_API
-#define LOGGER_API __declspec(dllexport) // Compile this static library with "dllexport" to export symbols through dll
+#define LOGGER_API __declspec(dllexport) 
 #endif
 
 #ifndef LOGGER_NS_ALIAS
@@ -105,7 +108,7 @@ namespace LOGGER_NS {
         //{
         //    Log<T, TClass, Args...>(classPtr, logger, location, level, formatSv, std::forward<Args>(args)...);
         //}
-
+        
         template<typename T, typename TClass, typename... Args>
         static void Log(
             TClass* classPtr,
