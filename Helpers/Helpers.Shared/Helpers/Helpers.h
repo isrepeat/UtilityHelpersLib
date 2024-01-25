@@ -43,9 +43,9 @@ namespace HELPERS_NS {
 #endif
 
     std::wstring GetLastErrorAsString();
+#if COMPILE_FOR_DESKTOP
     std::wstring GetWSALastErrorAsString(); // return last sockets error
 
-#if COMPILE_FOR_DESKTOP
     int GetProcessBitDepth(std::wstring processName);
     DWORD GetProcessID(const std::wstring& processName);
     MODULEENTRY32 CheckDllInProcess(DWORD dwPID, std::wstring szDllname);

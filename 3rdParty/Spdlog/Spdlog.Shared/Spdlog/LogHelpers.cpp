@@ -132,7 +132,7 @@ namespace LOGGER_NS {
         static std::set<std::wstring> initedLoggers;
 
         if (initFlags.Has(InitFlags::CreateInPackageFolder) && HELPERS_NS::PackageProvider::IsRunningUnderPackage()) {
-            logFilePath = ComApi::GetPackageFolder() / logFilePath.filename();
+            logFilePath = ComApi::GetPackageFolder() / logFilePath.relative_path();
         }
 
         if (initedLoggers.count(logFilePath) > 0) {
@@ -145,6 +145,7 @@ namespace LOGGER_NS {
 
         if (!std::filesystem::exists(logFilePath)) {
             initFlags &= ~InitFlags::AppendNewSessionMsg; // don't append new session message at first created log file
+            std::filesystem::create_directory(logFilePath.parent_path());
         }
         else {
             if (!initFlags.Has(InitFlags::Truncate) && std::filesystem::file_size(logFilePath) > maxSizeLogFile) {

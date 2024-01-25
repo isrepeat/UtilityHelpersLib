@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- Make sure this file are imported in .vcxitems -->
   
-  <!-- It is workaround to add CrashHandling nuget icnludes to public dirs -->
+  <!-- It is workaround to add CrashHandling nuget includes to public dirs -->
   <!-- TODO: Rewrite CrashHandling nuget and remove this .targets-->
   <PropertyGroup>
     <CrashHandlingIncludesDir>$(MSBuildThisFileDirectory)..\..\packages\CrashHandling.1.1.18\build\native\include</CrashHandlingIncludesDir>
