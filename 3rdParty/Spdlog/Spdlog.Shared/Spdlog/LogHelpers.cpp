@@ -41,11 +41,12 @@ namespace LOGGER_NS {
 
     enum class Pattern {
         Default,
+        Raw,
+        Time,
+        Func,
         Extend,
         Debug,
-        Func,
-        Time,
-        Raw,
+        DebugFn,
     };
 
     // %l - log level
@@ -53,14 +54,16 @@ namespace LOGGER_NS {
     // %d.%m.%Y %H:%M:%S:%e - time
     // %q - optional prefix/postfix callback
     // %v - log msg
+    // %^/%$ - start/end color range
     const std::string GetPattern(Pattern value) {
         static const std::unordered_map<Pattern, std::string> patterns = {
-            {Pattern::Default, "[%L] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q %v"},
+            {Pattern::Default, "[%L] [%t] %H:%M:%S:%e {%s:%# %!}%q %v"},
+            {Pattern::Raw, "%v"},
+            {Pattern::Time, "[%L] %d.%m.%Y %H:%M:%S:%e  %v"},
+            {Pattern::Func, "[%L] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q @@@ %v"},
             {Pattern::Extend, "[%L] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q %v"}, // use postfixCallback
             {Pattern::Debug, "[%L] [%t] %H:%M:%S:%e {%s:%# %!}%q %v"},
-            {Pattern::Func, "[%L] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q @@@ %v"},
-            {Pattern::Time, "[%L] %d.%m.%Y %H:%M:%S:%e  %v"},
-            {Pattern::Raw, "%v"},
+            {Pattern::DebugFn, "[%L] [%t] %H:%M:%S:%e {%s:%# %!}%^%q @@@ %v%$"},
         };
         return patterns.at(value);
     }
@@ -145,7 +148,7 @@ namespace LOGGER_NS {
 
         if (!std::filesystem::exists(logFilePath)) {
             initFlags &= ~InitFlags::AppendNewSessionMsg; // don't append new session message at first created log file
-            std::filesystem::create_directory(logFilePath.parent_path());
+            std::filesystem::create_directories(logFilePath.parent_path());
         }
         else {
             if (!initFlags.Has(InitFlags::Truncate) && std::filesystem::file_size(logFilePath) > maxSizeLogFile) {
@@ -192,11 +195,18 @@ namespace LOGGER_NS {
         _this.standardLoggersList[loggerId].fileSinkExtend->set_level(spdlog::level::trace);
 
         if (initFlags.Has(InitFlags::EnableLogToStdout)) {
-            _this.stdoutColorSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+            _this.stdoutDebugColorSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
             auto formatterDebug = std::make_unique<spdlog::pattern_formatter>();
             formatterDebug->add_flag<CustomMsgCallbackFlag>(CustomMsgCallbackFlag::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::Debug));
-            _this.stdoutColorSink->set_formatter(std::move(formatterDebug));
-            _this.stdoutColorSink->set_level(spdlog::level::trace);
+            _this.stdoutDebugColorSink->set_formatter(std::move(formatterDebug));
+            _this.stdoutDebugColorSink->set_level(spdlog::level::trace);
+
+            _this.stdoutDebugFnColorSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+            auto formatterFunc = std::make_unique<spdlog::pattern_formatter>();
+            formatterFunc->add_flag<CustomMsgCallbackFlag>(CustomMsgCallbackFlag::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::DebugFn));
+            _this.stdoutDebugFnColorSink->set_formatter(std::move(formatterFunc));
+            _this.stdoutDebugFnColorSink->set_color(spdlog::level::debug, FOREGROUND_GREEN | FOREGROUND_BLUE);
+            _this.stdoutDebugFnColorSink->set_level(spdlog::level::trace);
         }
 
 
@@ -207,12 +217,12 @@ namespace LOGGER_NS {
         spdlog::sinks_init_list extendLoggerSinks = { _this.standardLoggersList[loggerId].fileSinkExtend };
 
         if (initFlags.Has(InitFlags::EnableLogToStdout)) {
-            loggerSinks = { _this.stdoutColorSink, _this.standardLoggersList[loggerId].fileSink };
-            funcLoggerSinks = { _this.stdoutColorSink, _this.standardLoggersList[loggerId].fileSinkFunc };
+            loggerSinks = { _this.stdoutDebugColorSink, _this.standardLoggersList[loggerId].fileSink };
+            funcLoggerSinks = { _this.stdoutDebugFnColorSink, _this.standardLoggersList[loggerId].fileSinkFunc };
 
             if (initFlags.Has(InitFlags::RedirectRawTimeLogToStdout)) {
-                rawLoggerSinks = { _this.stdoutColorSink, _this.standardLoggersList[loggerId].fileSinkRaw };
-                timeLoggerSinks = { _this.stdoutColorSink, _this.standardLoggersList[loggerId].fileSinkTime };
+                rawLoggerSinks = { _this.stdoutDebugColorSink, _this.standardLoggersList[loggerId].fileSinkRaw };
+                timeLoggerSinks = { _this.stdoutDebugColorSink, _this.standardLoggersList[loggerId].fileSinkTime };
             }
         }
 
@@ -221,7 +231,7 @@ namespace LOGGER_NS {
 
         spdlog::sinks_init_list debugLoggerSinks = { _this.debugSink, _this.standardLoggersList[loggerId].fileSink };
         if (initFlags.Has(InitFlags::EnableLogToStdout)) {
-            debugLoggerSinks = { _this.debugSink, _this.stdoutColorSink, _this.standardLoggersList[loggerId].fileSink };
+            debugLoggerSinks = { _this.debugSink, _this.stdoutDebugColorSink, _this.standardLoggersList[loggerId].fileSink };
         }
 #endif
 
