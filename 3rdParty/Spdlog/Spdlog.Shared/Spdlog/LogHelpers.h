@@ -133,7 +133,8 @@ namespace LOGGER_NS {
 #ifdef _DEBUG
         const std::shared_ptr<spdlog::sinks::msvc_sink_mt> debugSink;
 #endif
-        std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> stdoutColorSink;
+        std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> stdoutDebugColorSink;
+        std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> stdoutDebugFnColorSink;
 
         std::array<StandardLoggers, maxLoggers> standardLoggersList;
 

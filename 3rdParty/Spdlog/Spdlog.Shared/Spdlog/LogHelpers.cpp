@@ -7,13 +7,46 @@
 #include <set>
 
 namespace LOGGER_NS {
-    // Free letter flags: 'J''j', 'K''k', 'Q', 'W''w' 
+    // Free letter flags: 'G', 'h', 'J''j', 'K''k', 'N', 'Q', 'U', 'V', 'W''w', 'Z', '*', "?"
 
-    class CustomMsgCallbackFlag : public spdlog::custom_flag_formatter {
+    // TODO: Use universal formatter to format source_location with paddings to make it more readable 
+    class FunctionNameFormatter : public spdlog::custom_flag_formatter {
+    public:
+        static const char flag = '?';
+        static const int maxFuncLenght = 30;
+
+        explicit FunctionNameFormatter() = default;
+
+        void format(const spdlog::details::log_msg& logMsg, const std::tm&, spdlog::memory_buf_t& dest) override {
+            if (logMsg.source.empty()) {
+                return;
+            }
+
+            // Make pretty function name
+            //std::string_view svFuncName = logMsg.source.funcname;
+            //if (svFuncName.size() > maxFuncLenght) {
+            //    std::string_view svFuncNameStart = svFuncName.substr(0, maxFuncLenght / 2);
+            //    std::string_view svFuncNameEnd = svFuncName.substr(svFuncName.size() - maxFuncLenght / 2);
+            //    
+            //    spdlog::details::fmt_helper::append_string_view({ svFuncNameStart.data(), svFuncNameStart.size() }, dest);
+            //    spdlog::details::fmt_helper::append_string_view("...", dest);
+            //    spdlog::details::fmt_helper::append_string_view({ svFuncNameEnd.data(), svFuncNameEnd.size() }, dest);
+            //    return;
+            //}
+            
+            spdlog::details::fmt_helper::append_string_view(logMsg.source.funcname, dest);
+        }
+
+        std::unique_ptr<custom_flag_formatter> clone() const override {
+            return spdlog::details::make_unique<FunctionNameFormatter>();
+        }
+    };
+
+    class MsgCallbackFormatter : public spdlog::custom_flag_formatter {
     public:
         static const char flag = 'q';
 
-        explicit CustomMsgCallbackFlag(std::function<std::wstring()> prefixFn, std::function<void(const std::string&)> postfixFn = nullptr)
+        explicit MsgCallbackFormatter(std::function<std::wstring()> prefixFn, std::function<void(const std::string&)> postfixFn = nullptr)
             : prefixCallback{ prefixFn }
             , postfixCallback{ postfixFn }
         {
@@ -30,7 +63,7 @@ namespace LOGGER_NS {
         }
 
         std::unique_ptr<custom_flag_formatter> clone() const override {
-            return spdlog::details::make_unique<CustomMsgCallbackFlag>(prefixCallback, postfixCallback);
+            return spdlog::details::make_unique<MsgCallbackFormatter>(prefixCallback, postfixCallback);
         }
 
     private:
@@ -41,11 +74,12 @@ namespace LOGGER_NS {
 
     enum class Pattern {
         Default,
+        Raw,
+        Time,
+        Func,
         Extend,
         Debug,
-        Func,
-        Time,
-        Raw,
+        DebugFn,
     };
 
     // %l - log level
@@ -53,14 +87,16 @@ namespace LOGGER_NS {
     // %d.%m.%Y %H:%M:%S:%e - time
     // %q - optional prefix/postfix callback
     // %v - log msg
+    // %^/%$ - start/end color range
     const std::string GetPattern(Pattern value) {
         static const std::unordered_map<Pattern, std::string> patterns = {
-            {Pattern::Default, "[%L] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q %v"},
-            {Pattern::Extend, "[%L] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q %v"}, // use postfixCallback
-            {Pattern::Debug, "[%L] [%t] %H:%M:%S:%e {%s:%# %!}%q %v"},
-            {Pattern::Func, "[%L] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %!}%q @@@ %v"},
-            {Pattern::Time, "[%L] %d.%m.%Y %H:%M:%S:%e  %v"},
+            {Pattern::Default, "[%L] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %?}%q %v"},
             {Pattern::Raw, "%v"},
+            {Pattern::Time, "[%L] %d.%m.%Y %H:%M:%S:%e  %v"},
+            {Pattern::Func, "[%L] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %?}%q @@@ %v"},
+            {Pattern::Extend, "[%L] [%t] %d.%m.%Y %H:%M:%S:%e {%s:%# %?}%q %v"}, // use postfixCallback
+            {Pattern::Debug, "[%L] [%t] %H:%M:%S:%e {%s:%# %?}%^%q %v%$"},
+            {Pattern::DebugFn, "[%L] [%t] %H:%M:%S:%e {%s:%# %?}%^%q @@@ %v%$"},
         };
         return patterns.at(value);
     }
@@ -73,7 +109,8 @@ namespace LOGGER_NS {
             , defaultLogger{ std::make_shared<spdlog::logger>("default_logger", spdlog::sinks_init_list{ defaultSink }) }
         {
             auto formatterDebug = std::make_unique<spdlog::pattern_formatter>();
-            formatterDebug->add_flag<CustomMsgCallbackFlag>(CustomMsgCallbackFlag::flag, nullptr).set_pattern(GetPattern(Pattern::Debug));
+            formatterDebug->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Debug));
+            formatterDebug->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, nullptr).set_pattern(GetPattern(Pattern::Debug));
             defaultSink->set_formatter(std::move(formatterDebug));
             defaultSink->set_level(spdlog::level::trace);
 
@@ -109,7 +146,8 @@ namespace LOGGER_NS {
 
 #ifdef _DEBUG
         auto formatterDebug = std::make_unique<spdlog::pattern_formatter>();
-        formatterDebug->add_flag<CustomMsgCallbackFlag>(CustomMsgCallbackFlag::flag, prefixCallback).set_pattern(GetPattern(Pattern::Debug));
+        formatterDebug->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Debug));
+        formatterDebug->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, prefixCallback).set_pattern(GetPattern(Pattern::Debug));
         debugSink->set_formatter(std::move(formatterDebug));
         debugSink->set_level(spdlog::level::trace);
 #endif
@@ -145,7 +183,7 @@ namespace LOGGER_NS {
 
         if (!std::filesystem::exists(logFilePath)) {
             initFlags &= ~InitFlags::AppendNewSessionMsg; // don't append new session message at first created log file
-            std::filesystem::create_directory(logFilePath.parent_path());
+            std::filesystem::create_directories(logFilePath.parent_path());
         }
         else {
             if (!initFlags.Has(InitFlags::Truncate) && std::filesystem::file_size(logFilePath) > maxSizeLogFile) {
@@ -160,7 +198,8 @@ namespace LOGGER_NS {
 
         _this.standardLoggersList[loggerId].fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, initFlags.Has(InitFlags::Truncate));
         auto formatterDefault = std::make_unique<spdlog::pattern_formatter>();
-        formatterDefault->add_flag<CustomMsgCallbackFlag>(CustomMsgCallbackFlag::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::Default));
+        formatterDefault->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Default));
+        formatterDefault->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::Default));
         _this.standardLoggersList[loggerId].fileSink->set_formatter(std::move(formatterDefault));
         _this.standardLoggersList[loggerId].fileSink->set_level(spdlog::level::trace);
 
@@ -181,22 +220,36 @@ namespace LOGGER_NS {
 
         _this.standardLoggersList[loggerId].fileSinkFunc = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, initFlags.Has(InitFlags::Truncate));
         auto formatterFunc = std::make_unique<spdlog::pattern_formatter>();
-        formatterFunc->add_flag<CustomMsgCallbackFlag>(CustomMsgCallbackFlag::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::Func));
+        formatterFunc->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Func));
+        formatterFunc->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::Func));
         _this.standardLoggersList[loggerId].fileSinkFunc->set_formatter(std::move(formatterFunc));
         _this.standardLoggersList[loggerId].fileSinkFunc->set_level(spdlog::level::trace);
 
         _this.standardLoggersList[loggerId].fileSinkExtend = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, initFlags.Has(InitFlags::Truncate));
         auto formatterExtend = std::make_unique<spdlog::pattern_formatter>();
-        formatterExtend->add_flag<CustomMsgCallbackFlag>(CustomMsgCallbackFlag::flag, _this.prefixCallback, _this.postfixCallback).set_pattern(GetPattern(Pattern::Default));
+        formatterExtend->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Extend));
+        formatterExtend->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, _this.prefixCallback, _this.postfixCallback).set_pattern(GetPattern(Pattern::Extend));
         _this.standardLoggersList[loggerId].fileSinkExtend->set_formatter(std::move(formatterExtend));
         _this.standardLoggersList[loggerId].fileSinkExtend->set_level(spdlog::level::trace);
 
         if (initFlags.Has(InitFlags::EnableLogToStdout)) {
-            _this.stdoutColorSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+            _this.stdoutDebugColorSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
             auto formatterDebug = std::make_unique<spdlog::pattern_formatter>();
-            formatterDebug->add_flag<CustomMsgCallbackFlag>(CustomMsgCallbackFlag::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::Debug));
-            _this.stdoutColorSink->set_formatter(std::move(formatterDebug));
-            _this.stdoutColorSink->set_level(spdlog::level::trace);
+            formatterDebug->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Debug));
+            formatterDebug->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::Debug));
+            _this.stdoutDebugColorSink->set_formatter(std::move(formatterDebug));
+            _this.stdoutDebugColorSink->set_color(spdlog::level::err, FOREGROUND_RED);
+            _this.stdoutDebugColorSink->set_color(spdlog::level::warn, FOREGROUND_RED);
+            _this.stdoutDebugColorSink->set_color(spdlog::level::debug, FOREGROUND_INTENSITY); // dark-gray
+            _this.stdoutDebugColorSink->set_level(spdlog::level::trace);
+
+            _this.stdoutDebugFnColorSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+            auto formatterFunc = std::make_unique<spdlog::pattern_formatter>();
+            formatterFunc->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::DebugFn));
+            formatterFunc->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::DebugFn));
+            _this.stdoutDebugFnColorSink->set_formatter(std::move(formatterFunc));
+            _this.stdoutDebugFnColorSink->set_color(spdlog::level::debug, FOREGROUND_GREEN | FOREGROUND_BLUE);
+            _this.stdoutDebugFnColorSink->set_level(spdlog::level::trace);
         }
 
 
@@ -207,12 +260,12 @@ namespace LOGGER_NS {
         spdlog::sinks_init_list extendLoggerSinks = { _this.standardLoggersList[loggerId].fileSinkExtend };
 
         if (initFlags.Has(InitFlags::EnableLogToStdout)) {
-            loggerSinks = { _this.stdoutColorSink, _this.standardLoggersList[loggerId].fileSink };
-            funcLoggerSinks = { _this.stdoutColorSink, _this.standardLoggersList[loggerId].fileSinkFunc };
+            loggerSinks = { _this.stdoutDebugColorSink, _this.standardLoggersList[loggerId].fileSink };
+            funcLoggerSinks = { _this.stdoutDebugFnColorSink, _this.standardLoggersList[loggerId].fileSinkFunc };
 
             if (initFlags.Has(InitFlags::RedirectRawTimeLogToStdout)) {
-                rawLoggerSinks = { _this.stdoutColorSink, _this.standardLoggersList[loggerId].fileSinkRaw };
-                timeLoggerSinks = { _this.stdoutColorSink, _this.standardLoggersList[loggerId].fileSinkTime };
+                rawLoggerSinks = { _this.stdoutDebugColorSink, _this.standardLoggersList[loggerId].fileSinkRaw };
+                timeLoggerSinks = { _this.stdoutDebugColorSink, _this.standardLoggersList[loggerId].fileSinkTime };
             }
         }
 
@@ -221,7 +274,7 @@ namespace LOGGER_NS {
 
         spdlog::sinks_init_list debugLoggerSinks = { _this.debugSink, _this.standardLoggersList[loggerId].fileSink };
         if (initFlags.Has(InitFlags::EnableLogToStdout)) {
-            debugLoggerSinks = { _this.debugSink, _this.stdoutColorSink, _this.standardLoggersList[loggerId].fileSink };
+            debugLoggerSinks = { _this.debugSink, _this.stdoutDebugColorSink, _this.standardLoggersList[loggerId].fileSink };
         }
 #endif
 
