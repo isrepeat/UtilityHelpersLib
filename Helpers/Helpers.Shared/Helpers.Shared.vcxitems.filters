@@ -22,6 +22,9 @@
     <Filter Include="_Sources">
       <UniqueIdentifier>{0acf4eff-0e53-40e7-a31b-9f22cd2b0efc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Async">
+      <UniqueIdentifier>{5fd2a503-a42e-42bb-87bf-98be8fff7a9c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Gate.cpp">
@@ -301,6 +304,12 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\UniqueHandle.h">
       <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AsyncTasks.h">
+      <Filter>Async</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Awaitables.h">
+      <Filter>Async</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

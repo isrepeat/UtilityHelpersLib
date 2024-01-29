@@ -46,6 +46,8 @@
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Action.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AlignedAllocator.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AsyncTasks.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Awaitables.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Bimap.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\BIOS.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Callback.hpp" />
