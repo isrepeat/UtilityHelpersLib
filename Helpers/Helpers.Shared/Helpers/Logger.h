@@ -9,6 +9,7 @@
 
 // NOTE: DISABLE_..._LOGGING macros must be defined at global level to guarantee that all files disabled this macros.
 //       If you want disable some log marco for specific file do it manually by redefining this macro with empty body.
+//       If you redefined some macros manually in header file - don't forget return original definitions for these macros at the end of file.
 
 #if !defined(DISABLE_ERROR_LOGGING)
 #define LogLastError LOG_ERROR_D(L"Last error: {}", HELPERS_NS::GetLastErrorAsString())
