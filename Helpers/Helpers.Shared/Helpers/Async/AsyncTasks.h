@@ -9,41 +9,43 @@
 // Don't forget return original definitions for these macros at the end of file
 //#define LOG_FUNCTION_ENTER_VERBOSE(fmt, ...)
 //#define LOG_FUNCTION_SCOPE_VERBOSE(fmt, ...)
+//#define LOG_FUNCTION_ENTER_VERBOSE_C(fmt, ...)
+//#define LOG_FUNCTION_SCOPE_VERBOSE_C(fmt, ...)
 
 namespace HELPERS_NS {
     namespace Async {
         // TODO: move implementation to .cpp
         class AsyncTasks {
+            CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(AsyncTasks);
         public:
             using Task = typename CoTask<initial_suspend_always>;
             using RootTask = typename CoTask<initial_suspend_never>;
 
-            AsyncTasks() {
-                LOG_FUNCTION_ENTER_VERBOSE("AsyncTasks()");
+            AsyncTasks(std::wstring instanceName) {
+                this->SetFullClassName(instanceName);
+                LOG_FUNCTION_ENTER_VERBOSE_C("AsyncTasks()");
             }
             ~AsyncTasks() {
-                LOG_FUNCTION_SCOPE_VERBOSE("~AsyncTasks()");
+                LOG_FUNCTION_SCOPE_VERBOSE_C("~AsyncTasks()");
                 Cancel();
             }
             void SetResumeCallback(std::function<void(std::weak_ptr<RootTask>)> resumeCallback) {
-                LOG_FUNCTION_ENTER_VERBOSE("SetResumeCallback(resumeCallback)");
+                LOG_FUNCTION_ENTER_VERBOSE_C("SetResumeCallback(resumeCallback)");
                 this->resumeCallback = resumeCallback;
             }
             void Add(Task::Ret_t task, std::chrono::milliseconds startAfter) {
-                LOG_FUNCTION_SCOPE_VERBOSE("Add(task, startAfter)");
+                LOG_FUNCTION_SCOPE_VERBOSE_C("Add(task, startAfter)");
                 std::unique_lock lk{ mx };
                 tasks.push({ std::move(task), startAfter });
             }
             // CHECK: Should not be called untill previous StartExecutingCoroutine() not finished
             void StartExecuting() {
-                LOG_FUNCTION_SCOPE_VERBOSE("StartExecuting()");
-                //StartExecutingCoroutine();
-                rootTask = StartExecutingCoroutine();
-                //rootTask->cancel();
+                LOG_FUNCTION_SCOPE_VERBOSE_C("StartExecuting()");
+                rootTask = StartExecutingCoroutine(L"rootTask");
                 return;
             }
             void Cancel() {
-                LOG_FUNCTION_SCOPE_VERBOSE("Cancel()");
+                LOG_FUNCTION_SCOPE_VERBOSE_C("Cancel()");
                 if (rootTask)
                     rootTask->cancel(); // no need mutex synchronization
 
@@ -60,7 +62,7 @@ namespace HELPERS_NS {
             };
             // TODO: Add multiple calls guard
             // TODO: Implement special CoTask for StartExecuting() to avoid resume this task from another thread
-            RootTask::Ret_t StartExecutingCoroutine() {
+            RootTask::Ret_t StartExecutingCoroutine(std::wstring coroFrameName /*passed to CoTask::Promise implicitlly*/) {
                 LOG_FUNCTION_SCOPE_VERBOSE("StartExecutingCoroutine()");
                 static thread_local std::size_t functionEnterThreadId = HELPERS_NS::GetThreadId();
 
@@ -107,7 +109,13 @@ namespace HELPERS_NS {
 #if !defined(DISABLE_VERBOSE_LOGGING)
 #define LOG_FUNCTION_ENTER_VERBOSE(fmt, ...) LOG_FUNCTION_ENTER(fmt, __VA_ARGS__)
 #define LOG_FUNCTION_SCOPE_VERBOSE(fmt, ...) LOG_FUNCTION_SCOPE(fmt, __VA_ARGS__)
+
+#define LOG_FUNCTION_ENTER_VERBOSE_C(fmt, ...) LOG_FUNCTION_ENTER_C(fmt, __VA_ARGS__)
+#define LOG_FUNCTION_SCOPE_VERBOSE_C(fmt, ...) LOG_FUNCTION_SCOPE_C(fmt, __VA_ARGS__)
 #else
 #define LOG_FUNCTION_ENTER_VERBOSE(fmt, ...)
 #define LOG_FUNCTION_SCOPE_VERBOSE(fmt, ...)
+
+#define LOG_FUNCTION_ENTER_VERBOSE_C(fmt, ...)
+#define LOG_FUNCTION_ENTER_VERBOSE_C(fmt, ...)
 #endif

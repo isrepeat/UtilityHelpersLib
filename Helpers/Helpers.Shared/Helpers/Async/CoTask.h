@@ -8,15 +8,17 @@
 // Don't forget return original definitions for these macros at the end of file
 //#define LOG_FUNCTION_ENTER_VERBOSE(fmt, ...)
 //#define LOG_FUNCTION_SCOPE_VERBOSE(fmt, ...)
+//#define LOG_FUNCTION_ENTER_VERBOSE_C(fmt, ...)
+//#define LOG_FUNCTION_SCOPE_VERBOSE_C(fmt, ...)
 
 namespace std {
-    template<typename T>
-    struct coroutine_traits<std::shared_ptr<T>> {
+    template<typename T, typename... Args>
+    struct coroutine_traits<std::shared_ptr<T>, Args...> {
         using promise_type = typename T::promise_type;
     };
 
-    template<typename T, typename Caller>
-    struct coroutine_traits<std::shared_ptr<T>, Caller> {
+    template<typename T, typename Caller, typename... Args>
+    struct coroutine_traits<std::shared_ptr<T>, Caller*, Args...> {
         using promise_type = typename T::promise_type;
     };
 }
@@ -40,37 +42,50 @@ namespace HELPERS_NS {
         // * InitialSuspendBaseT must implement initial_suspend() method
         template<typename InitialSuspendBaseT>
         class CoTask {
+            CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(CoTask);
         public:
+
             struct Promise : public InitialSuspendBaseT {
+                CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(Promise);
+            public:
                 using ObjectRet_t = std::shared_ptr<CoTask>;
 
-                Promise() {
-                    LOG_FUNCTION_ENTER_VERBOSE("Promise()");
+#ifdef __INTELLISENSE__ // https://stackoverflow.com/questions/67209981/weird-error-from-visual-c-no-default-constructor-for-promise-type
+                Promise(); // Do not use default Ctor, just mark it for intelli sense
+#endif                
+                Promise(std::wstring coroFrameName) { // Used for non-class functions
+                    this->SetFullClassName(coroFrameName);
+                    LOG_FUNCTION_ENTER_VERBOSE_C(L"Promise(coroFrameName)");
+                }
+                template <typename Caller>
+                Promise(Caller&, std::wstring coroFrameName) { // Used for methods from Caller class 
+                    this->SetFullClassName(coroFrameName);
+                    LOG_FUNCTION_ENTER_VERBOSE_C(L"Promise(Caller, coroFrameName)");
                 }
                 ~Promise() {
-                    LOG_FUNCTION_ENTER_VERBOSE("~Promise()");
+                    LOG_FUNCTION_ENTER_VERBOSE_C("~Promise()");
                 }
                 ObjectRet_t get_return_object() noexcept {
-                    LOG_FUNCTION_SCOPE_VERBOSE("get_return_object()");
-                    auto coTaskShared = std::make_shared<CoTask>(std::coroutine_handle<Promise>::from_promise(*this), token);
+                    LOG_FUNCTION_SCOPE_VERBOSE_C("get_return_object()");
+                    auto coTaskShared = std::make_shared<CoTask>(std::coroutine_handle<Promise>::from_promise(*this), token, this->GetFullClassNameW());
                     coTaskWeak = coTaskShared;
                     return coTaskShared;
                 }
                 auto initial_suspend() const noexcept {
-                    LOG_FUNCTION_SCOPE_VERBOSE("initial_suspend()");
+                    LOG_FUNCTION_SCOPE_VERBOSE_C("initial_suspend()");
                     return this->InitialSuspendBaseT::initial_suspend();
                 }
                 void unhandled_exception() {
-                    LOG_FUNCTION_SCOPE_VERBOSE("unhandled_exception()");
+                    LOG_FUNCTION_SCOPE_VERBOSE_C("unhandled_exception()");
                 }
                 auto final_suspend() const noexcept {
-                    LOG_FUNCTION_SCOPE_VERBOSE("final_suspend()");
+                    LOG_FUNCTION_SCOPE_VERBOSE_C("final_suspend()");
                     // "suspend always" at finish mean that we need to destroy coroutine_handle manually,
                     //  so return suspend_always to avoid double destroying problem in CoTask RAII class.
                     return std::suspend_always{};
                 }
                 void return_void() {
-                    LOG_FUNCTION_ENTER_VERBOSE("return_void()");
+                    LOG_FUNCTION_ENTER_VERBOSE_C("return_void()");
                 }
                 std::weak_ptr<CoTask> GetTask() {
                     return coTaskWeak;
@@ -90,14 +105,15 @@ namespace HELPERS_NS {
             CoTask() {
                 LOG_FUNCTION_ENTER_VERBOSE("CoTask()");
             }
-            explicit CoTask(std::coroutine_handle<> coroHandle, std::weak_ptr<int> promiseToken)
+            explicit CoTask(std::coroutine_handle<> coroHandle, std::weak_ptr<int> promiseToken, std::wstring coroFrameName)
                 : coroHandle{ coroHandle }
                 , promiseToken{ promiseToken }
             {
-                LOG_FUNCTION_ENTER_VERBOSE("CoTask(coroHandle, promiseToken)");
+                this->SetFullClassName(coroFrameName);
+                LOG_FUNCTION_ENTER_VERBOSE_C("CoTask(coroHandle, promiseToken, coroFrameName)");
             }
             ~CoTask() {
-                LOG_FUNCTION_ENTER_VERBOSE("~CoTask()");
+                LOG_FUNCTION_ENTER_VERBOSE_C("~CoTask()");
                 if (coroHandle) {
                     coroHandle.destroy(); // after this call promise_type will destroy (if final_suspend return suspend_always)
                 }
@@ -122,7 +138,7 @@ namespace HELPERS_NS {
 
 
             void resume() {
-                LOG_FUNCTION_SCOPE_VERBOSE("resume()");
+                LOG_FUNCTION_SCOPE_VERBOSE_C("resume()");
 
                 if (canceled) {
                     LOG_WARNING_D("task canceled");
@@ -140,7 +156,7 @@ namespace HELPERS_NS {
             }
 
             void cancel() {
-                LOG_FUNCTION_ENTER_VERBOSE("cancel()");
+                LOG_FUNCTION_ENTER_VERBOSE_C("cancel()");
                 canceled = true;
             }
 
@@ -160,7 +176,13 @@ namespace HELPERS_NS {
 #if !defined(DISABLE_VERBOSE_LOGGING)
 #define LOG_FUNCTION_ENTER_VERBOSE(fmt, ...) LOG_FUNCTION_ENTER(fmt, __VA_ARGS__)
 #define LOG_FUNCTION_SCOPE_VERBOSE(fmt, ...) LOG_FUNCTION_SCOPE(fmt, __VA_ARGS__)
+
+#define LOG_FUNCTION_ENTER_VERBOSE_C(fmt, ...) LOG_FUNCTION_ENTER_C(fmt, __VA_ARGS__)
+#define LOG_FUNCTION_SCOPE_VERBOSE_C(fmt, ...) LOG_FUNCTION_SCOPE_C(fmt, __VA_ARGS__)
 #else
 #define LOG_FUNCTION_ENTER_VERBOSE(fmt, ...)
 #define LOG_FUNCTION_SCOPE_VERBOSE(fmt, ...)
+
+#define LOG_FUNCTION_ENTER_VERBOSE_C(fmt, ...)
+#define LOG_FUNCTION_ENTER_VERBOSE_C(fmt, ...)
 #endif
