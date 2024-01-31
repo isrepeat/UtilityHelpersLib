@@ -21,7 +21,7 @@ namespace HELPERS_NS {
             using Task = typename CoTask<initial_suspend_always>;
             using RootTask = typename CoTask<initial_suspend_never>;
 
-            AsyncTasks(std::wstring instanceName) {
+            AsyncTasks(std::wstring instanceName = L"Unknown") {
                 this->SetFullClassName(instanceName);
                 LOG_FUNCTION_ENTER_VERBOSE_C("AsyncTasks()");
             }
@@ -38,9 +38,11 @@ namespace HELPERS_NS {
                 std::unique_lock lk{ mx };
                 tasks.push({ std::move(task), startAfter });
             }
-            // CHECK: Should not be called untill previous StartExecutingCoroutine() not finished
             void StartExecuting() {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("StartExecuting()");
+                if (LOG_ASSERT(executingStarted.exchange(true), "Executing of root coroutine already started!")) {
+                    return;
+                }
                 rootTask = StartExecutingCoroutine(L"rootTask");
                 return;
             }
@@ -63,7 +65,7 @@ namespace HELPERS_NS {
             // TODO: Add multiple calls guard
             // TODO: Implement special CoTask for StartExecuting() to avoid resume this task from another thread
             RootTask::Ret_t StartExecutingCoroutine(std::wstring coroFrameName /*passed to CoTask::Promise implicitlly*/) {
-                LOG_FUNCTION_SCOPE_VERBOSE("StartExecutingCoroutine()");
+                LOG_FUNCTION_SCOPE_VERBOSE_C("StartExecutingCoroutine()");
                 static thread_local std::size_t functionEnterThreadId = HELPERS_NS::GetThreadId();
 
                 while (true) {
@@ -76,12 +78,14 @@ namespace HELPERS_NS {
 
                     if (HELPERS_NS::GetThreadId() != functionEnterThreadId) {
                         LOG_ERROR_D("It seems you resume this task from thread that differs from initial. Force return.");
+                        executingStarted = false;
                         co_return;
                     }
                     LOG_DEBUG_D("resume co-task ...");
                     task->resume(); // here context is changed on co-task ...
                     LOG_DEBUG_D("co-task finished");
                 }
+                executingStarted = false; // TODO: move to promise final_suspend logic
                 co_return;
             }
 
@@ -99,6 +103,7 @@ namespace HELPERS_NS {
         private:
             std::mutex mx;
             RootTask::Ret_t rootTask;
+            std::atomic<bool> executingStarted = false;
             HELPERS_NS::iterable_queue<TaskWrapper> tasks;
             std::function<void(std::weak_ptr<RootTask>)> resumeCallback;
         };

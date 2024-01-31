@@ -50,15 +50,15 @@ namespace HELPERS_NS {
             public:
                 using ObjectRet_t = std::shared_ptr<CoTask>;
 
-#ifdef __INTELLISENSE__ // https://stackoverflow.com/questions/67209981/weird-error-from-visual-c-no-default-constructor-for-promise-type
-                Promise(); // Do not use default Ctor, just mark it for intelli sense
-#endif                
-                Promise(std::wstring coroFrameName) { // Used for non-class functions
+//#ifdef __INTELLISENSE__ // https://stackoverflow.com/questions/67209981/weird-error-from-visual-c-no-default-constructor-for-promise-type
+//                Promise(); // Do not use default Ctor, just mark it for intelli sense [commented because we already have default Ctor]
+//#endif                
+                Promise(std::wstring coroFrameName = L"Unknown") { // Used for non-class functions
                     this->SetFullClassName(coroFrameName);
                     LOG_FUNCTION_ENTER_VERBOSE_C(L"Promise(coroFrameName)");
                 }
                 template <typename Caller>
-                Promise(Caller&, std::wstring coroFrameName) { // Used for methods from Caller class 
+                Promise(Caller&, std::wstring coroFrameName = L"Unknown") { // Used for methods from Caller class 
                     this->SetFullClassName(coroFrameName);
                     LOG_FUNCTION_ENTER_VERBOSE_C(L"Promise(Caller, coroFrameName)");
                 }

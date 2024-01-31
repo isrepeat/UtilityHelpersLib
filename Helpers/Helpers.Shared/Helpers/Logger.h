@@ -19,7 +19,7 @@
 // - use comma statement "|| (..., false)" to execute next expression
 // - invert result to use it like "if (LOG_ASSERT(...))"
 #define LOG_ASSERT(expression, message, ...)  !(																										\
-	(bool)(expression) || (LOG_ERROR_D(L" " message L"  {" _CRT_WIDE(#expression) L"}", __VA_ARGS__), false) || (assertm(expression, message), false)	\
+	(bool)(expression) || (LOG_ERROR_D(L" " message L"  {{" _CRT_WIDE(#expression) L"}}", __VA_ARGS__), false) || (assertm(expression, message), false)	\
 )
 
 // NOTE: use comma instead semicolon to be able use it in "if statement" without braces
