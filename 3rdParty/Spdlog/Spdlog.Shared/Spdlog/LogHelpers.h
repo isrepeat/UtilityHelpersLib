@@ -254,7 +254,7 @@ LOGGER_API HELPERS_NS::nothing* __LgCtx(); // may be overwritten as class method
 	public:                                                                                                                   \
 	    void __ClassFullnameLogging() {}                                                                                      \
 	                                                                                                                          \
-	    className* __LgCtx() {                                                                                                \
+	    const className* __LgCtx() const {                                                                                    \
             return this;                                                                                                      \
         }                                                                                                                     \
 	                                                                                                                          \
@@ -264,11 +264,11 @@ LOGGER_API HELPERS_NS::nothing* __LgCtx(); // may be overwritten as class method
             this->className##_fullClassNameW = name;                                                                          \
         }                                                                                                                     \
                                                                                                                               \
-		const std::string& GetFullClassNameA() {                                                                              \
+		const std::string& GetFullClassNameA() const {                                                                        \
 			return this->className##_fullClassNameA;                                                                          \
 		}                                                                                                                     \
                                                                                                                               \
-		const std::wstring& GetFullClassNameW() {                                                                             \
+		const std::wstring& GetFullClassNameW() const {                                                                       \
 			return this->className##_fullClassNameW;                                                                          \
 		}                                                                                                                     \
                                                                                                                               \

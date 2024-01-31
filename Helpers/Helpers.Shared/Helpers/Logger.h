@@ -69,6 +69,9 @@
 
 #define LOG_FUNCTION_ENTER_VERBOSE(fmt, ...) LOG_FUNCTION_ENTER(fmt, __VA_ARGS__)
 #define LOG_FUNCTION_SCOPE_VERBOSE(fmt, ...) LOG_FUNCTION_SCOPE(fmt, __VA_ARGS__)
+
+#define LOG_FUNCTION_ENTER_VERBOSE_C(fmt, ...) LOG_FUNCTION_ENTER_C(fmt, __VA_ARGS__)
+#define LOG_FUNCTION_SCOPE_VERBOSE_C(fmt, ...) LOG_FUNCTION_SCOPE_C(fmt, __VA_ARGS__)
 #else
 #define LOG_DEBUG_VERBOSE(fmt, ...)
 #define LOG_ERROR_VERBOSE(fmt, ...)
@@ -78,6 +81,9 @@
 
 #define LOG_FUNCTION_ENTER_VERBOSE(fmt, ...)
 #define LOG_FUNCTION_SCOPE_VERBOSE(fmt, ...)
+
+#define LOG_FUNCTION_ENTER_VERBOSE_C(fmt, ...)
+#define LOG_FUNCTION_ENTER_VERBOSE_C(fmt, ...)
 #endif
 
 
