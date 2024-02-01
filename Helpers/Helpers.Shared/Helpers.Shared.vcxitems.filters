@@ -305,10 +305,13 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\UniqueHandle.h">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AsyncTasks.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Async\AsyncTasks.h">
       <Filter>Async</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Awaitables.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Async\Awaitables.h">
+      <Filter>Async</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Async\CoTask.h">
       <Filter>Async</Filter>
     </ClInclude>
   </ItemGroup>

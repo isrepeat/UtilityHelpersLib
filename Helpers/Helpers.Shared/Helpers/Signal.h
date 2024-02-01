@@ -13,9 +13,13 @@ namespace HELPERS_NS {
 			Once,
 		};
 
-		Signal(Type type = Type::Multi) : type{ type } {
+		Signal(Type type = Type::Multi) 
+			: type{ type } 
+		{
 		}
-		Signal(std::function<void()> handler, Type type = Type::Multi) : type{ type } {
+		Signal(std::function<void()> handler, Type type = Type::Multi) 
+			: type{ type }
+		{
 			handlers.push_back(handler);
 		}
 
@@ -35,6 +39,10 @@ namespace HELPERS_NS {
 			handlers.clear();
 		}
 
+		bool IsTriggeredAtLeastOnce() const {
+			return triggerCounter;
+		}
+
 		// Qualify as const to use in lambda captures by value
 		void operator() () const {
 			for (auto& handler : handlers) {
@@ -48,18 +56,19 @@ namespace HELPERS_NS {
 				}
 			}
 
+			triggerCounter++;
+
 			if (type == Type::Once && (handlers.size() || finishHandlers.size())) {
 				finishHandlers.clear();
 				handlers.clear();
 			}
 		}
 
-
 	private:
 		Type type;
+		mutable std::atomic<int> triggerCounter = 0;
 		mutable std::vector<std::function<void()>> handlers;
 		mutable std::vector<std::function<void()>> finishHandlers;
 		//std::mutex mx; // We cannot use mutex as mebmer because its copy constructor removed
 	};
-	
 }

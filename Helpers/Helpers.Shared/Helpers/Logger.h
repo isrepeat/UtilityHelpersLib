@@ -9,16 +9,19 @@
 
 // NOTE: DISABLE_..._LOGGING macros must be defined at global level to guarantee that all files disabled this macros.
 //       If you want disable some log marco for specific file do it manually by redefining this macro with empty body.
+//       If you redefined some macros manually in header file - don't forget return original definitions for these macros at the end of file.
 
 #if !defined(DISABLE_ERROR_LOGGING)
 #define LogLastError LOG_ERROR_D(L"Last error: {}", HELPERS_NS::GetLastErrorAsString())
 #define LogWSALastError LOG_ERROR_D(L"WSA Last error: {}", HELPERS_NS::GetWSALastErrorAsString())
 
-// NOTE: 
+// NOTE 1: 
 // - use comma statement "|| (..., false)" to execute next expression
 // - invert result to use it like "if (LOG_ASSERT(...))"
+// NOTE 2:
+// - in CONSOLE apps assert failure cause abort() call (by default). To override this behaviour use _set_error_mode(_OUT_TO_MSGBOX);
 #define LOG_ASSERT(expression, message, ...)  !(																										\
-	(bool)(expression) || (LOG_ERROR_D(L" " message L"  {" _CRT_WIDE(#expression) L"}", __VA_ARGS__), false) || (assertm(expression, message), false)	\
+	(bool)(expression) || (LOG_ERROR_D(L" " message L"  {{" _CRT_WIDE(#expression) L"}}", __VA_ARGS__), false) || (assertm(expression, message), false)	\
 )
 
 // NOTE: use comma instead semicolon to be able use it in "if statement" without braces
@@ -68,6 +71,9 @@
 
 #define LOG_FUNCTION_ENTER_VERBOSE(fmt, ...) LOG_FUNCTION_ENTER(fmt, __VA_ARGS__)
 #define LOG_FUNCTION_SCOPE_VERBOSE(fmt, ...) LOG_FUNCTION_SCOPE(fmt, __VA_ARGS__)
+
+#define LOG_FUNCTION_ENTER_VERBOSE_C(fmt, ...) LOG_FUNCTION_ENTER_C(fmt, __VA_ARGS__)
+#define LOG_FUNCTION_SCOPE_VERBOSE_C(fmt, ...) LOG_FUNCTION_SCOPE_C(fmt, __VA_ARGS__)
 #else
 #define LOG_DEBUG_VERBOSE(fmt, ...)
 #define LOG_ERROR_VERBOSE(fmt, ...)
@@ -77,6 +83,9 @@
 
 #define LOG_FUNCTION_ENTER_VERBOSE(fmt, ...)
 #define LOG_FUNCTION_SCOPE_VERBOSE(fmt, ...)
+
+#define LOG_FUNCTION_ENTER_VERBOSE_C(fmt, ...)
+#define LOG_FUNCTION_ENTER_VERBOSE_C(fmt, ...)
 #endif
 
 
