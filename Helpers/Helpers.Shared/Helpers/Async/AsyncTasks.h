@@ -2,15 +2,16 @@
 #include <Helpers/common.h>
 #include <Helpers/Container.hpp>
 #include <Helpers/Thread.h>
+//#include <Helpers/Signal.h>
 #include <Helpers/Logger.h>
 #include "Awaitables.h"
 #include "CoTask.h"
 
 // Don't forget return original definitions for these macros at the end of file
-//#define LOG_FUNCTION_ENTER_VERBOSE(fmt, ...)
-//#define LOG_FUNCTION_SCOPE_VERBOSE(fmt, ...)
-//#define LOG_FUNCTION_ENTER_VERBOSE_C(fmt, ...)
-//#define LOG_FUNCTION_SCOPE_VERBOSE_C(fmt, ...)
+#define LOG_FUNCTION_ENTER_VERBOSE(fmt, ...)
+#define LOG_FUNCTION_SCOPE_VERBOSE(fmt, ...)
+#define LOG_FUNCTION_ENTER_VERBOSE_C(fmt, ...)
+#define LOG_FUNCTION_SCOPE_VERBOSE_C(fmt, ...)
 
 namespace HELPERS_NS {
     namespace Async {
@@ -18,8 +19,8 @@ namespace HELPERS_NS {
         class AsyncTasks {
             CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(AsyncTasks);
         public:
-            using Task = typename CoTask<initial_suspend_always>;
-            using RootTask = typename CoTask<initial_suspend_never>;
+            using Task = typename CoTask<PromiseDefault>;
+            using RootTask = typename CoTask<PromiseRoot>;
 
             AsyncTasks(std::wstring instanceName = L"Unknown") {
                 this->SetFullClassName(instanceName);
@@ -29,21 +30,29 @@ namespace HELPERS_NS {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("~AsyncTasks()");
                 Cancel();
             }
-            void SetResumeCallback(std::function<void(std::weak_ptr<RootTask>)> resumeCallback) {
+            void SetResumeCallback(std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback) {
                 LOG_FUNCTION_ENTER_VERBOSE_C("SetResumeCallback(resumeCallback)");
                 this->resumeCallback = resumeCallback;
             }
-            void Add(Task::Ret_t task, std::chrono::milliseconds startAfter) {
+            std::weak_ptr<Task> Add(Task::Ret_t task, std::chrono::milliseconds startAfter) {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("Add(task, startAfter)");
                 std::unique_lock lk{ mx };
-                tasks.push({ std::move(task), startAfter });
+                tasks.push({ task, startAfter });
+                return task;
             }
+            //std::weak_ptr<Task> Add(Task::Ret_t task, std::shared_ptr<HELPERS_NS::Signal> completedSignal) {
+            //    LOG_FUNCTION_SCOPE_VERBOSE_C("Add(task, startAfter)");
+            //    std::unique_lock lk{ mx };
+            //    tasks.push({ task, 0ms, completedSignal });
+            //    return task;
+            //}
             void StartExecuting() {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("StartExecuting()");
-                if (LOG_ASSERT(executingStarted.exchange(true), "Executing of root coroutine already started!")) {
+                if (LOG_ASSERT(!executingStarted.exchange(true), "Executing of root coroutine already started!")) {
                     return;
-                }
-                rootTask = StartExecutingCoroutine(L"rootTask");
+                } 
+                rootTask = StartExecutingCoroutine(L"rootTask", resumeCallback);
+                rootTask->resume();
                 return;
             }
             void Cancel() {
@@ -61,10 +70,11 @@ namespace HELPERS_NS {
             struct TaskWrapper {
                 Task::Ret_t task;
                 std::chrono::milliseconds startAfter;
+                //std::shared_ptr<HELPERS_NS::Signal> completedSignal;
             };
             // TODO: Add multiple calls guard
             // TODO: Implement special CoTask for StartExecuting() to avoid resume this task from another thread
-            RootTask::Ret_t StartExecutingCoroutine(std::wstring coroFrameName /*passed to CoTask::Promise implicitlly*/) {
+            RootTask::Ret_t StartExecutingCoroutine(std::wstring coroFrameName, std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback) {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("StartExecutingCoroutine()");
                 static thread_local std::size_t functionEnterThreadId = HELPERS_NS::GetThreadId();
 
@@ -73,16 +83,20 @@ namespace HELPERS_NS {
                     if (!task) {
                         break;
                     }
-
-                    co_await InvokeCallbackAfter<RootTask>(startAfter, resumeCallback); // [suspend point] here control is returned to caller
+                    
+                    // NOTE: if you want resume such tasks (with 0ms timeout) in next workQueue Pop event - comment this condition
+                    if (startAfter.count() > 0) {
+                        co_await ResumeAfter<RootTask::promise_type>(startAfter); // [suspend point] here control is returned to caller
+                    }
 
                     if (HELPERS_NS::GetThreadId() != functionEnterThreadId) {
                         LOG_ERROR_D("It seems you resume this task from thread that differs from initial. Force return.");
                         executingStarted = false;
-                        co_return;
+                        co_return; // mb need clear tasks queue also?
                     }
-                    LOG_DEBUG_D("resume co-task ...");
-                    task->resume(); // here context is changed on co-task ...
+
+                    LOG_DEBUG_D("await co-task ...");
+                    co_await *task;
                     LOG_DEBUG_D("co-task finished");
                 }
                 executingStarted = false; // TODO: move to promise final_suspend logic
@@ -90,7 +104,7 @@ namespace HELPERS_NS {
             }
 
             TaskWrapper GetNextTask() {
-                LOG_FUNCTION_SCOPE_VERBOSE("GetNextTask()");
+                LOG_FUNCTION_SCOPE_VERBOSE_C("GetNextTask()");
                 std::unique_lock lk{ mx };
                 if (tasks.empty()) {
                     return { nullptr, 0ms };
@@ -105,7 +119,7 @@ namespace HELPERS_NS {
             RootTask::Ret_t rootTask;
             std::atomic<bool> executingStarted = false;
             HELPERS_NS::iterable_queue<TaskWrapper> tasks;
-            std::function<void(std::weak_ptr<RootTask>)> resumeCallback;
+            std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback;
         };
     } // namespace Async
 } // namespace HELPERS_NS

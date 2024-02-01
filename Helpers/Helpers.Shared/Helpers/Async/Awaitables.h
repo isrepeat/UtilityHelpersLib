@@ -1,6 +1,7 @@
 #pragma once
 #include <Helpers/common.h>
 #include <Helpers/Logger.h>
+#include <Helpers/Signal.h>
 #include <Helpers/Time.h>
 #include "CoTask.h"
 #include <coroutine>
@@ -14,24 +15,20 @@
 
 namespace HELPERS_NS {
     namespace Async {
-        // NOTE: CoTaskT::promise_type must implement GetTask() method that returns weak_ptr<CoTaskT>
-        template <typename CoTaskT>
-        auto InvokeCallbackAfter(
-            std::chrono::milliseconds duration,
-            std::function<void(std::weak_ptr<CoTaskT>)> resumeCallback) noexcept
-        {
-            LOG_FUNCTION_SCOPE_VERBOSE("InvokeCallbackAfter(duration, resumeCallback)");
+
+        // TODO: Add type_traits to detect check if caller promise_type does not have Ctor(..., resumeCallback)
+        // NOTE: Must be called from coroutine that accept resumeCallback in params.
+        //       (resumeCallback will passed to this task promise_type Ctor)
+        template <typename PromiseT>
+        auto ResumeAfter(std::chrono::milliseconds duration) noexcept {
+            LOG_FUNCTION_SCOPE_VERBOSE("ResumeAfter(duration, resumeCallback)");
 
             struct Awaitable {
-                explicit Awaitable(
-                    std::chrono::milliseconds duration,
-                    std::function<void(std::weak_ptr<CoTaskT>)> resumeCallback)
+                explicit Awaitable(std::chrono::milliseconds duration)
                     : duration{ duration }
-                    , resumeCallback{ resumeCallback }
                 {
                     LOG_FUNCTION_ENTER_VERBOSE("Awaitable(duration, resumeCallback)");
                 }
-
                 ~Awaitable() {
                     LOG_FUNCTION_ENTER_VERBOSE("~Awaitable()");
                 }
@@ -41,38 +38,45 @@ namespace HELPERS_NS {
                     return duration.count() <= 0;
                 }
 
+                void await_suspend(std::coroutine_handle<PromiseT> callerPromiseCoroHandle) {
+                    LOG_FUNCTION_SCOPE_VERBOSE("await_suspend(coroHandle)");
+
+                    std::weak_ptr<CoTaskBase> coTaskWeak = callerPromiseCoroHandle.promise().get_task();
+                    auto resumeCallback = callerPromiseCoroHandle.promise().get_resume_callback();
+#ifdef _DEBUG
+                    if (auto coTask = coTaskWeak.lock()) {
+                        assert(*coTask == callerPromiseCoroHandle);
+                    }
+#endif
+                    if (LOG_ASSERT(resumeCallback, "resumeCallback is empty!")) {
+                        LOG_WARNING_D("resume callerPromiseCoroHandle ...");
+                        callerPromiseCoroHandle.resume();
+                        LOG_DEBUG_D("callerPromiseCoroHandle finished");
+                        return;
+                    }
+
+                    HELPERS_NS::Timer::Once(duration, [resumeCallback, coTaskWeak] {
+                        LOG_FUNCTION_SCOPE_VERBOSE("Timer::Once__lambda()");
+                        resumeCallback(coTaskWeak);
+                        });
+                }
+
                 void await_resume() noexcept {
                     LOG_FUNCTION_SCOPE_VERBOSE("await_resume()");
                 }
 
-                void await_suspend(std::coroutine_handle<typename CoTaskT::promise_type> coroHandle) {
-                    LOG_FUNCTION_SCOPE_VERBOSE("await_suspend(coroHandle)");
-                    
-                    auto resumeCallbackCopy = resumeCallback; // mb no need copy, check if "this" is valid inside callback for all cases
-                    std::weak_ptr<CoTaskT> coTaskWeak = coroHandle.promise().GetTask();
-#ifdef _DEBUG
-                    if (auto coTask = coTaskWeak.lock()) {
-                        assert(*coTask == coroHandle);
-                    }
-#endif
-                    HELPERS_NS::Timer::Once(duration, [resumeCallbackCopy, coTaskWeak] {
-                        LOG_FUNCTION_SCOPE_VERBOSE("Timer::Once__lambda()");
-                        resumeCallbackCopy(coTaskWeak);
-                        });
-                }
-
             private:
                 std::chrono::system_clock::duration duration;
-                std::function<void(std::weak_ptr<CoTaskT>)> resumeCallback;
             };
 
-            return Awaitable{ duration, resumeCallback };
+            return Awaitable{ duration };
         }
     } // namespace Async
 } // namespace HELPERS_NS
 
 
 // NOTE: Do not encapsulate overloaded global operator co_await in namespace by design to simplify use
+// TODO: Add guards for expired promise / task
 template<typename Rep, typename Period>
 auto operator co_await(std::chrono::duration<Rep, Period> duration) noexcept {
     LOG_FUNCTION_SCOPE_VERBOSE("operator co_await(duration)");
