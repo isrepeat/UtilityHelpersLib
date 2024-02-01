@@ -312,17 +312,22 @@ namespace HELPERS_NS {
             CoTask(CoTask&& other)
                 : promiseCoroHandle{ other.promiseCoroHandle }
                 , promiseToken{ other.promiseToken }
+                , canceled{ other.canceled }
+                , promiseCoroHandleTyped{ other.promiseCoroHandleTyped }
             {
                 other.promiseCoroHandle = nullptr;
+                other.promiseCoroHandleTyped = nullptr;
             }
             CoTask& operator=(CoTask&& other) {
                 if (this != &other) {
                     if (promiseCoroHandle) {
-                        promiseCoroHandle.destroy();
+                        promiseCoroHandle.destroy(); // no need destroy promiseCoroHandleTyped because it is the same
                     }
                     promiseCoroHandle = other.promiseCoroHandle;
                     promiseToken = other.promiseToken;
+                    canceled = other.canceled;
                     other.promiseCoroHandle = nullptr;
+                    other.promiseCoroHandleTyped = nullptr;
                 }
                 return *this;
             }
