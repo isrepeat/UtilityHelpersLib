@@ -15,9 +15,11 @@
 #define LogLastError LOG_ERROR_D(L"Last error: {}", HELPERS_NS::GetLastErrorAsString())
 #define LogWSALastError LOG_ERROR_D(L"WSA Last error: {}", HELPERS_NS::GetWSALastErrorAsString())
 
-// NOTE: 
+// NOTE 1: 
 // - use comma statement "|| (..., false)" to execute next expression
 // - invert result to use it like "if (LOG_ASSERT(...))"
+// NOTE 2:
+// - in CONSOLE apps assert failure cause abort() call (by default). To override this behaviour use _set_error_mode(_OUT_TO_MSGBOX);
 #define LOG_ASSERT(expression, message, ...)  !(																										\
 	(bool)(expression) || (LOG_ERROR_D(L" " message L"  {{" _CRT_WIDE(#expression) L"}}", __VA_ARGS__), false) || (assertm(expression, message), false)	\
 )
