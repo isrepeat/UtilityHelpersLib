@@ -55,6 +55,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecSettingsItemSort\AudioCodecSettingsItemSortHelpers.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecSettingsItemSort\CmpOrder.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\MediaContainerExtension.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MFOutputTexResize\IMFOutputTexResize.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MFOutputTexResize\MFOutputTexResizeRgbaToNV12.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)pch.cpp">
@@ -80,5 +82,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecSettingsItemSort\AudioCodecSettingsItemCmp.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\AudioCodecSettingsItemSort\AudioCodecSettingsItemSortHelpers.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaFormat\MediaContainerExtension.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)MFOutputTexResize\MFOutputTexResizeRgbaToNV12.cpp" />
   </ItemGroup>
 </Project>
