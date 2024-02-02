@@ -77,6 +77,8 @@ namespace HELPERS_NS {
                 filesCollectionInterface.Complete();
             }
 
+            // TODO: remove to another place without forward declaration workaround
+            class FilesCollection;
             template <typename TCollection = FilesCollection>
             static TCollection GetFilesCollection(const std::vector<std::filesystem::path>& filePaths) {
                 TCollection filesCollection; // TCollection must have default Ctor
