@@ -144,7 +144,7 @@ namespace HELPERS_NS {
         protected:
             std::coroutine_handle<> continuation;
             std::weak_ptr<CoTaskBase> coTaskWeak;
-            std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback; // initialized in derived classes
+            std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback; // can be initialized in derived classes
             std::shared_ptr<int> token = std::make_shared<int>();
         };
 
@@ -282,6 +282,12 @@ namespace HELPERS_NS {
                 LOG_FUNCTION_ENTER_VERBOSE_C("~CoTaskBase()");
             }
 
+            CoTaskBase(const CoTaskBase&) = delete;
+            CoTaskBase& operator=(const CoTaskBase&) = delete;
+
+            CoTaskBase(CoTaskBase&&) = delete;
+            CoTaskBase& operator=(CoTaskBase&&) = delete;
+
             void resume() {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("resume()");
                 if (canceled) {
@@ -339,35 +345,39 @@ namespace HELPERS_NS {
             ~CoTask() {
                 LOG_FUNCTION_ENTER_VERBOSE_C("~CoTask()");
                 if (promiseCoroHandleTyped) {
-                    promiseCoroHandleTyped.destroy(); // promise_type will be destroyed
+                    // promise_type will be destroyed; no need destroy promiseCoroHandle because it is the same.
+                    promiseCoroHandleTyped.destroy(); 
                 }
             }
             
-            CoTask(CoTask&& other)
-                : promiseCoroHandle{ other.promiseCoroHandle }
-                , promiseToken{ other.promiseToken }
-                , canceled{ other.canceled }
-                , promiseCoroHandleTyped{ other.promiseCoroHandleTyped }
-            {
-                other.promiseCoroHandle = nullptr;
-                other.promiseCoroHandleTyped = nullptr;
-            }
-            CoTask& operator=(CoTask&& other) {
-                if (this != &other) {
-                    if (promiseCoroHandleTyped) {
-                        promiseCoroHandleTyped.destroy(); // no need destroy promiseCoroHandle because it is the same
-                    }
-                    promiseCoroHandle = other.promiseCoroHandle;
-                    promiseToken = other.promiseToken;
-                    canceled = other.canceled;
-                    other.promiseCoroHandle = nullptr;
-                    other.promiseCoroHandleTyped = nullptr;
-                }
-                return *this;
-            }
+            CoTask(const CoTask&) = delete;
+            CoTask& operator=(const CoTask&) = delete;
 
-            CoTask(CoTask const&) = delete;
-            CoTask& operator=(CoTask const&) = delete;
+            CoTask(CoTask&&) = delete;
+            CoTask& operator=(CoTask&&) = delete;
+
+            //CoTask(CoTask&& other)
+            //    : promiseCoroHandle{ other.promiseCoroHandle }
+            //    , promiseToken{ other.promiseToken }
+            //    , canceled{ other.canceled }
+            //    , promiseCoroHandleTyped{ other.promiseCoroHandleTyped }
+            //{
+            //    other.promiseCoroHandle = nullptr;
+            //    other.promiseCoroHandleTyped = nullptr;
+            //}
+            //CoTask& operator=(CoTask&& other)
+            //    if (this != &other) {
+            //        if (promiseCoroHandleTyped) {
+            //            promiseCoroHandleTyped.destroy();
+            //        }
+            //        promiseCoroHandle = other.promiseCoroHandle;
+            //        promiseToken = other.promiseToken;
+            //        canceled = other.canceled;
+            //        other.promiseCoroHandle = nullptr;
+            //        other.promiseCoroHandleTyped = nullptr;
+            //    }
+            //    return *this;
+            //}
 
             // TODO: quilify operator with &&
             auto operator co_await() {
