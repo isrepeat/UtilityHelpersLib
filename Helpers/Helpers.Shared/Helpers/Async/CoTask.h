@@ -2,6 +2,7 @@
 #include <Helpers/common.h>
 #include <Helpers/Logger.h>
 #include <Helpers/Thread.h>
+#include <Helpers/Signal.h>
 #include <coroutine>
 #include <queue>
 
@@ -25,9 +26,15 @@ namespace std {
 
 namespace HELPERS_NS {
     namespace Async {
+#ifdef __INTELLISENSE__ // https://stackoverflow.com/questions/67209981/weird-error-from-visual-c-no-default-constructor-for-promise-type
+    #define INTELLISENSE_DEFAULT_CTOR(className) className()
+#else
+    #define INTELLISENSE_DEFAULT_CTOR(className)
+#endif
+
         struct suspend {
-            static constexpr bool call_await_suspend = false; // std::suspend_always
-            static constexpr bool resume_immediately = true; // std::suspend_never
+            static constexpr bool always = false; // call await_suspend()
+            static constexpr bool never = true; // resume immediately (not call await_suspend())
         };
 
         struct initial_suspend_never {
@@ -60,7 +67,7 @@ namespace HELPERS_NS {
 
             struct FinalAwaiter {
                 bool await_ready() noexcept {
-                    return suspend::call_await_suspend;
+                    return suspend::always;
                 }
                 // NOTE: promiseCoroHandle associated with current co-function context where was created Promise
                 void await_suspend(std::coroutine_handle<PromiseImplT> promiseCoroHandle) noexcept {
@@ -75,20 +82,16 @@ namespace HELPERS_NS {
             };
 
             // Used for non-class functions
-            Promise(std::wstring instanceName, std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback)
-                : resumeCallback{ resumeCallback }
-            {
+            Promise(std::wstring instanceName) {
                 this->SetFullClassName(instanceName);
-                LOG_FUNCTION_ENTER_VERBOSE_C(L"Promise(instanceName, resumeCallback)");
+                LOG_FUNCTION_ENTER_VERBOSE_C(L"Promise(instanceName)");
             }
 
             // Used for Caller class methods
             template <typename Caller>
-            Promise(Caller&, std::wstring instanceName, std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback)
-                : resumeCallback{ resumeCallback }
-            {
+            Promise(Caller&, std::wstring instanceName) {
                 this->SetFullClassName(instanceName);
-                LOG_FUNCTION_ENTER_VERBOSE_C(L"Promise(Caller, instanceName, resumeCallback)");
+                LOG_FUNCTION_ENTER_VERBOSE_C(L"Promise(Caller, instanceName)");
             }
 
             ~Promise() {
@@ -122,11 +125,10 @@ namespace HELPERS_NS {
                 LOG_FUNCTION_ENTER_VERBOSE_C("return_void()");
             }
 
-            void set_resume_callback(std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback) {
-                this->resumeCallback = resumeCallback;
-            }
-            void set_continuation(std::coroutine_handle<> continuation) {
-                this->continuation = continuation;
+            template <typename PromiseT>
+            void set_continuation(std::coroutine_handle<PromiseT> otherPromise) {
+                this->resumeCallback = otherPromise.promise().get_resume_callback();
+                this->continuation = otherPromise;
             }
 
             std::function<void(std::weak_ptr<CoTaskBase>)> get_resume_callback() {
@@ -139,8 +141,10 @@ namespace HELPERS_NS {
                 return token;
             }
 
+        protected:
+            std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback; // can be initialized in derived classes
+
         private:
-            std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback;
             std::coroutine_handle<> continuation;
             std::weak_ptr<CoTaskBase> coTaskWeak;
             std::shared_ptr<int> token = std::make_shared<int>();
@@ -153,18 +157,16 @@ namespace HELPERS_NS {
         class PromiseDefault : public Promise<PromiseDefault> {
         public:
             using _MyBase = Promise<PromiseDefault>;
+            INTELLISENSE_DEFAULT_CTOR(PromiseDefault);
 
-#ifdef __INTELLISENSE__ // https://stackoverflow.com/questions/67209981/weird-error-from-visual-c-no-default-constructor-for-promise-type
-            PromiseDefault(); // Do not use default Ctor, just mark it for intelli sense
-#endif
             PromiseDefault(std::wstring instanceName)
-                : _MyBase(instanceName, nullptr)
+                : _MyBase(instanceName)
             {
                 LOG_FUNCTION_ENTER_VERBOSE(L"PromiseDefault(instanceName = {})", instanceName);
             }
             template <typename Caller>
             PromiseDefault(Caller& caller, std::wstring instanceName)
-                : _MyBase(caller, instanceName, nullptr)
+                : _MyBase(caller, instanceName)
             {
                 LOG_FUNCTION_ENTER_VERBOSE(L"PromiseDefault(Caller, instanceName = {})", instanceName);
             }
@@ -173,42 +175,71 @@ namespace HELPERS_NS {
         class PromiseRoot : public Promise<PromiseRoot> {
         public:
             using _MyBase = Promise<PromiseRoot>;
+            INTELLISENSE_DEFAULT_CTOR(PromiseRoot);
 
-#ifdef __INTELLISENSE__ // https://stackoverflow.com/questions/67209981/weird-error-from-visual-c-no-default-constructor-for-promise-type
-            PromiseRoot(); // Do not use default Ctor, just mark it for intelli sense
-#endif
             PromiseRoot(std::wstring instanceName, std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback)
-                :_MyBase(instanceName, resumeCallback)
+                : _MyBase(instanceName)
             {
                 LOG_FUNCTION_ENTER_VERBOSE(L"PromiseRoot(instanceName = {}, resumeCallback)", instanceName);
+                this->_MyBase::resumeCallback = resumeCallback;
             }
             template <typename Caller>
             PromiseRoot(Caller& caller, std::wstring instanceName, std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback)
-                : _MyBase(caller, instanceName, resumeCallback)
+                : _MyBase(caller, instanceName)
             {
                 LOG_FUNCTION_ENTER_VERBOSE(L"Promise(Caller, instanceName = {}, resumeCallback)", instanceName);
+                this->_MyBase::resumeCallback = resumeCallback;
             }
+        };
+
+        class PromiseSignal : public Promise<PromiseSignal> {
+        public:
+            using _MyBase = Promise<PromiseSignal>;
+            INTELLISENSE_DEFAULT_CTOR(PromiseSignal);
+
+            PromiseSignal(std::wstring instanceName, std::shared_ptr<HELPERS_NS::Signal> resumeSignal)
+                : _MyBase(instanceName)
+                , resumeSignal{ resumeSignal }
+            {
+                LOG_FUNCTION_ENTER_VERBOSE(L"PromiseSignal(instanceName = {}, resumeSignal)", instanceName);
+            }
+            template <typename Caller>
+            PromiseSignal(Caller& caller, std::wstring instanceName, std::shared_ptr<HELPERS_NS::Signal> resumeSignal)
+                : _MyBase(caller, instanceName)
+                , resumeSignal{ resumeSignal }
+            {
+                LOG_FUNCTION_ENTER_VERBOSE(L"PromiseSignal(Caller, instanceName = {}, resumeSignal)", instanceName);
+            }
+
+            std::weak_ptr<HELPERS_NS::Signal> get_resume_signal() {
+                return resumeSignal;
+            }
+
+        private:
+            std::shared_ptr<HELPERS_NS::Signal> resumeSignal;
         };
 
         /*------------------*/
         /*   AWAITER BASE   */
         /*------------------*/
         template <typename PromiseImplT>
-        class AwaiterBase { // Universal Awaiter class. You need overload await_suspend for all type of promises that can be used. 
+        class AwaiterBase { // Base Awaiter class for CoTask. You need overload await_suspend for all type of promises that can be used. 
         public:
             AwaiterBase(std::coroutine_handle<PromiseImplT> promiseCoroHandle)
                 : promiseCoroHandle{ promiseCoroHandle }
             {
             }
             bool await_ready() noexcept {
-                //return !promiseCoroHandle || promiseCoroHandle.done();
-                return suspend::call_await_suspend;
+                return suspend::always;
             }
             std::coroutine_handle<PromiseImplT> await_suspend(std::coroutine_handle<PromiseDefault> callerPromiseCoroHandle) noexcept {
                 return await_suspend_internal<PromiseDefault>(callerPromiseCoroHandle);
             }
             std::coroutine_handle<PromiseImplT> await_suspend(std::coroutine_handle<PromiseRoot> callerPromiseCoroHandle) noexcept {
                 return await_suspend_internal<PromiseRoot>(callerPromiseCoroHandle);
+            }
+            std::coroutine_handle<PromiseImplT> await_suspend(std::coroutine_handle<PromiseSignal> callerPromiseCoroHandle) noexcept {
+                return await_suspend_internal<PromiseSignal>(callerPromiseCoroHandle);
             }
             void await_resume() {
                 LOG_FUNCTION_ENTER_VERBOSE("await_resume()");
@@ -219,12 +250,12 @@ namespace HELPERS_NS {
             template <typename PromiseT>
             std::coroutine_handle<PromiseImplT> await_suspend_internal(std::coroutine_handle<PromiseT> callerPromiseCoroHandle) noexcept {
                 LOG_FUNCTION_SCOPE_VERBOSE("await_suspend_internal(callerPromiseCoroHandle)");
-                // 1. Remember callerPromiseCoroHandle (it is resumed when promiseCoroHandle finished in Promise::final_awaiter);
-                // 2. Resume promiseCoroHandle;
-                promiseCoroHandle.promise().set_resume_callback(callerPromiseCoroHandle.promise().get_resume_callback());
+                // 1. Remember callerPromiseCoroHandle (it is resumed when promiseCoroHandle finished in Promise::FinalAwaiter).
+                // 2. Resume promiseCoroHandle.
                 promiseCoroHandle.promise().set_continuation(callerPromiseCoroHandle);
                 return promiseCoroHandle;
-                // NOTE: control returned to caller only when promiseCoroHandle finished
+                // 3. Control returned to callerPromiseCoroHandle only when promiseCoroHandle finished;
+                //    if promiseCoroHandle has its own suspend points control returned to base resumer.
             }
 
         private:
@@ -239,7 +270,7 @@ namespace HELPERS_NS {
         class CoTaskBase {
             CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(CoTaskBase);
         public:
-            CoTaskBase() {
+            CoTaskBase() { // In most cases default Ctor must not be called
                 LOG_FUNCTION_ENTER_VERBOSE("CoTaskBase()");
             }
             CoTaskBase(std::coroutine_handle<> promiseCoroHandle, std::weak_ptr<int> promiseToken, std::wstring instanceName)
@@ -247,14 +278,17 @@ namespace HELPERS_NS {
                 , promiseToken{ promiseToken }
             {
                 this->SetFullClassName(instanceName);
-                LOG_FUNCTION_ENTER_VERBOSE_C("CoTaskBase(promiseCoroHandle, promiseToken, ...)");
+                LOG_FUNCTION_ENTER_VERBOSE_C("CoTaskBase(promiseCoroHandle, promiseToken, instanceName)");
             }
             ~CoTaskBase() {
                 LOG_FUNCTION_ENTER_VERBOSE_C("~CoTaskBase()");
-                if (promiseCoroHandle) {
-                    promiseCoroHandle.destroy(); // promise_type will be destroyed
-                }
             }
+
+            CoTaskBase(const CoTaskBase&) = delete;
+            CoTaskBase& operator=(const CoTaskBase&) = delete;
+
+            CoTaskBase(CoTaskBase&&) = delete;
+            CoTaskBase& operator=(CoTaskBase&&) = delete;
 
             void resume() {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("resume()");
@@ -300,40 +334,52 @@ namespace HELPERS_NS {
             using CoHandle_t = std::coroutine_handle<PromiseImplT>;
             using promise_type = PromiseImplT;
 
-            CoTask() {
+            CoTask() { // In most cases default Ctor must not be called
                 LOG_FUNCTION_ENTER_VERBOSE("CoTask()");
             }
             CoTask(CoHandle_t promiseCoroHandle, std::weak_ptr<int> promiseToken, std::wstring instanceName)
                 : CoTaskBase(promiseCoroHandle, promiseToken, instanceName)
                 , promiseCoroHandleTyped{ promiseCoroHandle }
             {
+                this->SetFullClassName(instanceName);
+                LOG_FUNCTION_ENTER_VERBOSE_C("CoTask(promiseCoroHandle, promiseToken, instanceName)");
             }
-
-            CoTask(CoTask&& other)
-                : promiseCoroHandle{ other.promiseCoroHandle }
-                , promiseToken{ other.promiseToken }
-                , canceled{ other.canceled }
-                , promiseCoroHandleTyped{ other.promiseCoroHandleTyped }
-            {
-                other.promiseCoroHandle = nullptr;
-                other.promiseCoroHandleTyped = nullptr;
-            }
-            CoTask& operator=(CoTask&& other) {
-                if (this != &other) {
-                    if (promiseCoroHandle) {
-                        promiseCoroHandle.destroy(); // no need destroy promiseCoroHandleTyped because it is the same
-                    }
-                    promiseCoroHandle = other.promiseCoroHandle;
-                    promiseToken = other.promiseToken;
-                    canceled = other.canceled;
-                    other.promiseCoroHandle = nullptr;
-                    other.promiseCoroHandleTyped = nullptr;
+            ~CoTask() {
+                LOG_FUNCTION_ENTER_VERBOSE_C("~CoTask()");
+                if (promiseCoroHandleTyped) {
+                    // promise_type will be destroyed; no need destroy promiseCoroHandle because it is the same.
+                    promiseCoroHandleTyped.destroy(); 
                 }
-                return *this;
             }
+            
+            CoTask(const CoTask&) = delete;
+            CoTask& operator=(const CoTask&) = delete;
 
-            CoTask(CoTask const&) = delete;
-            CoTask& operator=(CoTask const&) = delete;
+            CoTask(CoTask&&) = delete;
+            CoTask& operator=(CoTask&&) = delete;
+
+            //CoTask(CoTask&& other)
+            //    : promiseCoroHandle{ other.promiseCoroHandle }
+            //    , promiseToken{ other.promiseToken }
+            //    , canceled{ other.canceled }
+            //    , promiseCoroHandleTyped{ other.promiseCoroHandleTyped }
+            //{
+            //    other.promiseCoroHandle = nullptr;
+            //    other.promiseCoroHandleTyped = nullptr;
+            //}
+            //CoTask& operator=(CoTask&& other)
+            //    if (this != &other) {
+            //        if (promiseCoroHandleTyped) {
+            //            promiseCoroHandleTyped.destroy();
+            //        }
+            //        promiseCoroHandle = other.promiseCoroHandle;
+            //        promiseToken = other.promiseToken;
+            //        canceled = other.canceled;
+            //        other.promiseCoroHandle = nullptr;
+            //        other.promiseCoroHandleTyped = nullptr;
+            //    }
+            //    return *this;
+            //}
 
             // TODO: quilify operator with &&
             auto operator co_await() {

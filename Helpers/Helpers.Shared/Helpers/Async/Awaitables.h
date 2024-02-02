@@ -16,18 +16,18 @@
 namespace HELPERS_NS {
     namespace Async {
 
-        // TODO: Add type_traits to detect check if caller promise_type does not have Ctor(..., resumeCallback)
-        // NOTE: Must be called from coroutine that accept resumeCallback in params.
-        //       (resumeCallback will passed to this task promise_type Ctor)
+        // TODO: Add type_traits to detect check if caller promise_type does not have Ctor(..., resumeCallback).
+        // NOTE: Must be called from coroutine that accepts resumeCallback as parameter.
+        //       (resumeCallback will passed to this task::promise_type Ctor)
         template <typename PromiseT>
         auto ResumeAfter(std::chrono::milliseconds duration) noexcept {
-            LOG_FUNCTION_SCOPE_VERBOSE("ResumeAfter(duration, resumeCallback)");
+            LOG_FUNCTION_SCOPE_VERBOSE("ResumeAfter(duration)");
 
             struct Awaitable {
                 explicit Awaitable(std::chrono::milliseconds duration)
                     : duration{ duration }
                 {
-                    LOG_FUNCTION_ENTER_VERBOSE("Awaitable(duration, resumeCallback)");
+                    LOG_FUNCTION_ENTER_VERBOSE("Awaitable(duration)");
                 }
                 ~Awaitable() {
                     LOG_FUNCTION_ENTER_VERBOSE("~Awaitable()");
@@ -39,16 +39,12 @@ namespace HELPERS_NS {
                 }
 
                 void await_suspend(std::coroutine_handle<PromiseT> callerPromiseCoroHandle) {
-                    LOG_FUNCTION_SCOPE_VERBOSE("await_suspend(coroHandle)");
+                    LOG_FUNCTION_SCOPE_VERBOSE("await_suspend(callerPromiseCoroHandle)");
 
                     std::weak_ptr<CoTaskBase> coTaskWeak = callerPromiseCoroHandle.promise().get_task();
                     auto resumeCallback = callerPromiseCoroHandle.promise().get_resume_callback();
-#ifdef _DEBUG
-                    if (auto coTask = coTaskWeak.lock()) {
-                        assert(*coTask == callerPromiseCoroHandle);
-                    }
-#endif
-                    if (LOG_ASSERT(resumeCallback, "resumeCallback is empty!")) {
+
+                    if (LOG_ASSERT(resumeCallback, "resumeCallback is empty!")) { // This can happen if you call this function not in PromiseRoot task coroutine
                         LOG_WARNING_D("resume callerPromiseCoroHandle ...");
                         callerPromiseCoroHandle.resume();
                         LOG_DEBUG_D("callerPromiseCoroHandle finished");
@@ -70,6 +66,62 @@ namespace HELPERS_NS {
             };
 
             return Awaitable{ duration };
+        }
+
+
+
+        auto AsyncOperationWithResumeSignal(std::function<void(std::weak_ptr<HELPERS_NS::Signal>)> asyncOperationTask) noexcept {
+            LOG_FUNCTION_SCOPE_VERBOSE("AsyncOperationWithResumeSignal(asyncOperationTask)");
+
+            struct Awaitable {
+                explicit Awaitable(std::function<void(std::weak_ptr<HELPERS_NS::Signal>)> asyncOperationTask)
+                    : asyncOperationTask{ asyncOperationTask }
+                {
+                    LOG_FUNCTION_ENTER_VERBOSE("Awaitable(asyncOperationTask)");
+                }
+                ~Awaitable() {
+                    LOG_FUNCTION_ENTER_VERBOSE("~Awaitable()");
+                }
+
+                bool await_ready() const noexcept {
+                    LOG_FUNCTION_ENTER_VERBOSE("await_ready()");
+                    return suspend::always;
+                }
+
+                void await_suspend(std::coroutine_handle<PromiseSignal> callerPromiseCoroHandle) {
+                    LOG_FUNCTION_SCOPE_VERBOSE("await_suspend(callerPromiseCoroHandle)");
+
+                    std::weak_ptr<CoTaskBase> coTaskWeak = callerPromiseCoroHandle.promise().get_task();
+                    auto resumeSignalWeak = callerPromiseCoroHandle.promise().get_resume_signal();
+                    auto resumeCallback = callerPromiseCoroHandle.promise().get_resume_callback();                    
+
+                    auto resumeSignal = resumeSignalWeak.lock();
+                    if (LOG_ASSERT(resumeSignal, "resumeSignalWeak expired!") ||
+                        LOG_ASSERT(resumeCallback, "resumeCallback is empty!")) // This can happen if you call this function not in PromiseRoot task coroutine
+                    {
+                        LOG_WARNING_D("resume callerPromiseCoroHandle ...");
+                        callerPromiseCoroHandle.resume();
+                        LOG_DEBUG_D("callerPromiseCoroHandle finished");
+                        return;
+                    }
+
+                    resumeSignal->AddFinish([resumeCallback, coTaskWeak] {
+                        LOG_FUNCTION_SCOPE_VERBOSE("Signal::AddFinish__lambda()");
+                        resumeCallback(coTaskWeak);
+                        });
+
+                    asyncOperationTask(resumeSignalWeak);
+                }
+
+                void await_resume() noexcept {
+                    LOG_FUNCTION_SCOPE_VERBOSE("await_resume()");
+                }
+
+            private:
+                std::function<void(std::weak_ptr<HELPERS_NS::Signal>)> asyncOperationTask;
+            };
+
+            return Awaitable{ asyncOperationTask };
         }
     } // namespace Async
 } // namespace HELPERS_NS
