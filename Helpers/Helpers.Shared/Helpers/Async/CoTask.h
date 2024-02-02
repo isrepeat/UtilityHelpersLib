@@ -142,9 +142,11 @@ namespace HELPERS_NS {
             }
 
         protected:
+            std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback; // can be initialized in derived classes
+
+        private:
             std::coroutine_handle<> continuation;
             std::weak_ptr<CoTaskBase> coTaskWeak;
-            std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback; // can be initialized in derived classes
             std::shared_ptr<int> token = std::make_shared<int>();
         };
 
@@ -202,7 +204,7 @@ namespace HELPERS_NS {
                 LOG_FUNCTION_ENTER_VERBOSE(L"PromiseSignal(instanceName = {}, resumeSignal)", instanceName);
             }
             template <typename Caller>
-            PromiseSignal(Caller& caller, std::wstring instanceName, std::unique_ptr<HELPERS_NS::Signal> resumeSignal)
+            PromiseSignal(Caller& caller, std::wstring instanceName, std::shared_ptr<HELPERS_NS::Signal> resumeSignal)
                 : _MyBase(caller, instanceName)
                 , resumeSignal{ resumeSignal }
             {
