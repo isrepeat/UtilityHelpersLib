@@ -17,6 +17,12 @@ namespace HELPERS_NS {
 		catch (const CompleteException&) {
 			LOG_DEBUG_D("Action completed");
 		}
+		catch (std::exception& ex) {
+			LOG_ERROR_D("Catch std::exception = {}", ex.what());
+		}
+		catch (...) {
+			LOG_DEBUG_D("Catch unhandled exception");
+		}
 	}
 
 	void PerformActionWithAttempts::Break() {
