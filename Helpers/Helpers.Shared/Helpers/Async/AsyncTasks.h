@@ -1,12 +1,13 @@
 #pragma once
 #include <Helpers/common.h>
+#include <Helpers/FunctionTraits.hpp>
 #include <Helpers/Container.hpp>
 #include <Helpers/Thread.h>
-//#include <Helpers/Signal.h>
 #include <Helpers/Logger.h>
 #include "Awaitables.h"
 #include "CoTask.h"
 #include <variant>
+#include <list>
 
 // Don't forget return original definitions for these macros at the end of file
 #define LOG_FUNCTION_ENTER_VERBOSE(fmt, ...)
@@ -14,33 +15,15 @@
 #define LOG_FUNCTION_ENTER_VERBOSE_C(fmt, ...)
 #define LOG_FUNCTION_SCOPE_VERBOSE_C(fmt, ...)
 
+using namespace std::chrono_literals;
+
 namespace HELPERS_NS {
     namespace Async {
-        // TODO: move this helpers to another file
-        // Helper to get shared pointer type of variant or nullptr if variant has bad access
-        template <typename T, typename... Types>
-        std::shared_ptr<T>& GetVariantItem(std::variant<std::monostate, std::shared_ptr<Types>...>& variant) {
-            static const std::shared_ptr<T> emptyPoiner = nullptr;
-
-            try {
-                return std::get<std::shared_ptr<T>>(variant);
-            }
-            catch (const std::bad_variant_access&) {
-                return const_cast<std::shared_ptr<T>&>(emptyPoiner);
-            }
-        }
-
-        template<class... Ts>
-        struct overloaded : Ts... { using Ts::operator()...; };
-
-
         // TODO: move implementation to .cpp
         class AsyncTasks {
-            CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(AsyncTasks);
-            using RootTask = CoTask<PromiseRoot>;
+            CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(AsyncTasks);            
         public:
             using Task = CoTask<PromiseDefault>;
-            using TaskSignal = CoTask<PromiseSignal>;
 
             AsyncTasks(std::wstring instanceName = L"Unknown") {
                 this->SetFullClassName(instanceName);
@@ -51,32 +34,95 @@ namespace HELPERS_NS {
                 Cancel();
             }
 
+        private:
+            using RootTask = CoTask<PromiseRoot>;
+
+            // TODO: Rewrite wtih concepts
+            template <bool Requirements, typename PromiseImplT>
+            using AddedResult = std::enable_if_t<Requirements, std::weak_ptr<CoTask<PromiseImplT>>>;
+
+            template <typename PromiseImplT>
+            static constexpr bool IsValidPromise = std::is_same_v<PromiseImplT, PromiseDefault>;
+            
+            class TaskWrapper {
+            public:
+                TaskWrapper(std::shared_ptr<Task> task, std::chrono::milliseconds startAfter, std::function<void()> releaseCallback = nullptr)
+                    : task{ task }
+                    , startAfter{ startAfter }
+                    , releaseCallback{ releaseCallback }
+                {}
+                ~TaskWrapper() {
+                    if (releaseCallback) {
+                        releaseCallback();
+                    }
+                }
+                std::shared_ptr<Task>& GetTask() {
+                    return task;
+                }
+                std::chrono::milliseconds GetStartAfterTime() {
+                    return startAfter;
+                }
+            private:
+                std::shared_ptr<Task> task;
+                std::chrono::milliseconds startAfter;
+                std::function<void()> releaseCallback;
+            };
+
+        public:
             void SetResumeCallback(std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback) {
                 LOG_FUNCTION_ENTER_VERBOSE_C("SetResumeCallback(resumeCallback)");
                 this->resumeCallback = resumeCallback;
             }
 
-            // TODO: Rewrite wtih concepts
-            template <typename PromiseImplT>
-            using AddedTaskResult_t = std::enable_if_t<
-                std::is_same_v<PromiseImplT, PromiseDefault> ||
-                std::is_same_v<PromiseImplT, PromiseSignal>, std::weak_ptr<CoTask<PromiseImplT>>>;
-
-            template <typename PromiseImplT>
-            AddedTaskResult_t<PromiseImplT> Add(std::shared_ptr<CoTask<PromiseImplT>> task, std::chrono::milliseconds startAfter) {
-                LOG_FUNCTION_SCOPE_VERBOSE_C("Add(task, startAfter)");
+            template <typename PromiseImplT, typename... FnArgs, typename... RealArgs>
+            AddedResult<IsValidPromise<PromiseImplT>, PromiseImplT> AddTaskFn(
+                std::chrono::milliseconds startAfter,
+                std::shared_ptr<CoTask<PromiseImplT>> (*taskFn)(FnArgs...), RealArgs&&... args)
+            {
+                LOG_FUNCTION_SCOPE_VERBOSE_C("AddTaskFn(startAfter, taskFn, ...args)");
                 std::unique_lock lk{ mx };
-                tasks.push({ task, startAfter });
-                return task;
+                tasks.push(TaskWrapper{ taskFn(std::forward<RealArgs&&>(args)...), startAfter });
+                return tasks.front().GetTask();
+            }
+
+            template <typename PromiseImplT, typename C, typename... FnArgs, typename... RealArgs>
+            AddedResult<IsValidPromise<PromiseImplT>, PromiseImplT> AddTaskFn(
+                std::chrono::milliseconds startAfter,
+                C* classPtr, std::shared_ptr<CoTask<PromiseImplT>>(C::*taskFn)(FnArgs...), RealArgs&&... args)
+            {
+                LOG_FUNCTION_SCOPE_VERBOSE_C("AddTaskFn(startAfter, classPtr, taskFn, ...args)");
+                std::unique_lock lk{ mx };
+                tasks.push(TaskWrapper{ std::invoke(taskFn, classPtr, std::forward<RealArgs&&>(args)...), startAfter });
+                return tasks.front().GetTask();
+            }
+
+            template <typename Fn, typename... Args, typename PromiseImplT = PromiseExtractor<typename HELPERS_NS::FunctionTraits<Fn>::Ret>::promiseImpl_t>
+            std::weak_ptr<CoTask<PromiseImplT>> AddTaskLambda(
+                std::chrono::milliseconds startAfter,
+                Fn lambda, Args&&... args)
+            {
+                LOG_FUNCTION_SCOPE_VERBOSE_C("AddTaskLambda(startAfter, taskFn, ...args)");
+                std::unique_lock lk{ mx };           
+                
+                static std::list<Fn> lambdaKeeper;
+                auto& savedLambda = lambdaKeeper.emplace_back(std::move(lambda)); // save temporary lambda / functor to keep their captured args alive
+
+                tasks.push(TaskWrapper{ savedLambda(std::forward<Args&&>(args)...), startAfter,
+                    [this, currentElemIterator = HELPERS_NS::iter_to_last(lambdaKeeper)] { // Called from ~TaskWrapper() from root task coroutine thread
+                        std::unique_lock lk{ mx };
+                        lambdaKeeper.erase(currentElemIterator);
+                    } });
+
+                return tasks.front().GetTask();
             }
 
             void StartExecuting() {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("StartExecuting()");
                 if (LOG_ASSERT(!executingStarted.exchange(true), "Executing of root coroutine already started!")) {
                     return;
-                } 
+                }
                 rootTask = StartExecutingCoroutine(L"rootTask", resumeCallback);
-                rootTask->resume();
+                HELPERS_NS::Async::SafeResume(rootTask);
                 return;
             }
 
@@ -86,59 +132,37 @@ namespace HELPERS_NS {
                     rootTask->cancel(); // no need mutex synchronization
 
                 std::unique_lock lk{ mx };
-                for (auto& [taskVariant, startAfter] : tasks) {
-                    std::visit(overloaded{
-                        [](std::monostate) {},
-                        [](auto&& task) {
-                            if (task)
-                                task->cancel();
-                            }
-                        }, taskVariant);
+                for (auto& taskWrapper : tasks) {
+                    if (auto& task = taskWrapper.GetTask()) {
+                        task->cancel();
+                    }
                 }
             }
 
         private:
-            struct TaskWrapper {
-                std::variant<std::monostate, std::shared_ptr<Task>, std::shared_ptr<TaskSignal>> taskVariant;
-                std::chrono::milliseconds startAfter;
-            };
             // TODO: Add multiple calls guard
             // TODO: Implement special CoTask for StartExecuting() to avoid resume this task from another thread
             RootTask::Ret_t StartExecutingCoroutine(std::wstring coroFrameName, std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback) {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("StartExecutingCoroutine()");
                 static thread_local std::size_t functionEnterThreadId = HELPERS_NS::GetThreadId();
-                
-                while (true) {
-                    try {
-                        auto [taskVariant, startAfter] = GetNextTask();
-                        if (std::holds_alternative<std::monostate>(taskVariant)) {
-                            break;
-                        }
 
-                        // NOTE: if you want resume such tasks (with 0ms timeout) in next workQueue Pop event - comment this condition
-                        if (startAfter.count() > 0) {
-                            co_await ResumeAfter<RootTask::promise_type>(startAfter); // [suspend point] here control is returned to caller
-                        }
+                while (!tasks.empty()) {
+                    auto taskWrapper = GetNextTask();
+                    auto startAfter = taskWrapper.GetStartAfterTime();
+                    auto& task = taskWrapper.GetTask();
 
-                        if (HELPERS_NS::GetThreadId() != functionEnterThreadId) {
-                            LOG_ERROR_D("It seems you resume this task from thread that differs from initial. Force return.");
-                            executingStarted = false;
-                            co_return; // mb need clear tasks queue also?
-                        }
-
-                        LOG_DEBUG_D("await co-task ...");
-                        // TODO: maybe refactor with custom task visitor or overload co_await for std::variant co-tasks?
-                        if (auto task = GetVariantItem<Task>(taskVariant)) {
-                            co_await *task;
-                        }
-                        else if (auto taskSignal = GetVariantItem<TaskSignal>(taskVariant)) {
-                            co_await *taskSignal;
-                        }
-                        LOG_DEBUG_D("co-task finished");
+                    // NOTE: if you want resume such tasks (with 0ms timeout) asynchronously (in next workQueue Pop event) - comment this condition
+                    if (startAfter.count() > 0) {
+                        co_await ResumeAfter<RootTask::promise_type>(startAfter); // [suspend point] here control is returned to caller
                     }
-                    catch (const std::bad_variant_access&) {
-                        break;
+
+                    if (HELPERS_NS::GetThreadId() != functionEnterThreadId) {
+                        LOG_ERROR_D("You resume this task from thread that differs from initial!");
                     }
+
+                    LOG_DEBUG_D("await co-task ...");
+                    co_await *task;
+                    LOG_DEBUG_D("co-task finished");
                 }
                 executingStarted = false; // TODO: move to promise final_suspend logic
                 co_return;
@@ -148,11 +172,11 @@ namespace HELPERS_NS {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("GetNextTask()");
                 std::unique_lock lk{ mx };
                 if (tasks.empty()) {
-                    return { std::monostate{}, 0ms };
+                    return TaskWrapper{ nullptr, 0ms };
                 }
-                auto task = std::move(tasks.front());
+                auto taskWrapper = std::move(tasks.front());
                 tasks.pop();
-                return task;
+                return taskWrapper;
             }
 
         private:

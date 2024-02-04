@@ -407,6 +407,24 @@ namespace HELPERS_NS {
         private:
             CoHandle_t selfCoroutine;
         };
+
+
+        /*------------*/
+        /*   HELPERS  */
+        /*------------*/
+        template <typename T>
+        struct PromiseExtractor {
+        };
+
+        template <template<typename> typename CoTaskT, typename PromiseImplT>
+        struct PromiseExtractor<CoTaskT<PromiseImplT>> {
+            using promiseImpl_t = PromiseImplT;
+        };
+
+        template <template<typename> typename CoTaskT, typename PromiseImplT>
+        struct PromiseExtractor<std::shared_ptr<CoTaskT<PromiseImplT>>> {
+            using promiseImpl_t = PromiseImplT;
+        };
     } // namespace Async
 } // namespace HELPERS_NS
 
