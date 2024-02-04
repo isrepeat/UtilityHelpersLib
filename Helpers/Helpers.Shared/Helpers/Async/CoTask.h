@@ -79,16 +79,14 @@ namespace HELPERS_NS {
                     return suspend::always;
                 }
                 // NOTE: currentCoroutine associated with current co-function context where was created Promise
-                void await_suspend(std::coroutine_handle<PromiseImplT> currentCoroutine) noexcept {
-                    auto instanceName = this->GetFullClassNameA();
-                    LOG_FUNCTION_SCOPE_VERBOSE("await_suspend(currentCoroutine) [{}]", instanceName);
+                std::coroutine_handle<> await_suspend(std::coroutine_handle<PromiseImplT> currentCoroutine) noexcept {
+                    LOG_FUNCTION_SCOPE_VERBOSE_C("await_suspend(currentCoroutine)", instanceName);
                     if (currentCoroutine.promise().previousCoroutine) {
-                        currentCoroutine.promise().previousCoroutine.resume();
-                        // WARNING: After previousCoroutine finished FinalAwaiter may be destroyed
-                        NOOP;
+                        return currentCoroutine.promise().previousCoroutine;
                     }
-                    NOOP;
+                    return std::noop_coroutine();
                 }
+                
                 void await_resume() noexcept {
                     LOG_FUNCTION_ENTER_VERBOSE_C("await_resume()");
                     assertm(false, "Unexpected call");
@@ -244,7 +242,7 @@ namespace HELPERS_NS {
                 LOG_FUNCTION_ENTER_VERBOSE_C(L"~AwaiterBase()");
             }
             bool await_ready() noexcept {
-                return suspend::always;
+                return suspend::always; // suspend selfCoroutine
             }
             std::coroutine_handle<> await_suspend(std::coroutine_handle<PromiseDefault> callerCoroutine) noexcept {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("await_suspend(coroutine_handle<PromiseDefault>)");
@@ -267,7 +265,7 @@ namespace HELPERS_NS {
                     return callerCoroutine; // continue caller coroutine
                 }
                 // 1. Remember callerCoroutine (it will resumed in Promise::FinalAwaiter when selfCoroutine finished)
-                // 2. Resume promiseCoroHandle
+                // 2. Resume selfCoroutine
                 selfCoroutine.promise().remember_other_coroutine(callerCoroutine);
                 return selfCoroutine;
                 // 3. Control returned to callerCoroutine only when selfCoroutine finished;
