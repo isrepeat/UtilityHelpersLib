@@ -4,16 +4,32 @@
 #include <tuple>
 
 namespace HELPERS_NS {
-    template <typename ReturnType, typename ClassType, typename... Args>
-    struct _FunctionTraitsBase {
+    namespace details {
+        template <bool If, typename T, T ThenValue, T ElseValue>
+        struct IF_value {
+            static constexpr T value = ThenValue;
+        };
+
+        template <typename T, T ThenValue, T ElseValue>
+        struct IF_value<false, T, ThenValue, ElseValue> {
+            static constexpr T value = ElseValue;
+        };
+    }
+
+    enum class FuncKind {
+        Lambda, // for lambdas, std::function and custom Functor with "operator() const"
+        Functor, // for custom Functor with non const "operator()"
+        CstyleFunc,
+        ClassMember
+    };
+
+    template <typename ReturnType, typename... Args>
+    struct _FunctionTraitsBaseArgs {
         enum {
             ArgumentCount = sizeof...(Args)
         };
-        static constexpr bool IsPointerToMemberFunction = !std::is_same_v<ClassType, void>;
 
         using Ret = ReturnType;
-        using Class = ClassType;
-        using Function = Ret(Class::*) (Args...);
         using Arguments = std::tuple<Args...>;
 
         template <size_t i>
@@ -24,33 +40,65 @@ namespace HELPERS_NS {
         };
     };
 
+
+    template <typename ReturnType, typename ClassType, typename... Args>
+    struct _FunctionTraitsBase : _FunctionTraitsBaseArgs<ReturnType, Args...> {
+        using Class = ClassType;
+        using Function = ReturnType(Class::*) (Args...);
+        static constexpr bool IsPointerToMemberFunction = true;
+    };
+
+    template <typename ReturnType, typename... Args>
+    struct _FunctionTraitsBase<ReturnType, void, Args...> : _FunctionTraitsBaseArgs<ReturnType, Args...> {
+        using Class = void;
+        using Function = ReturnType(*)(Args...);
+        static constexpr bool IsPointerToMemberFunction = false;
+    };
+
+
     // Matches when T=lambda or T=Functor
     // For generic types, directly use the result of the signature of its 'operator()'
-    template <typename T>
-    struct FunctionTraits : public FunctionTraits<decltype(&T::operator())> 
+    template <typename T, bool IsGeneric = false>
+    struct FunctionTraits : public FunctionTraits<decltype(&T::operator()), true> 
     {};
 
-    // For Functor L-value or R-value
-    template <typename R, typename C, typename... A>
-    struct FunctionTraits<R(C::*)(A...)> : public _FunctionTraitsBase<R, C, A...> 
-    {};
+    // For Functor L-value or R-value with non const "operator()"
+    template <typename R, typename C, typename... A, bool IsGeneric>
+    struct FunctionTraits<R(C::*)(A...), IsGeneric> : public _FunctionTraitsBase<R, C, A...> {
+        static constexpr FuncKind Kind = details::IF_value<IsGeneric, FuncKind, FuncKind::Functor, FuncKind::ClassMember>::value;
+    };
 
-    // For lambdas (need const)
-    template <typename R, typename C, typename... A>
-    struct FunctionTraits<R(C::*)(A...) const> : public _FunctionTraitsBase<R, C, A...>
-    {};
+    // For lambdas or Functor with "operator() const"
+    template <typename R, typename C, typename... A, bool IsGeneric>
+    struct FunctionTraits<R(C::*)(A...) const, IsGeneric> : public _FunctionTraitsBase<R, C, A...> {
+        static constexpr FuncKind Kind = details::IF_value<IsGeneric, FuncKind, FuncKind::Lambda, FuncKind::ClassMember>::value;
+    };
 
     // For C-style functions
-    template <typename R, typename... A>
-    struct FunctionTraits<R(*)(A...)> : public _FunctionTraitsBase<R, void, A...>
-    {};
+    template <typename R, typename... A, bool IsGeneric>
+    struct FunctionTraits<R(*)(A...), IsGeneric> : public _FunctionTraitsBase<R, void, A...> {
+        static constexpr FuncKind Kind = FuncKind::CstyleFunc;
+    };
 
 #ifdef __CLR__
     // For C-style functions CLR
-    template <typename R, typename... A>
-    struct FunctionTraits<R(__clrcall*)(A...)> : public _FunctionTraitsBase<R, void, A...>
-    {};
+    template <typename R, typename... A, bool IsGeneric>
+    struct FunctionTraits<R(__clrcall*)(A...)> : public _FunctionTraitsBase<R, void, A...> {
+        static constexpr FuncKind Kind = FuncKind::CstyleFunc;
+    };
 #endif
+
+    template <typename Fn>
+    static constexpr bool IsLambda = HELPERS_NS::FunctionTraits<Fn>::Kind == HELPERS_NS::FuncKind::Lambda;
+    
+    template <typename Fn>
+    static constexpr bool IsFunctor = HELPERS_NS::FunctionTraits<Fn>::Kind == HELPERS_NS::FuncKind::Functor;
+
+    template <typename Fn>
+    static constexpr bool IsCStyleFn = HELPERS_NS::FunctionTraits<Fn>::Kind == HELPERS_NS::FuncKind::CstyleFunc;
+
+    template <typename Fn>
+    static constexpr bool IsClassFn = HELPERS_NS::FunctionTraits<Fn>::Kind == HELPERS_NS::FuncKind::ClassMember;
 
 
     template <typename T>
