@@ -129,7 +129,10 @@ namespace HELPERS_NS {
                 return std::suspend_always{};
             }
             void unhandled_exception() {
-                LOG_FUNCTION_SCOPE_VERBOSE_C("unhandled_exception()");
+                LOG_FUNCTION_SCOPE_C("unhandled_exception()");
+                // NOTE: By rethrowing an exception we break the tasks chain (if it exists).
+                //       This behavior is by design because next tasks may depend on current.
+                std::rethrow_exception(std::current_exception()); // "root resumer" must handle exceptions.
             }
             void return_void() {
                 LOG_FUNCTION_ENTER_VERBOSE_C("return_void()");

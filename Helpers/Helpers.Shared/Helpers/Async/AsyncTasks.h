@@ -140,24 +140,32 @@ namespace HELPERS_NS {
             RootTask::Ret_t StartExecutingCoroutine(std::wstring coroFrameName, std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback) {
                 LOG_FUNCTION_SCOPE_C("StartExecutingCoroutine(...)");
                 static thread_local std::size_t functionEnterThreadId = HELPERS_NS::GetThreadId();
+                try {
+                    while (!tasks.empty()) {
+                        auto taskWrapper = GetNextTask();
+                        auto startAfter = taskWrapper.GetStartAfterTime();
+                        auto& task = taskWrapper.GetTask();
 
-                while (!tasks.empty()) {
-                    auto taskWrapper = GetNextTask();
-                    auto startAfter = taskWrapper.GetStartAfterTime();
-                    auto& task = taskWrapper.GetTask();
+                        // NOTE: if you want resume such tasks (with 0ms timeout) asynchronously (in next workQueue Pop event) - comment this condition
+                        if (startAfter.count() > 0) {
+                            co_await ResumeAfter<RootTask::promise_type>(startAfter); // [suspend point] here control is returned to caller
+                        }
 
-                    // NOTE: if you want resume such tasks (with 0ms timeout) asynchronously (in next workQueue Pop event) - comment this condition
-                    if (startAfter.count() > 0) {
-                        co_await ResumeAfter<RootTask::promise_type>(startAfter); // [suspend point] here control is returned to caller
+                        if (HELPERS_NS::GetThreadId() != functionEnterThreadId) {
+                            LOG_ERROR_D("You resume this task from thread that differs from initial!");
+                        }
+
+                        LOG_DEBUG_D("await co-task ...");
+                        co_await *task;
+                        LOG_DEBUG_D("co-task finished");
                     }
-
-                    if (HELPERS_NS::GetThreadId() != functionEnterThreadId) {
-                        LOG_ERROR_D("You resume this task from thread that differs from initial!");
-                    }
-
-                    LOG_DEBUG_D("await co-task ...");
-                    co_await *task;
-                    LOG_DEBUG_D("co-task finished");
+                }
+                catch (...) {
+                    LOG_ERROR_D("Catch unhandled exception");
+                    LOG_WARNING_D("clear tasks queue and rethrow");
+                    tasks = {}; // clear queue
+                    executingStarted = false;
+                    throw;
                 }
                 executingStarted = false; // TODO: move to promise final_suspend logic
                 co_return;

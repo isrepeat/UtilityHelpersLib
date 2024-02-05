@@ -66,7 +66,7 @@ namespace HELPERS_NS {
 
 	private:
 		Type type;
-		mutable std::atomic<int> triggerCounter = 0;
+		mutable std::atomic<int> triggerCounter = 0; // default copy Ctor deleted for std::atomic
 		mutable std::vector<std::function<void()>> handlers;
 		mutable std::vector<std::function<void()>> finishHandlers;
 		//std::mutex mx; // We cannot use mutex as mebmer because its copy constructor removed
