@@ -59,6 +59,8 @@ namespace HELPERS_NS {
         template <typename PromiseImplT>
         class CoTask;
 
+        struct LambdaBindCoroKey {};
+
         template <typename PromiseImplT>
         class Promise {
             CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(Promise);
@@ -194,6 +196,15 @@ namespace HELPERS_NS {
                 , resumeSignal{ std::make_shared<HELPERS_NS::Signal>() }
             {
                 LOG_FUNCTION_ENTER_VERBOSE(L"PromiseDefault(Caller, instanceName = {})", instanceName);
+            }
+
+            // must be used only by LambdaBindCoro helper
+            template <typename LambdaT, class... Args>
+            PromiseDefault(LambdaBindCoroKey key, LambdaT& lambda, Args&...)
+                : _MyBase(L"LambdaBindCoroKey")
+                , resumeSignal{ std::make_shared<HELPERS_NS::Signal>() }
+            {
+                LOG_FUNCTION_ENTER_VERBOSE(L"PromiseDefault(LambdaCtorKey, LambdaT)");
             }
 
             std::weak_ptr<HELPERS_NS::Signal> get_resume_signal() {

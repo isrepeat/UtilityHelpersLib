@@ -46,16 +46,10 @@ namespace HELPERS_NS {
             
             class TaskWrapper {
             public:
-                TaskWrapper(std::shared_ptr<Task> task, std::chrono::milliseconds startAfter, std::function<void()> releaseCallback = nullptr)
+                TaskWrapper(std::shared_ptr<Task> task, std::chrono::milliseconds startAfter)
                     : task{ task }
                     , startAfter{ startAfter }
-                    , releaseCallback{ releaseCallback }
                 {}
-                ~TaskWrapper() {
-                    if (releaseCallback) {
-                        releaseCallback();
-                    }
-                }
                 std::shared_ptr<Task>& GetTask() {
                     return task;
                 }
@@ -65,7 +59,6 @@ namespace HELPERS_NS {
             private:
                 std::shared_ptr<Task> task;
                 std::chrono::milliseconds startAfter;
-                std::function<void()> releaseCallback;
             };
 
         public:
@@ -99,19 +92,20 @@ namespace HELPERS_NS {
             template <typename Fn, typename... Args, typename PromiseImplT = PromiseExtractor<typename HELPERS_NS::FunctionTraits<Fn>::Ret>::promiseImpl_t>
             AddedResult<IsValidPromise<PromiseImplT>, PromiseImplT> AddTaskLambda(
                 std::chrono::milliseconds startAfter,
-                Fn lambda, Args&&... args)
+                Fn lambda,
+                Args... args)
             {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("AddTaskLambda(startAfter, taskFn, ...args)");
-                std::unique_lock lk{ mx };           
-                
-                static std::list<Fn> lambdaKeeper;
-                auto& savedLambda = lambdaKeeper.emplace_back(std::move(lambda)); // save temporary lambda / functor to keep their captured args alive
+                // based on https://devblogs.microsoft.com/oldnewthing/20211103-00/?p=105870#comment-138536
+                struct LambdaBindCoro {
+                    static typename HELPERS_NS::FunctionTraits<Fn>::Ret Bind(LambdaBindCoroKey, Fn lambda, Args... args) {
+                        co_return co_await *lambda(std::move(args)...);
+                    }
+                };
 
-                tasks.push(TaskWrapper{ savedLambda(std::forward<Args&&>(args)...), startAfter,
-                    [this, currentElemIterator = HELPERS_NS::iter_to_last(lambdaKeeper)] { // Called from ~TaskWrapper() from root task coroutine thread
-                        std::unique_lock lk{ mx };
-                        lambdaKeeper.erase(currentElemIterator);
-                    } });
+                std::unique_lock lk{ mx };
+
+                tasks.push(TaskWrapper{ LambdaBindCoro::Bind(LambdaBindCoroKey{}, std::move(lambda), std::move(args)...), startAfter });
 
                 return tasks.front().GetTask();
             }
