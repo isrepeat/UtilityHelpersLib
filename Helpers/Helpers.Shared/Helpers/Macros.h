@@ -3,13 +3,20 @@
 #include <debugapi.h>
 #include <cassert>
 
+#define H_CONCAT_BASE(a, b) a ## b
+#define H_CONCAT(a, b) H_CONCAT_BASE(a,b)
+
 #ifdef _DEBUG
 #define assertm(expression, message) (void)(												                          \
             (!!(expression)) ||                                                                                       \
             (_wassert(L" " message L"  {" _CRT_WIDE(#expression) L"}", _CRT_WIDE(__FILE__), (unsigned)(__LINE__)), 0) \
         )
+
+
+#define NOOP int H_CONCAT(noop__,__LINE__) = 1234
 #else
 #define assertm(expression, message) ((void)0)
+#define NOOP
 #endif
 
 

@@ -38,16 +38,16 @@ namespace HELPERS_NS {
                     return duration.count() <= 0;
                 }
 
-                void await_suspend(std::coroutine_handle<PromiseT> callerPromiseCoroHandle) {
-                    LOG_FUNCTION_SCOPE_VERBOSE("await_suspend(callerPromiseCoroHandle)");
+                void await_suspend(std::coroutine_handle<PromiseT> callerCoroutine) {
+                    LOG_FUNCTION_SCOPE_VERBOSE("await_suspend(callerCoroutine)");
 
-                    std::weak_ptr<CoTaskBase> coTaskWeak = callerPromiseCoroHandle.promise().get_task();
-                    auto resumeCallback = callerPromiseCoroHandle.promise().get_resume_callback();
+                    std::weak_ptr<CoTaskBase> coTaskWeak = callerCoroutine.promise().get_task();
+                    auto resumeCallback = callerCoroutine.promise().get_resume_callback();
 
                     if (LOG_ASSERT(resumeCallback, "resumeCallback is empty!")) { // This can happen if you call this function not in PromiseRoot task coroutine
-                        LOG_WARNING_D("resume callerPromiseCoroHandle ...");
-                        callerPromiseCoroHandle.resume();
-                        LOG_DEBUG_D("callerPromiseCoroHandle finished");
+                        LOG_WARNING_D("resume callerCoroutine ...");
+                        callerCoroutine.resume();
+                        LOG_DEBUG_D("callerCoroutine finished");
                         return;
                     }
 
@@ -70,12 +70,12 @@ namespace HELPERS_NS {
 
 
 
-        auto AsyncOperationWithResumeSignal(std::function<void(std::weak_ptr<HELPERS_NS::Signal>)> asyncOperationTask) noexcept {
+        auto AsyncOperationWithResumeSignal(std::function<void(std::weak_ptr<HELPERS_NS::Signal>)> asyncOperation) noexcept {
             LOG_FUNCTION_SCOPE_VERBOSE("AsyncOperationWithResumeSignal(asyncOperationTask)");
 
             struct Awaitable {
-                explicit Awaitable(std::function<void(std::weak_ptr<HELPERS_NS::Signal>)> asyncOperationTask)
-                    : asyncOperationTask{ asyncOperationTask }
+                explicit Awaitable(std::function<void(std::weak_ptr<HELPERS_NS::Signal>)> asyncOperation)
+                    : asyncOperation{ asyncOperation }
                 {
                     LOG_FUNCTION_ENTER_VERBOSE("Awaitable(asyncOperationTask)");
                 }
@@ -88,19 +88,19 @@ namespace HELPERS_NS {
                     return suspend::always;
                 }
 
-                void await_suspend(std::coroutine_handle<PromiseSignal> callerPromiseCoroHandle) {
-                    LOG_FUNCTION_SCOPE_VERBOSE("await_suspend(callerPromiseCoroHandle)");
+                void await_suspend(std::coroutine_handle<PromiseDefault> callerCoroutine) {
+                    LOG_FUNCTION_SCOPE_VERBOSE("await_suspend(callerCoroutine)");
 
-                    std::weak_ptr<CoTaskBase> coTaskWeak = callerPromiseCoroHandle.promise().get_task();
-                    auto resumeSignalWeak = callerPromiseCoroHandle.promise().get_resume_signal();
-                    auto resumeCallback = callerPromiseCoroHandle.promise().get_resume_callback();                    
+                    std::weak_ptr<CoTaskBase> coTaskWeak = callerCoroutine.promise().get_task();
+                    auto resumeSignalWeak = callerCoroutine.promise().get_resume_signal();
+                    auto resumeCallback = callerCoroutine.promise().get_resume_callback();
 
                     auto resumeSignal = resumeSignalWeak.lock();
                     if (LOG_ASSERT(resumeSignal, "resumeSignalWeak expired!") ||
                         LOG_ASSERT(resumeCallback, "resumeCallback is empty!")) // This can happen if you call this function not in PromiseRoot task coroutine
                     {
                         LOG_WARNING_D("resume callerPromiseCoroHandle ...");
-                        callerPromiseCoroHandle.resume();
+                        callerCoroutine.resume();
                         LOG_DEBUG_D("callerPromiseCoroHandle finished");
                         return;
                     }
@@ -110,7 +110,7 @@ namespace HELPERS_NS {
                         resumeCallback(coTaskWeak);
                         });
 
-                    asyncOperationTask(resumeSignalWeak);
+                    asyncOperation(resumeSignalWeak);
                 }
 
                 void await_resume() noexcept {
@@ -118,10 +118,10 @@ namespace HELPERS_NS {
                 }
 
             private:
-                std::function<void(std::weak_ptr<HELPERS_NS::Signal>)> asyncOperationTask;
+                std::function<void(std::weak_ptr<HELPERS_NS::Signal>)> asyncOperation;
             };
 
-            return Awaitable{ asyncOperationTask };
+            return Awaitable{ asyncOperation };
         }
     } // namespace Async
 } // namespace HELPERS_NS

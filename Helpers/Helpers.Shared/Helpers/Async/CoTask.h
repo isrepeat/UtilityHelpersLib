@@ -27,9 +27,9 @@ namespace std {
 namespace HELPERS_NS {
     namespace Async {
 #ifdef __INTELLISENSE__ // https://stackoverflow.com/questions/67209981/weird-error-from-visual-c-no-default-constructor-for-promise-type
-    #define INTELLISENSE_DEFAULT_CTOR(className) className()
+#define INTELLISENSE_DEFAULT_CTOR(className) className()
 #else
-    #define INTELLISENSE_DEFAULT_CTOR(className)
+#define INTELLISENSE_DEFAULT_CTOR(className)
 #endif
 
         struct suspend {
@@ -65,18 +65,31 @@ namespace HELPERS_NS {
         public:
             using ObjectRet_t = std::shared_ptr<CoTask<PromiseImplT>>;
 
-            struct FinalAwaiter {
+            class FinalAwaiter {
+                CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(FinalAwaiter);
+            public:
+                FinalAwaiter(std::wstring instanceName) {
+                    this->SetFullClassName(instanceName);
+                    LOG_FUNCTION_ENTER_VERBOSE_C(L"FinalAwaiter(instanceName)");
+                }
+                ~FinalAwaiter() {
+                    LOG_FUNCTION_ENTER_VERBOSE_C(L"~FinalAwaiter()");
+                }
                 bool await_ready() noexcept {
                     return suspend::always;
                 }
-                // NOTE: promiseCoroHandle associated with current co-function context where was created Promise
-                void await_suspend(std::coroutine_handle<PromiseImplT> promiseCoroHandle) noexcept {
-                    if (promiseCoroHandle.promise().continuation) {
-                        promiseCoroHandle.promise().continuation.resume();
+                // NOTE: currentCoroutine associated with current co-function context where was created Promise
+                std::coroutine_handle<> await_suspend(std::coroutine_handle<PromiseImplT> currentCoroutine) noexcept {
+                    LOG_FUNCTION_SCOPE_VERBOSE_C("await_suspend(currentCoroutine)", instanceName);
+                    if (currentCoroutine.promise().previousCoroutine) {
+                        return currentCoroutine.promise().previousCoroutine;
                     }
+                    return std::noop_coroutine();
                 }
-
+                
                 void await_resume() noexcept {
+                    LOG_FUNCTION_ENTER_VERBOSE_C("await_resume()");
+                    assertm(false, "Unexpected call");
                     std::terminate();
                 }
             };
@@ -108,6 +121,7 @@ namespace HELPERS_NS {
                 coTaskWeak = coTaskShared;
                 return coTaskShared;
             }
+
             auto initial_suspend() const noexcept {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("initial_suspend()");
                 return std::suspend_always{};
@@ -115,20 +129,27 @@ namespace HELPERS_NS {
             void unhandled_exception() {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("unhandled_exception()");
             }
+            void return_void() {
+                LOG_FUNCTION_ENTER_VERBOSE_C("return_void()");
+            }
             auto final_suspend() const noexcept {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("final_suspend()");
                 // NOTE: "suspend always" at finish mean that we need to destroy coroutine_handle manually.
                 //        This is need to avoid double destroying problem in CoTask RAII class.
-                return FinalAwaiter{};
-            }
-            void return_void() {
-                LOG_FUNCTION_ENTER_VERBOSE_C("return_void()");
+                return FinalAwaiter{ this->GetFullClassNameW() };
             }
 
             template <typename PromiseT>
-            void set_continuation(std::coroutine_handle<PromiseT> otherPromise) {
-                this->resumeCallback = otherPromise.promise().get_resume_callback();
-                this->continuation = otherPromise;
+            void remember_other_coroutine(std::coroutine_handle<PromiseT> otherCoroutine) {
+                this->resumeCallback = otherCoroutine.promise().get_resume_callback();
+                this->previousCoroutine = otherCoroutine;
+            }
+
+            void cancel() {
+                canceled = true;
+            }
+            bool is_canceled() {
+                return canceled;
             }
 
             std::function<void(std::weak_ptr<CoTaskBase>)> get_resume_callback() {
@@ -145,7 +166,8 @@ namespace HELPERS_NS {
             std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback; // can be initialized in derived classes
 
         private:
-            std::coroutine_handle<> continuation;
+            std::atomic<bool> canceled = false;
+            std::coroutine_handle<> previousCoroutine;
             std::weak_ptr<CoTaskBase> coTaskWeak;
             std::shared_ptr<int> token = std::make_shared<int>();
         };
@@ -161,15 +183,25 @@ namespace HELPERS_NS {
 
             PromiseDefault(std::wstring instanceName)
                 : _MyBase(instanceName)
+                , resumeSignal{ std::make_shared<HELPERS_NS::Signal>() }
             {
                 LOG_FUNCTION_ENTER_VERBOSE(L"PromiseDefault(instanceName = {})", instanceName);
             }
+
             template <typename Caller>
             PromiseDefault(Caller& caller, std::wstring instanceName)
                 : _MyBase(caller, instanceName)
+                , resumeSignal{ std::make_shared<HELPERS_NS::Signal>() }
             {
                 LOG_FUNCTION_ENTER_VERBOSE(L"PromiseDefault(Caller, instanceName = {})", instanceName);
             }
+
+            std::weak_ptr<HELPERS_NS::Signal> get_resume_signal() {
+                return resumeSignal;
+            }
+
+        private:
+            std::shared_ptr<HELPERS_NS::Signal> resumeSignal;
         };
 
         class PromiseRoot : public Promise<PromiseRoot> {
@@ -183,6 +215,7 @@ namespace HELPERS_NS {
                 LOG_FUNCTION_ENTER_VERBOSE(L"PromiseRoot(instanceName = {}, resumeCallback)", instanceName);
                 this->_MyBase::resumeCallback = resumeCallback;
             }
+
             template <typename Caller>
             PromiseRoot(Caller& caller, std::wstring instanceName, std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback)
                 : _MyBase(caller, instanceName)
@@ -192,74 +225,55 @@ namespace HELPERS_NS {
             }
         };
 
-        class PromiseSignal : public Promise<PromiseSignal> {
-        public:
-            using _MyBase = Promise<PromiseSignal>;
-            INTELLISENSE_DEFAULT_CTOR(PromiseSignal);
-
-            PromiseSignal(std::wstring instanceName, std::shared_ptr<HELPERS_NS::Signal> resumeSignal)
-                : _MyBase(instanceName)
-                , resumeSignal{ resumeSignal }
-            {
-                LOG_FUNCTION_ENTER_VERBOSE(L"PromiseSignal(instanceName = {}, resumeSignal)", instanceName);
-            }
-            template <typename Caller>
-            PromiseSignal(Caller& caller, std::wstring instanceName, std::shared_ptr<HELPERS_NS::Signal> resumeSignal)
-                : _MyBase(caller, instanceName)
-                , resumeSignal{ resumeSignal }
-            {
-                LOG_FUNCTION_ENTER_VERBOSE(L"PromiseSignal(Caller, instanceName = {}, resumeSignal)", instanceName);
-            }
-
-            std::weak_ptr<HELPERS_NS::Signal> get_resume_signal() {
-                return resumeSignal;
-            }
-
-        private:
-            std::shared_ptr<HELPERS_NS::Signal> resumeSignal;
-        };
-
         /*------------------*/
         /*   AWAITER BASE   */
         /*------------------*/
         template <typename PromiseImplT>
         class AwaiterBase { // Base Awaiter class for CoTask. You need overload await_suspend for all type of promises that can be used. 
+            CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(AwaiterBase);
         public:
-            AwaiterBase(std::coroutine_handle<PromiseImplT> promiseCoroHandle)
-                : promiseCoroHandle{ promiseCoroHandle }
+            AwaiterBase(std::coroutine_handle<PromiseImplT> selfCoroutine, std::wstring instanceName)
+                : selfCoroutine{ selfCoroutine }
             {
+                this->SetFullClassName(instanceName);
+                LOG_FUNCTION_ENTER_VERBOSE_C(L"AwaiterBase(selfCoroutine, instanceName)");
+            }
+            ~AwaiterBase() {
+                LOG_FUNCTION_ENTER_VERBOSE_C(L"~AwaiterBase()");
             }
             bool await_ready() noexcept {
-                return suspend::always;
+                return suspend::always; // suspend selfCoroutine
             }
-            std::coroutine_handle<PromiseImplT> await_suspend(std::coroutine_handle<PromiseDefault> callerPromiseCoroHandle) noexcept {
-                return await_suspend_internal<PromiseDefault>(callerPromiseCoroHandle);
+            std::coroutine_handle<> await_suspend(std::coroutine_handle<PromiseDefault> callerCoroutine) noexcept {
+                LOG_FUNCTION_SCOPE_VERBOSE_C("await_suspend(coroutine_handle<PromiseDefault>)");
+                return await_suspend_internal<PromiseDefault>(callerCoroutine);
             }
-            std::coroutine_handle<PromiseImplT> await_suspend(std::coroutine_handle<PromiseRoot> callerPromiseCoroHandle) noexcept {
-                return await_suspend_internal<PromiseRoot>(callerPromiseCoroHandle);
-            }
-            std::coroutine_handle<PromiseImplT> await_suspend(std::coroutine_handle<PromiseSignal> callerPromiseCoroHandle) noexcept {
-                return await_suspend_internal<PromiseSignal>(callerPromiseCoroHandle);
+            std::coroutine_handle<> await_suspend(std::coroutine_handle<PromiseRoot> callerCoroutine) noexcept {
+                LOG_FUNCTION_SCOPE_VERBOSE_C("await_suspend(coroutine_handle<PromiseRoot>)");
+                return await_suspend_internal<PromiseRoot>(callerCoroutine);
             }
             void await_resume() {
-                LOG_FUNCTION_ENTER_VERBOSE("await_resume()");
+                LOG_FUNCTION_ENTER_VERBOSE_C("await_resume()");
             }
 
         private:
-            // NOTE: callerPromiseCoroHandle associated with outter co-function context where called operator co_await CoTask{}
+            // NOTE: callerCoroutine associated with outter co-function context where called operator co_await CoTask{}
             template <typename PromiseT>
-            std::coroutine_handle<PromiseImplT> await_suspend_internal(std::coroutine_handle<PromiseT> callerPromiseCoroHandle) noexcept {
-                LOG_FUNCTION_SCOPE_VERBOSE("await_suspend_internal(callerPromiseCoroHandle)");
-                // 1. Remember callerPromiseCoroHandle (it is resumed when promiseCoroHandle finished in Promise::FinalAwaiter).
-                // 2. Resume promiseCoroHandle.
-                promiseCoroHandle.promise().set_continuation(callerPromiseCoroHandle);
-                return promiseCoroHandle;
-                // 3. Control returned to callerPromiseCoroHandle only when promiseCoroHandle finished;
-                //    if promiseCoroHandle has its own suspend points control returned to base resumer.
+            std::coroutine_handle<> await_suspend_internal(std::coroutine_handle<PromiseT> callerCoroutine) noexcept {
+                LOG_FUNCTION_SCOPE_VERBOSE_C("await_suspend_internal(callerCoroutine)");
+                if (selfCoroutine.promise().is_canceled()) {
+                    return callerCoroutine; // continue caller coroutine
+                }
+                // 1. Remember callerCoroutine (it will resumed in Promise::FinalAwaiter when selfCoroutine finished)
+                // 2. Resume selfCoroutine
+                selfCoroutine.promise().remember_other_coroutine(callerCoroutine);
+                return selfCoroutine;
+                // 3. Control returned to callerCoroutine only when selfCoroutine finished;
+                //    if selfCoroutine has its own suspend points control returned to base resumer (previous stack frame)
             }
 
         private:
-            std::coroutine_handle<PromiseImplT> promiseCoroHandle;
+            std::coroutine_handle<PromiseImplT> selfCoroutine;
         };
 
 
@@ -273,15 +287,16 @@ namespace HELPERS_NS {
             CoTaskBase() { // In most cases default Ctor must not be called
                 LOG_FUNCTION_ENTER_VERBOSE("CoTaskBase()");
             }
-            CoTaskBase(std::coroutine_handle<> promiseCoroHandle, std::weak_ptr<int> promiseToken, std::wstring instanceName)
-                : promiseCoroHandle{ promiseCoroHandle }
+            CoTaskBase(std::coroutine_handle<> selfCoroutineBase, std::weak_ptr<int> promiseToken, std::wstring instanceName)
+                : selfCoroutineBase{ selfCoroutineBase }
                 , promiseToken{ promiseToken }
             {
                 this->SetFullClassName(instanceName);
-                LOG_FUNCTION_ENTER_VERBOSE_C("CoTaskBase(promiseCoroHandle, promiseToken, instanceName)");
+                LOG_FUNCTION_ENTER_VERBOSE_C("CoTaskBase(selfCoroutineBase, promiseToken, instanceName)");
             }
             ~CoTaskBase() {
                 LOG_FUNCTION_ENTER_VERBOSE_C("~CoTaskBase()");
+                // here promise_type already destroyed (in derived class Dtor)
             }
 
             CoTaskBase(const CoTaskBase&) = delete;
@@ -290,37 +305,59 @@ namespace HELPERS_NS {
             CoTaskBase(CoTaskBase&&) = delete;
             CoTaskBase& operator=(CoTaskBase&&) = delete;
 
-            void resume() {
-                LOG_FUNCTION_SCOPE_VERBOSE_C("resume()");
-                if (canceled) {
-                    LOG_WARNING_D("task canceled");
-                    return;
-                }
-                if (promiseToken.expired()) {
-                    LOG_WARNING_D("promiseToken expired!");
-                    return;
-                }
-                if (!promiseCoroHandle) {
-                    LOG_WARNING_D("promiseCoroHandle is empty!");
-                    return;
-                }
-                promiseCoroHandle.resume();
+            bool operator==(std::coroutine_handle<> otherCoroutine) {
+                return selfCoroutineBase == otherCoroutine;
             }
+
+            friend void SafeResume(std::weak_ptr<CoTaskBase>);
 
             void cancel() {
                 LOG_FUNCTION_ENTER_VERBOSE_C("cancel()");
                 canceled = true;
-            }
-
-            bool operator==(std::coroutine_handle<> otherCoroHandle) {
-                return promiseCoroHandle == otherCoroHandle;
+                cancelPromise();
             }
 
         protected:
-            std::coroutine_handle<> promiseCoroHandle;
+            virtual void cancelPromise() = 0;
+
+            // You also can use std::noop_coroutine() instead unique_ptr
+            std::unique_ptr<std::coroutine_handle<>> get_coro_handle() {
+                LOG_FUNCTION_SCOPE_VERBOSE_C("get_coro_handle()");
+                if (canceled) {
+                    LOG_WARNING_D("task canceled");
+                    return nullptr;
+                }
+                if (promiseToken.expired()) {
+                    LOG_WARNING_D("promiseToken expired!");
+                    return nullptr;
+                }
+                if (!selfCoroutineBase) {
+                    LOG_WARNING_D("selfCoroutineBase is empty!");
+                    return nullptr;
+                }
+                return std::make_unique<std::coroutine_handle<>>(selfCoroutineBase);
+            }
+
+        protected:
+            std::coroutine_handle<> selfCoroutineBase;
             std::weak_ptr<int> promiseToken;
             std::atomic<bool> canceled = false;
         };
+
+
+        // NOTE: we don't save shared_ptr<CoTaskBase>
+        inline void SafeResume(std::weak_ptr<CoTaskBase> taskWeak) {
+            LOG_FUNCTION_SCOPE_VERBOSE("SafeResume(taskWeak)");
+            std::unique_ptr<std::coroutine_handle<>> coroHandle;
+
+            if (auto task = taskWeak.lock()) {
+                coroHandle = task->get_coro_handle();
+            }
+            
+            if (coroHandle) { // if task->get_coro_handle() return std::noop_coroutine() this condition not need
+                coroHandle->resume();
+            }
+        }
 
 
         /*-----------------------------*/
@@ -337,57 +374,58 @@ namespace HELPERS_NS {
             CoTask() { // In most cases default Ctor must not be called
                 LOG_FUNCTION_ENTER_VERBOSE("CoTask()");
             }
-            CoTask(CoHandle_t promiseCoroHandle, std::weak_ptr<int> promiseToken, std::wstring instanceName)
-                : CoTaskBase(promiseCoroHandle, promiseToken, instanceName)
-                , promiseCoroHandleTyped{ promiseCoroHandle }
+            CoTask(CoHandle_t selfCoroutine, std::weak_ptr<int> promiseToken, std::wstring instanceName)
+                : CoTaskBase(selfCoroutine, promiseToken, instanceName)
+                , selfCoroutine{ selfCoroutine }
             {
                 this->SetFullClassName(instanceName);
-                LOG_FUNCTION_ENTER_VERBOSE_C("CoTask(promiseCoroHandle, promiseToken, instanceName)");
+                LOG_FUNCTION_ENTER_VERBOSE_C("CoTask(selfCoroutine, promiseToken, instanceName)");
             }
             ~CoTask() {
                 LOG_FUNCTION_ENTER_VERBOSE_C("~CoTask()");
-                if (promiseCoroHandleTyped) {
-                    // promise_type will be destroyed; no need destroy promiseCoroHandle because it is the same.
-                    promiseCoroHandleTyped.destroy(); 
+                if (selfCoroutine) {
+                    // promise_type will be destroyed; no need destroy selfCoroutineBase because it is the same.
+                    selfCoroutine.destroy();
                 }
             }
-            
+
             CoTask(const CoTask&) = delete;
             CoTask& operator=(const CoTask&) = delete;
 
             CoTask(CoTask&&) = delete;
             CoTask& operator=(CoTask&&) = delete;
 
-            //CoTask(CoTask&& other)
-            //    : promiseCoroHandle{ other.promiseCoroHandle }
-            //    , promiseToken{ other.promiseToken }
-            //    , canceled{ other.canceled }
-            //    , promiseCoroHandleTyped{ other.promiseCoroHandleTyped }
-            //{
-            //    other.promiseCoroHandle = nullptr;
-            //    other.promiseCoroHandleTyped = nullptr;
-            //}
-            //CoTask& operator=(CoTask&& other)
-            //    if (this != &other) {
-            //        if (promiseCoroHandleTyped) {
-            //            promiseCoroHandleTyped.destroy();
-            //        }
-            //        promiseCoroHandle = other.promiseCoroHandle;
-            //        promiseToken = other.promiseToken;
-            //        canceled = other.canceled;
-            //        other.promiseCoroHandle = nullptr;
-            //        other.promiseCoroHandleTyped = nullptr;
-            //    }
-            //    return *this;
-            //}
-
             // TODO: quilify operator with &&
             auto operator co_await() {
-                return AwaiterBase<promise_type> { promiseCoroHandleTyped };
+                return AwaiterBase<promise_type> { selfCoroutine, this->GetFullClassNameW() };
             }
 
         private:
-            CoHandle_t promiseCoroHandleTyped;
+            void cancelPromise() override {
+                LOG_FUNCTION_ENTER_VERBOSE_C("cancelPromise()");
+                selfCoroutine.promise().cancel();
+            }
+
+        private:
+            CoHandle_t selfCoroutine;
+        };
+
+
+        /*------------*/
+        /*   HELPERS  */
+        /*------------*/
+        template <typename T>
+        struct PromiseExtractor {
+        };
+
+        template <template<typename> typename CoTaskT, typename PromiseImplT>
+        struct PromiseExtractor<CoTaskT<PromiseImplT>> {
+            using promiseImpl_t = PromiseImplT;
+        };
+
+        template <template<typename> typename CoTaskT, typename PromiseImplT>
+        struct PromiseExtractor<std::shared_ptr<CoTaskT<PromiseImplT>>> {
+            using promiseImpl_t = PromiseImplT;
         };
     } // namespace Async
 } // namespace HELPERS_NS
