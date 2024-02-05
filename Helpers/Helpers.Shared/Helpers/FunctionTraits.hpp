@@ -89,16 +89,16 @@ namespace HELPERS_NS {
 #endif
 
     template <typename Fn>
-    static constexpr bool IsLambda = HELPERS_NS::FunctionTraits<Fn>::Kind == HELPERS_NS::FuncKind::Lambda;
+    static constexpr bool IsLambda = FunctionTraits<Fn>::Kind == FuncKind::Lambda;
     
     template <typename Fn>
-    static constexpr bool IsFunctor = HELPERS_NS::FunctionTraits<Fn>::Kind == HELPERS_NS::FuncKind::Functor;
+    static constexpr bool IsFunctor = FunctionTraits<Fn>::Kind == FuncKind::Functor;
 
     template <typename Fn>
-    static constexpr bool IsCStyleFn = HELPERS_NS::FunctionTraits<Fn>::Kind == HELPERS_NS::FuncKind::CstyleFunc;
+    static constexpr bool IsCStyleFn = FunctionTraits<Fn>::Kind == FuncKind::CstyleFunc;
 
     template <typename Fn>
-    static constexpr bool IsClassFn = HELPERS_NS::FunctionTraits<Fn>::Kind == HELPERS_NS::FuncKind::ClassMember;
+    static constexpr bool IsClassFn = FunctionTraits<Fn>::Kind == FuncKind::ClassMember;
 
 
     template <typename T>
