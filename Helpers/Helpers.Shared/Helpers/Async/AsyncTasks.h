@@ -102,10 +102,10 @@ namespace HELPERS_NS {
                 Fn lambda, Args&&... args)
             {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("AddTaskLambda(startAfter, taskFn, ...args)");
+                // based on https://devblogs.microsoft.com/oldnewthing/20211103-00/?p=105870#comment-138536
                 struct LambdaBindCoro {
-                    static typename HELPERS_NS::FunctionTraits<Fn>::Ret Bind(Fn lambda, Args&&... args) {
-                        co_await *lambda(std::forward<Args&&>(args)...);
-                        co_return;
+                    static auto Bind(Fn lambda, Args&&... args) -> decltype(lambda(std::forward<Args&&>(args)...)) {
+                        co_return co_await *lambda(std::forward<Args&&>(args)...);
                     }
                 };
 
