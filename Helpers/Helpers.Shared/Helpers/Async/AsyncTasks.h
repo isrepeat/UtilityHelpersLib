@@ -102,16 +102,16 @@ namespace HELPERS_NS {
                 Fn lambda, Args&&... args)
             {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("AddTaskLambda(startAfter, taskFn, ...args)");
-                std::unique_lock lk{ mx };           
-                
-                static std::list<Fn> lambdaKeeper;
-                auto& savedLambda = lambdaKeeper.emplace_back(std::move(lambda)); // save temporary lambda / functor to keep their captured args alive
+                struct LambdaBindCoro {
+                    static typename HELPERS_NS::FunctionTraits<Fn>::Ret Bind(Fn lambda, Args&&... args) {
+                        co_await *lambda(std::forward<Args&&>(args)...);
+                        co_return;
+                    }
+                };
 
-                tasks.push(TaskWrapper{ savedLambda(std::forward<Args&&>(args)...), startAfter,
-                    [this, currentElemIterator = HELPERS_NS::iter_to_last(lambdaKeeper)] { // Called from ~TaskWrapper() from root task coroutine thread
-                        std::unique_lock lk{ mx };
-                        lambdaKeeper.erase(currentElemIterator);
-                    } });
+                std::unique_lock lk{ mx };
+
+                tasks.push(TaskWrapper{ LambdaBindCoro::Bind(lambda, std::forward<Args&&>(args)...), startAfter });
 
                 return tasks.front().GetTask();
             }
