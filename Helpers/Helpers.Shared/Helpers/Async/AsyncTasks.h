@@ -92,19 +92,20 @@ namespace HELPERS_NS {
             template <typename Fn, typename... Args, typename PromiseImplT = PromiseExtractor<typename HELPERS_NS::FunctionTraits<Fn>::Ret>::promiseImpl_t>
             AddedResult<IsValidPromise<PromiseImplT>, PromiseImplT> AddTaskLambda(
                 std::chrono::milliseconds startAfter,
-                Fn lambda, Args&&... args)
+                Fn lambda,
+                Args... args)
             {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("AddTaskLambda(startAfter, taskFn, ...args)");
                 // based on https://devblogs.microsoft.com/oldnewthing/20211103-00/?p=105870#comment-138536
                 struct LambdaBindCoro {
-                    static auto Bind(Fn lambda, Args&&... args) -> decltype(lambda(std::forward<Args&&>(args)...)) {
-                        co_return co_await *lambda(std::forward<Args&&>(args)...);
+                    static typename HELPERS_NS::FunctionTraits<Fn>::Ret Bind(LambdaBindCoroKey, Fn lambda, Args... args) {
+                        co_return co_await *lambda(std::move(args)...);
                     }
                 };
 
                 std::unique_lock lk{ mx };
 
-                tasks.push(TaskWrapper{ LambdaBindCoro::Bind(lambda, std::forward<Args&&>(args)...), startAfter });
+                tasks.push(TaskWrapper{ LambdaBindCoro::Bind(LambdaBindCoroKey{}, std::move(lambda), std::move(args)...), startAfter });
 
                 return tasks.front().GetTask();
             }
