@@ -46,16 +46,10 @@ namespace HELPERS_NS {
             
             class TaskWrapper {
             public:
-                TaskWrapper(std::shared_ptr<Task> task, std::chrono::milliseconds startAfter, std::function<void()> releaseCallback = nullptr)
+                TaskWrapper(std::shared_ptr<Task> task, std::chrono::milliseconds startAfter)
                     : task{ task }
                     , startAfter{ startAfter }
-                    , releaseCallback{ releaseCallback }
                 {}
-                ~TaskWrapper() {
-                    if (releaseCallback) {
-                        releaseCallback();
-                    }
-                }
                 std::shared_ptr<Task>& GetTask() {
                     return task;
                 }
@@ -65,7 +59,6 @@ namespace HELPERS_NS {
             private:
                 std::shared_ptr<Task> task;
                 std::chrono::milliseconds startAfter;
-                std::function<void()> releaseCallback;
             };
 
         public:
