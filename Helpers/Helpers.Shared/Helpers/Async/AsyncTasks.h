@@ -97,7 +97,7 @@ namespace HELPERS_NS {
             }
 
             template <typename Fn, typename... Args, typename PromiseImplT = PromiseExtractor<typename HELPERS_NS::FunctionTraits<Fn>::Ret>::promiseImpl_t>
-            std::weak_ptr<CoTask<PromiseImplT>> AddTaskLambda(
+            AddedResult<IsValidPromise<PromiseImplT>, PromiseImplT> AddTaskLambda(
                 std::chrono::milliseconds startAfter,
                 Fn lambda, Args&&... args)
             {
