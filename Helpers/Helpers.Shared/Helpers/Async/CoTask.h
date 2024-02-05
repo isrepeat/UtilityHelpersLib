@@ -320,6 +320,7 @@ namespace HELPERS_NS {
         protected:
             virtual void cancelPromise() = 0;
 
+            // You also can use std::noop_coroutine() instead unique_ptr
             std::unique_ptr<std::coroutine_handle<>> get_coro_handle() {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("get_coro_handle()");
                 if (canceled) {
@@ -352,7 +353,8 @@ namespace HELPERS_NS {
             if (auto task = taskWeak.lock()) {
                 coroHandle = task->get_coro_handle();
             }
-            if (coroHandle) {
+            
+            if (coroHandle) { // if task->get_coro_handle() return std::noop_coroutine() this condition not need
                 coroHandle->resume();
             }
         }
