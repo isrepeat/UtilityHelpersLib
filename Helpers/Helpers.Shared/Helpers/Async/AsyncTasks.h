@@ -27,10 +27,10 @@ namespace HELPERS_NS {
 
             AsyncTasks(std::wstring instanceName = L"Unknown") {
                 this->SetFullClassName(instanceName);
-                LOG_FUNCTION_ENTER_VERBOSE_C("AsyncTasks()");
+                LOG_FUNCTION_ENTER_C("AsyncTasks()");
             }
             ~AsyncTasks() {
-                LOG_FUNCTION_SCOPE_VERBOSE_C("~AsyncTasks()");
+                LOG_FUNCTION_SCOPE_C("~AsyncTasks()");
                 Cancel();
             }
 
@@ -63,7 +63,7 @@ namespace HELPERS_NS {
 
         public:
             void SetResumeCallback(std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback) {
-                LOG_FUNCTION_ENTER_VERBOSE_C("SetResumeCallback(resumeCallback)");
+                LOG_FUNCTION_ENTER_C("SetResumeCallback(resumeCallback)");
                 this->resumeCallback = resumeCallback;
             }
 
@@ -72,7 +72,7 @@ namespace HELPERS_NS {
                 std::chrono::milliseconds startAfter,
                 std::shared_ptr<CoTask<PromiseImplT>> (*taskFn)(FnArgs...), RealArgs&&... args)
             {
-                LOG_FUNCTION_SCOPE_VERBOSE_C("AddTaskFn(startAfter, taskFn, ...args)");
+                LOG_FUNCTION_ENTER_C("AddTaskFn(...)");
                 std::unique_lock lk{ mx };
                 tasks.push(TaskWrapper{ taskFn(std::forward<RealArgs&&>(args)...), startAfter });
                 return tasks.front().GetTask();
@@ -83,7 +83,7 @@ namespace HELPERS_NS {
                 std::chrono::milliseconds startAfter,
                 C* classPtr, std::shared_ptr<CoTask<PromiseImplT>>(C::*taskFn)(FnArgs...), RealArgs&&... args)
             {
-                LOG_FUNCTION_SCOPE_VERBOSE_C("AddTaskFn(startAfter, classPtr, taskFn, ...args)");
+                LOG_FUNCTION_ENTER_C("AddTaskFn(classPtr, ...)");
                 std::unique_lock lk{ mx };
                 tasks.push(TaskWrapper{ std::invoke(taskFn, classPtr, std::forward<RealArgs&&>(args)...), startAfter });
                 return tasks.front().GetTask();
@@ -95,10 +95,11 @@ namespace HELPERS_NS {
                 Fn lambda,
                 Args... args)
             {
-                LOG_FUNCTION_SCOPE_VERBOSE_C("AddTaskLambda(startAfter, taskFn, ...args)");
+                LOG_FUNCTION_ENTER_C("AddTaskLambda(...)");
                 // based on https://devblogs.microsoft.com/oldnewthing/20211103-00/?p=105870#comment-138536
                 struct LambdaBindCoro {
                     static typename HELPERS_NS::FunctionTraits<Fn>::Ret Bind(LambdaBindCoroKey, Fn lambda, Args... args) {
+                        LOG_FUNCTION_SCOPE_VERBOSE("LambdaBindCoro::Bind(...)");
                         co_return co_await *lambda(std::move(args)...);
                     }
                 };
@@ -111,7 +112,7 @@ namespace HELPERS_NS {
             }
 
             void StartExecuting() {
-                LOG_FUNCTION_SCOPE_VERBOSE_C("StartExecuting()");
+                LOG_FUNCTION_SCOPE_C("StartExecuting()");
                 if (LOG_ASSERT(!executingStarted.exchange(true), "Executing of root coroutine already started!")) {
                     return;
                 }
@@ -121,7 +122,7 @@ namespace HELPERS_NS {
             }
 
             void Cancel() {
-                LOG_FUNCTION_SCOPE_VERBOSE_C("Cancel()");
+                LOG_FUNCTION_SCOPE_C("Cancel()");
                 if (rootTask)
                     rootTask->cancel(); // no need mutex synchronization
 
@@ -137,33 +138,41 @@ namespace HELPERS_NS {
             // TODO: Add multiple calls guard
             // TODO: Implement special CoTask for StartExecuting() to avoid resume this task from another thread
             RootTask::Ret_t StartExecutingCoroutine(std::wstring coroFrameName, std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback) {
-                LOG_FUNCTION_SCOPE_VERBOSE_C("StartExecutingCoroutine()");
+                LOG_FUNCTION_SCOPE_C("StartExecutingCoroutine(...)");
                 static thread_local std::size_t functionEnterThreadId = HELPERS_NS::GetThreadId();
+                try {
+                    while (!tasks.empty()) {
+                        auto taskWrapper = GetNextTask();
+                        auto startAfter = taskWrapper.GetStartAfterTime();
+                        auto& task = taskWrapper.GetTask();
 
-                while (!tasks.empty()) {
-                    auto taskWrapper = GetNextTask();
-                    auto startAfter = taskWrapper.GetStartAfterTime();
-                    auto& task = taskWrapper.GetTask();
+                        // NOTE: if you want resume such tasks (with 0ms timeout) asynchronously (in next workQueue Pop event) - comment this condition
+                        if (startAfter.count() > 0) {
+                            co_await ResumeAfter<RootTask::promise_type>(startAfter); // [suspend point] here control is returned to caller
+                        }
 
-                    // NOTE: if you want resume such tasks (with 0ms timeout) asynchronously (in next workQueue Pop event) - comment this condition
-                    if (startAfter.count() > 0) {
-                        co_await ResumeAfter<RootTask::promise_type>(startAfter); // [suspend point] here control is returned to caller
+                        if (HELPERS_NS::GetThreadId() != functionEnterThreadId) {
+                            LOG_ERROR_D("You resume this task from thread that differs from initial!");
+                        }
+
+                        LOG_DEBUG_D("await co-task ...");
+                        co_await *task;
+                        LOG_DEBUG_D("co-task finished");
                     }
-
-                    if (HELPERS_NS::GetThreadId() != functionEnterThreadId) {
-                        LOG_ERROR_D("You resume this task from thread that differs from initial!");
-                    }
-
-                    LOG_DEBUG_D("await co-task ...");
-                    co_await *task;
-                    LOG_DEBUG_D("co-task finished");
+                }
+                catch (...) {
+                    LOG_ERROR_D("Catch unhandled exception");
+                    LOG_WARNING_D("clear tasks queue and rethrow");
+                    tasks = {}; // clear queue
+                    executingStarted = false;
+                    throw;
                 }
                 executingStarted = false; // TODO: move to promise final_suspend logic
                 co_return;
             }
 
             TaskWrapper GetNextTask() {
-                LOG_FUNCTION_SCOPE_VERBOSE_C("GetNextTask()");
+                LOG_FUNCTION_ENTER_C("GetNextTask()");
                 std::unique_lock lk{ mx };
                 if (tasks.empty()) {
                     return TaskWrapper{ nullptr, 0ms };

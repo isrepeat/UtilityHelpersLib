@@ -41,7 +41,7 @@ namespace LOGGER_NS {
     // define a "__classFullnameLogging" "member checker" class
     define_has_member(__ClassFullnameLogging);
 
-   
+
     struct LOGGER_API StandardLoggers {
         std::shared_ptr<spdlog::logger> logger;
         std::shared_ptr<spdlog::logger> rawLogger;
@@ -108,7 +108,7 @@ namespace LOGGER_NS {
         //{
         //    Log<T, TClass, Args...>(classPtr, logger, location, level, formatSv, std::forward<Args>(args)...);
         //}
-        
+
         template<typename T, typename TClass, typename... Args>
         static void Log(
             TClass* classPtr,
@@ -260,6 +260,10 @@ LOGGER_API HELPERS_NS::nothing* __LgCtx(); // may be overwritten as class method
 	                                                                                                                          \
         void SetFullClassName(std::wstring name) {                                                                            \
             LOG_DEBUG_D(L"Full class name = {}", name);                                                                       \
+            this->SetFullClassNameSilent(name);                                                                               \
+        }                                                                                                                     \
+	                                                                                                                          \
+        void SetFullClassNameSilent(std::wstring name) {                                                                      \
             this->className##_fullClassNameA = HELPERS_NS::WStrToStr(name);                                                   \
             this->className##_fullClassNameW = name;                                                                          \
         }                                                                                                                     \
