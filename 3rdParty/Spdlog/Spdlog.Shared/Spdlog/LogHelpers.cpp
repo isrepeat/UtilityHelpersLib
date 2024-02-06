@@ -53,8 +53,17 @@ namespace LOGGER_NS {
         }
 
         void format(const spdlog::details::log_msg& logMsg, const std::tm&, spdlog::memory_buf_t& dest) override {
+            switch (logMsg.level) {
+            case spdlog::level::level_enum::err:
+                spdlog::details::fmt_helper::append_string_view(" *** [E] = ", dest);
+                break;
+            case spdlog::level::level_enum::warn:
+                spdlog::details::fmt_helper::append_string_view(" *** [W] = ", dest);
+                break;
+            }
+            
             if (prefixCallback) {
-                std::wstring prefix = std::wstring(padinfo_.width_, ' ') + prefixCallback();
+                std::wstring prefix = std::wstring(padinfo_.width_, ' ') + prefixCallback();  
                 dest.append(prefix.data(), prefix.data() + prefix.size());
             }
             if (postfixCallback) {
