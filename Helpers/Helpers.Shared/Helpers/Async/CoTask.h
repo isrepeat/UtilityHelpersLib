@@ -110,7 +110,7 @@ namespace HELPERS_NS {
             // Used for Caller class methods
             template <typename Caller>
             Promise(Caller&, InstanceName instanceName) {
-                this->SetFullClassName(instanceName.name);
+                this->SetFullClassNameSilent(instanceName.name);
                 LOG_FUNCTION_ENTER_VERBOSE_C(L"Promise(Caller)");
             }
 
