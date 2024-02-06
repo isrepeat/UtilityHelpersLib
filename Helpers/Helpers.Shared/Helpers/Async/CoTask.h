@@ -50,6 +50,11 @@ namespace HELPERS_NS {
             }
         };
 
+        struct InstanceName {
+            InstanceName(const wchar_t* name) : name(name) {}
+            InstanceName(std::wstring name) : name(name) {}
+            std::wstring name;
+        };
 
         /*------------------------*/
         /*      PROMISE BASE      */
@@ -70,9 +75,9 @@ namespace HELPERS_NS {
             class FinalAwaiter {
                 CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(FinalAwaiter);
             public:
-                FinalAwaiter(std::wstring instanceName) {
-                    this->SetFullClassName(instanceName);
-                    LOG_FUNCTION_ENTER_VERBOSE_C(L"FinalAwaiter(instanceName)");
+                FinalAwaiter(InstanceName instanceName) {
+                    this->SetFullClassNameSilent(instanceName.name);
+                    LOG_FUNCTION_ENTER_VERBOSE_C(L"FinalAwaiter()");
                 }
                 ~FinalAwaiter() {
                     LOG_FUNCTION_ENTER_VERBOSE_C(L"~FinalAwaiter()");
@@ -82,13 +87,13 @@ namespace HELPERS_NS {
                 }
                 // NOTE: currentCoroutine associated with current co-function context where was created Promise
                 std::coroutine_handle<> await_suspend(std::coroutine_handle<PromiseImplT> currentCoroutine) noexcept {
-                    LOG_FUNCTION_SCOPE_VERBOSE_C("await_suspend(currentCoroutine)", instanceName);
+                    LOG_FUNCTION_SCOPE_VERBOSE_C("await_suspend(currentCoroutine)");
                     if (currentCoroutine.promise().previousCoroutine) {
                         return currentCoroutine.promise().previousCoroutine;
                     }
                     return std::noop_coroutine();
                 }
-                
+
                 void await_resume() noexcept {
                     LOG_FUNCTION_ENTER_VERBOSE_C("await_resume()");
                     assertm(false, "Unexpected call");
@@ -97,16 +102,16 @@ namespace HELPERS_NS {
             };
 
             // Used for non-class functions
-            Promise(std::wstring instanceName) {
-                this->SetFullClassName(instanceName);
-                LOG_FUNCTION_ENTER_VERBOSE_C(L"Promise(instanceName)");
+            Promise(InstanceName instanceName) {
+                this->SetFullClassNameSilent(instanceName.name);
+                LOG_FUNCTION_ENTER_VERBOSE_C(L"Promise()");
             }
 
             // Used for Caller class methods
             template <typename Caller>
-            Promise(Caller&, std::wstring instanceName) {
-                this->SetFullClassName(instanceName);
-                LOG_FUNCTION_ENTER_VERBOSE_C(L"Promise(Caller, instanceName)");
+            Promise(Caller&, InstanceName instanceName) {
+                this->SetFullClassName(instanceName.name);
+                LOG_FUNCTION_ENTER_VERBOSE_C(L"Promise(Caller)");
             }
 
             ~Promise() {
@@ -129,7 +134,7 @@ namespace HELPERS_NS {
                 return std::suspend_always{};
             }
             void unhandled_exception() {
-                LOG_FUNCTION_SCOPE_C("unhandled_exception()");
+                LOG_FUNCTION_SCOPE_VERBOSE_C("unhandled_exception()");
                 // NOTE: By rethrowing an exception we break the tasks chain (if it exists).
                 //       This behavior is by design because next tasks may depend on current.
                 std::rethrow_exception(std::current_exception()); // "root resumer" must handle exceptions.
@@ -184,30 +189,43 @@ namespace HELPERS_NS {
         class PromiseDefault : public Promise<PromiseDefault> {
         public:
             using _MyBase = Promise<PromiseDefault>;
-            INTELLISENSE_DEFAULT_CTOR(PromiseDefault);
 
-            PromiseDefault(std::wstring instanceName)
+            template <typename... Args>
+            PromiseDefault(Args&... args)
+                : PromiseDefault(InstanceName{ L"co-task" }, args...) // NOTE: use InstanceName explicitly to help compiler deduction
+            {}
+
+            template <typename... Args>
+            PromiseDefault(InstanceName instanceName, Args&...)
                 : _MyBase(instanceName)
                 , resumeSignal{ std::make_shared<HELPERS_NS::Signal>() }
             {
-                LOG_FUNCTION_ENTER_VERBOSE(L"PromiseDefault(instanceName = {})", instanceName);
+                this->SetFullClassNameSilent(instanceName.name);
+                LOG_FUNCTION_ENTER_VERBOSE_C(L"PromiseDefault()");
             }
 
-            template <typename Caller>
-            PromiseDefault(Caller& caller, std::wstring instanceName)
+            template <typename Caller, typename... Args>
+            PromiseDefault(Caller& caller, Args&... args)
+                : PromiseDefault(caller, InstanceName{ L"co-task" }, args...)
+            {}
+
+            template <typename Caller, typename... Args>
+            PromiseDefault(Caller& caller, InstanceName instanceName, Args&...)
                 : _MyBase(caller, instanceName)
                 , resumeSignal{ std::make_shared<HELPERS_NS::Signal>() }
             {
-                LOG_FUNCTION_ENTER_VERBOSE(L"PromiseDefault(Caller, instanceName = {})", instanceName);
+                this->SetFullClassNameSilent(instanceName.name);
+                LOG_FUNCTION_ENTER_VERBOSE_C(L"PromiseDefault(Caller)");
             }
 
             // must be used only by LambdaBindCoro helper
-            template <typename LambdaT, class... Args>
+            template <typename LambdaT, typename... Args>
             PromiseDefault(LambdaBindCoroKey key, LambdaT& lambda, Args&...)
                 : _MyBase(L"LambdaBindCoroKey")
                 , resumeSignal{ std::make_shared<HELPERS_NS::Signal>() }
             {
-                LOG_FUNCTION_ENTER_VERBOSE(L"PromiseDefault(LambdaCtorKey, LambdaT)");
+                this->SetFullClassNameSilent(L"LambdaBindCoroKey");
+                LOG_FUNCTION_ENTER_VERBOSE_C(L"PromiseDefault(LambdaCtorKey, LambdaT)");
             }
 
             std::weak_ptr<HELPERS_NS::Signal> get_resume_signal() {
@@ -218,23 +236,26 @@ namespace HELPERS_NS {
             std::shared_ptr<HELPERS_NS::Signal> resumeSignal;
         };
 
+
         class PromiseRoot : public Promise<PromiseRoot> {
         public:
             using _MyBase = Promise<PromiseRoot>;
             INTELLISENSE_DEFAULT_CTOR(PromiseRoot);
 
-            PromiseRoot(std::wstring instanceName, std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback)
+            PromiseRoot(InstanceName instanceName, std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback)
                 : _MyBase(instanceName)
             {
-                LOG_FUNCTION_ENTER_VERBOSE(L"PromiseRoot(instanceName = {}, resumeCallback)", instanceName);
+                this->SetFullClassNameSilent(instanceName.name);
+                LOG_FUNCTION_ENTER_VERBOSE_C(L"PromiseRoot(resumeCallback)");
                 this->_MyBase::resumeCallback = resumeCallback;
             }
 
             template <typename Caller>
-            PromiseRoot(Caller& caller, std::wstring instanceName, std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback)
+            PromiseRoot(Caller& caller, InstanceName instanceName, std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback)
                 : _MyBase(caller, instanceName)
             {
-                LOG_FUNCTION_ENTER_VERBOSE(L"Promise(Caller, instanceName = {}, resumeCallback)", instanceName);
+                this->SetFullClassNameSilent(instanceName.name);
+                LOG_FUNCTION_ENTER_VERBOSE_C(L"Promise(Caller, resumeCallback)");
                 this->_MyBase::resumeCallback = resumeCallback;
             }
         };
@@ -246,11 +267,11 @@ namespace HELPERS_NS {
         class AwaiterBase { // Base Awaiter class for CoTask. You need overload await_suspend for all type of promises that can be used. 
             CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(AwaiterBase);
         public:
-            AwaiterBase(std::coroutine_handle<PromiseImplT> selfCoroutine, std::wstring instanceName)
+            AwaiterBase(std::coroutine_handle<PromiseImplT> selfCoroutine, InstanceName instanceName)
                 : selfCoroutine{ selfCoroutine }
             {
-                this->SetFullClassName(instanceName);
-                LOG_FUNCTION_ENTER_VERBOSE_C(L"AwaiterBase(selfCoroutine, instanceName)");
+                this->SetFullClassNameSilent(instanceName.name);
+                LOG_FUNCTION_ENTER_VERBOSE_C(L"AwaiterBase(selfCoroutine)");
             }
             ~AwaiterBase() {
                 LOG_FUNCTION_ENTER_VERBOSE_C(L"~AwaiterBase()");
@@ -301,12 +322,12 @@ namespace HELPERS_NS {
             CoTaskBase() { // In most cases default Ctor must not be called
                 LOG_FUNCTION_ENTER_VERBOSE("CoTaskBase()");
             }
-            CoTaskBase(std::coroutine_handle<> selfCoroutineBase, std::weak_ptr<int> promiseToken, std::wstring instanceName)
+            CoTaskBase(std::coroutine_handle<> selfCoroutineBase, std::weak_ptr<int> promiseToken, InstanceName instanceName)
                 : selfCoroutineBase{ selfCoroutineBase }
                 , promiseToken{ promiseToken }
             {
-                this->SetFullClassName(instanceName);
-                LOG_FUNCTION_ENTER_VERBOSE_C("CoTaskBase(selfCoroutineBase, promiseToken, instanceName)");
+                this->SetFullClassNameSilent(instanceName.name);
+                LOG_FUNCTION_ENTER_VERBOSE_C("CoTaskBase(selfCoroutineBase, promiseToken)");
             }
             ~CoTaskBase() {
                 LOG_FUNCTION_ENTER_VERBOSE_C("~CoTaskBase()");
@@ -367,7 +388,7 @@ namespace HELPERS_NS {
             if (auto task = taskWeak.lock()) {
                 coroHandle = task->get_coro_handle();
             }
-            
+
             if (coroHandle) { // if task->get_coro_handle() return std::noop_coroutine() this condition not need
                 coroHandle->resume();
             }
@@ -388,12 +409,12 @@ namespace HELPERS_NS {
             CoTask() { // In most cases default Ctor must not be called
                 LOG_FUNCTION_ENTER_VERBOSE("CoTask()");
             }
-            CoTask(CoHandle_t selfCoroutine, std::weak_ptr<int> promiseToken, std::wstring instanceName)
+            CoTask(CoHandle_t selfCoroutine, std::weak_ptr<int> promiseToken, InstanceName instanceName)
                 : CoTaskBase(selfCoroutine, promiseToken, instanceName)
                 , selfCoroutine{ selfCoroutine }
             {
-                this->SetFullClassName(instanceName);
-                LOG_FUNCTION_ENTER_VERBOSE_C("CoTask(selfCoroutine, promiseToken, instanceName)");
+                this->SetFullClassNameSilent(instanceName.name);
+                LOG_FUNCTION_ENTER_VERBOSE_C("CoTask(selfCoroutine, promiseToken)");
             }
             ~CoTask() {
                 LOG_FUNCTION_ENTER_VERBOSE_C("~CoTask()");
