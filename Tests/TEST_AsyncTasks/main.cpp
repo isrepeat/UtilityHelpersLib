@@ -33,8 +33,6 @@ namespace HELPERS_NS {
         exist_bool_variable = !exist_bool_variable;                      \
         });
 
-//namespace HELPERS_NS {
-//    namespace Async {
 
 void SomeAsyncOperationWithResumeSignal(std::chrono::milliseconds duration, std::weak_ptr<H::Signal> resumeSignalWeak) {
     LOG_FUNCTION_SCOPE(L"SomeAsyncOperationWithResumeSignal()");
@@ -70,39 +68,29 @@ public:
 // The fixture for testing <YOUR_CLASS>.
 class WorkQueueCoroutineTest : public testing::Test {
 protected:
-    // You can remove any or all of the following functions if their bodies would
-    // be empty.
+    // You can remove any or all of the following functions if their bodies would be empty.
 
     WorkQueueCoroutineTest()
         : oldErrorMode{ _set_error_mode(_OUT_TO_MSGBOX) } // prevent termination for console app if assert triggered
     {
         // You can do set-up work for each test here.
-        NOOP;
     }
-
     ~WorkQueueCoroutineTest() override {
         // You can do clean-up work that doesn't throw exceptions here.
         _set_error_mode(oldErrorMode);
-        NOOP;
     }
 
     // If the constructor and destructor are not enough for setting up
     // and cleaning up each test, you can define the following methods:
 
     void SetUp() override {
-        // Code here will be called immediately after the constructor (right
-        // before each test).
-        NOOP;
+        // Code here will be called immediately after the constructor (right before each test).
     }
-
     void TearDown() override {
-        // Code here will be called immediately after each test (right
-        // before the destructor).
-        NOOP;
+        // Code here will be called immediately after each test (right before the destructor).
     }
 
-    // Class members declared here can be used by all tests in the test suite
-    // for <YOUR_CLASS>.
+    // Class members declared here can be used by all tests in the test suite for <YOUR_CLASS>.
 
     void StartEventLoopFor(std::chrono::milliseconds timeout) {
         H::Timer::Once(timeout, [this] {
@@ -129,6 +117,8 @@ protected:
 
 // Tests that asyncTasks corectly added / handled lambda and start it in workQueue after showEvent
 TEST_F(WorkQueueCoroutineTest, AsyncLambdaCalledInWorkQueueAfterShowEvent) {
+    LOG_FUNCTION_SCOPE("TEST: AsyncLambdaCalledInWorkQueueAfterShowEvent()");
+
     std::atomic<bool> insideTaskLambdaBody = false;
     std::atomic<bool> insideShowEventLambdaBody = false;
     std::chrono::milliseconds taskLambda_startAfter = 500ms;
@@ -165,7 +155,7 @@ TEST_F(WorkQueueCoroutineTest, AsyncLambdaCalledInWorkQueueAfterShowEvent) {
         FUNCTION_SCOPE_SET_BOOL_VALUE(insideShowEventLambdaBody, true);
         EXPECT_FALSE(insideTaskLambdaBody);
         EXPECT_FALSE(asyncTasks.IsExecutingStarted());
-                
+
         LOG_DEBUG_D("ShowEvent_Action_1");
         std::this_thread::sleep_for(taskLambda_startAfter / 2);
 
@@ -190,9 +180,46 @@ TEST_F(WorkQueueCoroutineTest, AsyncLambdaCalledInWorkQueueAfterShowEvent) {
         return;
         } });
 
-    StartEventLoopFor(3'000ms);
+    StartEventLoopFor(taskLambda_startAfter + someAsyncOperation_duration + 1000ms);
     EXPECT_FALSE(asyncTasks.IsExecutingStarted());
     EXPECT_FALSE(insideTaskLambdaBody);
+}
+
+
+
+// Tests that added lambda and it captured args still valid when co-task resumed
+TEST_F(WorkQueueCoroutineTest, AsyncLambdaCapturedArgsIsValid) {
+    LOG_FUNCTION_SCOPE("TEST: AsyncLambdaCapturedArgsIsValid()");
+    struct Temp {
+        void TestAccessToArray() {
+            for (int i = 0; i < 100'000; i++) {
+                arrayOnStack[i] = i;
+            }
+        }
+        int arrayOnStack[100'000];
+    };
+
+    asyncTasks.SetResumeCallback([&](std::weak_ptr<H::Async::CoTaskBase> taskWeak) {
+        workQueue.Push({ "signal ResumeNextCoTask()", [&, taskWeak] {
+            H::Async::SafeResume(taskWeak);
+            } });
+        });
+    
+    for (int i = 0; i < 10; i++) {
+        auto temp = std::make_shared<Temp>();
+        asyncTasks.AddTaskLambda(0ms, [temp]() -> H::Async::AsyncTasks::Task::Ret_t {
+            LOG_FUNCTION_SCOPE(L"TaskLambda()");
+            temp->TestAccessToArray(); // If lambda was destroyed here will be Access Violation
+            co_return;
+            });
+    }
+
+    workQueue.Push({ "signal ShowEvent()", [&] {
+        asyncTasks.StartExecuting();
+        return;
+        } });
+
+    StartEventLoopFor(1000ms);
 }
 
 
