@@ -21,7 +21,12 @@ namespace HELPERS_NS {
     namespace Async {
         // TODO: move implementation to .cpp
         class AsyncTasks {
-            CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(AsyncTasks);            
+            CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(AsyncTasks);
+
+#       ifdef TEST_AsyncTasks_FirendWrapper
+            friend class TEST_AsyncTasks_FirendWrapper; // NOTE: class-wrapper must be in same namespace
+#       endif
+
         public:
             using Task = CoTask<PromiseDefault>;
 
@@ -43,7 +48,7 @@ namespace HELPERS_NS {
 
             template <typename PromiseImplT>
             static constexpr bool IsValidPromise = std::is_same_v<PromiseImplT, PromiseDefault>;
-            
+
             class TaskWrapper {
             public:
                 TaskWrapper(std::shared_ptr<Task> task, std::chrono::milliseconds startAfter)
@@ -70,7 +75,7 @@ namespace HELPERS_NS {
             template <typename PromiseImplT, typename... FnArgs, typename... RealArgs>
             AddedResult<IsValidPromise<PromiseImplT>, PromiseImplT> AddTaskFn(
                 std::chrono::milliseconds startAfter,
-                std::shared_ptr<CoTask<PromiseImplT>> (*taskFn)(FnArgs...), RealArgs&&... args)
+                std::shared_ptr<CoTask<PromiseImplT>>(*taskFn)(FnArgs...), RealArgs&&... args)
             {
                 LOG_FUNCTION_ENTER_C("AddTaskFn(...)");
                 std::unique_lock lk{ mx };
@@ -105,20 +110,22 @@ namespace HELPERS_NS {
                 };
 
                 std::unique_lock lk{ mx };
-
                 tasks.push(TaskWrapper{ LambdaBindCoro::Bind(LambdaBindCoroKey{}, std::move(lambda), std::move(args)...), startAfter });
-
                 return tasks.front().GetTask();
             }
 
-            void StartExecuting() {
+            bool StartExecuting() {
                 LOG_FUNCTION_SCOPE_C("StartExecuting()");
                 if (LOG_ASSERT(!executingStarted.exchange(true), "Executing of root coroutine already started!")) {
-                    return;
+                    return false;
                 }
                 rootTask = StartExecutingCoroutine(L"rootTask", resumeCallback);
                 HELPERS_NS::Async::SafeResume(rootTask);
-                return;
+                return true;
+            }
+
+            bool IsExecutingStarted() {
+                return executingStarted;
             }
 
             void Cancel() {
