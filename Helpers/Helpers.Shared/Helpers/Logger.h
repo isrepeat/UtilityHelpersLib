@@ -15,15 +15,6 @@
 #define LogLastError LOG_ERROR_D(L"Last error: {}", HELPERS_NS::GetLastErrorAsString())
 #define LogWSALastError LOG_ERROR_D(L"WSA Last error: {}", HELPERS_NS::GetWSALastErrorAsString())
 
-// NOTE 1: 
-// - use comma statement "|| (..., false)" to execute next expression
-// - invert result to use it like "if (LOG_ASSERT(...))"
-// NOTE 2:
-// - in CONSOLE apps assert failure cause abort() call (by default). To override this behaviour use _set_error_mode(_OUT_TO_MSGBOX);
-#define LOG_ASSERT(expression, message, ...)  !(																										\
-	(bool)(expression) || (LOG_ERROR_D(L" " message L"  {{" _CRT_WIDE(#expression) L"}}", __VA_ARGS__), false) || (assertm(expression, message), false)	\
-)
-
 // NOTE: use comma instead semicolon to be able use it in "if statement" without braces
 #define LOG_THROW_STD_EXCEPTION(fmt, ...)                                                                                     \
 		LOG_ERROR_EX(fmt, __VA_ARGS__),  /* LOG_ERROR_EX saved last logger message */                                         \
@@ -39,9 +30,22 @@
 #else
 #define LogLastError
 #define LogWSALastError
-#define LOG_ASSERT(expression, message, ...) !((bool)(expression))
 #define LOG_THROW_STD_EXCEPTION(fmt, ...) throw std::exception(fmt)
 #define LOG_THROW_IF_FAILED(hr) HELPERS_NS::System::ThrowIfFailed(hr)
+#endif
+
+#if !defined(DISABLE_ASSERT_LOGGING) && !defined(DISABLE_ERROR_LOGGING)
+// NOTE 1: 
+// - use comma statement "|| (..., false)" to execute next expression
+// - invert result to use it like "if (LOG_ASSERT(...))"
+// NOTE 2:
+// - in CONSOLE apps assert failure cause abort() call (by default). To override this behaviour use _set_error_mode(_OUT_TO_MSGBOX);
+#define LOG_ASSERT(expression, message, ...)  !(																										\
+	(bool)(expression) || (LOG_ERROR_D(L" " message L"  {{" _CRT_WIDE(#expression) L"}}", __VA_ARGS__), false) || (assertm(expression, message), false)	\
+)
+
+#else
+#define LOG_ASSERT(expression, message, ...) !((bool)(expression))
 #endif
 
 
