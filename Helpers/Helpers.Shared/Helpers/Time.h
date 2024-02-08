@@ -9,6 +9,14 @@
 using namespace std::chrono_literals;
 
 namespace HELPERS_NS {
+	namespace {
+		constexpr uint64_t nanoSecond = 1'000'000'000;
+		constexpr uint64_t Hns = nanoSecond / 10; // resolution = 100-nanosecond intervals
+
+		constexpr double UTCtoSeconds = 1.0 / Hns;
+		constexpr double UTCtoMilliseconds = 1000 * UTCtoSeconds;
+	}
+
 	class Timer	{
 	public:
 		template <typename Duration>
