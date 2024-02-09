@@ -9,13 +9,21 @@
 using namespace std::chrono_literals;
 
 namespace HELPERS_NS {
-	namespace {
+	namespace Literals {
 		constexpr uint64_t nanoSecond = 1'000'000'000;
-		constexpr uint64_t Hns = nanoSecond / 10; // resolution = 100-nanosecond intervals
+		constexpr uint64_t Hns = nanoSecond / 100; // resolution = 100-nanosecond intervals
 
-		constexpr double UTCtoSeconds = 1.0 / Hns;
-		constexpr double UTCtoMilliseconds = 1000 * UTCtoSeconds;
+		constexpr double HnsToSeconds = 1.0 / Hns;
+		constexpr double HnsToMilliseconds = 1000 * HnsToSeconds;
 	}
+
+	constexpr uint64_t HnsToSeconds(uint64_t Hns) {
+		return static_cast<uint64_t>(Hns * Literals::HnsToSeconds + 0.5); // + 0.5 fix precision problem
+	}
+	constexpr uint64_t HnsToMilliseconds(uint64_t Hns) {
+		return static_cast<uint64_t>(Hns * Literals::HnsToMilliseconds + 0.5);
+	}
+
 
 	class Timer	{
 	public:
@@ -128,7 +136,6 @@ namespace HELPERS_NS {
 		std::function<void(uint64_t dtMs)> completedCallback;
 		std::chrono::time_point<std::chrono::high_resolution_clock> start;
 	};
-
 
 	enum class TimeFormat {
 		None,
