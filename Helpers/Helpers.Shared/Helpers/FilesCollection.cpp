@@ -31,18 +31,44 @@ namespace HELPERS_NS {
         }
 
         void FilesCollection::HandlePathItem(const PathItem& pathItem) {
+            std::filesystem::path pathEntry;
+
+            switch (pathItem.type) {
+            case PathItem::Type::File:
+            case PathItem::Type::Directory:
+                pathEntry = pathItem.mainItem;
+                break;
+            case PathItem::Type::RecursiveEntry:
+                pathEntry = pathItem.recursiveItem;
+                break;
+            }
+
             switch (pathItem.ExpandType()) {
             case PathItem::Type::File:
-                files.push_back(pathItem.mainItem);
+                files.push_back(pathEntry);
                 totalSize += std::filesystem::file_size(pathItem.mainItem);
                 break;
             case PathItem::Type::Directory:
-                dirs.push_back(pathItem.mainItem);
+                dirs.push_back(pathEntry);
                 break;
             }
         }
 
         void FilesCollection::Complete() {
         }
+
+
+        FilesCollection GetFilesCollection(const std::vector<std::filesystem::path>& filePaths) {
+            FilesCollection filesCollection;
+            GetFilesCollection<FilesCollection>(filePaths, filesCollection);
+            return filesCollection;
+        }
     }
+}
+
+std::ostream& operator<< (std::ostream& out, const HELPERS_NS::FS::FilesCollection& filesCollection) {
+    for (auto& file : filesCollection.GetFiles()) {
+        out << file << "\n";
+    }
+    return out;
 }

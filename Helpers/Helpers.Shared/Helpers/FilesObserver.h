@@ -41,65 +41,52 @@ namespace HELPERS_NS {
             virtual ~IFilesCollection() = default;
 
         protected:
-            friend class FilesObserver;
+            template <typename FilesCollectionT>
+            friend void GetFilesCollection(const std::vector<std::filesystem::path>&, FilesCollectionT&);
+
             virtual void Initialize() = 0;
             virtual void HandlePathItem(const PathItem& pathItem) = 0;
             virtual void Complete() = 0;
         };
 
 
-        class FilesObserver {
-        private:
-            FilesObserver() = delete;
-            ~FilesObserver() = delete;
+        template <typename FilesCollectionT>
+        static void GetFilesCollection(const std::vector<std::filesystem::path>& filePaths, FilesCollectionT& filesCollection) {
+            IFilesCollection& filesCollectionInterface = filesCollection;
+            filesCollectionInterface.Initialize();
 
-        public:
-            template <typename TCollection>
-            static void GetFilesCollection(const std::vector<std::filesystem::path>& filePaths, TCollection& filesCollection) {
-                IFilesCollection& filesCollectionInterface = filesCollection;
-                filesCollectionInterface.Initialize();
+            for (auto& item : filePaths) {
+                if (std::filesystem::is_regular_file(item)) {
+                    filesCollectionInterface.HandlePathItem(PathItem{ PathItem::Type::File, std::move(item) });
+                }
+                else if (std::filesystem::is_directory(item)) {
+                    PathItem pathItem{ PathItem::Type::Directory, std::move(item) };
+                    filesCollectionInterface.HandlePathItem(pathItem);
 
-                for (auto& item : filePaths) {
-                    if (std::filesystem::is_regular_file(item)) {
-                        filesCollectionInterface.HandlePathItem(PathItem{ PathItem::Type::File, std::move(item) });
-                    }
-                    else if (std::filesystem::is_directory(item)) {
-                        PathItem pathItem{ PathItem::Type::Directory, std::move(item) };
+                    for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(item)) {
+                        pathItem.type = PathItem::Type::RecursiveEntry;
+                        pathItem.recursiveItem = dirEntry.path();
                         filesCollectionInterface.HandlePathItem(pathItem);
-
-                        for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(item)) {
-                            pathItem.type = PathItem::Type::RecursiveEntry;
-                            pathItem.recursiveItem = dirEntry.path();
-                            filesCollectionInterface.HandlePathItem(pathItem);
-                        }
                     }
                 }
-                filesCollectionInterface.Complete();
             }
+            filesCollectionInterface.Complete();
+        }
 
-            // TODO: remove to another place without forward declaration workaround
-            class FilesCollection;
-            template <typename TCollection = FilesCollection>
-            static TCollection GetFilesCollection(const std::vector<std::filesystem::path>& filePaths) {
-                TCollection filesCollection; // TCollection must have default Ctor
-                GetFilesCollection<TCollection>(filePaths, filesCollection);
-                return filesCollection;
+
+        template<template<class> class TCollection, class... Args>
+        static void RenameDuplicate(
+            std::filesystem::path& path,
+            const TCollection<Args...>& collection,
+            std::function<bool(const typename TCollection<Args...>::value_type&)> predicate) 
+        {
+            auto duplicates = std::count_if(collection.begin(), collection.end(), predicate);
+
+            if (duplicates > 0) {
+                auto nameSuffix = L" (" + std::to_wstring(duplicates) + L")";
+                auto ext = path.extension();
+                path = path.replace_extension().wstring() + nameSuffix + ext.wstring();
             }
-
-            template<template<class> class TCollection, class... Args>
-            static void RenameDuplicate(
-                std::filesystem::path& path,
-                const TCollection<Args...>& collection,
-                std::function<bool(const typename TCollection<Args...>::value_type&)> predicate
-            ) {
-                auto duplicates = std::count_if(collection.begin(), collection.end(), predicate);
-
-                if (duplicates > 0) {
-                    auto nameSuffix = L" (" + std::to_wstring(duplicates) + L")";
-                    auto ext = path.extension();
-                    path = path.replace_extension().wstring() + nameSuffix + ext.wstring();
-                }
-            }
-        };
+        }
     }
 }

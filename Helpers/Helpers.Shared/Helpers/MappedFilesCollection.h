@@ -2,6 +2,7 @@
 #include "common.h"
 #include "FilesObserver.h"
 #include <Helpers/Flags.h>
+#include <iostream>
 
 namespace HELPERS_NS {
     namespace FS {
@@ -52,3 +53,5 @@ namespace HELPERS_NS {
         };
     }
 }
+
+std::ostream& operator<< (std::ostream& out, const HELPERS_NS::FS::MappedFilesCollection& mappedFilesCollection);

@@ -107,12 +107,11 @@ namespace HELPERS_NS {
         }
 
         void MappedFilesCollection::Complete() {
-            // Rename duplicates
             if (formatFlags.Has(Format::RenameDuplicates)) {
-                for (auto collection : {&dirs, &files}) {
+                for (auto* collection : {&dirs, &files}) {
                     for (auto itemIt = collection->rbegin(); itemIt != collection->rend(); ++itemIt) {
                         auto pathTmp = std::move(itemIt->mappedPath); // Temporarily "remove" from list
-                        H::FS::FilesObserver::RenameDuplicate(pathTmp, *collection, [&](const MappedFileItem& item) {
+                        HELPERS_NS::FS::RenameDuplicate(pathTmp, *collection, [&](const MappedFileItem& item) {
                             return item.mappedPath == pathTmp;
                             });
                         itemIt->mappedPath = pathTmp;
@@ -130,4 +129,11 @@ namespace HELPERS_NS {
             }
         }
     }
+}
+
+std::ostream& operator<< (std::ostream& out, const HELPERS_NS::FS::MappedFilesCollection& mappedFilesCollection) {
+    for (auto& file : mappedFilesCollection.GetFiles()) {
+        out << "[" << file.localPath << ";  " << file.mappedPath << "] \n";
+    }
+    return out;
 }
