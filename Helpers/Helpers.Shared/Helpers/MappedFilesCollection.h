@@ -2,21 +2,50 @@
 #include "common.h"
 #include "FilesObserver.h"
 #include <Helpers/Flags.h>
+#include <iostream>
 
 namespace HELPERS_NS {
     namespace FS {
+        struct FileItemWithMappedPath : FileItemBase {
+            FileItemWithMappedPath() = default;
+            ~FileItemWithMappedPath() = default;
+
+            FileItemWithMappedPath(std::string path, std::string mappedPath)
+                : FileItemBase{ path }
+                , mappedPath{ mappedPath }
+            {}
+            FileItemWithMappedPath(std::wstring path, std::wstring mappedPath)
+                : FileItemBase{ path }
+                , mappedPath{ mappedPath }
+            {}
+            FileItemWithMappedPath(const char* path, const char* mappedPath)
+                : FileItemBase{ path }
+                , mappedPath{ mappedPath }
+            {}
+            FileItemWithMappedPath(const wchar_t* path, const wchar_t* mappedPath)
+                : FileItemBase{ path }
+                , mappedPath{ mappedPath }
+            {}
+            FileItemWithMappedPath(std::filesystem::path path, std::filesystem::path mappedPath)
+                : FileItemBase{ path }
+                , mappedPath{ mappedPath }
+            {}
+
+            std::filesystem::path mappedPath;
+        };
+
         struct MappedFileItem {
             std::filesystem::path localPath;
             std::filesystem::path mappedPath;
         };
 
-
         class MappedFilesCollection : public IFilesCollection {
         public:
             enum Format {
                 None = 0x00,
-                RelativeMappedPath = 0x01,
+                KeepRelativeMappedPath = 0x01,
                 RenameDuplicates = 0x02,
+                PreserveDirStructure = 0x04,
                 Default = None
             };
 
@@ -28,7 +57,6 @@ namespace HELPERS_NS {
             // After copying, internally calls Complete()
             MappedFilesCollection& operator=(const MappedFilesCollection& other);
 
-            void SetPreserveDirectoryStructure(bool preserve);
             bool IsPreserveDirectoryStructure();
 
             const uint64_t GetSize() const;
@@ -48,7 +76,11 @@ namespace HELPERS_NS {
             std::filesystem::path mappedRootPath;
             std::vector<MappedFileItem> dirs;
             std::vector<MappedFileItem> files;
-            bool preserveDirStructure;
         };
+
+        void GetFilesCollection(std::vector<FileItemWithMappedPath> fileItems, MappedFilesCollection& filesCollection);
     }
 }
+
+std::ostream& operator<< (std::ostream& out, const std::vector<HELPERS_NS::FS::MappedFileItem>& mappedPathItems);
+std::ostream& operator<< (std::ostream& out, const HELPERS_NS::FS::MappedFilesCollection& mappedFilesCollection);

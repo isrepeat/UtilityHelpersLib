@@ -1,6 +1,7 @@
 #pragma once
 #include "common.h"
 #include "FilesObserver.h"
+#include <iostream>
 
 namespace HELPERS_NS {
     namespace FS {
@@ -24,5 +25,14 @@ namespace HELPERS_NS {
             std::vector<std::filesystem::path> dirs;
             std::vector<std::filesystem::path> files;
         };
+
+        template <typename FileItemT>
+        FilesCollection GetFilesCollection(const std::vector<FileItemT>& fileItems) {
+            FilesCollection filesCollection;
+            GetFilesCollection<FileItemT, FilesCollection>(fileItems, filesCollection);
+            return filesCollection;
+        }
     }
 }
+
+std::ostream& operator<< (std::ostream& out, const HELPERS_NS::FS::FilesCollection& filesCollection);
