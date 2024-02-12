@@ -1,13 +1,13 @@
 #pragma once
 #include "MappedFilesCollection.h"
+#include <Helpers/TypeSwitch.h>
 
 namespace HELPERS_NS {
     namespace FS {
         MappedFilesCollection::MappedFilesCollection(std::filesystem::path mappedRootPath, HELPERS_NS::Flags<Format> formatFlags)
             : totalSize{ 0 }
-            , formatFlags{formatFlags}
+            , formatFlags{ formatFlags }
             , mappedRootPath{ mappedRootPath }
-            , preserveDirStructure{ false }
         {
         }
 
@@ -17,18 +17,13 @@ namespace HELPERS_NS {
                 files = other.files;
                 totalSize = other.totalSize;
                 mappedRootPath = other.mappedRootPath;
-                preserveDirStructure = other.preserveDirStructure;
                 Complete();
             }
             return *this;
         }
 
-        void MappedFilesCollection::SetPreserveDirectoryStructure(bool preserve) {
-            preserveDirStructure = preserve;
-        }
-
         bool MappedFilesCollection::IsPreserveDirectoryStructure() {
-            return preserveDirStructure;
+            return formatFlags.Has(Format::PreserveDirStructure);
         }
 
         const uint64_t MappedFilesCollection::GetSize() const {
@@ -47,7 +42,6 @@ namespace HELPERS_NS {
             return files[i];
         }
 
-        
 
         void MappedFilesCollection::Initialize() {
             dirs.clear();
@@ -59,11 +53,12 @@ namespace HELPERS_NS {
             MappedFileItem mappedFileItem;
             auto basePath = mappedRootPath;
 
-            if (preserveDirStructure) {
-                basePath = mappedRootPath / pathItem.mainItem.relative_path().remove_filename();
+            // TODO: Rewrite without paths comparison, write tests
+            if (formatFlags.Has(Format::PreserveDirStructure)) {
+                basePath = mappedRootPath / pathItem.mainItem->path.relative_path().remove_filename();
 
                 // Add missing dirs to list
-                auto newDirs = pathItem.mainItem.relative_path().remove_filename();
+                auto newDirs = pathItem.mainItem->path.relative_path().remove_filename();
                 std::filesystem::path currentSubdir;
                 for (auto& subdir : newDirs) {
                     if (subdir.empty()) {
@@ -77,20 +72,27 @@ namespace HELPERS_NS {
                         });
 
                     if (existingDir == dirs.end()) {
-                        dirs.push_back({pathItem.mainItem.root_path() / currentSubdir, currentSubdir});
+                        dirs.push_back({ pathItem.mainItem->path.root_path() / currentSubdir, currentSubdir });
                     }
                 }
             }
 
+            H::TypeSwitch(pathItem.mainItem.get(),
+                [&basePath](FileItemWithMappedPath& item) {
+                    basePath /= item.mappedPath;
+                    return;
+                }
+                );
+
             switch (pathItem.type) {
             case PathItem::Type::File:
             case PathItem::Type::Directory:
-                mappedFileItem = { pathItem.mainItem, basePath / pathItem.mainItem.filename() };
+                mappedFileItem = { pathItem.mainItem->path, basePath / pathItem.mainItem->path.filename() };
                 break;
             case PathItem::Type::RecursiveEntry: {
                 // Cut mainItem path part from recursiveItem (recursiveItem is a child item of mainItem)
-                auto relativePathToMainItem = pathItem.recursiveItem.wstring().substr(pathItem.mainItem.wstring().size() + 1); // +1 - skip slash
-                mappedFileItem = { pathItem.recursiveItem, basePath / pathItem.mainItem.filename() / relativePathToMainItem };
+                auto relativePathToMainItem = std::filesystem::relative(pathItem.recursiveItem->path, pathItem.mainItem->path);
+                mappedFileItem = { pathItem.recursiveItem->path, basePath / pathItem.mainItem->path.filename() / relativePathToMainItem };
                 break;
             }
             }
@@ -98,7 +100,7 @@ namespace HELPERS_NS {
             switch (pathItem.ExpandType()) {
             case PathItem::Type::File:
                 files.push_back(std::move(mappedFileItem));
-                totalSize += std::filesystem::file_size(pathItem.mainItem);
+                totalSize += std::filesystem::file_size(pathItem.mainItem->path);
                 break;
             case PathItem::Type::Directory:
                 dirs.push_back(std::move(mappedFileItem));
@@ -108,7 +110,7 @@ namespace HELPERS_NS {
 
         void MappedFilesCollection::Complete() {
             if (formatFlags.Has(Format::RenameDuplicates)) {
-                for (auto* collection : {&dirs, &files}) {
+                for (auto* collection : { &dirs, &files }) {
                     for (auto itemIt = collection->rbegin(); itemIt != collection->rend(); ++itemIt) {
                         auto pathTmp = std::move(itemIt->mappedPath); // Temporarily "remove" from list
                         HELPERS_NS::FS::RenameDuplicate(pathTmp, *collection, [&](const MappedFileItem& item) {
@@ -119,7 +121,7 @@ namespace HELPERS_NS {
                 }
             }
 
-            if (formatFlags.Has(Format::RelativeMappedPath)) { // remove root path
+            if (formatFlags.Has(Format::KeepRelativeMappedPath)) { // remove root path
                 for (auto& dir : dirs) {
                     dir.mappedPath = dir.mappedPath.relative_path();
                 }
@@ -128,12 +130,32 @@ namespace HELPERS_NS {
                 }
             }
         }
+
+        void GetFilesCollection(std::vector<FileItemWithMappedPath> fileItems, MappedFilesCollection& filesCollection) {
+            std::vector<std::unique_ptr<FileItemBase>> fileItemsUniq;
+
+            std::transform(fileItems.begin(), fileItems.end(), std::back_inserter(fileItemsUniq),
+                [](const FileItemWithMappedPath& item) {
+                    return std::make_unique<H::FS::FileItemWithMappedPath>(item);
+                });
+
+            GetFilesCollection<MappedFilesCollection>(std::move(fileItemsUniq), filesCollection);
+        }
     }
+}
+
+std::ostream& operator<< (std::ostream& out, const std::vector<HELPERS_NS::FS::MappedFileItem>& mappedPathItems) {
+    for (auto& file : mappedPathItems) {
+        out << file.localPath << "\n";
+        out << file.mappedPath << "\n\n";
+    }
+    return out;
 }
 
 std::ostream& operator<< (std::ostream& out, const HELPERS_NS::FS::MappedFilesCollection& mappedFilesCollection) {
     for (auto& file : mappedFilesCollection.GetFiles()) {
-        out << "[" << file.localPath << ";  " << file.mappedPath << "] \n";
+        out << file.localPath << "\n";
+        out << file.mappedPath << "\n\n";
     }
     return out;
 }

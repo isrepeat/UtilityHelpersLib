@@ -26,7 +26,12 @@ namespace HELPERS_NS {
             std::vector<std::filesystem::path> files;
         };
 
-        FilesCollection GetFilesCollection(const std::vector<std::filesystem::path>& filePaths);
+        template <typename FileItemT>
+        FilesCollection GetFilesCollection(const std::vector<FileItemT>& fileItems) {
+            FilesCollection filesCollection;
+            GetFilesCollection<FileItemT, FilesCollection>(fileItems, filesCollection);
+            return filesCollection;
+        }
     }
 }
 

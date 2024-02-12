@@ -36,17 +36,17 @@ namespace HELPERS_NS {
             switch (pathItem.type) {
             case PathItem::Type::File:
             case PathItem::Type::Directory:
-                pathEntry = pathItem.mainItem;
+                pathEntry = pathItem.mainItem->path;
                 break;
             case PathItem::Type::RecursiveEntry:
-                pathEntry = pathItem.recursiveItem;
+                pathEntry = pathItem.recursiveItem->path;
                 break;
             }
 
             switch (pathItem.ExpandType()) {
             case PathItem::Type::File:
                 files.push_back(pathEntry);
-                totalSize += std::filesystem::file_size(pathItem.mainItem);
+                totalSize += std::filesystem::file_size(pathItem.mainItem->path);
                 break;
             case PathItem::Type::Directory:
                 dirs.push_back(pathEntry);
@@ -55,13 +55,6 @@ namespace HELPERS_NS {
         }
 
         void FilesCollection::Complete() {
-        }
-
-
-        FilesCollection GetFilesCollection(const std::vector<std::filesystem::path>& filePaths) {
-            FilesCollection filesCollection;
-            GetFilesCollection<FilesCollection>(filePaths, filesCollection);
-            return filesCollection;
         }
     }
 }

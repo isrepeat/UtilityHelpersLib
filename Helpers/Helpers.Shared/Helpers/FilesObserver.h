@@ -9,6 +9,19 @@
 
 namespace HELPERS_NS {
     namespace FS {
+        struct FileItemBase {
+            FileItemBase() = default;
+            virtual ~FileItemBase() = default;
+
+            FileItemBase(std::string path) : path{ path } {}
+            FileItemBase(std::wstring path) : path{ path } {}
+            FileItemBase(const char* path) : path{ path } {}
+            FileItemBase(const wchar_t* path) : path{ path } {}
+            FileItemBase(std::filesystem::path path) : path{ path } {}
+            
+            std::filesystem::path path;
+        };
+
         struct PathItem {
             enum class Type {
                 File,
@@ -16,14 +29,19 @@ namespace HELPERS_NS {
                 RecursiveEntry,
             };
 
+            PathItem(Type type, std::unique_ptr<FileItemBase> mainItem)
+                : type{ type }
+                , mainItem{ std::move(mainItem) }
+            {}
+
             Type ExpandType() const {
                 if (type == PathItem::Type::RecursiveEntry) {
-                    assert(!recursiveItem.empty() && "--> recursiveItem is empty!");
+                    assert(!recursiveItem->path.empty() && "--> recursiveItem is empty!");
 
-                    if (std::filesystem::is_regular_file(recursiveItem)) {
+                    if (std::filesystem::is_regular_file(recursiveItem->path)) {
                         return Type::File;
                     }
-                    else if (std::filesystem::is_directory(recursiveItem)) {
+                    else if (std::filesystem::is_directory(recursiveItem->path)) {
                         return Type::Directory;
                     }
                 }
@@ -31,8 +49,8 @@ namespace HELPERS_NS {
             }
 
             Type type;
-            std::filesystem::path mainItem;
-            std::filesystem::path recursiveItem;
+            std::unique_ptr<FileItemBase> mainItem;
+            std::unique_ptr<FileItemBase> recursiveItem;
         };
 
 
@@ -42,7 +60,11 @@ namespace HELPERS_NS {
 
         protected:
             template <typename FilesCollectionT>
-            friend void GetFilesCollection(const std::vector<std::filesystem::path>&, FilesCollectionT&);
+            friend void GetFilesCollection(std::vector<std::unique_ptr<FileItemBase>>, FilesCollectionT&);
+
+            template <typename FileItemT, typename FilesCollectionT>
+            friend void GetFilesCollection(std::vector<FileItemT>, FilesCollectionT&);
+
 
             virtual void Initialize() = 0;
             virtual void HandlePathItem(const PathItem& pathItem) = 0;
@@ -51,26 +73,39 @@ namespace HELPERS_NS {
 
 
         template <typename FilesCollectionT>
-        static void GetFilesCollection(const std::vector<std::filesystem::path>& filePaths, FilesCollectionT& filesCollection) {
+        void GetFilesCollection(std::vector<std::unique_ptr<FileItemBase>> fileItemsUniq, FilesCollectionT& filesCollection) {
             IFilesCollection& filesCollectionInterface = filesCollection;
             filesCollectionInterface.Initialize();
 
-            for (auto& item : filePaths) {
-                if (std::filesystem::is_regular_file(item)) {
+            for (auto& item : fileItemsUniq) {
+                if (std::filesystem::is_regular_file(item->path)) {
                     filesCollectionInterface.HandlePathItem(PathItem{ PathItem::Type::File, std::move(item) });
                 }
-                else if (std::filesystem::is_directory(item)) {
+                else if (std::filesystem::is_directory(item->path)) {
                     PathItem pathItem{ PathItem::Type::Directory, std::move(item) };
                     filesCollectionInterface.HandlePathItem(pathItem);
 
-                    for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(item)) {
+                    for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(pathItem.mainItem->path)) {
                         pathItem.type = PathItem::Type::RecursiveEntry;
-                        pathItem.recursiveItem = dirEntry.path();
+                        pathItem.recursiveItem = std::make_unique<FileItemBase>(dirEntry.path());
                         filesCollectionInterface.HandlePathItem(pathItem);
                     }
                 }
             }
             filesCollectionInterface.Complete();
+        }
+
+        // Base implementation for convertion from FileItemT to std::unique_ptr<FileItemBase>
+        template <typename FileItemT, typename FilesCollectionT>
+        void GetFilesCollection(std::vector<FileItemT> fileItems, FilesCollectionT& filesCollection) {
+            std::vector<std::unique_ptr<FileItemBase>> fileItemsUniq;
+
+            std::transform(fileItems.begin(), fileItems.end(), std::back_inserter(fileItemsUniq),
+                [](const FileItemT& item) {
+                    return std::make_unique<H::FS::FileItemBase>(item);
+                });
+
+            GetFilesCollection<FilesCollectionT>(std::move(fileItemsUniq), filesCollection);
         }
 
 
