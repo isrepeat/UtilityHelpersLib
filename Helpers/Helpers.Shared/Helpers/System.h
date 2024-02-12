@@ -41,6 +41,7 @@ namespace HELPERS_NS {
         };
 
         inline void ThrowIfFailed(HRESULT hr) {
+            static_assert(std::is_same_v<TCHAR, wchar_t>, "TCHAR != wchar_t");
             if (FAILED(hr)) {
                 throw ComException(hr, _com_error(hr).ErrorMessage());
             }
