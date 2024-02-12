@@ -102,7 +102,7 @@ namespace HELPERS_NS {
 
             std::transform(fileItems.begin(), fileItems.end(), std::back_inserter(fileItemsUniq),
                 [](const FileItemT& item) {
-                    return std::make_unique<H::FS::FileItemBase>(item);
+                    return std::make_unique<FileItemBase>(item);
                 });
 
             GetFilesCollection<FilesCollectionT>(std::move(fileItemsUniq), filesCollection);

@@ -77,7 +77,7 @@ namespace HELPERS_NS {
                 }
             }
 
-            H::TypeSwitch(pathItem.mainItem.get(),
+            HELPERS_NS::TypeSwitch(pathItem.mainItem.get(),
                 [&basePath](FileItemWithMappedPath& item) {
                     basePath /= item.mappedPath;
                     return;
@@ -136,7 +136,7 @@ namespace HELPERS_NS {
 
             std::transform(fileItems.begin(), fileItems.end(), std::back_inserter(fileItemsUniq),
                 [](const FileItemWithMappedPath& item) {
-                    return std::make_unique<H::FS::FileItemWithMappedPath>(item);
+                    return std::make_unique<FileItemWithMappedPath>(item);
                 });
 
             GetFilesCollection<MappedFilesCollection>(std::move(fileItemsUniq), filesCollection);
