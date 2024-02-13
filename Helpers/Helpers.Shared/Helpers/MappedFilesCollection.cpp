@@ -53,28 +53,8 @@ namespace HELPERS_NS {
             MappedFileItem mappedFileItem;
             auto basePath = mappedRootPath;
 
-            // TODO: Rewrite without paths comparison, write tests
             if (formatFlags.Has(Format::PreserveDirStructure)) {
-                basePath = mappedRootPath / pathItem.mainItem->path.relative_path().remove_filename();
-
-                // Add missing dirs to list
-                auto newDirs = pathItem.mainItem->path.relative_path().remove_filename();
-                std::filesystem::path currentSubdir;
-                for (auto& subdir : newDirs) {
-                    if (subdir.empty()) {
-                        continue;
-                    }
-
-                    currentSubdir /= subdir;
-                    auto existingDir = std::find_if(dirs.begin(), dirs.end(),
-                        [&](MappedFileItem& item) {
-                            return item.mappedPath == currentSubdir;
-                        });
-
-                    if (existingDir == dirs.end()) {
-                        dirs.push_back({ pathItem.mainItem->path.root_path() / currentSubdir, currentSubdir });
-                    }
-                }
+                basePath /= pathItem.mainItem->path.relative_path().remove_filename();
             }
 
             HELPERS_NS::TypeSwitch(pathItem.mainItem.get(),
@@ -82,7 +62,7 @@ namespace HELPERS_NS {
                     basePath /= item.mappedPath;
                     return;
                 }
-                );
+            );
 
             switch (pathItem.type) {
             case PathItem::Type::File:
