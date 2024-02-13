@@ -195,8 +195,10 @@ namespace LOGGER_NS {
             std::filesystem::create_directories(logFilePath.parent_path());
         }
         else {
-            if (!initFlags.Has(InitFlags::Truncate) && std::filesystem::file_size(logFilePath) > maxSizeLogFile) {
-                HELPERS_NS::FS::RemoveBytesFromStart(logFilePath, maxSizeLogFile / 2, [](std::ofstream& file) {
+            auto logSize = std::filesystem::file_size(logFilePath);
+            if (!initFlags.Has(InitFlags::Truncate) && logSize > maxSizeLogFile) {
+                auto truncatedBytes = logSize - maxSizeLogFile / 2;
+                HELPERS_NS::FS::RemoveBytesFromStart(logFilePath, truncatedBytes, [](std::ofstream& file) {
                     std::string header = "... [truncated] \n\n";
                     file.write(header.data(), header.size());
                     });
