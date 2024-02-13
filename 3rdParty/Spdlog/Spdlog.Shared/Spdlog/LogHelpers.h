@@ -84,7 +84,7 @@ namespace LOGGER_NS {
 
         struct UnscopedData;
 
-        static constexpr uintmax_t maxSizeLogFile = 2 * 1024 * 1024; // 2 MB (~ 20'000 rows)
+        static constexpr uintmax_t maxSizeLogFile = 5 * 1024 * 1024; // 5 MB (~ 50'000 rows)
         static constexpr size_t maxLoggers = 2;
 
         static void Init(std::filesystem::path logFilePath, HELPERS_NS::Flags<InitFlags> initFlags = InitFlags::DefaultFlags);
