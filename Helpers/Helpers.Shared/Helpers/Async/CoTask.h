@@ -462,6 +462,16 @@ namespace HELPERS_NS {
         struct PromiseExtractor<std::shared_ptr<CoTaskT<PromiseImplT>>> {
             using promiseImpl_t = PromiseImplT;
         };
+
+        inline void ResumeCoroutineViaSignal(std::weak_ptr<H::Signal> resumeSignalWeak) {
+            LOG_FUNCTION_ENTER("ResumeCoroutineViaSignal()");
+            auto resumeSignal = resumeSignalWeak.lock();
+            if (!resumeSignal) {
+                LOG_ERROR_D("resumeSignal expired");
+                return;
+            }
+            (*resumeSignal)();
+        }
     } // namespace Async
 } // namespace HELPERS_NS
 
