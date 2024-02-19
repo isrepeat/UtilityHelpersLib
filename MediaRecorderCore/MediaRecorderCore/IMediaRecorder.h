@@ -6,6 +6,11 @@
 #include <vector>
 #include <string>
 
+// https://accu.org/journals/overload/27/152/boger_2683/
+// use strong types to enforce errors in dependent code to check if use of UseHardwareTransformsForEncoding right in dependent code context
+enum class UseHardwareTransformsForEncoding : bool {};
+enum class UseNv12VideoSamples : bool {};
+
 class IMediaRecorder {
 public:
     IMediaRecorder() {}

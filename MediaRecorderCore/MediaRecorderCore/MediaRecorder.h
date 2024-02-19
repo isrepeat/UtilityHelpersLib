@@ -12,6 +12,8 @@
 #include "ChunkMerger.h"
 
 // default profile of H264 can fail on sink->Finalize with video bitrate > 80 mbits.
+// Old setting bool useCPUForEncoding is implicitly enabled by use of this->params.DxBufferFactory
+// New setting UseHardwareTransformsForEncoding can be used with or without this->params.DxBufferFactory
 class MediaRecorder : public MFUser, public IMediaRecorder {
 public:
     static constexpr uint32_t AudioSampleBits = 16;
@@ -26,8 +28,8 @@ public:
     MediaRecorder(
         IMFByteStream* outputStream,
         MediaRecorderParams params,
-        bool useCPUForEncoding,
-        bool nv12VideoSamples,
+        UseHardwareTransformsForEncoding hardwareTransformsForEncoding,
+        UseNv12VideoSamples nv12VideoSamples,
         std::shared_ptr<IEvent<Native::MediaRecorderEventArgs>> recordEventCallback = nullptr);
 
     MediaRecorder(MediaRecorder&&) = default;
@@ -74,7 +76,7 @@ public:
         const IAudioCodecSettings* settings,
         uint32_t bitsPerSample);
     static Microsoft::WRL::ComPtr<IMFMediaType> CreateVideoInMediaType(
-        const IVideoCodecSettings* settings, bool nv12VideoSamples);
+        const IVideoCodecSettings* settings, UseNv12VideoSamples nv12VideoSamples);
     static Microsoft::WRL::ComPtr<IMFMediaType> CreateVideoOutMediaType(
         const IVideoCodecSettings* settings, MediaContainerType containerType, bool useChunkMerger);
 
@@ -88,9 +90,10 @@ private:
 
     int64_t audioPtsHns = 0;
     int64_t videoPtsHns = 0;
-    
-    bool cpuEncoding = false;
-    bool nv12Textures = false;
+
+    // hardwareTransformsForEncoding by default true because it reduces memory usage
+    UseHardwareTransformsForEncoding hardwareTransformsForEncoding = UseHardwareTransformsForEncoding{ true };
+    UseNv12VideoSamples nv12VideoSamples = UseNv12VideoSamples{ false };
     const std::wstring containerExt;
     int64_t chunkAudioPtsHns = 0;
     int64_t chunkVideoPtsHns = 0;
@@ -111,7 +114,10 @@ private:
 
     std::shared_ptr<IEvent<Native::MediaRecorderEventArgs>> recordEventCallback;
 
-    void InitializeSinkWriter(IMFByteStream *outputStream, bool useCPUForEncoding, bool nv12VideoSamples);
+    void InitializeSinkWriter(
+        IMFByteStream *outputStream,
+        UseHardwareTransformsForEncoding hardwareTransformsForEncoding,
+        UseNv12VideoSamples nv12VideoSamples);
 
     static Microsoft::WRL::ComPtr<IMFMediaType> GetBestOutputType(
         IMFTransform *transform,
