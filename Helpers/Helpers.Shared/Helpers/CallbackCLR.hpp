@@ -1,7 +1,7 @@
 #pragma once
 #include "common.h"
 
-#ifdef __CLR__
+#if COMPILE_FOR_CLR == 1
 #include "Callback.hpp"
 #include <msclr\auto_gcroot.h>
 
@@ -87,4 +87,4 @@ Callback<R, Ts...> MakeWeakGCRootCallback(T data, R(__clrcall* callbackFn)(T dat
     auto icallback = std::unique_ptr<GenericWeakGCRootCallback<T, R, Ts...>>(ptr);
     return Callback<R, Ts...>(std::move(icallback));
 }
-#endif // __CLR__
+#endif

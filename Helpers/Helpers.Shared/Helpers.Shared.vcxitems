@@ -52,7 +52,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Bimap.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\BIOS.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Callback.hpp" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Callback_CLR.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CallbackCLR.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CancellationToken.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Channel.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\common.h" />
