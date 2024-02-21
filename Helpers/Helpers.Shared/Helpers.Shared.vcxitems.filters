@@ -164,7 +164,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TaskChain.h">
       <Filter>Concurrency</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Callback_CLR.hpp">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CallbackCLR.hpp">
       <Filter>CLR</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Action.h">
