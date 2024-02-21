@@ -18,7 +18,13 @@ namespace HELPERS_NS_ALIAS = HELPERS_NS; // set your alias for original "helpers
 #define COMPILE_FOR_CLR 1
 #else
 #if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-#define COMPILE_FOR_WINRT 1
+#define COMPILE_FOR_CX_or_WINRT 1
+
+#ifdef __cplusplus_winrt
+#	define COMPILE_FOR_WINRT 1
+#else
+#	define COMPILE_FOR_CX 1
+#endif
 #endif
 #endif
 
