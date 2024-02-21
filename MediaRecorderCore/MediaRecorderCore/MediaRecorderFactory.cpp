@@ -7,19 +7,25 @@
 MediaRecorderFactory::MediaRecorderFactory(
     IMFByteStream* outputStream,
     MediaRecorderParams params,
-    bool useCPUForEncoding,
-    bool nv12VideoSamples,
+    UseHardwareTransformsForEncoding hardwareTransformsForEncoding,
+    UseNv12VideoSamples nv12VideoSamples,
     std::shared_ptr<IEvent<Native::MediaRecorderEventArgs>> recordEventCallback)
     : outputStream(outputStream)
     , params(std::move(params))
-    , useCPUForEncoding(useCPUForEncoding)
+    , hardwareTransformsForEncoding(hardwareTransformsForEncoding)
     , nv12VideoSamples(nv12VideoSamples)
     , recordEventCallback(recordEventCallback)
 {
 }
 
 std::unique_ptr<IMediaRecorder> MediaRecorderFactory::CreateMediaRecorder() {
-    auto rec = std::make_unique<MediaRecorder>(this->outputStream.Get(), this->params, this->useCPUForEncoding, this->nv12VideoSamples, this->recordEventCallback);
+    auto rec = std::make_unique<MediaRecorder>(
+        this->outputStream.Get(),
+        this->params,
+        this->hardwareTransformsForEncoding,
+        this->nv12VideoSamples,
+        this->recordEventCallback
+        );
     return rec;
 }
 

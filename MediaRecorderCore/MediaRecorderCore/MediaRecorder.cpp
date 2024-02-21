@@ -21,13 +21,13 @@ const uint32_t MediaRecorder::AllowedBytesPerSecond[] = { 12000, 16000, 20000, 2
 MediaRecorder::MediaRecorder(
     IMFByteStream* outputStream,
     MediaRecorderParams params,
-    bool useCPUForEncoding,
-    bool nv12VideoSamples,
+    UseHardwareTransformsForEncoding hardwareTransformsForEncoding,
+    UseNv12VideoSamples nv12VideoSamples,
     std::shared_ptr<IEvent<Native::MediaRecorderEventArgs>> recordEventCallback)
     : stream(outputStream)
     , params(std::move(params))
-    , cpuEncoding{ useCPUForEncoding }
-    , nv12Textures{ nv12VideoSamples }
+    , hardwareTransformsForEncoding{ hardwareTransformsForEncoding }
+    , nv12VideoSamples{ nv12VideoSamples }
     , containerExt{ this->params.mediaFormat.GetMediaContainerFileExtension() }
     , lastChunkCreatedTime{ H::Time::GetCurrentLibTime() }
     , recordEventCallback{ recordEventCallback }
@@ -37,7 +37,7 @@ MediaRecorder::MediaRecorder(
     }
 
     auto newStream = this->params.UseChunkMerger ? StartNewChunk() : this->stream.Get();
-    this->InitializeSinkWriter(newStream, useCPUForEncoding, nv12VideoSamples);
+    this->InitializeSinkWriter(newStream, hardwareTransformsForEncoding, nv12VideoSamples);
 }
 
 bool MediaRecorder::IsChunkMergerEnabled() {
@@ -332,7 +332,10 @@ void MediaRecorder::Write(const void *videoData, size_t rowPitch, int64_t hns, i
     this->WriteVideoSample(buffer, hns, durationHns);
 }
 
-void MediaRecorder::InitializeSinkWriter(IMFByteStream *outputStream, bool useCPUForEncoding, bool nv12VideoSamples)
+void MediaRecorder::InitializeSinkWriter(
+    IMFByteStream* outputStream,
+    UseHardwareTransformsForEncoding hardwareTransformsForEncoding,
+    UseNv12VideoSamples nv12VideoSamples)
 {
     HRESULT hr = S_OK;
     Microsoft::WRL::ComPtr<IMFByteStream> byteStream = outputStream;
@@ -347,7 +350,7 @@ void MediaRecorder::InitializeSinkWriter(IMFByteStream *outputStream, bool useCP
     hr = sinkAttr->SetUINT32(MF_SINK_WRITER_DISABLE_THROTTLING, TRUE);
     H::System::ThrowIfFailed(hr);
 
-    if (!useCPUForEncoding) {
+    if (static_cast<bool>(hardwareTransformsForEncoding)) {
         hr = sinkAttr->SetUINT32(MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, TRUE);
         H::System::ThrowIfFailed(hr);
     }
@@ -390,7 +393,7 @@ void MediaRecorder::InitializeSinkWriter(IMFByteStream *outputStream, bool useCP
         Microsoft::WRL::ComPtr<IMFMediaType> typeOut, typeIn;
 
         if (auto basicSettings = settings->GetBasicSettings()) {
-            if (!nv12VideoSamples && basicSettings->height > 1080 && settings->GetCodecType() == VideoCodecType::HEVC) {
+            if (!static_cast<bool>(nv12VideoSamples) && basicSettings->height > 1080 && settings->GetCodecType() == VideoCodecType::HEVC) {
                 // TODO check why crash with nv12VideoSamples == false and >1080(2k, 4k) HEVC
                 assert(false);
                 H::System::ThrowIfFailed(E_FAIL);
@@ -642,7 +645,7 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateAudioFlacOutMediaType(
 }
 
 Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateVideoInMediaType(
-    const IVideoCodecSettings *settings, bool nv12VideoSamples)
+    const IVideoCodecSettings *settings, UseNv12VideoSamples nv12VideoSamples)
 {
     if (settings == nullptr)
         return nullptr;
@@ -656,7 +659,7 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateVideoInMediaType(
     hr = mediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
     H::System::ThrowIfFailed(hr);
 
-    if (nv12VideoSamples)
+    if (static_cast<bool>(nv12VideoSamples))
     {
         hr = mediaType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_NV12);
         H::System::ThrowIfFailed(hr);
@@ -942,7 +945,7 @@ void MediaRecorder::MergeChunks(IMFByteStream* outputStream, std::vector<std::ws
         outputStream,
         MediaRecorder::CreateAudioInMediaType(this->params.mediaFormat.GetAudioCodecSettings(), AudioSampleBits),
         MediaRecorder::CreateAudioOutMediaType(this->params.mediaFormat.GetAudioCodecSettings(), AudioSampleBits),
-        MediaRecorder::CreateVideoInMediaType(this->params.mediaFormat.GetVideoCodecSettings(), nv12Textures),
+        MediaRecorder::CreateVideoInMediaType(this->params.mediaFormat.GetVideoCodecSettings(), nv12VideoSamples),
         MediaRecorder::CreateVideoOutMediaType(this->params.mediaFormat.GetVideoCodecSettings(), this->params.mediaFormat.GetMediaContainerType(), params.UseChunkMerger),
         this->params.mediaFormat.GetVideoCodecSettings(),
         std::move(chunks),
@@ -963,7 +966,7 @@ void MediaRecorder::ResetSinkWriterOnNewChunk() {
     FinalizeRecord(true);
     auto newStream = StartNewChunk();
     lastChunkCreatedTime = H::Time::GetCurrentLibTime();
-    this->InitializeSinkWriter(newStream, cpuEncoding, nv12Textures);
+    this->InitializeSinkWriter(newStream, hardwareTransformsForEncoding, nv12VideoSamples);
     StartRecord();
 }
 

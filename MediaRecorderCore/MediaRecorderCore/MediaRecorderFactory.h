@@ -11,8 +11,8 @@ public:
     MediaRecorderFactory(
         IMFByteStream* outputStream,
         MediaRecorderParams params,
-        bool useCPUForEncoding,
-        bool nv12VideoSamples,
+        UseHardwareTransformsForEncoding hardwareTransformsForEncoding,
+        UseNv12VideoSamples nv12VideoSamples,
         std::shared_ptr<IEvent<Native::MediaRecorderEventArgs>> recordEventCallback);
 
     std::unique_ptr<IMediaRecorder> CreateMediaRecorder() override;
@@ -22,8 +22,9 @@ public:
     static std::vector<uint32_t> GetAvailableAudioBitsPerSecond();
 
 private:
-    bool useCPUForEncoding;
-    bool nv12VideoSamples;
+    // hardwareTransformsForEncoding by default true because it reduces memory usage
+    UseHardwareTransformsForEncoding hardwareTransformsForEncoding = UseHardwareTransformsForEncoding{ true };
+    UseNv12VideoSamples nv12VideoSamples = UseNv12VideoSamples{ false };
     MediaRecorderParams params;
     Microsoft::WRL::ComPtr<IMFByteStream> outputStream;
     std::shared_ptr<IEvent<Native::MediaRecorderEventArgs>> recordEventCallback;
