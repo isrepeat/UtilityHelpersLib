@@ -25,6 +25,9 @@
     <Filter Include="Async">
       <UniqueIdentifier>{5fd2a503-a42e-42bb-87bf-98be8fff7a9c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="WinRT">
+      <UniqueIdentifier>{52bcaca5-b5f7-4dcc-989d-0f63747814d1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Gate.cpp">

@@ -21,7 +21,7 @@ public:
 private:
     friend TClass;
     _Singleton() = default;
-    ~_Singleton() = default;
+    virtual ~_Singleton() = default;
 
 private:
     T m_instance; // by default not used (T = void*)
@@ -117,6 +117,11 @@ public:
     static Instance_t GetInstance() {
         assert(_MyBase::GetInstance().m_instance);
         return _MyBase::GetInstance().m_instance;
+    }
+
+    static void DeleteInstance() {
+        delete _MyBase::GetInstance().m_instance;
+        _MyBase::GetInstance().m_instance = nullptr;
     }
 
 private:
