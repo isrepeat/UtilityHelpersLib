@@ -25,7 +25,7 @@ public:
     {
     }
 
-    virtual ~GenericWeakWinRTCallback() {}
+    ~GenericWeakWinRTCallback() {}
 
     GenericWeakWinRTCallback& operator=(const GenericWeakWinRTCallback& other) {
         if (this != &other) {
@@ -64,8 +64,6 @@ private:
 // <instance> will be wrapped into WeakReference
 template<typename T, typename R, typename... Ts>
 Callback<R, Ts...> MakeWinRTCallback(T^ instance, R(*callbackFn)(T^ instance, Ts... args)) {
-    auto ptr = new GenericWeakWinRTCallback<T, R, Ts...>(instance, callbackFn);
-    auto icallback = std::unique_ptr<GenericWeakWinRTCallback<T, R, Ts...>>(ptr);
-    return Callback<R, Ts...>(std::move(icallback));
+    return Callback<R, Ts...>(std::make_unique<GenericWeakWinRTCallback<T, R, Ts...>>(instance, callbackFn));
 }
 #endif
