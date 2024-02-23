@@ -334,8 +334,8 @@ void MediaRecorder::Write(const void *videoData, size_t rowPitch, int64_t hns, i
 
 void MediaRecorder::InitializeSinkWriter(
     IMFByteStream* outputStream,
-    UseHardwareTransformsForEncoding hardwareTransformsForEncoding,
-    UseNv12VideoSamples nv12VideoSamples)
+    UseHardwareTransformsForEncoding useHardwareTransformsForEncoding,
+    UseNv12VideoSamples useNv12VideoSamples)
 {
     HRESULT hr = S_OK;
     Microsoft::WRL::ComPtr<IMFByteStream> byteStream = outputStream;
@@ -350,7 +350,7 @@ void MediaRecorder::InitializeSinkWriter(
     hr = sinkAttr->SetUINT32(MF_SINK_WRITER_DISABLE_THROTTLING, TRUE);
     H::System::ThrowIfFailed(hr);
 
-    if (static_cast<bool>(hardwareTransformsForEncoding)) {
+    if (static_cast<bool>(useHardwareTransformsForEncoding)) {
         hr = sinkAttr->SetUINT32(MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, TRUE);
         H::System::ThrowIfFailed(hr);
     }
@@ -393,14 +393,14 @@ void MediaRecorder::InitializeSinkWriter(
         Microsoft::WRL::ComPtr<IMFMediaType> typeOut, typeIn;
 
         if (auto basicSettings = settings->GetBasicSettings()) {
-            if (!static_cast<bool>(nv12VideoSamples) && basicSettings->height > 1080 && settings->GetCodecType() == VideoCodecType::HEVC) {
-                // TODO check why crash with nv12VideoSamples == false and >1080(2k, 4k) HEVC
+            if (!static_cast<bool>(useNv12VideoSamples) && basicSettings->height > 1080 && settings->GetCodecType() == VideoCodecType::HEVC) {
+                // TODO check why crash with useNv12VideoSamples == false and >1080(2k, 4k) HEVC
                 assert(false);
                 H::System::ThrowIfFailed(E_FAIL);
             }
         }
 
-        typeIn = MediaRecorder::CreateVideoInMediaType(settings, nv12VideoSamples);
+        typeIn = MediaRecorder::CreateVideoInMediaType(settings, useNv12VideoSamples);
         typeOut = MediaRecorder::CreateVideoOutMediaType(settings, this->params.mediaFormat.GetMediaContainerType(), params.UseChunkMerger);
 
         hr = this->sinkWriter->AddStream(typeOut.Get(), &this->videoStreamIdx);
