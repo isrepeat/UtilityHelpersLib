@@ -94,7 +94,7 @@ void EncoderEnumerator::EnumAudio(std::function<void(const GUID &)> fn) {
                     }
 
                     // try to create recorder in order to check codec support
-                    MediaRecorder recorder(stream.Get(), std::move(params), true, true);
+                    MediaRecorder recorder(stream.Get(), std::move(params), UseHardwareTransformsForEncoding{ true }, UseNv12VideoSamples{ true });
 
                     auto codecGuid = codecSupport->MapAudioCodec(codecType);
 
@@ -133,7 +133,7 @@ void EncoderEnumerator::EnumVideo(std::function<void(const GUID &)> fn) {
                     params.mediaFormat = MediaFormat(containerType, nullptr, std::make_unique<EncoderEnumeratorVideoSettings>(codecType));
 
                     // try to create recorder in order to check codec support
-                    MediaRecorder recorder(stream.Get(), std::move(params), true, true);
+                    MediaRecorder recorder(stream.Get(), std::move(params), UseHardwareTransformsForEncoding{ true }, UseNv12VideoSamples{ true });
 
                     auto codecGuid = codecSupport->MapVideoCodec(codecType);
 
