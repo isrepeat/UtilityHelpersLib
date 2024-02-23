@@ -27,6 +27,37 @@ namespace HELPERS_NS {
         Completed,
     };
 
+
+    inline StatusReadFile GetOverlappedResultRoutine(HANDLE hFile, LPOVERLAPPED lpOverlapped, LPDWORD numberOfBytesTransfered, const std::atomic<bool>& stop) {
+        StatusReadFile status;
+
+        while (true) {
+            // Check break conditions in while scope (if we chek it after while may be status conflicts)
+            if (stop) {
+                return StatusReadFile::Stopped;
+            }
+
+            if (GetOverlappedResult(hFile, lpOverlapped, numberOfBytesTransfered, FALSE)) {
+                return StatusReadFile::Completed;
+            }
+            else { // pending ...
+                auto lastErrorGetOverlappedResult = GetLastError();
+                switch (lastErrorGetOverlappedResult) {
+                case ERROR_IO_INCOMPLETE:
+                    break; // continue call GetOverlappedResult() until it finish or error
+
+                case ERROR_MORE_DATA:
+                    return StatusReadFile::NeedMoreBuffer;
+
+                default:
+                    LogLastError;
+                    return StatusReadFile::Error;
+                }
+            }
+        }
+    }
+
+
     // TODO: rewrite this without blocking current thread
     template<typename T = uint8_t>
     StatusReadFile ReadFileAsync(HANDLE hFile, const std::atomic<bool>& stop, std::vector<T>& outBuffer, DWORD numberOfBytesToRead) {
@@ -50,36 +81,7 @@ namespace HELPERS_NS {
                 auto lastErrorReadFile = GetLastError();
                 switch (lastErrorReadFile) {
                 case ERROR_IO_PENDING:
-                    while (true) {
-                        // Check break conditions in while scope (if we chek it after while may be status conflicts)
-                        if (stop) {
-                            status = StatusReadFile::Stopped;
-                            break;
-                        }
-
-                        if (GetOverlappedResult(hFile, &stOverlapped, &dwBytesRead, FALSE)) {
-                            // ReadFile operation completed
-                            status = StatusReadFile::Completed;
-                            break;
-                        }
-                        else {
-                            // pending ...
-                            auto lastErrorGetOverlappedResult = GetLastError();
-                            switch (lastErrorGetOverlappedResult) {
-                            case ERROR_IO_INCOMPLETE: // this is normal case, just call GetOverlappedResult() again
-                                break;
-                            
-                            case ERROR_MORE_DATA:
-                                status = StatusReadFile::NeedMoreBuffer;
-                                break;
-                            
-                            default:
-                                status = StatusReadFile::Error;
-                                LogLastError;
-                                break;
-                            }
-                        }
-                    }
+                    status = GetOverlappedResultRoutine(hFile, &stOverlapped, &dwBytesRead, stop);
                     break;
 
                 case ERROR_MORE_DATA:
@@ -90,7 +92,6 @@ namespace HELPERS_NS {
                     LogLastError; 
                     status = StatusReadFile::Error;
                 }
-
 
                 if (status == StatusReadFile::NeedMoreBuffer) {
                     numberOfBytesToRead += READ_FILE_BUFFER_SIZE_DEFAULT * 100;
