@@ -65,8 +65,15 @@ namespace HELPERS_NS {
                         else {
                             // pending ...
                             auto lastErrorGetOverlappedResult = GetLastError();
-                            if (lastErrorGetOverlappedResult != ERROR_IO_INCOMPLETE) {
-                                // remote side was closed or smth else
+                            switch (lastErrorGetOverlappedResult) {
+                            case ERROR_IO_INCOMPLETE: // this is normal case, just call GetOverlappedResult() again
+                                break;
+                            
+                            case ERROR_MORE_DATA:
+                                status = StatusReadFile::NeedMoreBuffer;
+                                break;
+                            
+                            default:
                                 status = StatusReadFile::Error;
                                 LogLastError;
                                 break;
@@ -76,18 +83,22 @@ namespace HELPERS_NS {
                     break;
 
                 case ERROR_MORE_DATA:
-                    numberOfBytesToRead += READ_FILE_BUFFER_SIZE_DEFAULT * 100;
-                    if (numberOfBytesToRead >= READ_FILE_BUFFER_SIZE_MAX) {
-                        status = StatusReadFile::Error;
-                        LogLastError;
-                        break;
-                    }
                     status = StatusReadFile::NeedMoreBuffer;
                     break;
 
                 default:
                     LogLastError; 
                     status = StatusReadFile::Error;
+                }
+
+
+                if (status == StatusReadFile::NeedMoreBuffer) {
+                    numberOfBytesToRead += READ_FILE_BUFFER_SIZE_DEFAULT * 100;
+                    if (numberOfBytesToRead >= READ_FILE_BUFFER_SIZE_MAX) {
+                        status = StatusReadFile::Error;
+                        LogLastError;
+                        break;
+                    }
                 }
             }
         } while (status == StatusReadFile::NeedMoreBuffer);
