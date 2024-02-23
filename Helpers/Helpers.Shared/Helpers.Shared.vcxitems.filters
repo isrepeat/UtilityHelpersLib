@@ -320,6 +320,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TypeSwitch.h">
       <Filter>_Headers</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CallbackWinRT.hpp">
+      <Filter>WinRT</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />
