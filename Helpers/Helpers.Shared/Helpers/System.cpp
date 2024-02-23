@@ -1,6 +1,5 @@
 #include "System.h"
 #if COMPILE_FOR_DESKTOP
-#include "Logger.h"
 #ifdef CRASH_HANDLING_NUGET
 #include <CrashHandling/CrashHandling.h>
 #endif
