@@ -75,6 +75,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\FunctionTraits.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Gate.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\GetAddressOf.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Math.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Helpers.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\HWindows.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Input.h" />
