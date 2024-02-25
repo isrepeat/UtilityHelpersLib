@@ -40,6 +40,10 @@ namespace HELPERS_NS_ALIAS = HELPERS_NS; // set your alias for original "helpers
 #define CRASH_HANDLING_SUPPORT
 #endif
 
+#if defined(SPDLOG_SOURCES) || __has_include("Spdlog/LogHelpers.h")
+#define SPDLOG_SUPPORT
+#endif
+
 #if __has_include("boost/asio.hpp")
 #define BOOST_SUPPORTED
 #endif

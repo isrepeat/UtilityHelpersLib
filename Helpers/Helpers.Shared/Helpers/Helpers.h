@@ -1,6 +1,8 @@
 #pragma once
 #include "common.h"
 #include "HWindows.h"
+#include "Macros.h"
+
 #include <KnownFolders.h>
 #include <filesystem>
 #include <tlhelp32.h>
@@ -112,13 +114,4 @@ namespace HELPERS_NS {
                 return item <= i;
             });
     }
-
-#ifdef _DEBUG
-#define MIN_BEEP_DURATION 500
-#define BEEP(ton, duration) Beep(ton, duration > MIN_BEEP_DURATION ? duration : MIN_BEEP_DURATION)
-#define Dbreak __debugbreak()
-#else
-#define BEEP(ton, ms) (void)(0)
-#define Dbreak
-#endif
 }
