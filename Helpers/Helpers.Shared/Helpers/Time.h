@@ -6,22 +6,29 @@
 #include <thread>
 #include <future>
 
-using namespace std::chrono_literals;
-
 namespace HELPERS_NS {
-	namespace Literals {
-		constexpr uint64_t nanoSecond = 1'000'000'000;
-		constexpr uint64_t Hns = nanoSecond / 100; // resolution = 100-nanosecond intervals
+	namespace Chrono {
+		using Hns = std::chrono::duration<uint64_t, std::ratio<1, 10'000'000>>; // resolution = 100-nanosecond intervals
 
-		constexpr double HnsToSeconds = 1.0 / Hns;
-		constexpr double HnsToMilliseconds = 1000 * HnsToSeconds;
+		template <class _To, class _Rep, class _Period>
+		constexpr const std::chrono::duration<float, typename _To::period> duration_cast_float(const std::chrono::duration<_Rep, _Period>& _Dur) noexcept {
+			return std::chrono::duration_cast<std::chrono::duration<float, typename _To::period>>(_Dur);
+		}
 	}
 
-	constexpr uint64_t HnsToSeconds(uint64_t Hns) {
-		return static_cast<uint64_t>(Hns * Literals::HnsToSeconds + 0.5); // + 0.5 fix precision problem
+	inline namespace Literals {
+		inline namespace ChronoLiterals {
+			constexpr Chrono::Hns operator"" hns(unsigned long long _Val) noexcept {
+				return Chrono::Hns(_Val);
+			}
+		}
 	}
-	constexpr uint64_t HnsToMilliseconds(uint64_t Hns) {
-		return static_cast<uint64_t>(Hns * Literals::HnsToMilliseconds + 0.5);
+	
+	constexpr float HnsToSeconds(Chrono::Hns countHns) {
+		return Chrono::duration_cast_float<std::chrono::seconds>(countHns).count();
+	}
+	constexpr float HnsToMilliseconds(Chrono::Hns countHns) {
+		return Chrono::duration_cast_float<std::chrono::milliseconds>(countHns).count();
 	}
 
 
@@ -144,6 +151,10 @@ namespace HELPERS_NS {
 	std::string GetTimeNow(TimeFormat format = TimeFormat::None);
 	std::string GetTimezone();
 };
+
+using namespace std::chrono_literals;
+using namespace HELPERS_NS::ChronoLiterals;
+
 
 #ifdef _DEBUG
 // https://stackoverflow.com/questions/1597007/creating-c-macro-with-and-line-token-concatenation-with-positioning-macr
