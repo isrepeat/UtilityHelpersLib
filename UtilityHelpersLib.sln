@@ -25,9 +25,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ComAPI", "Helpers\ComAPI\Co
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Spdlog", "Spdlog", "{63FEF46C-0CC7-468E-9557-732EC7D823AC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Spdlog.Shared", "3rdParty\spdlog\Spdlog.Shared\Spdlog.Shared.vcxitems", "{34A69FFA-7FAE-4DE7-BAC0-30B5730831E9}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Spdlog.Shared", "3rdParty\Spdlog\Spdlog.Shared\Spdlog.Shared.vcxitems", "{34A69FFA-7FAE-4DE7-BAC0-30B5730831E9}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Spdlog.Static", "3rdParty\spdlog\Spdlog.Static\Spdlog.Static.vcxproj", "{4AB35171-9952-4A89-9589-8A63E8BE47E9}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Spdlog.Static", "3rdParty\Spdlog\Spdlog.Static\Spdlog.Static.vcxproj", "{4AB35171-9952-4A89-9589-8A63E8BE47E9}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Helpers.Includes", "Helpers\Helpers.Includes\Helpers.Includes.vcxitems", "{301BF8C8-F7CA-429F-8B12-DED615A64508}"
 EndProject
@@ -55,6 +55,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{82723E30
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TEST_AsyncTasks", "Tests\TEST_AsyncTasks\TEST_AsyncTasks.vcxproj", "{0061E887-26E6-40E8-9FA6-CA2C7FC73967}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{01CCDD93-E851-4CAF-8584-11B40149F589}"
+	ProjectSection(SolutionItems) = preProject
+		UtilityHelpersLibCommon.targets = UtilityHelpersLibCommon.targets
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Preprocessor", "Shared\Preprocessor\Preprocessor.vcxitems", "{A204FD66-46BC-4871-A6AC-75785C2C271D}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		3rdParty\3rdParty_Packages_Includes\3rdParty.Includes\3rdParty.Includes.vcxitems*{0061e887-26e6-40e8-9fa6-ca2c7fc73967}*SharedItemsImports = 4
@@ -65,6 +72,7 @@ Global
 		Helpers\ComAPI.Shared\ComAPI.Shared.vcxitems*{1f26dd5b-02c2-4192-ac91-06bed3d214f3}*SharedItemsImports = 4
 		Helpers\Helpers.Shared\Helpers.Shared.vcxitems*{1f26dd5b-02c2-4192-ac91-06bed3d214f3}*SharedItemsImports = 4
 		3rdParty\3rdParty_Packages_Includes\Boost.Includes\Boost.Includes.vcxitems*{298ab331-24aa-4f41-916e-2206023f8085}*SharedItemsImports = 4
+		3rdParty\JsonParser\JsonParser.Shared\JsonParser.Shared.vcxitems*{298ab331-24aa-4f41-916e-2206023f8085}*SharedItemsImports = 4
 		3rdParty\MagicEnum\MagicEnum.Shared\MagicEnum.Shared.vcxitems*{298ab331-24aa-4f41-916e-2206023f8085}*SharedItemsImports = 4
 		Helpers\Helpers.Shared\Helpers.Shared.vcxitems*{298ab331-24aa-4f41-916e-2206023f8085}*SharedItemsImports = 4
 		Helpers\Helpers.Includes\Helpers.Includes.vcxitems*{301bf8c8-f7ca-429f-8b12-ded615a64508}*SharedItemsImports = 9
@@ -77,6 +85,7 @@ Global
 		3rdParty\MagicEnum\MagicEnum.Shared\MagicEnum.Shared.vcxitems*{9119a10a-d27c-4eaf-8ee9-1a3097d8c6f6}*SharedItemsImports = 9
 		Helpers\ComAPI.Shared\ComAPI.Shared.vcxitems*{9ae2e2f4-5b16-4d19-9d1f-799a9e18ca69}*SharedItemsImports = 9
 		MediaRecorderCore\MediaRecorderCore\MediaRecorderCore.vcxitems*{9b70a232-1bc1-4bc4-b4c2-4932da0af224}*SharedItemsImports = 9
+		Shared\Preprocessor\Preprocessor.vcxitems*{a204fd66-46bc-4871-a6ac-75785c2c271d}*SharedItemsImports = 9
 		Helpers\Helpers.Shared\Helpers.Shared.vcxitems*{a3451486-ab38-4360-b752-94680b491792}*SharedItemsImports = 9
 		3rdParty\3rdParty_Packages_Includes\Boost.Includes\Boost.Includes.vcxitems*{a6a390c3-171d-47b9-b50c-39764ba0bd68}*SharedItemsImports = 4
 		3rdParty\MagicEnum\MagicEnum.Shared\MagicEnum.Shared.vcxitems*{a6a390c3-171d-47b9-b50c-39764ba0bd68}*SharedItemsImports = 4
@@ -201,6 +210,7 @@ Global
 		{4DC532AD-A19B-4EC5-9923-990DF8F4A9AB} = {E1A87477-9E41-4151-99A3-3C202225C9C2}
 		{1F26DD5B-02C2-4192-AC91-06BED3D214F3} = {4A5644B4-23EF-48F7-8F3E-45A0EBE5C607}
 		{0061E887-26E6-40E8-9FA6-CA2C7FC73967} = {82723E30-0CB2-4283-9642-3C200BE9CE5F}
+		{A204FD66-46BC-4871-A6AC-75785C2C271D} = {01CCDD93-E851-4CAF-8584-11B40149F589}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A114CB48-500F-4E4B-BC01-3ACE75DCCC4F}

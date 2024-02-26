@@ -1,22 +1,29 @@
 #pragma once
-// define these macros before first include spdlog headers
-#define SPDLOG_WCHAR_TO_ANSI_SUPPORT
-#define SPDLOG_WCHAR_FILENAMES
+#include <Preprocessor.h>
+#pragma message(PREPROCESSOR_FILE_INCLUDED("LogHelpers.h"))
 
 // You can compile static library with "dllexport" to export symbols through dll.
 // WARNING: Client must use "dllimport" if this project compiled as dll otherwise will be problems, for example:
 //          - DefaultLoggers singleton may exist in two instances.
 #ifndef LOGGER_API
-#define LOGGER_API __declspec(dllexport) 
+#define LOGGER_API
+#else
+#pragma message(PREPROCESSOR_MSG("LOGGER_API already defined = '" PP_STRINGIFY(LOGGER_API) "'"))
 #endif
 
 #ifndef LOGGER_NS_ALIAS
 #define LOGGER_NS_ALIAS lg
+#else
+#pragma message(PREPROCESSOR_MSG("LOGGER_NS_ALIAS already defined = '" PP_STRINGIFY(LOGGER_NS_ALIAS) "'"))
 #endif
 
 #define LOGGER_NS __lg_ns
 namespace LOGGER_NS {} // create uniq "logger namespace" for this project
 namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger namespace" (defined via macro)
+
+// define these macros before first include spdlog headers
+#define SPDLOG_WCHAR_TO_ANSI_SUPPORT
+#define SPDLOG_WCHAR_FILENAMES
 
 #include <spdlog/spdlog.h>
 #include <spdlog/logger.h>

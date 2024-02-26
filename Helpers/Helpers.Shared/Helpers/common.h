@@ -1,11 +1,16 @@
 #pragma once
+#include "Preprocessor.h"
+
 #ifndef HELPERS_NS_ALIAS
 #define HELPERS_NS_ALIAS H
+#else
+#pragma message(PREPROCESSOR_MSG("HELPERS_NS_ALIAS already defined = '" PP_STRINGIFY(HELPERS_NS_ALIAS) "'"))
 #endif
 
 #define HELPERS_NS __H_ns
 namespace HELPERS_NS {} // create uniq "helpers namespace" for this project
 namespace HELPERS_NS_ALIAS = HELPERS_NS; // set your alias for original "helpers namespace" (defined via macro)
+
 
 #include <winapifamily.h>
 
@@ -38,6 +43,10 @@ namespace HELPERS_NS_ALIAS = HELPERS_NS; // set your alias for original "helpers
 
 #if defined(CRASH_HANDLING_NUGET) || __has_include("CrashHandling/CrashHandling.h")
 #define CRASH_HANDLING_SUPPORT
+#endif
+
+#if defined(SPDLOG_SOURCES) || __has_include("Spdlog/LogHelpers.h")
+#define SPDLOG_SUPPORT
 #endif
 
 #if __has_include("boost/asio.hpp")

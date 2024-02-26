@@ -1,6 +1,7 @@
 #pragma once
 #include "StdRedirection.h"
 #include "Logger.h"
+#include "Macros.h"
 #include <fcntl.h>
 #include <io.h>
 
