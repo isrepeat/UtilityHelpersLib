@@ -52,14 +52,18 @@ namespace HELPERS_NS {
         void MappedFilesCollection::HandlePathItem(const PathItem& pathItem) {
             MappedFileItem mappedFileItem;
             auto basePath = mappedRootPath;
+            auto mappedFileName = pathItem.mainItem->path.filename();
 
             if (formatFlags.Has(Format::PreserveDirStructure)) {
                 basePath /= pathItem.mainItem->path.relative_path().remove_filename();
             }
 
             HELPERS_NS::TypeSwitch(pathItem.mainItem.get(),
-                [&basePath](FileItemWithMappedPath& item) {
+                [&basePath, &mappedFileName](FileItemWithMappedPath& item) {
                     basePath /= item.mappedPath;
+                    if (item.keepMappedFilename) {
+                        mappedFileName = item.mappedFileName;
+                    }
                     return;
                 }
             );
@@ -67,12 +71,12 @@ namespace HELPERS_NS {
             switch (pathItem.type) {
             case PathItem::Type::File:
             case PathItem::Type::Directory:
-                mappedFileItem = { pathItem.mainItem->path, basePath / pathItem.mainItem->path.filename() };
+                mappedFileItem = { pathItem.mainItem->path, basePath / mappedFileName };
                 break;
             case PathItem::Type::RecursiveEntry: {
                 // Cut mainItem path part from recursiveItem (recursiveItem is a child item of mainItem)
                 auto relativePathToMainItem = std::filesystem::relative(pathItem.recursiveItem->path, pathItem.mainItem->path);
-                mappedFileItem = { pathItem.recursiveItem->path, basePath / pathItem.mainItem->path.filename() / relativePathToMainItem };
+                mappedFileItem = { pathItem.recursiveItem->path, basePath / mappedFileName / relativePathToMainItem };
                 break;
             }
             }
