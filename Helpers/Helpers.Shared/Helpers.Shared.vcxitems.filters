@@ -326,6 +326,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Math.h">
       <Filter>_Headers</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MediaTypeInfo.h">
+      <Filter>MediaFoundation</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />

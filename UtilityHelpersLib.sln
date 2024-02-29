@@ -62,15 +62,28 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{01CCDD
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Preprocessor", "Shared\Preprocessor\Preprocessor.vcxitems", "{A204FD66-46BC-4871-A6AC-75785C2C271D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Helpers.MovieMaker", "Helpers.MovieMaker", "{5563DFA3-7547-4D86-8657-F8311EEF8A9A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Helpers.MovieMaker.Shared", "Helpers.MovieMaker\Helpers.MovieMaker.Shared\Helpers.MovieMaker.Shared.vcxitems", "{2481C6A9-BEC9-4AAA-B9D1-7480CEE35FD1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Helpers.MovieMaker.Desktop", "Helpers.MovieMaker\Helpers.MovieMaker.Desktop\Helpers.MovieMaker.Desktop.vcxproj", "{68E45821-1434-4594-A8DA-EC8D7B6F7CCE}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Helpers.MovieMaker.UWP", "Helpers.MovieMaker\Helpers.MovieMaker.UWP\Helpers.MovieMaker.UWP.vcxproj", "{C4998F75-24DB-454D-9A2D-F602FFBEA9D0}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MediaRecorderCore.sl.UWP", "MediaRecorderCore\MediaRecorderCore.sl.UWP\MediaRecorderCore.sl.UWP.vcxproj", "{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		3rdParty\3rdParty_Packages_Includes\3rdParty.Includes\3rdParty.Includes.vcxitems*{0061e887-26e6-40e8-9fa6-ca2c7fc73967}*SharedItemsImports = 4
+		MediaRecorderCore\MediaRecorderCore.Shared.UWP\MediaRecorderCore.Shared.UWP.vcxitems*{0429d5ce-1aaa-4141-83d3-b4329c7cb48e}*SharedItemsImports = 4
+		MediaRecorderCore\MediaRecorderCore\MediaRecorderCore.vcxitems*{0429d5ce-1aaa-4141-83d3-b4329c7cb48e}*SharedItemsImports = 4
 		3rdParty\JsonParser\JsonParser.Shared\JsonParser.Shared.vcxitems*{05dacba7-9f59-4442-a519-d32aa0373c0a}*SharedItemsImports = 9
 		MediaRecorderCore\MediaRecorderCore.Shared.UWP\MediaRecorderCore.Shared.UWP.vcxitems*{17f767e6-631b-4068-a504-810de9e39431}*SharedItemsImports = 9
 		3rdParty\MagicEnum\MagicEnum.Shared\MagicEnum.Shared.vcxitems*{1f26dd5b-02c2-4192-ac91-06bed3d214f3}*SharedItemsImports = 4
 		3rdParty\Spdlog\Spdlog.Shared\Spdlog.Shared.vcxitems*{1f26dd5b-02c2-4192-ac91-06bed3d214f3}*SharedItemsImports = 4
 		Helpers\ComAPI.Shared\ComAPI.Shared.vcxitems*{1f26dd5b-02c2-4192-ac91-06bed3d214f3}*SharedItemsImports = 4
 		Helpers\Helpers.Shared\Helpers.Shared.vcxitems*{1f26dd5b-02c2-4192-ac91-06bed3d214f3}*SharedItemsImports = 4
+		Helpers.MovieMaker\Helpers.MovieMaker.Shared\Helpers.MovieMaker.Shared.vcxitems*{2481c6a9-bec9-4aaa-b9d1-7480cee35fd1}*SharedItemsImports = 9
 		3rdParty\3rdParty_Packages_Includes\Boost.Includes\Boost.Includes.vcxitems*{298ab331-24aa-4f41-916e-2206023f8085}*SharedItemsImports = 4
 		3rdParty\JsonParser\JsonParser.Shared\JsonParser.Shared.vcxitems*{298ab331-24aa-4f41-916e-2206023f8085}*SharedItemsImports = 4
 		3rdParty\MagicEnum\MagicEnum.Shared\MagicEnum.Shared.vcxitems*{298ab331-24aa-4f41-916e-2206023f8085}*SharedItemsImports = 4
@@ -81,6 +94,7 @@ Global
 		Helpers\Helpers.Includes\Helpers.Includes.vcxitems*{4ab35171-9952-4a89-9589-8a63e8be47e9}*SharedItemsImports = 4
 		3rdParty\JsonParser\JsonParser.Shared\JsonParser.Shared.vcxitems*{4dc532ad-a19b-4ec5-9923-990df8f4a9ab}*SharedItemsImports = 4
 		3rdParty\3rdParty_Packages_Includes\3rdParty.Includes\3rdParty.Includes.vcxitems*{63bb29a8-e9c3-4070-9e45-900fa2f2da8a}*SharedItemsImports = 9
+		Helpers.MovieMaker\Helpers.MovieMaker.Shared\Helpers.MovieMaker.Shared.vcxitems*{68e45821-1434-4594-a8da-ec8d7b6f7cce}*SharedItemsImports = 4
 		3rdParty\3rdParty_Packages_Includes\Boost.Includes\Boost.Includes.vcxitems*{8e6397bf-29ae-4d5a-a7e7-87f332256bda}*SharedItemsImports = 9
 		3rdParty\MagicEnum\MagicEnum.Shared\MagicEnum.Shared.vcxitems*{9119a10a-d27c-4eaf-8ee9-1a3097d8c6f6}*SharedItemsImports = 9
 		Helpers\ComAPI.Shared\ComAPI.Shared.vcxitems*{9ae2e2f4-5b16-4d19-9d1f-799a9e18ca69}*SharedItemsImports = 9
@@ -90,6 +104,7 @@ Global
 		3rdParty\3rdParty_Packages_Includes\Boost.Includes\Boost.Includes.vcxitems*{a6a390c3-171d-47b9-b50c-39764ba0bd68}*SharedItemsImports = 4
 		3rdParty\MagicEnum\MagicEnum.Shared\MagicEnum.Shared.vcxitems*{a6a390c3-171d-47b9-b50c-39764ba0bd68}*SharedItemsImports = 4
 		Helpers\Helpers.Shared\Helpers.Shared.vcxitems*{a6a390c3-171d-47b9-b50c-39764ba0bd68}*SharedItemsImports = 4
+		Helpers.MovieMaker\Helpers.MovieMaker.Shared\Helpers.MovieMaker.Shared.vcxitems*{c4998f75-24db-454d-9a2d-f602ffbea9d0}*SharedItemsImports = 4
 		Helpers\ComAPI.Shared\ComAPI.Shared.vcxitems*{d2f14f8e-303b-4ae6-a98b-b789cd19981d}*SharedItemsImports = 4
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -183,6 +198,40 @@ Global
 		{0061E887-26E6-40E8-9FA6-CA2C7FC73967}.Release|x64.Build.0 = Release|x64
 		{0061E887-26E6-40E8-9FA6-CA2C7FC73967}.Release|x86.ActiveCfg = Release|Win32
 		{0061E887-26E6-40E8-9FA6-CA2C7FC73967}.Release|x86.Build.0 = Release|Win32
+		{68E45821-1434-4594-A8DA-EC8D7B6F7CCE}.Debug|ARM.ActiveCfg = Debug|Win32
+		{68E45821-1434-4594-A8DA-EC8D7B6F7CCE}.Debug|x64.ActiveCfg = Debug|x64
+		{68E45821-1434-4594-A8DA-EC8D7B6F7CCE}.Debug|x64.Build.0 = Debug|x64
+		{68E45821-1434-4594-A8DA-EC8D7B6F7CCE}.Debug|x86.ActiveCfg = Debug|Win32
+		{68E45821-1434-4594-A8DA-EC8D7B6F7CCE}.Debug|x86.Build.0 = Debug|Win32
+		{68E45821-1434-4594-A8DA-EC8D7B6F7CCE}.Release|ARM.ActiveCfg = Release|Win32
+		{68E45821-1434-4594-A8DA-EC8D7B6F7CCE}.Release|x64.ActiveCfg = Release|x64
+		{68E45821-1434-4594-A8DA-EC8D7B6F7CCE}.Release|x64.Build.0 = Release|x64
+		{68E45821-1434-4594-A8DA-EC8D7B6F7CCE}.Release|x86.ActiveCfg = Release|Win32
+		{68E45821-1434-4594-A8DA-EC8D7B6F7CCE}.Release|x86.Build.0 = Release|Win32
+		{C4998F75-24DB-454D-9A2D-F602FFBEA9D0}.Debug|ARM.ActiveCfg = Debug|ARM
+		{C4998F75-24DB-454D-9A2D-F602FFBEA9D0}.Debug|ARM.Build.0 = Debug|ARM
+		{C4998F75-24DB-454D-9A2D-F602FFBEA9D0}.Debug|x64.ActiveCfg = Debug|x64
+		{C4998F75-24DB-454D-9A2D-F602FFBEA9D0}.Debug|x64.Build.0 = Debug|x64
+		{C4998F75-24DB-454D-9A2D-F602FFBEA9D0}.Debug|x86.ActiveCfg = Debug|Win32
+		{C4998F75-24DB-454D-9A2D-F602FFBEA9D0}.Debug|x86.Build.0 = Debug|Win32
+		{C4998F75-24DB-454D-9A2D-F602FFBEA9D0}.Release|ARM.ActiveCfg = Release|ARM
+		{C4998F75-24DB-454D-9A2D-F602FFBEA9D0}.Release|ARM.Build.0 = Release|ARM
+		{C4998F75-24DB-454D-9A2D-F602FFBEA9D0}.Release|x64.ActiveCfg = Release|x64
+		{C4998F75-24DB-454D-9A2D-F602FFBEA9D0}.Release|x64.Build.0 = Release|x64
+		{C4998F75-24DB-454D-9A2D-F602FFBEA9D0}.Release|x86.ActiveCfg = Release|Win32
+		{C4998F75-24DB-454D-9A2D-F602FFBEA9D0}.Release|x86.Build.0 = Release|Win32
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Debug|ARM.ActiveCfg = Debug|ARM
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Debug|ARM.Build.0 = Debug|ARM
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Debug|x64.ActiveCfg = Debug|x64
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Debug|x64.Build.0 = Debug|x64
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Debug|x86.ActiveCfg = Debug|Win32
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Debug|x86.Build.0 = Debug|Win32
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Release|ARM.ActiveCfg = Release|ARM
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Release|ARM.Build.0 = Release|ARM
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Release|x64.ActiveCfg = Release|x64
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Release|x64.Build.0 = Release|x64
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Release|x86.ActiveCfg = Release|Win32
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -211,6 +260,10 @@ Global
 		{1F26DD5B-02C2-4192-AC91-06BED3D214F3} = {4A5644B4-23EF-48F7-8F3E-45A0EBE5C607}
 		{0061E887-26E6-40E8-9FA6-CA2C7FC73967} = {82723E30-0CB2-4283-9642-3C200BE9CE5F}
 		{A204FD66-46BC-4871-A6AC-75785C2C271D} = {01CCDD93-E851-4CAF-8584-11B40149F589}
+		{2481C6A9-BEC9-4AAA-B9D1-7480CEE35FD1} = {5563DFA3-7547-4D86-8657-F8311EEF8A9A}
+		{68E45821-1434-4594-A8DA-EC8D7B6F7CCE} = {5563DFA3-7547-4D86-8657-F8311EEF8A9A}
+		{C4998F75-24DB-454D-9A2D-F602FFBEA9D0} = {5563DFA3-7547-4D86-8657-F8311EEF8A9A}
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E} = {A78FEBFD-4F54-40B5-8E2A-D5FC27765320}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A114CB48-500F-4E4B-BC01-3ACE75DCCC4F}

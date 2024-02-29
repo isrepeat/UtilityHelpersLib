@@ -2,6 +2,8 @@
 #include "CodecsTable.h"
 #include "MediaFormat/MediaFormatCodecsSupport.h"
 #include "Platform/PlatformClassFactory.h"
+#include <Helpers/MediaFoundation/MediaTypeInfo.h>
+
 #include <limits>
 #include <filesystem>
 #include <libhelpers/HardDrive.h>
@@ -9,9 +11,7 @@
 #include <libhelpers/HMathCP.h>
 #include <libhelpers/HTime.h>
 #include <mfapi.h>
-#if SPDLOG_ENABLED
-#include <spdlog/LoggerWrapper.h>
-#endif
+
 
 // encoder restrictions can be found here : https://msdn.microsoft.com/en-us/library/windows/desktop/dd742785(v=vs.85).aspx
 const uint32_t MediaRecorder::AllowedNumChannels[] = { 1 , 2 };
@@ -363,12 +363,12 @@ void MediaRecorder::InitializeSinkWriter(
     H::System::ThrowIfFailed(hr);
 
     if (this->params.mediaFormat.GetAudioCodecSettings()) {
-        
+
         auto settings = this->params.mediaFormat.GetAudioCodecSettings();
         Microsoft::WRL::ComPtr<IMFMediaType> typeOut, typeIn;
 
         typeIn = MediaRecorder::CreateAudioInMediaType(settings, AudioSampleBits);
-        
+
         switch (settings->GetCodecType()) {
         case AudioCodecType::AAC:
             typeOut = CreateAudioAACOutMediaType();
@@ -377,7 +377,7 @@ void MediaRecorder::InitializeSinkWriter(
         default:
             typeOut = CreateAudioOutMediaType(settings, AudioSampleBits);
         }
-        
+
         //typeOut = CreateAudioFlacOutMediaType();
         //typeOut = MediaRecorder::CreateAudioInMediaType(settings, AudioSampleBits);
 
@@ -418,6 +418,8 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateAudioInMediaType(
     const IAudioCodecSettings *settings,
     uint32_t bitsPerSample)
 {
+    LOG_FUNCTION_SCOPE_VERBOSE("CreateAudioInMediaType()");
+
     if (settings == nullptr)
         return nullptr;
 
@@ -459,6 +461,7 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateAudioInMediaType(
     hr = mediaType->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE);
     H::System::ThrowIfFailed(hr);
 
+    MF::Helpers::PrintAudioMediaTypeInfo(mediaType, "[audioTypeIn]");
     return mediaType;
 }
 
@@ -466,6 +469,8 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateAudioOutMediaType(
     const IAudioCodecSettings *settings,
     uint32_t bitsPerSample)
 {
+    LOG_FUNCTION_SCOPE_VERBOSE("CreateAudioOutMediaType()");
+
     if (settings == nullptr)
         return nullptr;
 
@@ -571,11 +576,14 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateAudioOutMediaType(
         H::System::ThrowIfFailed(hr);
     }
     
+    MF::Helpers::PrintAudioMediaTypeInfo(mediaType, "[audioTypeOut]");
     return mediaType;
 }
 
 //TODO maybe replace codec
 Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateAudioAACOutMediaType() {
+    LOG_FUNCTION_SCOPE_VERBOSE("CreateAudioAACOutMediaType()");
+
     HRESULT hr = S_OK;
     Microsoft::WRL::ComPtr<IMFMediaType> mediaType;
 
@@ -605,6 +613,7 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateAudioAACOutMediaType()
         H::System::ThrowIfFailed(hr);
     }
     
+    MF::Helpers::PrintAudioMediaTypeInfo(mediaType, "[audioAacTypeOut]");
     return mediaType;
 }
 
@@ -647,6 +656,8 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateAudioFlacOutMediaType(
 Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateVideoInMediaType(
     const IVideoCodecSettings *settings, UseNv12VideoSamples nv12VideoSamples)
 {
+    LOG_FUNCTION_SCOPE_VERBOSE("CreateVideoInMediaType()");
+
     if (settings == nullptr)
         return nullptr;
 
@@ -686,12 +697,15 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateVideoInMediaType(
     hr = MFSetAttributeRatio(mediaType.Get(), MF_MT_PIXEL_ASPECT_RATIO, 1, 1);
     H::System::ThrowIfFailed(hr);
 
+    MF::Helpers::PrintVideoMediaTypeInfo(mediaType, "[videoTypeIn]");
     return mediaType;
 }
 
 Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateVideoOutMediaType(
     const IVideoCodecSettings *settings, MediaContainerType containerType, bool useChunkMerger)
 {
+    LOG_FUNCTION_SCOPE_VERBOSE("CreateVideoOutMediaType()");
+
     if (settings == nullptr)
         return nullptr;
 
@@ -737,6 +751,7 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::CreateVideoOutMediaType(
         H::System::ThrowIfFailed(hr);
     }
 
+    MF::Helpers::PrintVideoMediaTypeInfo(mediaType, "[videoTypeOut]");
     return mediaType;
 }
 
@@ -749,6 +764,8 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::GetBestOutputType(
     uint32_t bitsPerSample,
     uint32_t bitrate)
 {
+    LOG_FUNCTION_SCOPE_VERBOSE("GetBestOutputType()");
+
     Microsoft::WRL::ComPtr<IMFMediaType> outType;
     uint32_t outTypeIdx = 0;
     uint32_t outTypeBitrate = 0;
@@ -822,6 +839,7 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::GetBestOutputType(
         outType = defaultType;
     }
 
+    MF::Helpers::PrintAudioMediaTypeInfo(outType, "[audioBestTypeOut]");
     return outType;
 }
 

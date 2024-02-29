@@ -84,6 +84,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Logger.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Macros.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MappedFilesCollection.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MediaTypeInfo.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MFInclude.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MFLibs.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MFUser.h" />

@@ -12,6 +12,17 @@ namespace HELPERS_NS {} // create uniq "helpers namespace" for this project
 namespace HELPERS_NS_ALIAS = HELPERS_NS; // set your alias for original "helpers namespace" (defined via macro)
 
 
+#ifndef MEDIA_FOUNDATION_NS_ALIAS
+#define MEDIA_FOUNDATION_NS_ALIAS MF
+#else
+#pragma message(PREPROCESSOR_MSG("MEDIA_FOUNDATION_NS_ALIAS already defined = '" PP_STRINGIFY(MEDIA_FOUNDATION_NS_ALIAS) "'"))
+#endif
+
+#define MEDIA_FOUNDATION_NS __MF_ns
+namespace MEDIA_FOUNDATION_NS {}
+namespace MEDIA_FOUNDATION_NS_ALIAS = MEDIA_FOUNDATION_NS;
+
+
 #include <winapifamily.h>
 
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)

@@ -26,6 +26,17 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Helpers.MovieMaker\Helpers.MovieMaker.UWP\Helpers.MovieMaker.UWP.vcxproj">
+      <Project>{c4998f75-24db-454d-9a2d-f602ffbea9d0}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Helpers\Helpers.UWP\Helpers.UWP.vcxproj">
+      <Project>{1f26dd5b-02c2-4192-ac91-06bed3d214f3}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="MediaRecorderCore.sl.UWP.targets" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0429d5ce-1aaa-4141-83d3-b4329c7cb48e}</ProjectGuid>
     <Keyword>StaticLibrary</Keyword>
@@ -108,42 +119,36 @@
     <OutDir>$(SolutionDir)\!VS_TMP\Build\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
     <TargetName>MediaRecorderCore.sl.uwp</TargetName>
-    <IncludePath>$(ProjectDir)..\MediaRecorderCore\;$(ProjectDir)..\..\Helpers\Helpers.Shared\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <GenerateManifest>false</GenerateManifest>
     <OutDir>$(SolutionDir)\!VS_TMP\Build\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
     <TargetName>MediaRecorderCore.sl.uwp</TargetName>
-    <IncludePath>$(ProjectDir)..\MediaRecorderCore\;$(ProjectDir)..\..\Helpers\Helpers.Shared\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <GenerateManifest>false</GenerateManifest>
     <OutDir>$(SolutionDir)\!VS_TMP\Build\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
     <TargetName>MediaRecorderCore.sl.uwp</TargetName>
-    <IncludePath>$(ProjectDir)..\MediaRecorderCore\;$(ProjectDir)..\..\Helpers\Helpers.Shared\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <GenerateManifest>false</GenerateManifest>
     <OutDir>$(SolutionDir)\!VS_TMP\Build\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
     <TargetName>MediaRecorderCore.sl.uwp</TargetName>
-    <IncludePath>$(ProjectDir)..\MediaRecorderCore\;$(ProjectDir)..\..\Helpers\Helpers.Shared\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <GenerateManifest>false</GenerateManifest>
     <OutDir>$(SolutionDir)\!VS_TMP\Build\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
     <TargetName>MediaRecorderCore.sl.uwp</TargetName>
-    <IncludePath>$(ProjectDir)..\MediaRecorderCore\;$(ProjectDir)..\..\Helpers\Helpers.Shared\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <GenerateManifest>false</GenerateManifest>
     <OutDir>$(SolutionDir)\!VS_TMP\Build\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
     <TargetName>MediaRecorderCore.sl.uwp</TargetName>
-    <IncludePath>$(ProjectDir)..\MediaRecorderCore\;$(ProjectDir)..\..\Helpers\Helpers.Shared\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -232,4 +237,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <!-- ==================== Custom targets ==================== -->
+  <Import Project="$(MSBuildThisFileDirectory)MediaRecorderCore.sl.UWP.targets" />
+  <!-- ======================================================== -->
 </Project>
