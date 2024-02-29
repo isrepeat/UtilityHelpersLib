@@ -36,4 +36,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderCore\Platform\PlatformHelpers.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderCore\Platform\Wma8CodecFactory.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)MediaRecorderCore.Shared.UWP.targets" />
+  </ItemGroup>
 </Project>

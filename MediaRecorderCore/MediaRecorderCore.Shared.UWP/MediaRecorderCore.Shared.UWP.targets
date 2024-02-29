@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- Make sure this file are imported in .vcxitems -->  
   <PropertyGroup>
-    <HelpersMovieMakerSourcesDir>$(MSBuildThisFileDirectory)libhelpers</HelpersMovieMakerSourcesDir>
+    <MediaRecorderCoreUWPSourcesDir>$(MSBuildThisFileDirectory)MediaRecorderCore</MediaRecorderCoreUWPSourcesDir>
     <!-- Expose own dir for other projects -->
     <PublicIncludeDirectories>$(MSBuildThisFileDirectory);$(PublicIncludeDirectories)</PublicIncludeDirectories>
   </PropertyGroup>
@@ -10,7 +10,6 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>
-        INSIDE_HELPERS_MOVIEMAKER_PROJECT;
         %(PreprocessorDefinitions)
       </PreprocessorDefinitions>
     </ClCompile>
