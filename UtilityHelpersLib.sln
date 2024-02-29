@@ -70,9 +70,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Helpers.MovieMaker.Desktop"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Helpers.MovieMaker.UWP", "Helpers.MovieMaker\Helpers.MovieMaker.UWP\Helpers.MovieMaker.UWP.vcxproj", "{C4998F75-24DB-454D-9A2D-F602FFBEA9D0}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MediaRecorderCore.sl.UWP", "MediaRecorderCore\MediaRecorderCore.sl.UWP\MediaRecorderCore.sl.UWP.vcxproj", "{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		3rdParty\3rdParty_Packages_Includes\3rdParty.Includes\3rdParty.Includes.vcxitems*{0061e887-26e6-40e8-9fa6-ca2c7fc73967}*SharedItemsImports = 4
+		MediaRecorderCore\MediaRecorderCore.Shared.UWP\MediaRecorderCore.Shared.UWP.vcxitems*{0429d5ce-1aaa-4141-83d3-b4329c7cb48e}*SharedItemsImports = 4
+		MediaRecorderCore\MediaRecorderCore\MediaRecorderCore.vcxitems*{0429d5ce-1aaa-4141-83d3-b4329c7cb48e}*SharedItemsImports = 4
 		3rdParty\JsonParser\JsonParser.Shared\JsonParser.Shared.vcxitems*{05dacba7-9f59-4442-a519-d32aa0373c0a}*SharedItemsImports = 9
 		MediaRecorderCore\MediaRecorderCore.Shared.UWP\MediaRecorderCore.Shared.UWP.vcxitems*{17f767e6-631b-4068-a504-810de9e39431}*SharedItemsImports = 9
 		3rdParty\MagicEnum\MagicEnum.Shared\MagicEnum.Shared.vcxitems*{1f26dd5b-02c2-4192-ac91-06bed3d214f3}*SharedItemsImports = 4
@@ -216,6 +220,18 @@ Global
 		{C4998F75-24DB-454D-9A2D-F602FFBEA9D0}.Release|x64.Build.0 = Release|x64
 		{C4998F75-24DB-454D-9A2D-F602FFBEA9D0}.Release|x86.ActiveCfg = Release|Win32
 		{C4998F75-24DB-454D-9A2D-F602FFBEA9D0}.Release|x86.Build.0 = Release|Win32
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Debug|ARM.ActiveCfg = Debug|ARM
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Debug|ARM.Build.0 = Debug|ARM
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Debug|x64.ActiveCfg = Debug|x64
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Debug|x64.Build.0 = Debug|x64
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Debug|x86.ActiveCfg = Debug|Win32
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Debug|x86.Build.0 = Debug|Win32
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Release|ARM.ActiveCfg = Release|ARM
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Release|ARM.Build.0 = Release|ARM
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Release|x64.ActiveCfg = Release|x64
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Release|x64.Build.0 = Release|x64
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Release|x86.ActiveCfg = Release|Win32
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -247,6 +263,7 @@ Global
 		{2481C6A9-BEC9-4AAA-B9D1-7480CEE35FD1} = {5563DFA3-7547-4D86-8657-F8311EEF8A9A}
 		{68E45821-1434-4594-A8DA-EC8D7B6F7CCE} = {5563DFA3-7547-4D86-8657-F8311EEF8A9A}
 		{C4998F75-24DB-454D-9A2D-F602FFBEA9D0} = {5563DFA3-7547-4D86-8657-F8311EEF8A9A}
+		{0429D5CE-1AAA-4141-83D3-B4329C7CB48E} = {A78FEBFD-4F54-40B5-8E2A-D5FC27765320}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A114CB48-500F-4E4B-BC01-3ACE75DCCC4F}
