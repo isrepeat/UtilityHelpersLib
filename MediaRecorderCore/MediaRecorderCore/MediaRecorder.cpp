@@ -2,6 +2,8 @@
 #include "CodecsTable.h"
 #include "MediaFormat/MediaFormatCodecsSupport.h"
 #include "Platform/PlatformClassFactory.h"
+#include <Helpers/MediaFoundation/MediaTypeInfo.h>
+
 #include <limits>
 #include <filesystem>
 #include <libhelpers/HardDrive.h>
@@ -10,9 +12,6 @@
 #include <libhelpers/HTime.h>
 #include <mfapi.h>
 
-// TODO: rewrite this workaround for namespace alias. At least move this definition to root header.
-#define HELPERS_NS_ALIAS HH
-#include <Helpers/MediaFoundation/MediaTypeInfo.h>
 
 // encoder restrictions can be found here : https://msdn.microsoft.com/en-us/library/windows/desktop/dd742785(v=vs.85).aspx
 const uint32_t MediaRecorder::AllowedNumChannels[] = { 1 , 2 };
