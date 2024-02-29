@@ -4,13 +4,6 @@
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     <HasSharedItems>true</HasSharedItems>
     <ItemsProjectGuid>{2481c6a9-bec9-4aaa-b9d1-7480cee35fd1}</ItemsProjectGuid>
-    <ItemsRootNamespace>Helpers</ItemsRootNamespace>
-    <ItemsProjectName>Helpers.Shared</ItemsProjectName>
-    <CodeSharingProject>248F659F-DAC5-46E8-AC09-60EC9FC95053</CodeSharingProject>
-    <ItemsSccProjectName>$/Video Cutter Express/Prototype/NativeLibraries/Helpers/Helpers.Shared</ItemsSccProjectName>
-    <ItemsSccAuxPath>http://tfsdct.com:8080/tfs/uwp</ItemsSccAuxPath>
-    <ItemsSccLocalPath>.</ItemsSccLocalPath>
-    <ItemsSccProvider>{4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}</ItemsSccProvider>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -324,4 +317,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)libhelpers\UniquePROPVARIANT.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)libhelpers\WinRT\HDataWinRT.cpp" />
   </ItemGroup>
+  <!-- Custom targets -->
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)Helpers.MovieMaker.Shared.targets" />
+  </ItemGroup>
+  <Import Project="$(MSBuildThisFileDirectory)Helpers.MovieMaker.Shared.targets" />
 </Project>

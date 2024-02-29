@@ -80,7 +80,7 @@
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
-    <Import Project="..\Helpers.Shared\Helpers.Shared.vcxitems" Label="Shared" />
+    <Import Project="..\Helpers.MovieMaker.Shared\Helpers.MovieMaker.Shared.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -109,7 +109,6 @@
     <TargetName>Helpers</TargetName>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <IncludePath>$(ProjectDir)..\Helpers.Shared\libhelpers\;$(ProjectDir)..\..\WinRT\HelpersWinRT\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <GenerateManifest>false</GenerateManifest>
@@ -118,7 +117,6 @@
     <TargetName>Helpers</TargetName>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <IncludePath>$(ProjectDir)..\Helpers.Shared\libhelpers\;$(ProjectDir)..\..\WinRT\HelpersWinRT\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <GenerateManifest>false</GenerateManifest>
@@ -127,7 +125,6 @@
     <TargetName>Helpers</TargetName>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <IncludePath>$(ProjectDir)..\Helpers.Shared\libhelpers\;$(ProjectDir)..\..\WinRT\HelpersWinRT\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <GenerateManifest>false</GenerateManifest>
@@ -136,7 +133,6 @@
     <TargetName>Helpers</TargetName>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <IncludePath>$(ProjectDir)..\Helpers.Shared\libhelpers\;$(ProjectDir)..\..\WinRT\HelpersWinRT\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <GenerateManifest>false</GenerateManifest>
@@ -145,7 +141,6 @@
     <TargetName>Helpers</TargetName>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <IncludePath>$(ProjectDir)..\Helpers.Shared\libhelpers\;$(ProjectDir)..\..\WinRT\HelpersWinRT\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <GenerateManifest>false</GenerateManifest>
@@ -154,7 +149,6 @@
     <TargetName>Helpers</TargetName>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <IncludePath>$(ProjectDir)..\Helpers.Shared\libhelpers\;$(ProjectDir)..\..\WinRT\HelpersWinRT\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
