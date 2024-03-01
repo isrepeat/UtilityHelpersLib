@@ -70,6 +70,8 @@ namespace HELPERS_NS {
             void HandlePathItem(const PathItem& pathItem) override;
             void Complete() override;
 
+            void RenameDuplicatesInCollection(std::vector<HELPERS_NS::FS::MappedFileItem>& collection);
+
         private:
             uint64_t totalSize;
             const HELPERS_NS::Flags<Format> formatFlags;

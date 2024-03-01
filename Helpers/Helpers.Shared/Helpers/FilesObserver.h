@@ -108,6 +108,18 @@ namespace HELPERS_NS {
             GetFilesCollection<FilesCollectionT>(std::move(fileItemsUniq), filesCollection);
         }
 
+        template<template<class> class TCollection, class... Args>
+        static void GetAllFiles(const std::filesystem::path& basePath, TCollection<Args...>& collection) {
+            try {
+                for (auto fileEntry : std::filesystem::recursive_directory_iterator(basePath)) {
+                    collection.insert(collection.end(), fileEntry.path());
+                }
+            }
+            catch (...) {
+                // Ignore
+            }
+        }
+
 
         template<template<class> class TCollection, class... Args>
         static void RenameDuplicate(
