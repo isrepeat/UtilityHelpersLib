@@ -110,8 +110,13 @@ namespace HELPERS_NS {
 
         template<template<class> class TCollection, class... Args>
         static void GetAllFiles(const std::filesystem::path& basePath, TCollection<Args...>& collection) {
-            for (auto fileEntry : std::filesystem::recursive_directory_iterator(basePath)) {
-                collection.insert(collection.end(), fileEntry.path());
+            try {
+                for (auto fileEntry : std::filesystem::recursive_directory_iterator(basePath)) {
+                    collection.insert(collection.end(), fileEntry.path());
+                }
+            }
+            catch (...) {
+                // Ignore
             }
         }
 
