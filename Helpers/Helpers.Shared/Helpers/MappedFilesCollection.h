@@ -13,44 +13,25 @@ namespace HELPERS_NS {
             FileItemWithMappedPath(std::string path, std::string mappedPath)
                 : FileItemBase{ path }
                 , mappedPath{ mappedPath }
-            {
-                InitializePaths();
-            }
+            {}
             FileItemWithMappedPath(std::wstring path, std::wstring mappedPath)
                 : FileItemBase{ path }
                 , mappedPath{ mappedPath }
-            {
-                InitializePaths();
-            }
+            {}
             FileItemWithMappedPath(const char* path, const char* mappedPath)
                 : FileItemBase{ path }
                 , mappedPath{ mappedPath }
-            {
-                InitializePaths();
-            }
+            {}
             FileItemWithMappedPath(const wchar_t* path, const wchar_t* mappedPath)
                 : FileItemBase{ path }
                 , mappedPath{ mappedPath }
-            {
-                InitializePaths();
-            }
+            {}
             FileItemWithMappedPath(std::filesystem::path path, std::filesystem::path mappedPath)
                 : FileItemBase{ path }
                 , mappedPath{ mappedPath }
-            {
-                InitializePaths();
-            }
+            {}
 
             std::filesystem::path mappedPath;
-            std::filesystem::path mappedFileName;
-            bool keepMappedFilename = false;
-
-        private:
-            inline void InitializePaths() {
-                mappedPath = mappedPath.relative_path();
-                mappedFileName = mappedPath.filename();
-                mappedPath.remove_filename();
-            }
         };
 
         struct MappedFileItem {
