@@ -184,7 +184,7 @@ void MediaRecorder::RecordVideoSample(const Microsoft::WRL::ComPtr<IMFSample>& s
 }
 
 
-void MediaRecorder::RecordAudioBuffer(const float* audioSamples, size_t samplesCount) {
+void MediaRecorder::RecordAudioBuffer(const float* audioSamples, size_t samplesCountForAllChannels) {
     if (this->recordingErrorOccured) {
         LOG_ERROR_D("Was recording error before, ignore");
         return;
@@ -192,26 +192,31 @@ void MediaRecorder::RecordAudioBuffer(const float* audioSamples, size_t samplesC
 
     HRESULT hr = S_OK;
 
-    BYTE* bufferData = nullptr;
-    Microsoft::WRL::ComPtr<IMFMediaBuffer> buffer;
-    const DWORD bufferByteSize = (uint32_t)(samplesCount * sizeof(int16_t));
-
-    // <valuesCount> must be multiple of <NumAudioChannels> in order to write full audio frame
+    assert(this->HasAudio());
     assert(this->params.mediaFormat.GetAudioCodecSettings());
     assert(this->params.mediaFormat.GetAudioCodecSettings()->GetBasicSettings());
-    assert(samplesCount % this->params.mediaFormat.GetAudioCodecSettings()->GetBasicSettings()->numChannels == 0);
-    assert(this->HasAudio());
 
+    // 'samplesCountForAllChannels' must be multiple of 'numChannels' in order to write full audio frame
+    auto basicSettings = this->params.mediaFormat.GetAudioCodecSettings()->GetBasicSettings();
+    assert(samplesCountForAllChannels % basicSettings->numChannels == 0);
+
+    // TODO: Rewrite without int16_t
+    // sample size = 2 byte == AudioSampleBits / 8 (AudioSampleBits == 16 for PCM)
+    const DWORD bufferByteSize = (uint32_t)(samplesCountForAllChannels * sizeof(int16_t)); 
+    
+    Microsoft::WRL::ComPtr<IMFMediaBuffer> buffer;
     hr = MFCreateMemoryBuffer(bufferByteSize, buffer.GetAddressOf());
     H::System::ThrowIfFailed(hr);
 
+    BYTE* bufferData = nullptr;
     hr = buffer->Lock(&bufferData, NULL, NULL);
 
+    // TODO: rewrite without int16_t
     if (SUCCEEDED(hr)) {
         auto src = audioSamples;
         auto dst = reinterpret_cast<int16_t*>(bufferData);
 
-        for (size_t i = 0; i < samplesCount; i++) {
+        for (size_t i = 0; i < samplesCountForAllChannels; i++) {
             dst[i] = (int16_t)(src[i] * INT16_MAX);
         }
     }
@@ -222,13 +227,11 @@ void MediaRecorder::RecordAudioBuffer(const float* audioSamples, size_t samplesC
     hr = buffer->SetCurrentLength(bufferByteSize);
     H::System::ThrowIfFailed(hr);
 
-    auto basicSettings = this->params.mediaFormat.GetAudioCodecSettings()->GetBasicSettings();
 
-    // check difference between 'samplesCount' and 'sampleCount_' and mb rename
-    int64_t sampleCount_ = samplesCount / basicSettings->numChannels;
+    int64_t samplesCountPerChannel = samplesCountForAllChannels / basicSettings->numChannels;
 
     int64_t durationHns = H::MathCP::Convert2(
-        sampleCount_, 
+        samplesCountPerChannel,
         (int64_t)basicSettings->sampleRate,
         (int64_t)H::Time::HNSResolution);
 
@@ -951,11 +954,11 @@ void MediaRecorder::WriteSample(const Microsoft::WRL::ComPtr<IMFSample> &sample,
 
         if (streamIndex == this->videoStreamIdx) {
             //LOG_DEBUG_D("WriteSample VIDEO: samplePts = {}, sampleDuration = {}  (videoFrameNumber = {})", samplePts, sampleDuration, framesNumber);
-            lastWritedVideoSample = std::make_unique<WritedSample>(samplePts, sampleDuration);
+            lastWritedVideoSample.emplace(samplePts, sampleDuration);
         }
         else {
             //LOG_DEBUG_D("WriteSample AUDIO: samplePts = {}, sampleDuration = {}  (audioSampleNumber = {})", samplePts, sampleDuration, samplesNumber);
-            lastWritedAudioSample = std::make_unique<WritedSample>(samplePts, sampleDuration);
+            lastWritedAudioSample.emplace(samplePts, sampleDuration);
         }
 
         hr = this->sinkWriter->WriteSample(streamIndex, sample.Get());

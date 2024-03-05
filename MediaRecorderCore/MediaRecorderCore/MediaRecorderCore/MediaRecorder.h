@@ -55,7 +55,7 @@ public:
     void StartRecord() override;
     void Record(const Microsoft::WRL::ComPtr<IMFSample> &sample, bool audio) override;
     void RecordVideoSample(const Microsoft::WRL::ComPtr<IMFSample> &sample);
-    void RecordAudioBuffer(const float* audioSamples, size_t samplesCount);
+    void RecordAudioBuffer(const float* audioSamples, size_t samplesCountForAllChannels);
     void EndRecord() override;
 
     void Restore(IMFByteStream* outputStream, std::vector<std::wstring>&& chunks) override;
@@ -97,8 +97,8 @@ private:
     int64_t audioPtsHns = 0;
     int64_t videoPtsHns = 0;
     
-    std::unique_ptr<WritedSample> lastWritedAudioSample;
-    std::unique_ptr<WritedSample> lastWritedVideoSample;
+    std::optional<WritedSample> lastWritedAudioSample;
+    std::optional<WritedSample> lastWritedVideoSample;
 
     // hardwareTransformsForEncoding by default true because it reduces memory usage
     UseHardwareTransformsForEncoding hardwareTransformsForEncoding = UseHardwareTransformsForEncoding{ true };
