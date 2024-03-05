@@ -245,5 +245,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderCore\MediaFormat\AudioCodecSettingsItemSort\CmpOrder.h">
       <Filter>Sources</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderCore\WritedSample.h">
+      <Filter>Sources</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
