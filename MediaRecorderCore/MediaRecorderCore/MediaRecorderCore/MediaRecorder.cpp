@@ -950,11 +950,11 @@ void MediaRecorder::WriteSample(const Microsoft::WRL::ComPtr<IMFSample> &sample,
         H::System::ThrowIfFailed(hr);
 
         if (streamIndex == this->videoStreamIdx) {
-            LOG_DEBUG_D("WriteSample VIDEO: samplePts = {}, sampleDuration = {}  (videoFrameNumber = {})", samplePts, sampleDuration, framesNumber);
+            //LOG_DEBUG_D("WriteSample VIDEO: samplePts = {}, sampleDuration = {}  (videoFrameNumber = {})", samplePts, sampleDuration, framesNumber);
             lastWritedVideoSample = std::make_unique<WritedSample>(samplePts, sampleDuration);
         }
         else {
-            LOG_DEBUG_D("WriteSample AUDIO: samplePts = {}, sampleDuration = {}  (audioSampleNumber = {})", samplePts, sampleDuration, samplesNumber);
+            //LOG_DEBUG_D("WriteSample AUDIO: samplePts = {}, sampleDuration = {}  (audioSampleNumber = {})", samplePts, sampleDuration, samplesNumber);
             lastWritedAudioSample = std::make_unique<WritedSample>(samplePts, sampleDuration);
         }
 
