@@ -40,9 +40,12 @@ public:
     bool HasAudio() const override;
     bool HasVideo() const override;
 
-    int64_t LastVideoPtsHns() const override;
     int64_t LastAudioPtsHns() const override;
+    int64_t LastVideoPtsHns() const override;
     int64_t LastPtsHns() const override;
+
+    WritedSample LastWritedAudioSample() const override;
+    WritedSample LastWritedVideoSample() const override;
 
     bool ChunkAudioSamplesWritten() const override;
     bool ChunkVideoSamplesWritten() const override;
@@ -51,6 +54,8 @@ public:
 
     void StartRecord() override;
     void Record(const Microsoft::WRL::ComPtr<IMFSample> &sample, bool audio) override;
+    void RecordVideoSample(const Microsoft::WRL::ComPtr<IMFSample> &sample);
+    void RecordAudioBuffer(const float* audioSamples, size_t samplesCount);
     void EndRecord() override;
 
     void Restore(IMFByteStream* outputStream, std::vector<std::wstring>&& chunks) override;
@@ -63,11 +68,12 @@ public:
     Microsoft::WRL::ComPtr<IMFMediaType> CreateAudioAACOutMediaType();
     Microsoft::WRL::ComPtr<IMFMediaType> CreateAudioFlacOutMediaType();
 
-    void Write(const float *audioSamples, size_t valuesCount, int64_t hns = -1);
+    [[deprecated("Write(const float* audioSamples, size_t valuesCount, int64_t hns) is deprecated, use RecordAudioBuffer(...) instead")]]
+    void Write(const float* audioSamples, size_t valuesCount, int64_t hns = -1);
     // without sample allocator it can cause memory leak
-    void Write(ID3D11DeviceContext *d3dCtx, ID3D11Texture2D *tex, int64_t hns = -1, int64_t durationHns = -1);
+    void Write(ID3D11DeviceContext* d3dCtx, ID3D11Texture2D* tex, int64_t hns = -1, int64_t durationHns = -1);
     // without sample allocator it can cause memory leak
-    void Write(const void *videoData, size_t rowPitch, int64_t hns = -1, int64_t durationHns = -1);
+    void Write(const void* videoData, size_t rowPitch, int64_t hns = -1, int64_t durationHns = -1);
 
     static Microsoft::WRL::ComPtr<IMFMediaType> CreateAudioInMediaType(
         const IAudioCodecSettings* settings,
@@ -90,6 +96,9 @@ private:
 
     int64_t audioPtsHns = 0;
     int64_t videoPtsHns = 0;
+    
+    std::unique_ptr<WritedSample> lastWritedAudioSample;
+    std::unique_ptr<WritedSample> lastWritedVideoSample;
 
     // hardwareTransformsForEncoding by default true because it reduces memory usage
     UseHardwareTransformsForEncoding hardwareTransformsForEncoding = UseHardwareTransformsForEncoding{ true };

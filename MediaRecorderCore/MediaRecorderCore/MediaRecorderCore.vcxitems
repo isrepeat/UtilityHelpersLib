@@ -107,5 +107,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderCore\Platform\IWma8CodecFactory.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderCore\Platform\PlatformClassFactory.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderCore\targetver.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderCore\WritedSample.h" />
   </ItemGroup>
 </Project>
