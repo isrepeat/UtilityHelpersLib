@@ -67,6 +67,20 @@ int64_t MediaRecorder::LastPtsHns() const {
     return ptsHns;
 }
 
+WritedSample MediaRecorder::LastWritedAudioSample() const {
+    if (!this->lastWritedAudioSample)
+        return {};
+
+    return *this->lastWritedAudioSample;
+}
+
+WritedSample MediaRecorder::LastWritedVideoSample() const {
+    if (!this->lastWritedVideoSample)
+        return {};
+
+    return *this->lastWritedVideoSample;
+}
+
 bool MediaRecorder::ChunkAudioSamplesWritten() const {
     bool written = this->samplesNumber > 0;
     return written;
@@ -145,36 +159,86 @@ void MediaRecorder::Record(const Microsoft::WRL::ComPtr<IMFSample> &sample, bool
         ++framesNumber;
     }
 
-    try {
-        this->WriteSample(sample, streamIdx);
-    }
-    catch (const HResultException& ex) {
-        if (ex.GetHRESULT() == HRESULT_FROM_WIN32(ERROR_DISK_FULL))
-        {
-            if (recordEventCallback) {
-                Native::MediaRecorderEventArgs eventArgs;
-
-                if (params.UseChunkMerger) {
-                    eventArgs.message = Native::MediaRecorderMessageEnum::NotEnoughSpaceOnDiskWithChunks;
-                }
-                else {
-                    eventArgs.message = Native::MediaRecorderMessageEnum::NotEnoughSpaceOnTargetRecordPath;
-                }
-
-                recordEventCallback->call(eventArgs);
-                this->recordingErrorOccured = true;
-            }
-            else {
-                throw;
-            }
-        }
-        else {
-            throw;
-        }
-    }
-
+    this->WriteSample(sample, streamIdx);
     *ptsPtr = samplePts + sampleDuration;
 }
+
+
+void MediaRecorder::RecordVideoSample(const Microsoft::WRL::ComPtr<IMFSample>& sample) {
+    if (this->recordingErrorOccured) {
+        LOG_ERROR_D("Was recording error before, ignore");
+        // don't write samples after recording error
+        // because it can throw/report more different exceptions
+        // than the one that caused the initial recording error
+        return;
+    }
+
+    HRESULT hr = S_OK;
+    hr = sample->SetSampleTime(this->LastWritedVideoSample().nextSamplePts);
+    H::System::ThrowIfFailed(hr);
+
+    // NOTE: sample duration is set outside because it depend on frameRate
+
+    this->WriteSample(sample, this->videoStreamIdx);
+    this->framesNumber++;
+}
+
+
+void MediaRecorder::RecordAudioBuffer(const float* audioSamples, size_t samplesCountForAllChannels) {
+    if (this->recordingErrorOccured) {
+        LOG_ERROR_D("Was recording error before, ignore");
+        return;
+    }
+
+    HRESULT hr = S_OK;
+
+    assert(this->HasAudio());
+    assert(this->params.mediaFormat.GetAudioCodecSettings());
+    assert(this->params.mediaFormat.GetAudioCodecSettings()->GetBasicSettings());
+
+    // 'samplesCountForAllChannels' must be multiple of 'numChannels' in order to write full audio frame
+    auto basicSettings = this->params.mediaFormat.GetAudioCodecSettings()->GetBasicSettings();
+    assert(samplesCountForAllChannels % basicSettings->numChannels == 0);
+
+    // TODO: Rewrite without int16_t
+    // sample size = 2 byte == AudioSampleBits / 8 (AudioSampleBits == 16 for PCM)
+    const DWORD bufferByteSize = (uint32_t)(samplesCountForAllChannels * sizeof(int16_t)); 
+    
+    Microsoft::WRL::ComPtr<IMFMediaBuffer> buffer;
+    hr = MFCreateMemoryBuffer(bufferByteSize, buffer.GetAddressOf());
+    H::System::ThrowIfFailed(hr);
+
+    BYTE* bufferData = nullptr;
+    hr = buffer->Lock(&bufferData, NULL, NULL);
+
+    // TODO: rewrite without int16_t
+    if (SUCCEEDED(hr)) {
+        auto src = audioSamples;
+        auto dst = reinterpret_cast<int16_t*>(bufferData);
+
+        for (size_t i = 0; i < samplesCountForAllChannels; i++) {
+            dst[i] = (int16_t)(src[i] * INT16_MAX);
+        }
+    }
+
+    buffer->Unlock();
+    H::System::ThrowIfFailed(hr);
+
+    hr = buffer->SetCurrentLength(bufferByteSize);
+    H::System::ThrowIfFailed(hr);
+
+
+    int64_t samplesCountPerChannel = samplesCountForAllChannels / basicSettings->numChannels;
+
+    int64_t durationHns = H::MathCP::Convert2(
+        samplesCountPerChannel,
+        (int64_t)basicSettings->sampleRate,
+        (int64_t)H::Time::HNSResolution);
+
+    this->WriteSample(buffer, this->LastWritedAudioSample().nextSamplePts, durationHns, this->audioStreamIdx);
+    this->samplesNumber += samplesCountPerChannel;
+}
+
 
 void MediaRecorder::EndRecord() {
     if (params.UseChunkMerger) {
@@ -236,7 +300,7 @@ Microsoft::WRL::ComPtr<IMFMediaType> MediaRecorder::GetVideoTypeOut() const {
     return this->videoTypeOut;
 }
 
-void MediaRecorder::Write(const float *audioSamples, size_t valuesCount, int64_t hns) {
+void MediaRecorder::Write(const float* audioSamples, size_t valuesCount, int64_t hns) {
     HRESULT hr = S_OK;
     BYTE *bufferData = nullptr;
     Microsoft::WRL::ComPtr<IMFMediaBuffer> buffer;
@@ -287,7 +351,7 @@ void MediaRecorder::Write(const float *audioSamples, size_t valuesCount, int64_t
 }
 
 
-void MediaRecorder::Write(ID3D11DeviceContext *d3dCtx, ID3D11Texture2D *tex, int64_t hns, int64_t durationHns) {
+void MediaRecorder::Write(ID3D11DeviceContext* d3dCtx, ID3D11Texture2D* tex, int64_t hns, int64_t durationHns) {
     assert(this->params.DxBufferFactory);
 
     Microsoft::WRL::ComPtr<IMFMediaBuffer> buffer = this->params.DxBufferFactory->CreateBuffer(d3dCtx, tex);
@@ -295,7 +359,7 @@ void MediaRecorder::Write(ID3D11DeviceContext *d3dCtx, ID3D11Texture2D *tex, int
     this->WriteVideoSample(buffer, hns, durationHns);
 }
 
-void MediaRecorder::Write(const void *videoData, size_t rowPitch, int64_t hns, int64_t durationHns) {
+void MediaRecorder::Write(const void* videoData, size_t rowPitch, int64_t hns, int64_t durationHns) {
     assert(this->params.mediaFormat.GetVideoCodecSettings());
     assert(this->params.mediaFormat.GetVideoCodecSettings()->GetBasicSettings());
 
@@ -311,7 +375,7 @@ void MediaRecorder::Write(const void *videoData, size_t rowPitch, int64_t hns, i
 
     if (SUCCEEDED(hr)) {
         if (basicSettings->width * 4 != rowPitch) {
-            auto src = static_cast<const uint8_t *>(videoData);
+            auto src = static_cast<const uint8_t*>(videoData);
             auto dst = bufferData;
 
             for (uint32_t y = 0; y < basicSettings->height; y++, src += rowPitch, dst += basicSettings->height * 4) {
@@ -877,10 +941,52 @@ void MediaRecorder::WriteSample(const Microsoft::WRL::ComPtr<IMFMediaBuffer> &bu
 }
 
 void MediaRecorder::WriteSample(const Microsoft::WRL::ComPtr<IMFSample> &sample, DWORD streamIndex) {
-    HRESULT hr = S_OK;
-    
-    hr = this->sinkWriter->WriteSample(streamIndex, sample.Get());
-    H::System::ThrowIfFailed(hr);
+    try {
+        HRESULT hr = S_OK;
+
+        LONGLONG samplePts;
+        hr = sample->GetSampleTime(&samplePts);
+        H::System::ThrowIfFailed(hr);
+
+        LONGLONG sampleDuration;
+        hr = sample->GetSampleDuration(&sampleDuration);
+        H::System::ThrowIfFailed(hr);
+
+        if (streamIndex == this->videoStreamIdx) {
+            //LOG_DEBUG_D("WriteSample VIDEO: samplePts = {}, sampleDuration = {}  (videoFrameNumber = {})", samplePts, sampleDuration, framesNumber);
+            lastWritedVideoSample.emplace(samplePts, sampleDuration);
+        }
+        else {
+            //LOG_DEBUG_D("WriteSample AUDIO: samplePts = {}, sampleDuration = {}  (audioSampleNumber = {})", samplePts, sampleDuration, samplesNumber);
+            lastWritedAudioSample.emplace(samplePts, sampleDuration);
+        }
+
+        hr = this->sinkWriter->WriteSample(streamIndex, sample.Get());
+        H::System::ThrowIfFailed(hr);
+    }
+    catch (const HResultException& ex) {
+        if (ex.GetHRESULT() == HRESULT_FROM_WIN32(ERROR_DISK_FULL)) {
+            if (recordEventCallback) {
+                Native::MediaRecorderEventArgs eventArgs;
+
+                if (params.UseChunkMerger) {
+                    eventArgs.message = Native::MediaRecorderMessageEnum::NotEnoughSpaceOnDiskWithChunks;
+                }
+                else {
+                    eventArgs.message = Native::MediaRecorderMessageEnum::NotEnoughSpaceOnTargetRecordPath;
+                }
+
+                recordEventCallback->call(eventArgs);
+                this->recordingErrorOccured = true;
+            }
+            else {
+                throw;
+            }
+        }
+        else {
+            throw;
+        }
+    }
 }
 
 int64_t MediaRecorder::GetDefaultVideoFrameDuration() const {

@@ -2,6 +2,7 @@
 #include "IMFVideoSampleAllocatorSimpleNotify.h"
 
 #include <libhelpers\HSystem.h>
+#include <Helpers/Logger.h>
 
 IMFVideoSampleAllocatorSimpleNotify::IMFVideoSampleAllocatorSimpleNotify(IMFVideoSampleAllocator *allocator)
     : alloc(0), hasSample(0), stop(false)
@@ -57,6 +58,8 @@ void IMFVideoSampleAllocatorSimpleNotify::Wait(HRESULT hrAlloc, bool *stopped) {
 
         return;
     }
+
+    LOG_DEBUG("hrAlloc == MF_E_SAMPLEALLOCATOR_EMPTY");
 
     this->cv.wait(lk, [&] { return this->hasSample || this->stop; });
 

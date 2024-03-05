@@ -42,6 +42,7 @@ namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger na
 #include <string>
 #include <memory>
 #include <array>
+#include <set>
 
 
 namespace LOGGER_NS {
@@ -96,6 +97,7 @@ namespace LOGGER_NS {
 
         static void Init(std::filesystem::path logFilePath, HELPERS_NS::Flags<InitFlags> initFlags = InitFlags::DefaultFlags);
         static void InitForId(uint8_t loggerId, std::filesystem::path logFilePath, HELPERS_NS::Flags<InitFlags> initFlags = InitFlags::DefaultFlags);
+        static bool IsInitialized(uint8_t id = 0);
         static std::string GetLastMessage();
 
         static std::shared_ptr<spdlog::logger> Logger(uint8_t id = 0);
@@ -137,6 +139,8 @@ namespace LOGGER_NS {
         }
 
     private:
+        //const std::unordered_map<uint8_t, bool> initializedLoggersById;
+        std::set<uint8_t> initializedLoggersById;
 #ifdef _DEBUG
         const std::shared_ptr<spdlog::sinks::msvc_sink_mt> debugSink;
 #endif

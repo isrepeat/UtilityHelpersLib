@@ -176,18 +176,19 @@ namespace LOGGER_NS {
 
     void DefaultLoggers::InitForId(uint8_t loggerId, std::filesystem::path logFilePath, HELPERS_NS::Flags<InitFlags> initFlags) {
         assertm(loggerId < maxLoggers, "loggerId out of bound");
-        static std::set<std::wstring> initedLoggers;
+        // TODO: Use H::Bimap<"loggerPath", loggerId> and move to class member (combine with initializedLoggersById)
+        static std::set<std::wstring> initializedLoggersByPath;
 
         if (initFlags.Has(InitFlags::CreateInPackageFolder) && HELPERS_NS::PackageProvider::IsRunningUnderPackage()) {
             logFilePath = ComApi::GetPackageFolder() / logFilePath.relative_path();
         }
 
-        if (initedLoggers.count(logFilePath) > 0) {
+        if (initializedLoggersByPath.count(logFilePath) > 0) {
             TimeLogger(loggerId)->warn("the logger on this path has already been initialized");
             return;
         }
         else {
-            initedLoggers.insert(logFilePath);
+            initializedLoggersByPath.insert(logFilePath);
         }
 
         if (!std::filesystem::exists(logFilePath)) {
@@ -205,7 +206,14 @@ namespace LOGGER_NS {
             }
         }
 
+
         auto& _this = GetInstance();
+        if (_this.initializedLoggersById.count(loggerId) > 0) {
+            TimeLogger(loggerId)->warn("the logger on this id = {} has already been initialized, continue reinitalize ...", loggerId);
+        }
+        else {
+            _this.initializedLoggersById.insert(loggerId);
+        }
 
         _this.standardLoggersList[loggerId].fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, initFlags.Has(InitFlags::Truncate));
         auto formatterDefault = std::make_unique<spdlog::pattern_formatter>();
@@ -330,10 +338,15 @@ namespace LOGGER_NS {
         }
     }
 
+    bool DefaultLoggers::IsInitialized(uint8_t id) {
+        return GetInstance().initializedLoggersById.count(id) > 0;
+    }
+
     std::string DefaultLoggers::GetLastMessage() {
         std::unique_lock lk{ GetInstance().mxCustomFlagHandlers };
         return GetInstance().lastMessage;
     }
+
 
     std::shared_ptr<spdlog::logger> DefaultLoggers::Logger(uint8_t id) {
         auto& _this = GetInstance(); // ensure that token set

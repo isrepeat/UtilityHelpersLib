@@ -115,4 +115,4 @@ logging::Logger::ReportMessage(__LogFn_ThId() + "--->>" + __FUNCSIG__);
 
 #define DEBUG_JOIN(...) __VA_ARGS__
 #define WFILE WSTR2(__FILE__)
-#define LOG_DEBUG(...) logging::Logger::ReportMessage(std::wstring(logging::Logger::Helper::GetFileName(WFILE)) + L":" + std::to_wstring(__LINE__) + std::wstring{L" : "} + DEBUG_JOIN(__VA_ARGS__))
+#define LOG_REPORT(...) logging::Logger::ReportMessage(std::wstring(logging::Logger::Helper::GetFileName(WFILE)) + L":" + std::to_wstring(__LINE__) + std::wstring{L" : "} + DEBUG_JOIN(__VA_ARGS__))

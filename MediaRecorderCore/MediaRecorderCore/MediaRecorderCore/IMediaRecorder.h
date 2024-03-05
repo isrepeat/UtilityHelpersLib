@@ -1,5 +1,5 @@
 #pragma once
-
+#include "WritedSample.h"
 #include <cstdint>
 #include <wrl.h>
 #include <mfapi.h>
@@ -23,6 +23,9 @@ public:
     virtual int64_t LastAudioPtsHns() const = 0;
     // default implementation is to return max(LastVideoPtsHns(), LastAudioPtsHns())
     virtual int64_t LastPtsHns() const = 0;
+
+    virtual WritedSample LastWritedAudioSample() const = 0;
+    virtual WritedSample LastWritedVideoSample() const = 0;
 
     virtual bool ChunkAudioSamplesWritten() const = 0;
     virtual bool ChunkVideoSamplesWritten() const = 0;

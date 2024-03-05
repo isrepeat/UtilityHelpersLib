@@ -8,12 +8,49 @@
 
 namespace HELPERS_NS {
 	namespace Chrono {
-		using Hns = std::chrono::duration<uint64_t, std::ratio<1, 10'000'000>>; // resolution = 100-nanosecond intervals
-
 		template <class _To, class _Rep, class _Period>
 		constexpr const std::chrono::duration<float, typename _To::period> duration_cast_float(const std::chrono::duration<_Rep, _Period>& _Dur) noexcept {
 			return std::chrono::duration_cast<std::chrono::duration<float, typename _To::period>>(_Dur);
 		}
+
+		template <typename _Rep, typename _Period>
+		struct DurationBase : std::chrono::duration<_Rep, _Period> {
+			using _MyBase = std::chrono::duration<_Rep, _Period>;
+			using _MyBase::duration;
+
+			operator uint64_t() const {
+				return this->count();
+			}
+			operator int64_t() const {
+				return this->count();
+			}
+			operator uint32_t() const {
+				return this->count();
+			}
+			operator int32_t() const {
+				return this->count();
+			}
+			explicit operator float() const {
+				return duration_cast_float<_MyBase>(*this).count();
+			}
+			explicit operator double() const {
+				// TODO: add duration_cast_double
+				return duration_cast_float<_MyBase>(*this).count();
+			}
+		};
+
+		template <typename _Rep, typename _Period>
+		constexpr DurationBase<_Rep, _Period> operator+(const DurationBase<_Rep, _Period>& _Left, const DurationBase<_Rep, _Period>& _Right) noexcept {
+			return std::chrono::operator+(_Left, _Right);
+		}
+
+		template <typename _Rep, typename _Period>
+		constexpr DurationBase<_Rep, _Period> operator-(const DurationBase<_Rep, _Period>& _Left, const DurationBase<_Rep, _Period>& _Right) noexcept {
+			return std::chrono::operator-(_Left, _Right);
+		}
+
+
+		using Hns = DurationBase<unsigned long long, std::ratio<1, 10'000'000>>;
 	}
 
 	inline namespace Literals {
