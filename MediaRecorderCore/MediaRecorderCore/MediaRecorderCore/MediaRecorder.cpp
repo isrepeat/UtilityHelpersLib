@@ -236,7 +236,7 @@ void MediaRecorder::RecordAudioBuffer(const float* audioSamples, size_t samplesC
         (int64_t)H::Time::HNSResolution);
 
     this->WriteSample(buffer, this->LastWritedAudioSample().nextSamplePts, durationHns, this->audioStreamIdx);
-    this->samplesNumber++;
+    this->samplesNumber += samplesCountPerChannel;
 }
 
 
