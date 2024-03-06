@@ -562,6 +562,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Meta\ZeroDefaultValue.h">
       <Filter>Sources</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\jsonNative\jsoncpp_git_info.h">
+      <Filter>Sources</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)libhelpers\AABB.cpp">
