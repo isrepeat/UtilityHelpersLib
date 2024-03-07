@@ -76,7 +76,7 @@ AudioCodecSettingsValues MediaFormatFactory::GetSettingsValues(AudioCodecType co
     }
 
     if (!transform) {
-        throw std::exception();
+        throw std::exception("Can't create MFTransform");
     }
 
     AudioCodecSettingsValues settings;
@@ -97,7 +97,7 @@ AudioCodecSettingsValues MediaFormatFactory::GetSettingsValues(AudioCodecType co
         if (!type) {
             // check logic and hr result handling
             assert(false);
-            throw std::exception();
+            throw std::exception("Can't get output available type");
         }
 
         GUID curSubtype = GUID_NULL;
