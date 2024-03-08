@@ -1,4 +1,5 @@
 #include "LogHelpers.h"
+#pragma message(PREPROCESSOR_MSG("Build LogHelpers.cpp with LOGGER_API = '" PP_STRINGIFY(LOGGER_API) "'"))
 #include <Helpers/FileSystem_inline.h>
 #include <Helpers/PackageProvider.h> // need link with Helpers.lib
 #include <Helpers/TokenSingleton.hpp>
@@ -33,7 +34,7 @@ namespace LOGGER_NS {
             //    spdlog::details::fmt_helper::append_string_view({ svFuncNameEnd.data(), svFuncNameEnd.size() }, dest);
             //    return;
             //}
-            
+
             spdlog::details::fmt_helper::append_string_view(logMsg.source.funcname, dest);
         }
 
@@ -61,9 +62,9 @@ namespace LOGGER_NS {
                 spdlog::details::fmt_helper::append_string_view(" *** [W] =", dest);
                 break;
             }
-            
+
             if (prefixCallback) {
-                std::wstring prefix = std::wstring(padinfo_.width_, ' ') + prefixCallback();  
+                std::wstring prefix = std::wstring(padinfo_.width_, ' ') + prefixCallback();
                 dest.append(prefix.data(), prefix.data() + prefix.size());
             }
             if (postfixCallback) {
@@ -133,7 +134,7 @@ namespace LOGGER_NS {
         const std::shared_ptr<spdlog::logger> DefaultLogger() const {
             return defaultLogger;
         }
-        
+
     private:
         const std::shared_ptr<spdlog::sinks::msvc_sink_mt> defaultSink;
         const std::shared_ptr<spdlog::logger> defaultLogger;
@@ -161,7 +162,7 @@ namespace LOGGER_NS {
         debugSink->set_level(spdlog::level::trace);
 #endif
         // DefaultLoggers::UnscopedData is created inside singleton
-        TokenSingleton<DefaultLoggers>::SetToken(Passkey<DefaultLoggers>{}, this->token); 
+        TokenSingleton<DefaultLoggers>::SetToken(Passkey<DefaultLoggers>{}, this->token);
     }
 
     DefaultLoggers::~DefaultLoggers() {

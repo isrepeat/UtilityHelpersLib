@@ -5,6 +5,7 @@
 // You can compile static library with "dllexport" to export symbols through dll.
 // WARNING: Client must use "dllimport" if this project compiled as dll otherwise will be problems, for example:
 //          - DefaultLoggers singleton may exist in two instances.
+// NOTE: This macro must be redefined at global level (in <PreprocessorDefinitions>)
 #ifndef LOGGER_API
 #define LOGGER_API
 #else

@@ -44,6 +44,7 @@ namespace HELPERS_NS {
         inline void ThrowIfFailed(HRESULT hr) {
             static_assert(std::is_same_v<TCHAR, wchar_t>, "TCHAR != wchar_t");
             if (FAILED(hr)) {
+                Dbreak;
                 throw ComException(hr, _com_error(hr).ErrorMessage());
             }
         }
@@ -52,6 +53,7 @@ namespace HELPERS_NS {
         inline void ThrowIfFailed(HRESULT hr) {
             //static_assert(std::is_same_v<TCHAR, wchar_t>, "TCHAR != wchar_t");
             if (FAILED(hr)) {
+                Dbreak;
                 auto comErr = _com_error(hr, nullptr);
                 //LOG_ERROR_D(L"Com exception = [{:#08x}] {}", static_cast<unsigned int>(hr), comErr.ErrorMessage());
                 throw comErr;
