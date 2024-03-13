@@ -116,38 +116,38 @@
   <PropertyGroup />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <GenerateManifest>false</GenerateManifest>
-    <OutDir>$(SolutionDir)\!VS_TMP\Build\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)\!VS_TMP\Build\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
     <TargetName>MediaRecorderCore.sl.uwp</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <GenerateManifest>false</GenerateManifest>
-    <OutDir>$(SolutionDir)\!VS_TMP\Build\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)\!VS_TMP\Build\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
     <TargetName>MediaRecorderCore.sl.uwp</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <GenerateManifest>false</GenerateManifest>
-    <OutDir>$(SolutionDir)\!VS_TMP\Build\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)\!VS_TMP\Build\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
     <TargetName>MediaRecorderCore.sl.uwp</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <GenerateManifest>false</GenerateManifest>
-    <OutDir>$(SolutionDir)\!VS_TMP\Build\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)\!VS_TMP\Build\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
     <TargetName>MediaRecorderCore.sl.uwp</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <GenerateManifest>false</GenerateManifest>
-    <OutDir>$(SolutionDir)\!VS_TMP\Build\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)\!VS_TMP\Build\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
     <TargetName>MediaRecorderCore.sl.uwp</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <GenerateManifest>false</GenerateManifest>
-    <OutDir>$(SolutionDir)\!VS_TMP\Build\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\UWP\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)\!VS_TMP\Build\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
     <TargetName>MediaRecorderCore.sl.uwp</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
