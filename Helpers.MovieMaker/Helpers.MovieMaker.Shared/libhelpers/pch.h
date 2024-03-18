@@ -19,6 +19,18 @@
 #include <string>
 #include <vector>
 
+#define HELPERS_NS_ALIAS HH
+#include <MagicEnum/MagicEnum.h>
+#include <Helpers/Logger.h>
+#include <Helpers/Time.h>
+
+//#define MEASURE_TIME_SCOPED(name) HH::MeasureTimeScoped H_CONCAT(_measureTimeScoped, __LINE__)([] (std::chrono::duration<double, std::milli> dt) {      \
+//    LOG_DEBUG_D("[" ##name "] dt = {}", dt.count());                                                                                                    \
+//    })
+//
+//#define LOG_DELTA_TIME_POINTS(tpNameB, tpNameA) LOG_DEBUG_D("" #tpNameB " - " #tpNameA " = {}", std::chrono::duration<double, std::milli>(tpNameB - tpNameA).count());
+
+
 #include "config.h"
 #include "HSystem.h"
 #include "HMath.h"
