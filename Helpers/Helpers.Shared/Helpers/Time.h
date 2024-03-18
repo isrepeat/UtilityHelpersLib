@@ -173,11 +173,11 @@ namespace HELPERS_NS {
 
 	class MeasureTimeScoped {
 	public:
-		MeasureTimeScoped(std::function<void(uint64_t dtMs)> completedCallback);
+		MeasureTimeScoped(std::function<void(std::chrono::duration<double, std::milli> dt)> completedCallback);
 		~MeasureTimeScoped();
 
 	private:
-		std::function<void(uint64_t dtMs)> completedCallback;
+		std::function<void(std::chrono::duration<double, std::milli>)> completedCallback;
 		std::chrono::time_point<std::chrono::high_resolution_clock> start;
 	};
 
@@ -193,14 +193,14 @@ using namespace std::chrono_literals;
 using namespace HELPERS_NS::ChronoLiterals;
 
 
-#ifdef _DEBUG
-// https://stackoverflow.com/questions/1597007/creating-c-macro-with-and-line-token-concatenation-with-positioning-macr
-#define MEASURE_TIME_TOKENPASTE(x, y) x ## y
-// use it with __LINE__ to fix "hides declaration of the same name in outer scope"
-#define MEASURE_TIME_TOKENPASTE2(x, y) MEASURE_TIME_TOKENPASTE(x, y)
-#define MEASURE_TIME HELPERS_NS::MeasureTime MEASURE_TIME_TOKENPASTE2(_measureTimeScoped, __LINE__);
-#define MEASURE_TIME_WITH_CALLBACK(callback) HELPERS_NS::MeasureTimeScoped MEASURE_TIME_TOKENPASTE2(_measureTimeScoped, __LINE__)(callback);
-#else
-#define MEASURE_TIME
-#define MEASURE_TIME_WITH_CALLBACK(callback)
-#endif
+//#ifdef _DEBUG
+//// https://stackoverflow.com/questions/1597007/creating-c-macro-with-and-line-token-concatenation-with-positioning-macr
+//#define MEASURE_TIME_TOKENPASTE(x, y) x ## y
+//// use it with __LINE__ to fix "hides declaration of the same name in outer scope"
+//#define MEASURE_TIME_TOKENPASTE2(x, y) MEASURE_TIME_TOKENPASTE(x, y)
+//#define MEASURE_TIME HELPERS_NS::MeasureTime MEASURE_TIME_TOKENPASTE2(_measureTimeScoped, __LINE__);
+//#define MEASURE_TIME_WITH_CALLBACK(callback) HELPERS_NS::MeasureTimeScoped MEASURE_TIME_TOKENPASTE2(_measureTimeScoped, __LINE__)(callback);
+//#else
+//#define MEASURE_TIME
+//#define MEASURE_TIME_WITH_CALLBACK(callback)
+//#endif
