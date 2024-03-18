@@ -67,14 +67,14 @@ int64_t MediaRecorder::LastPtsHns() const {
     return ptsHns;
 }
 
-WritedSample MediaRecorder::LastWritedAudioSample() const {
+MF::SampleInfo MediaRecorder::LastWritedAudioSample() const {
     if (!this->lastWritedAudioSample)
         return {};
 
     return *this->lastWritedAudioSample;
 }
 
-WritedSample MediaRecorder::LastWritedVideoSample() const {
+MF::SampleInfo MediaRecorder::LastWritedVideoSample() const {
     if (!this->lastWritedVideoSample)
         return {};
 

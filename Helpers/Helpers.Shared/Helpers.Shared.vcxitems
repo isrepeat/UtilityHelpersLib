@@ -88,6 +88,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MFInclude.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MFLibs.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MFUser.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\SampleInfo.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MoveLambda.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MultithreadMutex.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PackageProvider.h" />

@@ -1,5 +1,5 @@
 #pragma once
-#include "WritedSample.h"
+#include <Helpers/MediaFoundation/SampleInfo.h>
 #include <cstdint>
 #include <wrl.h>
 #include <mfapi.h>
@@ -24,8 +24,8 @@ public:
     // default implementation is to return max(LastVideoPtsHns(), LastAudioPtsHns())
     virtual int64_t LastPtsHns() const = 0;
 
-    virtual WritedSample LastWritedAudioSample() const = 0;
-    virtual WritedSample LastWritedVideoSample() const = 0;
+    virtual MF::SampleInfo LastWritedAudioSample() const = 0;
+    virtual MF::SampleInfo LastWritedVideoSample() const = 0;
 
     virtual bool ChunkAudioSamplesWritten() const = 0;
     virtual bool ChunkVideoSamplesWritten() const = 0;
