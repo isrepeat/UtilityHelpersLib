@@ -9,6 +9,11 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
+      <AdditionalIncludeDirectories>
+        <!-- Add sources dir to have access to .pch from any subfolder-->
+        $(HelpersMovieMakerSourcesDir);
+        %(AdditionalIncludeDirectories)
+      </AdditionalIncludeDirectories>
       <PreprocessorDefinitions>
         INSIDE_HELPERS_MOVIEMAKER_PROJECT;
         %(PreprocessorDefinitions)

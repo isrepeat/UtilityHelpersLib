@@ -28,6 +28,10 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
+      <AdditionalIncludeDirectories>
+        $(MSBuildThisFileDirectory);
+        %(AdditionalIncludeDirectories)
+      </AdditionalIncludeDirectories>
       <PreprocessorDefinitions>
         INSIDE_HELPERS_PROJECT;
         %(PreprocessorDefinitions)
