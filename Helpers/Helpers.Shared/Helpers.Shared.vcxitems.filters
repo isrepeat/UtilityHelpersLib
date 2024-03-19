@@ -28,6 +28,9 @@
     <Filter Include="WinRT">
       <UniqueIdentifier>{52bcaca5-b5f7-4dcc-989d-0f63747814d1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Dx">
+      <UniqueIdentifier>{7b934efc-d218-41b0-958f-42602b5fa9fc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Gate.cpp">
@@ -113,6 +116,9 @@
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\SystemDataProvider.cpp">
       <Filter>_Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxHelpers.cpp">
+      <Filter>Dx</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -331,6 +337,15 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\SampleInfo.h">
       <Filter>MediaFoundation</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxHelpers.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSettings.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSettingsWinRt.h">
+      <Filter>Dx</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
