@@ -2,6 +2,7 @@
 #include <Helpers/common.h>
 #include <vector>
 #include <string>
+#include <dxgi.h>
 #include <wrl.h>
 
 namespace HELPERS_NS {
@@ -9,6 +10,7 @@ namespace HELPERS_NS {
         struct Adapter {
             Microsoft::WRL::ComPtr<IDXGIAdapter> dxgiAdapter;
             std::wstring description;
+            uint32_t idx;
 
             operator bool() {
                 return static_cast<bool>(dxgiAdapter);

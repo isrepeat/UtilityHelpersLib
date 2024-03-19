@@ -22,6 +22,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\CrashHandler.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\CrashInfo.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxHelpers.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSettings.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\FilesCollection.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\FileSystem.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Gate.cpp" />

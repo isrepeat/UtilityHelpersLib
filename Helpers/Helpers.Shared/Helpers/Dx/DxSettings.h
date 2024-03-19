@@ -1,52 +1,49 @@
 #pragma once
 #include <Helpers/common.h>
 #include "DxHelpers.h"
+#include <functional>
 #include <vector>
 #include <string>
 #include <atomic>
 
 namespace HELPERS_NS {
     namespace Dx {
+        struct DxSettingsHandlers {
+            std::function<void()> msaaChanged;
+            std::function<void()> vsyncChanged;
+            std::function<void()> adapersUpdated;
+            std::function<void()> currentAdapterChanged;
+        };
+
         class DxSettings {
         public:
-            DxSettings()
-                : msaa{ false }
-                , vsync{ true }
-            {}
+            DxSettings();
 
-            void EnableMSAA(bool enabled) {
-                msaa = enabled;
-            }
-            bool IsMSAAEnabled() {
-                return msaa;
-            }
+            //void SetMSAAChangedCallback(std::function<void()> msaaChangedCallback);
+            void EnableMSAA(bool enabled);
+            bool IsMSAAEnabled();
 
+            //void SetVSyncChangedCallback(std::function<void()> vsyncChangedCallback);
+            void EnableVSync(bool enabled);
+            bool IsVSyncEnabled();
 
-            void EnableVSync(bool enabled) {
-                vsync = enabled;
-            }
-            bool IsVSyncEnabled() {
-                return vsync;
-            }
+            //void SetCurrentAdapterChangedCallback(std::function<void()> currentAdapterChangedCallback);
+            void SetCurrentAdapterByIdx(uint32_t idx);
+            Adapter GetCurrentAdapter();
 
+            //void SetAdaptersUpdatedCallback(std::function<void()> adapersUpdatedCallback);
+            void UpdateAdapters();
+            std::vector<Adapter> GetAdapters();
 
-            void UpdateAdapters() {
-                // TODO: add mutex
-                adapters.clear();
-                EnumAdaptersState enumAdapters;
-
-                while (auto adapter = enumAdapters.Next()) {
-                    adapters.push_back(adapter);
-                }
-            }
-            std::vector<Adapter> GetAdapters() {                
-                return adapters;
-            }
+            DxSettingsHandlers& GetDxSettingsHandlers();
 
         private:
             std::atomic<bool> msaa;
             std::atomic<bool> vsync;
             std::vector<Adapter> adapters;
+            Adapter currentAdapter;
+
+            DxSettingsHandlers dxSettingsHandlers;
         };
     }
 }

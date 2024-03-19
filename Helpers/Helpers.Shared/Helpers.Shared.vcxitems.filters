@@ -120,6 +120,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxHelpers.cpp">
       <Filter>Dx</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSettings.cpp">
+      <Filter>Dx</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Gate.h">

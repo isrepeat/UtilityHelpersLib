@@ -9,6 +9,7 @@ namespace HELPERS_NS {
         namespace WinRt {
             public value struct Adapter {
                 Platform::String^ Description;
+                uint32_t idx;
             };
 
             public ref class DxSettingsWinRt sealed {
@@ -34,6 +35,19 @@ namespace HELPERS_NS {
                     }
                 }
 
+                property WinRt::Adapter CurrentAdapter {
+                    WinRt::Adapter get() {
+                        auto& adapter = dxSettings.GetCurrentAdapter();
+                        return WinRt::Adapter{
+                                ref new Platform::String(adapter.description.c_str()),
+                                adapter.idx
+                        };
+                    }
+                    void set(WinRt::Adapter adapter) {
+                        dxSettings.SetCurrentAdapterByIdx(adapter.idx);
+                    }
+                }
+
                 property WFCollections::IObservableVector<WinRt::Adapter>^ Adapters {
                     Windows::Foundation::Collections::IObservableVector<WinRt::Adapter>^ get() {
                         dxSettings.UpdateAdapters();
@@ -41,12 +55,17 @@ namespace HELPERS_NS {
 
                         for (auto& adapter : dxSettings.GetAdapters()) {
                             result->Append(WinRt::Adapter{ 
-                                ref new Platform::String(adapter.description.c_str()) 
+                                ref new Platform::String(adapter.description.c_str()),
+                                adapter.idx
                                 });
                         }
                         return result;
                     }
                 };
+
+                DxSettingsHandlers& GetDxSettingsHandlers() {
+                    return dxSettings.GetDxSettingsHandlers();
+                }
 
             private:
                 DxSettings dxSettings;

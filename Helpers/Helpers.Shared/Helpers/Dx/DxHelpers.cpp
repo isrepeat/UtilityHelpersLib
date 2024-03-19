@@ -1,6 +1,5 @@
 #include "DxHelpers.h"
 #include <Helpers/System.h>
-#include <dxgi1_3.h>
 
 namespace HELPERS_NS {
     namespace Dx {
@@ -38,8 +37,7 @@ namespace HELPERS_NS {
             }
             H::System::ThrowIfFailed(hr);
 
-            return Adapter{ adapter, details::GetAdapterDescription(adapter).Description };
+            return Adapter{ adapter, details::GetAdapterDescription(adapter).Description, this->idx - 1 };
         }
-
     }
 }
