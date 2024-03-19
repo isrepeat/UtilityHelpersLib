@@ -347,9 +347,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSettings.h">
       <Filter>Dx</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSettingsWinRt.h">
-      <Filter>Dx</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />

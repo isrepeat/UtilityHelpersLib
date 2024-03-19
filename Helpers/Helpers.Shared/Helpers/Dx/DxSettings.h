@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <atomic>
+#include <memory>
 
 namespace HELPERS_NS {
     namespace Dx {
@@ -19,23 +20,19 @@ namespace HELPERS_NS {
         public:
             DxSettings();
 
-            //void SetMSAAChangedCallback(std::function<void()> msaaChangedCallback);
             void EnableMSAA(bool enabled);
             bool IsMSAAEnabled();
 
-            //void SetVSyncChangedCallback(std::function<void()> vsyncChangedCallback);
             void EnableVSync(bool enabled);
             bool IsVSyncEnabled();
 
-            //void SetCurrentAdapterChangedCallback(std::function<void()> currentAdapterChangedCallback);
             void SetCurrentAdapterByIdx(uint32_t idx);
             Adapter GetCurrentAdapter();
 
-            //void SetAdaptersUpdatedCallback(std::function<void()> adapersUpdatedCallback);
             void UpdateAdapters();
             std::vector<Adapter> GetAdapters();
 
-            DxSettingsHandlers& GetDxSettingsHandlers();
+            std::unique_ptr<DxSettingsHandlers>& GetDxSettingsHandlers();
 
         private:
             std::atomic<bool> msaa;
@@ -43,7 +40,7 @@ namespace HELPERS_NS {
             std::vector<Adapter> adapters;
             Adapter currentAdapter;
 
-            DxSettingsHandlers dxSettingsHandlers;
+            std::unique_ptr<DxSettingsHandlers> dxSettingsHandlers;
         };
     }
 }

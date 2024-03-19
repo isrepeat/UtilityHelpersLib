@@ -45,7 +45,7 @@ namespace MEDIA_FOUNDATION_NS_ALIAS = MEDIA_FOUNDATION_NS;
 #endif
 
 
-#if COMPILE_FOR_CX_or_WINRT
+#if COMPILE_FOR_WINRT
 #include <collection.h>
 #include <ppltasks.h>
 

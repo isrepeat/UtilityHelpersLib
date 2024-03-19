@@ -68,7 +68,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CrashInfo.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxHelpers.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSettings.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSettingsWinRt.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Event.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Exception.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\File.h" />

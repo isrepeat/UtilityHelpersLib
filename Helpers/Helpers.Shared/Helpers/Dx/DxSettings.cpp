@@ -9,20 +9,17 @@ namespace HELPERS_NS {
         DxSettings::DxSettings()
             : msaa{ false }
             , vsync{ true }
+            , dxSettingsHandlers{ std::make_unique<DxSettingsHandlers>() }
         {
             UpdateAdapters();
             currentAdapter = adapters.at(0);
         }
 
 
-        //void DxSettings::SetMSAAChangedCallback(std::function<void()> msaaChangedCallback) {
-        //    dxSettingsHandlers.msaaChanged = msaaChangedCallback;
-        //}
-
         void DxSettings::EnableMSAA(bool enabled) {
             msaa = enabled;
-            if (dxSettingsHandlers.msaaChanged) {
-                dxSettingsHandlers.msaaChanged();
+            if (dxSettingsHandlers->msaaChanged) {
+                dxSettingsHandlers->msaaChanged();
             }
         }
 
@@ -31,14 +28,10 @@ namespace HELPERS_NS {
         }
 
 
-        //void DxSettings::SetVSyncChangedCallback(std::function<void()> vsyncChangedCallback) {
-        //    dxSettingsHandlers.vsyncChanged = vsyncChangedCallback;
-        //}
-
         void DxSettings::EnableVSync(bool enabled) {
             vsync = enabled;
-            if (dxSettingsHandlers.vsyncChanged) {
-                dxSettingsHandlers.vsyncChanged();
+            if (dxSettingsHandlers->vsyncChanged) {
+                dxSettingsHandlers->vsyncChanged();
             }
         }
 
@@ -47,17 +40,13 @@ namespace HELPERS_NS {
         }
 
 
-        //void DxSettings::SetCurrentAdapterChangedCallback(std::function<void()> currentAdapterChangedCallback) {
-        //    dxSettingsHandlers.currentAdapterChanged = currentAdapterChangedCallback;
-        //}
-
         void DxSettings::SetCurrentAdapterByIdx(uint32_t idx) {
             if (idx >= adapters.size()) {
                 return;
             }
             currentAdapter = adapters[idx];
-            if (dxSettingsHandlers.currentAdapterChanged) {
-                dxSettingsHandlers.currentAdapterChanged();
+            if (dxSettingsHandlers->currentAdapterChanged) {
+                dxSettingsHandlers->currentAdapterChanged();
             }
         }
 
@@ -65,11 +54,7 @@ namespace HELPERS_NS {
             return currentAdapter;
         }
 
-
-        //void DxSettings::SetAdaptersUpdatedCallback(std::function<void()> adapersUpdatedCallback) {
-        //    dxSettingsHandlers.adapersUpdated = adapersUpdatedCallback;
-        //}
-
+ 
         void DxSettings::UpdateAdapters() {
             // TODO: add mutex
             adapters.clear();
@@ -78,8 +63,8 @@ namespace HELPERS_NS {
             while (auto adapter = enumAdapters.Next()) {
                 adapters.push_back(adapter);
             }
-            if (dxSettingsHandlers.adapersUpdated) {
-                dxSettingsHandlers.adapersUpdated();
+            if (dxSettingsHandlers->adapersUpdated) {
+                dxSettingsHandlers->adapersUpdated();
             }
         }
 
@@ -87,7 +72,7 @@ namespace HELPERS_NS {
             return adapters;
         }
        
-        DxSettingsHandlers& DxSettings::GetDxSettingsHandlers() {
+        std::unique_ptr<DxSettingsHandlers>& DxSettings::GetDxSettingsHandlers() {
             return dxSettingsHandlers;
         }
     }
