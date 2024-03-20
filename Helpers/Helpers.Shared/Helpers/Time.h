@@ -193,14 +193,25 @@ using namespace std::chrono_literals;
 using namespace HELPERS_NS::ChronoLiterals;
 
 
-//#ifdef _DEBUG
+
+#define MEASURE_TIME_SCOPED(name)
+#define LOG_DELTA_TIME_POINTS(tpNameB, tpNameA)
+
+#ifdef _DEBUG
 //// https://stackoverflow.com/questions/1597007/creating-c-macro-with-and-line-token-concatenation-with-positioning-macr
 //#define MEASURE_TIME_TOKENPASTE(x, y) x ## y
 //// use it with __LINE__ to fix "hides declaration of the same name in outer scope"
 //#define MEASURE_TIME_TOKENPASTE2(x, y) MEASURE_TIME_TOKENPASTE(x, y)
 //#define MEASURE_TIME HELPERS_NS::MeasureTime MEASURE_TIME_TOKENPASTE2(_measureTimeScoped, __LINE__);
 //#define MEASURE_TIME_WITH_CALLBACK(callback) HELPERS_NS::MeasureTimeScoped MEASURE_TIME_TOKENPASTE2(_measureTimeScoped, __LINE__)(callback);
-//#else
+#if SPDLOG_SUPPORT
+#define MEASURE_TIME_SCOPED(name) HH::MeasureTimeScoped H_CONCAT(_measureTimeScoped, __LINE__)([] (std::chrono::duration<double, std::milli> dt) {		\
+		LOG_DEBUG_D("[" ##name "] dt = {}", dt.count());																								\
+		})
+
+#define LOG_DELTA_TIME_POINTS(tpNameB, tpNameA) LOG_DEBUG_D("" #tpNameB " - " #tpNameA " = {}", std::chrono::duration<double, std::milli>(tpNameB - tpNameA).count());
+#endif
+#else
 //#define MEASURE_TIME
 //#define MEASURE_TIME_WITH_CALLBACK(callback)
-//#endif
+#endif
