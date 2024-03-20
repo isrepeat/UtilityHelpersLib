@@ -22,9 +22,12 @@ public:
     template<class... Args>
     WinRtRenderer(
         Windows::UI::Xaml::Controls::SwapChainPanel ^panel, DxDevice *dxDev, Args&&... args)
-        : dxDev(dxDev), output(dxDev, panel), pointerMoves(false),
-        renderer(dxDev, &this->output, std::forward<Args>(args)...), renderThreadState(RenderThreadState::Stop),
-        panel(panel)
+        : dxDev(dxDev)
+        , output(dxDev, panel)
+        , pointerMoves(false)
+        , renderer(dxDev, &this->output, std::forward<Args>(args)...)
+        , renderThreadState(RenderThreadState::Stop)
+        , panel(panel)
     {
         auto window = Windows::UI::Xaml::Window::Current->CoreWindow;
         auto displayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();

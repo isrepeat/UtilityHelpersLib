@@ -12,7 +12,7 @@ namespace HELPERS_NS {
             std::wstring description;
             uint32_t idx;
 
-            operator bool() {
+            operator bool() const {
                 return static_cast<bool>(dxgiAdapter);
             }
         };

@@ -5,11 +5,15 @@ namespace HELPERS_NS {
     namespace Dx {
         namespace details {
             DXGI_ADAPTER_DESC1 GetAdapterDescription(const Microsoft::WRL::ComPtr<IDXGIAdapter>& dxgiAdapter) {
+                HRESULT hr = S_OK;
+
                 Microsoft::WRL::ComPtr<IDXGIAdapter1> dxgiAdapter1;
-                dxgiAdapter.As(&dxgiAdapter1);
+                hr = dxgiAdapter.As(&dxgiAdapter1);
+                if (FAILED(hr))
+                    return {};
 
                 DXGI_ADAPTER_DESC1 dxgiAdapterDesc;
-                HRESULT hr = dxgiAdapter1->GetDesc1(&dxgiAdapterDesc);
+                hr = dxgiAdapter1->GetDesc1(&dxgiAdapterDesc);
 
                 if (SUCCEEDED(hr))
                     return dxgiAdapterDesc;
