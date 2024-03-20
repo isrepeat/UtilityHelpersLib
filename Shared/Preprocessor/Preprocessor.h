@@ -5,7 +5,7 @@
 
 #if !defined(DISABLE_PREPROCESSOR_MESSAGES)
 #ifdef __PROJECT_NAME__
-#	define PREPROCESSOR_MSG(msg) "  PREPROCESSOR<" ## __PROJECT_NAME__ ">: \"" msg "\""
+#	define PREPROCESSOR_MSG(msg) "  PREPROCESSOR<" PP_STRINGIFY(__PROJECT_NAME__) ">: \"" msg "\""
 #else
 #	define PREPROCESSOR_MSG(msg) "  PREPROCESSOR: \"" msg "\""
 #endif

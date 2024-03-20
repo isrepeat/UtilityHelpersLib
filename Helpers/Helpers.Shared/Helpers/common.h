@@ -45,6 +45,19 @@ namespace MEDIA_FOUNDATION_NS_ALIAS = MEDIA_FOUNDATION_NS;
 #endif
 
 
+#if COMPILE_FOR_WINRT
+#include <collection.h>
+#include <ppltasks.h>
+
+namespace PCollections = Platform::Collections;
+
+namespace WFCollections = Windows::Foundation::Collections;
+namespace WFoundation = Windows::Foundation;
+namespace WSStreams = Windows::Storage::Streams;
+namespace WStorage = Windows::Storage;
+#endif
+
+
 /* ------------------------------------ */
 /*   Check external includes / nugets   */
 /* ------------------------------------ */
@@ -53,13 +66,13 @@ namespace MEDIA_FOUNDATION_NS_ALIAS = MEDIA_FOUNDATION_NS;
 #endif
 
 #if defined(CRASH_HANDLING_NUGET) || __has_include("CrashHandling/CrashHandling.h")
-#define CRASH_HANDLING_SUPPORT
+#define CRASH_HANDLING_SUPPORT 1
 #endif
 
 #if defined(SPDLOG_SOURCES) || __has_include("Spdlog/LogHelpers.h")
-#define SPDLOG_SUPPORT
+#define SPDLOG_SUPPORT 1
 #endif
 
 #if __has_include("boost/asio.hpp")
-#define BOOST_SUPPORTED
+#define BOOST_SUPPORTED 1
 #endif

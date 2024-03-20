@@ -19,6 +19,11 @@
 #include <string>
 #include <vector>
 
+#define HELPERS_NS_ALIAS HH
+#include <MagicEnum/MagicEnum.h>
+#include <Helpers/Logger.h>
+#include <Helpers/Time.h>
+
 #include "config.h"
 #include "HSystem.h"
 #include "HMath.h"

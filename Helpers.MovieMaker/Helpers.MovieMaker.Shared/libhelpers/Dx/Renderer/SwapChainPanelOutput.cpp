@@ -45,11 +45,14 @@ namespace ScreenRotation
 	);
 };
 
-SwapChainPanelOutput::SwapChainPanelOutput(
-	raw_ptr<DxDevice> dxDev,
-	Windows::UI::Xaml::Controls::SwapChainPanel ^swapChainPanel)
-	: dxDev(dxDev), swapChainPanel(swapChainPanel), physicalSize(1.0f, 1.0f),
-	d2dOrientationTransform(D2D1::IdentityMatrix()), d3dOrientationTransform(ScreenRotation::Rotation0) {
+SwapChainPanelOutput::SwapChainPanelOutput(raw_ptr<DxDevice> dxDev, Windows::UI::Xaml::Controls::SwapChainPanel^ swapChainPanel)
+	: dxDev(dxDev)
+	, dxSettings{ ref new Helpers_WinRt::Dx::DxSettings() }
+	, swapChainPanel(swapChainPanel)
+	, physicalSize(1.0f, 1.0f)
+	, d2dOrientationTransform(D2D1::IdentityMatrix())
+	, d3dOrientationTransform(ScreenRotation::Rotation0)
+{
 	{
 		auto tmp = DirectX::Colors::LightGreen;
 		this->rtColor = { tmp.f[0], tmp.f[1], tmp.f[2], tmp.f[3] };
@@ -68,9 +71,19 @@ SwapChainPanelOutput::SwapChainPanelOutput(
 		this->swapChainPanel->CompositionScaleY);
 
 	this->CreateWindowSizeDependentResources();
+
+	// TODO: add guards for destroyed 'this'
+	this->dxSettingsMsaaChangedToken = this->dxSettings->MsaaChanged += ref new Helpers_WinRt::EventHandler([this] {
+		this->CreateWindowSizeDependentResources();
+	});
+	this->dxSettingsCurrentAdapterChangedToken = this->dxSettings->CurrentAdapterChanged += ref new Helpers_WinRt::EventHandler([this] {
+		// recreate dxDev ...
+		});
 }
 
 SwapChainPanelOutput::~SwapChainPanelOutput() {
+	this->dxSettings->MsaaChanged -= this->dxSettingsMsaaChangedToken;
+	this->dxSettings->CurrentAdapterChanged -= this->dxSettingsCurrentAdapterChangedToken;
 }
 
 float SwapChainPanelOutput::GetLogicalDpi() const {
@@ -109,91 +122,7 @@ DirectX::XMFLOAT4X4 SwapChainPanelOutput::GetD3DOrientationTransform() const {
 	return this->d3dOrientationTransform;
 }
 
-Windows::UI::Xaml::Controls::SwapChainPanel ^SwapChainPanelOutput::GetSwapChainPanel() const {
-	return this->swapChainPanel;
-}
-
-void SwapChainPanelOutput::SetLogicalDpi(float v) {
-	this->logicalDpi = v;
-}
-
-void SwapChainPanelOutput::SetLogicalSize(const DirectX::XMFLOAT2 &v) {
-	this->logicalSize = v;
-}
-
-DirectX::XMFLOAT2 SwapChainPanelOutput::GetCompositionScale() const {
-	return this->compositionScale;
-}
-
-void SwapChainPanelOutput::SetCompositionScale(const DirectX::XMFLOAT2 &v) {
-	this->compositionScale = v;
-}
-
-Windows::Graphics::Display::DisplayOrientations SwapChainPanelOutput::GetCurrentOrientation() const {
-	return this->currentOrientation;
-}
-
-void SwapChainPanelOutput::SetCurrentOrientation(Windows::Graphics::Display::DisplayOrientations v) {
-	this->currentOrientation = v;
-}
-
-void SwapChainPanelOutput::Resize() {
-	this->CreateWindowSizeDependentResources();
-}
-
-void SwapChainPanelOutput::BeginRender() {
-	ID3D11RenderTargetView *const targets[1] = { this->GetD3DRtView() };
-	auto ctx = this->dxDev->GetContext();
-
-	ctx->D3D()->OMSetRenderTargets(1, targets, nullptr);
-	DirectX::XMVECTORF32 tmp = { 
-        this->rtColor.x * this->rtColor.w,
-		this->rtColor.y * this->rtColor.w,
-		this->rtColor.z * this->rtColor.w,
-		this->rtColor.w };
-	ctx->D3D()->ClearRenderTargetView(this->GetD3DRtView(), tmp);
-}
-
-void SwapChainPanelOutput::EndRender() {
-	this->Present();
-}
-
-void SwapChainPanelOutput::Present() {
-	if (m_msaaRenderTarget) {
-		this->dxDev->GetContext()->D3D()->ResolveSubresource(backBuffer.Get(), 0, m_msaaRenderTarget.Get(), 0, SwapChainPanelOutput::BufferFmt);
-	}
-
-	// The first argument instructs DXGI to block until VSync, putting the application
-	// to sleep until the next VSync. This ensures we don't waste any cycles rendering
-	// frames that will never be displayed to the screen.
-	HRESULT hr = this->swapChain->Present(1, 0);
-
-	{
-		auto ctx = this->dxDev->GetContext();
-
-		// Discard the contents of the render target.
-		// This is a valid operation only when the existing contents will be entirely
-		// overwritten. If dirty or scroll rects are used, this call should be modified.
-		ctx->D3D()->DiscardView1(this->d3dRenderTargetView.Get(), nullptr, 0);
-
-		if (m_msaaRenderTargetView) {
-			ctx->D3D()->DiscardView1(m_msaaRenderTargetView.Get(), nullptr, 0);
-		}
-	}
-
-	//// If the device was removed either by a disconnection or a driver upgrade, we 
-	//// must recreate all device resources.
-	//if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
-	//{
-	//	HandleDeviceLost();
-	//}
-	//else
-	//{
-	//	DX::ThrowIfFailed(hr);
-	//}
-}
-
-DirectX::XMFLOAT4 SwapChainPanelOutput::GetRTColor() {
+DirectX::XMFLOAT4 SwapChainPanelOutput::GetRTColor() const {
 	return this->rtColor;
 }
 
@@ -241,7 +170,107 @@ OrientationTypes SwapChainPanelOutput::GetNativeOrientation() const {
 	}
 }
 
+Helpers_WinRt::Dx::DxSettings^ SwapChainPanelOutput::GetDxSettings() const {
+	return this->dxSettings;
+}
+
+Windows::UI::Xaml::Controls::SwapChainPanel^ SwapChainPanelOutput::GetSwapChainPanel() const {
+	return this->swapChainPanel;
+}
+
+void SwapChainPanelOutput::SetLogicalDpi(float v) {
+	this->logicalDpi = v;
+}
+
+void SwapChainPanelOutput::SetLogicalSize(const DirectX::XMFLOAT2 &v) {
+	this->logicalSize = v;
+}
+
+DirectX::XMFLOAT2 SwapChainPanelOutput::GetCompositionScale() const {
+	return this->compositionScale;
+}
+
+void SwapChainPanelOutput::SetCompositionScale(const DirectX::XMFLOAT2 &v) {
+	this->compositionScale = v;
+}
+
+Windows::Graphics::Display::DisplayOrientations SwapChainPanelOutput::GetCurrentOrientation() const {
+	return this->currentOrientation;
+}
+
+void SwapChainPanelOutput::SetCurrentOrientation(Windows::Graphics::Display::DisplayOrientations v) {
+	this->currentOrientation = v;
+}
+
+void SwapChainPanelOutput::Resize() {
+	this->CreateWindowSizeDependentResources();
+}
+
+void SwapChainPanelOutput::Render(std::function<void()> renderHandler) {
+	std::lock_guard lk{ mx };
+	BeginRender();
+	if (renderHandler) {
+		renderHandler();
+	}
+	EndRender();
+}
+
+void SwapChainPanelOutput::BeginRender() {
+	ID3D11RenderTargetView *const targets[1] = { this->GetD3DRtView() };
+	auto ctx = this->dxDev->GetContext();
+
+	ctx->D3D()->OMSetRenderTargets(1, targets, nullptr);
+	DirectX::XMVECTORF32 tmp = { 
+        this->rtColor.x * this->rtColor.w,
+		this->rtColor.y * this->rtColor.w,
+		this->rtColor.z * this->rtColor.w,
+		this->rtColor.w };
+	ctx->D3D()->ClearRenderTargetView(this->GetD3DRtView(), tmp);
+}
+
+void SwapChainPanelOutput::EndRender() {
+	this->Present();
+}
+
+void SwapChainPanelOutput::Present() {
+	if (m_msaaRenderTarget) {
+		this->dxDev->GetContext()->D3D()->ResolveSubresource(backBuffer.Get(), 0, m_msaaRenderTarget.Get(), 0, SwapChainPanelOutput::BufferFmt);
+	}
+
+	// The first argument instructs DXGI to block until VSync, putting the application
+	// to sleep until the next VSync. This ensures we don't waste any cycles rendering
+	// frames that will never be displayed to the screen.
+	HRESULT hr = this->swapChain->Present(dxSettings->VSync, 0);
+
+	{
+		auto ctx = this->dxDev->GetContext();
+
+		// Discard the contents of the render target.
+		// This is a valid operation only when the existing contents will be entirely
+		// overwritten. If dirty or scroll rects are used, this call should be modified.
+		ctx->D3D()->DiscardView1(this->d3dRenderTargetView.Get(), nullptr, 0);
+
+		if (m_msaaRenderTargetView) {
+			ctx->D3D()->DiscardView1(m_msaaRenderTargetView.Get(), nullptr, 0);
+		}
+	}
+
+	//// If the device was removed either by a disconnection or a driver upgrade, we 
+	//// must recreate all device resources.
+	//if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
+	//{
+	//	HandleDeviceLost();
+	//}
+	//else
+	//{
+	//	DX::ThrowIfFailed(hr);
+	//}
+}
+
+
 void SwapChainPanelOutput::CreateWindowSizeDependentResources() {
+	std::lock_guard lk{ mx };
+
 	// Clear the previous window size specific context.
 	HRESULT hr = S_OK;
 	ID3D11RenderTargetView* nullViews[] = { nullptr };
@@ -297,7 +326,8 @@ void SwapChainPanelOutput::CreateWindowSizeDependentResources() {
 		this->d3dRenderTargetView.GetAddressOf());
 	H::System::ThrowIfFailed(hr);
 
-	{
+
+	if (dxSettings->MSAA) {
 		D3D11_TEXTURE2D_DESC desc = {};
 
 		backBuffer->GetDesc(&desc);

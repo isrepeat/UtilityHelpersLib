@@ -22,9 +22,12 @@ public:
     template<class... Args>
     WinRtRenderer(
         Windows::UI::Xaml::Controls::SwapChainPanel ^panel, DxDevice *dxDev, Args&&... args)
-        : dxDev(dxDev), output(dxDev, panel), pointerMoves(false),
-        renderer(dxDev, &this->output, std::forward<Args>(args)...), renderThreadState(RenderThreadState::Stop),
-        panel(panel)
+        : dxDev(dxDev)
+        , output(dxDev, panel)
+        , pointerMoves(false)
+        , renderer(dxDev, &this->output, std::forward<Args>(args)...)
+        , renderThreadState(RenderThreadState::Stop)
+        , panel(panel)
     {
         auto window = Windows::UI::Xaml::Window::Current->CoreWindow;
         auto displayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
@@ -165,13 +168,18 @@ public:
         return &this->renderer;
     }
 
+    DirectX::XMFLOAT4 GetRTColor();
+    void SetRTColor(DirectX::XMFLOAT4 color);
+    
+    Helpers_WinRt::Dx::DxSettings^ GetDxSettings() {
+        return this->output.GetDxSettings();
+    }
+
+public:
     std::function<void(Windows::UI::Input::PointerPoint^)> pointerPressed;
     std::function<void(Windows::UI::Input::PointerPoint^)> pointerMoved;
     std::function<void(Windows::UI::Input::PointerPoint^)> pointerReleased;
     std::function<void(Windows::UI::Input::PointerPoint^)> pointerWheelChanged;
-
-    DirectX::XMFLOAT4 GetRTColor();
-    void SetRTColor(DirectX::XMFLOAT4 color);
 
 private:
     DxDevice *dxDev;
@@ -256,10 +264,9 @@ private:
     void Render() {
         while (this->CheckRenderThreadState()) {
             thread::critical_section::scoped_yield_lock lk(this->cs);
-
-            this->output.BeginRender();
-            this->renderer.Render();
-            this->output.EndRender();
+            this->output.Render([this] {
+                this->renderer.Render();
+                });
         }
     }
 

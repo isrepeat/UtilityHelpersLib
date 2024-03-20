@@ -26,6 +26,11 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Helpers\Helpers.WinRt\Helpers.WinRt.vcxproj">
+      <Project>{ad8f9708-44ea-4cec-b78d-c376eb02c2b8}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{c4998f75-24db-454d-9a2d-f602ffbea9d0}</ProjectGuid>
     <Keyword>StaticLibrary</Keyword>
