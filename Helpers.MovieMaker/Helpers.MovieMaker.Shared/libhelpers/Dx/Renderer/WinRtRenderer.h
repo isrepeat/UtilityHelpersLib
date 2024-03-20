@@ -165,13 +165,18 @@ public:
         return &this->renderer;
     }
 
+    DirectX::XMFLOAT4 GetRTColor();
+    void SetRTColor(DirectX::XMFLOAT4 color);
+    
+    Helpers_WinRt::Dx::DxSettings^ GetDxSettings() {
+        return this->output.GetDxSettings();
+    }
+
+public:
     std::function<void(Windows::UI::Input::PointerPoint^)> pointerPressed;
     std::function<void(Windows::UI::Input::PointerPoint^)> pointerMoved;
     std::function<void(Windows::UI::Input::PointerPoint^)> pointerReleased;
     std::function<void(Windows::UI::Input::PointerPoint^)> pointerWheelChanged;
-
-    DirectX::XMFLOAT4 GetRTColor();
-    void SetRTColor(DirectX::XMFLOAT4 color);
 
 private:
     DxDevice *dxDev;
@@ -256,10 +261,9 @@ private:
     void Render() {
         while (this->CheckRenderThreadState()) {
             thread::critical_section::scoped_yield_lock lk(this->cs);
-
-            this->output.BeginRender();
-            this->renderer.Render();
-            this->output.EndRender();
+            this->output.Render([this] {
+                this->renderer.Render();
+                });
         }
     }
 

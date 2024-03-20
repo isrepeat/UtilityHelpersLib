@@ -27,8 +27,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Helpers\Helpers.UWP\Helpers.UWP.vcxproj">
-      <Project>{1f26dd5b-02c2-4192-ac91-06bed3d214f3}</Project>
+    <ProjectReference Include="..\..\Helpers\Helpers.WinRt\Helpers.WinRt.vcxproj">
+      <Project>{ad8f9708-44ea-4cec-b78d-c376eb02c2b8}</Project>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup Label="Globals">
