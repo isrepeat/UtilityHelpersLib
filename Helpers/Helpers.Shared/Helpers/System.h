@@ -51,12 +51,22 @@ namespace HELPERS_NS {
 #endif
 #if COMPILE_FOR_CX_or_WINRT
         inline void ThrowIfFailed(HRESULT hr) {
-            //static_assert(std::is_same_v<TCHAR, wchar_t>, "TCHAR != wchar_t");
             if (FAILED(hr)) {
                 Dbreak;
                 auto comErr = _com_error(hr, nullptr);
-                //LOG_ERROR_D(L"Com exception = [{:#08x}] {}", static_cast<unsigned int>(hr), comErr.ErrorMessage());
+                LOG_ERROR_D(L"Com exception = [{:#08x}] [Cx / WinRt]", static_cast<unsigned int>(hr));
                 throw comErr;
+            }
+        }
+#endif
+#if COMPILE_FOR_WINRT
+        namespace WinRt {
+            inline void ThrowIfFailed(HRESULT hr) {
+                if (FAILED(hr)) {
+                    Dbreak;
+                    LOG_ERROR_D(L"Com exception = [{:#08x}] [WinRt]", static_cast<unsigned int>(hr));
+                    throw ref new Platform::COMException(hr);
+                }
             }
         }
 #endif
