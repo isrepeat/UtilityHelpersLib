@@ -32,6 +32,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\MultithreadMutex.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\PackageProvider.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\RegistryManager.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Semaphore.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Socket.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\StdRedirection.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\String.cpp" />
@@ -44,6 +45,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\UniqueHandle.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Semaphore.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Action.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AlignedAllocator.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Async\AsyncTasks.h" />

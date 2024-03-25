@@ -114,6 +114,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\SystemDataProvider.cpp">
       <Filter>_Sources</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Semaphore.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Gate.h">
@@ -329,6 +330,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MediaTypeInfo.h">
       <Filter>MediaFoundation</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Semaphore.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />
