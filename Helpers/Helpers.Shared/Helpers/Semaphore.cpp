@@ -5,7 +5,6 @@ namespace HELPERS_NS {
 	Semaphore::Semaphore(const std::wstring& name) {
 		auto fullName = L"Global\\" + name;
 		semaphore = CreateSemaphore(nullptr, 1, 1, fullName.data());
-		auto lastError = GetLastError();
 		if (semaphore == INVALID_HANDLE_VALUE) {
 			HELPERS_NS::System::ThrowIfFailed(E_FAIL);
 		}
@@ -23,7 +22,7 @@ namespace HELPERS_NS {
 
 	void Semaphore::Lock() {
 		auto result = WaitForSingleObject(semaphore, INFINITE);
-		if (result != WAIT_OBJECT_0) {
+		if (result == WAIT_FAILED) {
 			HELPERS_NS::System::ThrowIfFailed(E_FAIL);
 		}
 	}
