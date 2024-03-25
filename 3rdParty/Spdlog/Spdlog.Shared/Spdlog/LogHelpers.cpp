@@ -193,6 +193,7 @@ namespace LOGGER_NS {
     void DefaultLoggers::CheckLogFileSize(StandardLoggers& loggers) {
         auto& _this = GetInstance();
         auto lk = _this.logSizeCheckSem.LockScoped();
+        auto logLk = loggers.pauseLoggingEvent->ResetScoped();
 
         std::filesystem::path path(loggers.fileSink->GetFilename());
         auto fileSize = std::filesystem::file_size(path);
@@ -222,16 +223,12 @@ namespace LOGGER_NS {
                 uintmax_t newFilesize = oldFileSize - std::min(oldFileSize, truncatedBytes);
                 oldFile.seekg(truncatedBytes, std::ios::beg);
 
-                std::vector<char> data;
-                data.resize(newFilesize);
-                oldFile.read(data.data(), data.size());
+                std::vector<char> data(logTruncationMessage.begin(), logTruncationMessage.end());
+                data.resize(newFilesize + logTruncationMessage.size());
+                oldFile.read(data.data() + logTruncationMessage.size(), data.size());
                 oldFile.close();
 
-                std::ofstream newFile(loggers.fileSink->GetFilename(), std::ios::binary);
-                newFile.write(logTruncationMessage.data(), logTruncationMessage.size());
-                newFile.write(data.data(), data.size());
-                newFile.close();
-
+                HELPERS_NS::FS::PrependToFile(loggers.fileSink->GetFilename(), data.data(), data.size());
                 TryDeleteFile(tmpPath);
             }
         }
@@ -258,6 +255,7 @@ namespace LOGGER_NS {
             initializedLoggersByPath.insert(logFilePath);
         }
 
+        std::wstring pauseLoggingEventName = logFilePath.filename().wstring() + L"-PauseLogging";
         logFilePath = DynamicFileSinkMt::PickLogFile(logFilePath);
 
         if (!std::filesystem::exists(logFilePath)) {
@@ -283,14 +281,14 @@ namespace LOGGER_NS {
             _this.initializedLoggersById.insert(loggerId);
         }
         
-        _this.standardLoggersList[loggerId].fileSink = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate));
+        _this.standardLoggersList[loggerId].fileSink = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate), pauseLoggingEventName);
         auto formatterDefault = std::make_unique<spdlog::pattern_formatter>();
         formatterDefault->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Default));
         formatterDefault->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::Default));
         _this.standardLoggersList[loggerId].fileSink->set_formatter(std::move(formatterDefault));
         _this.standardLoggersList[loggerId].fileSink->set_level(spdlog::level::trace);
 
-        _this.standardLoggersList[loggerId].fileSinkRaw = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate));
+        _this.standardLoggersList[loggerId].fileSinkRaw = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate), pauseLoggingEventName);
         if (initFlags.Has(InitFlags::DisableEOLforRawLogger)) {
             auto formatterRaw = std::make_unique<spdlog::pattern_formatter>(GetPattern(Pattern::Raw), spdlog::pattern_time_type::local, std::string(""));
             _this.standardLoggersList[loggerId].fileSinkRaw->set_formatter(std::move(formatterRaw));
@@ -301,18 +299,18 @@ namespace LOGGER_NS {
         _this.standardLoggersList[loggerId].fileSinkRaw->set_level(spdlog::level::trace);
 
 
-        _this.standardLoggersList[loggerId].fileSinkTime = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate));
+        _this.standardLoggersList[loggerId].fileSinkTime = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate), pauseLoggingEventName);
         _this.standardLoggersList[loggerId].fileSinkTime->set_pattern(GetPattern(Pattern::Time));
         _this.standardLoggersList[loggerId].fileSinkTime->set_level(spdlog::level::trace);
 
-        _this.standardLoggersList[loggerId].fileSinkFunc = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate));
+        _this.standardLoggersList[loggerId].fileSinkFunc = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate), pauseLoggingEventName);
         auto formatterFunc = std::make_unique<spdlog::pattern_formatter>();
         formatterFunc->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Func));
         formatterFunc->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::Func));
         _this.standardLoggersList[loggerId].fileSinkFunc->set_formatter(std::move(formatterFunc));
         _this.standardLoggersList[loggerId].fileSinkFunc->set_level(spdlog::level::trace);
 
-        _this.standardLoggersList[loggerId].fileSinkExtend = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate));
+        _this.standardLoggersList[loggerId].fileSinkExtend = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate), pauseLoggingEventName);
         auto formatterExtend = std::make_unique<spdlog::pattern_formatter>();
         formatterExtend->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Extend));
         formatterExtend->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, _this.prefixCallback, _this.postfixCallback).set_pattern(GetPattern(Pattern::Extend));
@@ -412,6 +410,8 @@ namespace LOGGER_NS {
             CheckLogFileSize(loggers);
         }, true);
         _this.standardLoggersList[loggerId].logSizeLimitChecker = timer;
+
+        _this.standardLoggersList[loggerId].pauseLoggingEvent = std::make_shared<HELPERS_NS::EventObject>(pauseLoggingEventName);
     }
 
     bool DefaultLoggers::IsInitialized(uint8_t id) {

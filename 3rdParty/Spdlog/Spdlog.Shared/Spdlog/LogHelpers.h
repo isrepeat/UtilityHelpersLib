@@ -71,6 +71,7 @@ namespace LOGGER_NS {
         std::shared_ptr<DynamicFileSinkMt> fileSinkExtend;
 
         std::shared_ptr<HELPERS_NS::Timer> logSizeLimitChecker;
+        std::shared_ptr<HELPERS_NS::EventObject> pauseLoggingEvent;
     };
 
 
