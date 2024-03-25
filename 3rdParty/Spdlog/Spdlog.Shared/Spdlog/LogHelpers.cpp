@@ -145,8 +145,9 @@ namespace LOGGER_NS {
 
     DefaultLoggers::DefaultLoggers()
 #ifdef _DEBUG
-        : debugSink{ std::make_shared<spdlog::sinks::msvc_sink_mt>() }
+        : debugSink{ std::make_shared<spdlog::sinks::msvc_sink_mt>() },
 #endif
+        logSizeCheckSem{L"DefaultLoggers::CheckLogFileSize"}
     {
         prefixCallback = [this] {
             return className;
@@ -179,21 +180,62 @@ namespace LOGGER_NS {
         }
     }
 
-    void DefaultLoggers::CheckLogFileSize(StandardLoggers& loggers) {
-            std::filesystem::path path(loggers.fileSink->GetFilename());
-            auto fileSize = std::filesystem::file_size(path);
-            if (fileSize > maxSizeLogFile || !std::filesystem::exists(path)) {
-                std::initializer_list sinks{
-                    loggers.fileSink.get(), loggers.fileSinkRaw.get(), loggers.fileSinkTime.get(),
-                    loggers.fileSinkFunc.get(), loggers.fileSinkExtend.get()};
+    bool TryRenameFile(const std::filesystem::path& filePath, const std::filesystem::path& newName) {
+        try {
+            std::filesystem::rename(filePath, std::filesystem::path(filePath).remove_filename() / newName);
+            return true;
+        }
+        catch (...) {
+            return false;
+        }
+    }
 
-                for (auto& sink : sinks) {
-                    sink->SwitchFile();
+    void DefaultLoggers::CheckLogFileSize(StandardLoggers& loggers) {
+        auto& _this = GetInstance();
+        auto lk = _this.logSizeCheckSem.LockScoped();
+
+        std::filesystem::path path(loggers.fileSink->GetFilename());
+        auto fileSize = std::filesystem::file_size(path);
+        if (fileSize > maxSizeLogFile || !std::filesystem::exists(path)) {
+            std::initializer_list sinks{
+                loggers.fileSink.get(), loggers.fileSinkRaw.get(), loggers.fileSinkTime.get(),
+                loggers.fileSinkFunc.get(), loggers.fileSinkExtend.get()};
+
+            for (auto& sink : sinks) {
+                sink->SwitchFile();
+            }
+
+            // Rename old file and copy last `maxSizeLogFile / 2` bytes from it to new file
+            std::filesystem::path tmpName(path.filename().wstring() + L".tmp");
+            if (TryRenameFile(path, tmpName)) { // If this succeeds, we are the last process to switch to new file
+                auto tmpPath = std::filesystem::path(path).remove_filename() / tmpName;
+                auto truncatedBytes = fileSize - maxSizeLogFile / 2;
+
+                std::ifstream oldFile(tmpPath, std::ios::binary);
+                if (!oldFile.is_open()) { // This shouldn't happen
+                    TryDeleteFile(tmpPath);
+                    return;
                 }
 
-                TryDeleteFile(path);
+                oldFile.seekg(0, std::ios::end);
+                uintmax_t oldFileSize = oldFile.tellg();
+                uintmax_t newFilesize = oldFileSize - std::min(oldFileSize, truncatedBytes);
+                oldFile.seekg(truncatedBytes, std::ios::beg);
+
+                std::vector<char> data;
+                data.resize(newFilesize);
+                oldFile.read(data.data(), data.size());
+                oldFile.close();
+
+                std::ofstream newFile(loggers.fileSink->GetFilename(), std::ios::binary);
+                newFile.write(logTruncationMessage.data(), logTruncationMessage.size());
+                newFile.write(data.data(), data.size());
+                newFile.close();
+
+                TryDeleteFile(tmpPath);
             }
         }
+    }
 
     void DefaultLoggers::Init(std::filesystem::path logFilePath, HELPERS_NS::Flags<InitFlags> initFlags) {
         GetInstance().InitForId(0, logFilePath, initFlags);
@@ -227,8 +269,7 @@ namespace LOGGER_NS {
             if (!initFlags.Has(InitFlags::Truncate) && logSize > maxSizeLogFile) {
                 auto truncatedBytes = logSize - maxSizeLogFile / 2;
                 HELPERS_NS::FS::RemoveBytesFromStart(logFilePath, truncatedBytes, [](std::ofstream& file) {
-                    std::string header = "... [truncated] \n\n";
-                    file.write(header.data(), header.size());
+                    file.write(logTruncationMessage.data(), logTruncationMessage.size());
                     });
             }
         }
