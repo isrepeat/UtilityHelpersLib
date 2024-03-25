@@ -18,7 +18,6 @@ namespace HELPERS_NS {
 	}
 
 	Semaphore::~Semaphore() {
-		Unlock();
 		CloseHandle(semaphore);
 	}
 

@@ -21,22 +21,23 @@ namespace LOGGER_NS {
         }
 
         void SwitchFile() {
+            std::scoped_lock lk(this->mutex_);
             std::filesystem::path filePath(fileHelper.filename());
 
             if (IsAltFile(filePath)) {
-                SetFilename(GetInitialPath(filePath));
+                SetFilenameInternal(GetInitialPath(filePath));
             } else {
-                SetFilename(GetAltPath(filePath));
+                SetFilenameInternal(GetAltPath(filePath));
             }
         }
 
-        const spdlog::filename_t& GetFilename() const {
+        spdlog::filename_t GetFilename() const {
             return fileHelper.filename();
         }
 
         void SetFilename(const spdlog::filename_t& filename, bool truncate = false) {
-            fileHelper.close();
-            fileHelper.open(filename, truncate);
+            std::scoped_lock lk(this->mutex_);
+            SetFilenameInternal(filename, truncate);
         }
 
         // Pick which file to write to, depending on modification time
@@ -71,8 +72,8 @@ namespace LOGGER_NS {
             return initialPath;
         }
 
-    private:
-        void sink_it_(const spdlog::details::log_msg& msg) {
+    protected:
+        virtual void sink_it_(const spdlog::details::log_msg& msg) override {
             if (!std::filesystem::exists(fileHelper.filename())) {
                 SwitchFile();
             }
@@ -82,8 +83,14 @@ namespace LOGGER_NS {
             fileHelper.write(formatted);
         }
 
-        void flush_() {
+        virtual void flush_() override {
             fileHelper.flush();
+        }
+
+    private:
+        void SetFilenameInternal(const spdlog::filename_t& filename, bool truncate = false) {
+            fileHelper.close();
+            fileHelper.open(filename, truncate);
         }
 
         static bool IsAltFile(const std::filesystem::path& filePath) {
