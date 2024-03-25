@@ -5,19 +5,37 @@
 #include <spdlog/common.h>
 #include <spdlog/details/os.h>
 
+#include <Helpers/EventObject.h>
+
 #include <mutex>
 #include <string>
 #include <string_view>
 #include <filesystem>
+#include <memory>
 
 namespace LOGGER_NS {
     template<class Mutex>
     class DynamicFileSink : public spdlog::sinks::base_sink<Mutex> {
     public:
-        explicit DynamicFileSink(const spdlog::filename_t& filename, bool truncate, const spdlog::file_event_handlers& event_handlers = {})
+        explicit DynamicFileSink(
+            const spdlog::filename_t& filename,
+            bool truncate,
+            const spdlog::file_event_handlers& event_handlers = {},
+            const std::wstring& pauseLoggingEventName = L"")
             : fileHelper{event_handlers}
         {
             fileHelper.open(filename, truncate);
+            if (!pauseLoggingEventName.empty()) {
+                pauseLoggingEvent = std::make_unique<HELPERS_NS::EventObject>(pauseLoggingEventName);
+            }
+        }
+
+        explicit DynamicFileSink(
+            const spdlog::filename_t& filename,
+            bool truncate,
+            const std::wstring& pauseLoggingEventName)
+            : DynamicFileSink(filename, truncate, {}, pauseLoggingEventName)
+        {
         }
 
         void SwitchFile() {
@@ -74,6 +92,10 @@ namespace LOGGER_NS {
 
     protected:
         virtual void sink_it_(const spdlog::details::log_msg& msg) override {
+            if (pauseLoggingEvent) {
+                pauseLoggingEvent->Wait();
+            }
+
             if (!std::filesystem::exists(fileHelper.filename())) {
                 SwitchFile();
             }
@@ -119,6 +141,7 @@ namespace LOGGER_NS {
 
         static constexpr const std::wstring_view altFilePrefix{L"_"};
         spdlog::details::file_helper fileHelper;
+        std::unique_ptr<HELPERS_NS::EventObject> pauseLoggingEvent;
     };
 
     using DynamicFileSinkMt = DynamicFileSink<std::mutex>;
