@@ -13,16 +13,16 @@ namespace HELPERS_NS {
 		OutputDebugStringA((std::stringstream() << "[elapsed time = " << duration.count() * 1000 << "ms] \n").str().c_str());
 	}
 
-	MeasureTimeScoped::MeasureTimeScoped(std::function<void(uint64_t dtMs)> completedCallback)
+	MeasureTimeScoped::MeasureTimeScoped(std::function<void(std::chrono::duration<double, std::milli> dt)> completedCallback)
 		: start{ std::chrono::high_resolution_clock::now() }
 		, completedCallback{ completedCallback }
 	{
 	}
 	MeasureTimeScoped::~MeasureTimeScoped() {
+		auto stop = std::chrono::high_resolution_clock::now();
 		if (completedCallback) {
-			auto stop = std::chrono::high_resolution_clock::now();
-			std::chrono::duration<double> duration = stop - start; // different in seconds
-			completedCallback(duration.count() * 1000);
+			std::chrono::duration<double, std::milli> duration = stop - start;
+			completedCallback(duration);
 		}
 	}
 

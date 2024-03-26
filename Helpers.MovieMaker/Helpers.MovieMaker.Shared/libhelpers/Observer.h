@@ -38,47 +38,68 @@ protected:
 	std::list<std::weak_ptr<FnType>> observers;
 };
 
+// TODO refactor to remove or fix use of ScopedUnlock
+// ScopedUnlock used to unlock thread::critical_section on stack in order to let event handlers to access locked objects
+
 // implemetation of Observer pattern based on std::function
 template<class Arg1>
 class Observable : public ObservableBase<Arg1> {
 public:
-	void Notify(Arg1 arg) {
-		thread::LockStack::ScopedUnlock unlock;
+	void Notify(Arg1 arg, bool useScopedUnlock = true) {
+		if (useScopedUnlock) {
+			thread::LockStack::ScopedUnlock unlock;
+			this->NotifyObservers(arg);
+		}
+		else {
+			this->NotifyObservers(arg);
+		}
+	}
 
+private:
+	void NotifyObservers(Arg1 arg) {
 		this->observers.remove_if(
-			[&](const std::weak_ptr<FnType> &item)
-		{
-			bool remove = true;
-			auto locked = item.lock();
+			[&](const std::weak_ptr<FnType>& item)
+			{
+				bool remove = true;
+				auto locked = item.lock();
 
-			if (locked) {
-				remove = false;
-				(*locked)(arg);
-			}
+				if (locked) {
+					remove = false;
+					(*locked)(arg);
+				}
 
-			return remove;
-		});
+				return remove;
+			});
 	}
 };
 
 template<>
 class Observable<void> : public ObservableBase<void> {
 public:
-	void Notify() {
-		thread::LockStack::ScopedUnlock unlock;
+	void Notify(bool useScopedUnlock = true) {
+		if (useScopedUnlock) {
+			thread::LockStack::ScopedUnlock unlock;
+			this->NotifyObservers();
+		}
+		else {
+			this->NotifyObservers();
+		}
+	}
 
+private:
+	void NotifyObservers() {
 		this->observers.remove_if(
-			[&](const std::weak_ptr<FnType> &item)
-		{
-			bool remove = true;
-			auto locked = item.lock();
+			[&](const std::weak_ptr<FnType>& item)
+			{
+				bool remove = true;
+				auto locked = item.lock();
 
-			if (locked) {
-				remove = false;
-				(*locked)();
-			}
+				if (locked) {
+					remove = false;
+					(*locked)();
+				}
 
-			return remove;
-		});
+				return remove;
+			});
 	}
 };

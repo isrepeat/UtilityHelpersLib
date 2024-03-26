@@ -44,8 +44,8 @@ public:
     int64_t LastVideoPtsHns() const override;
     int64_t LastPtsHns() const override;
 
-    WritedSample LastWritedAudioSample() const override;
-    WritedSample LastWritedVideoSample() const override;
+    MF::SampleInfo LastWritedAudioSample() const override;
+    MF::SampleInfo LastWritedVideoSample() const override;
 
     bool ChunkAudioSamplesWritten() const override;
     bool ChunkVideoSamplesWritten() const override;
@@ -97,8 +97,8 @@ private:
     int64_t audioPtsHns = 0;
     int64_t videoPtsHns = 0;
     
-    std::optional<WritedSample> lastWritedAudioSample;
-    std::optional<WritedSample> lastWritedVideoSample;
+    std::optional<MF::SampleInfo> lastWritedAudioSample;
+    std::optional<MF::SampleInfo> lastWritedVideoSample;
 
     // hardwareTransformsForEncoding by default true because it reduces memory usage
     UseHardwareTransformsForEncoding hardwareTransformsForEncoding = UseHardwareTransformsForEncoding{ true };

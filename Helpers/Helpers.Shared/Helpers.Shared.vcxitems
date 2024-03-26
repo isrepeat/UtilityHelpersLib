@@ -21,6 +21,8 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Conversion.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\CrashHandler.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\CrashInfo.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxHelpers.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSettings.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\EventObject.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\FilesCollection.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\FileSystem.cpp" />
@@ -68,6 +70,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CoUniquePtr.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CrashHandler.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CrashInfo.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxHelpers.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSettings.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Event.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Exception.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\File.h" />
@@ -92,6 +96,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MFInclude.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MFLibs.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MFUser.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\SampleInfo.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MoveLambda.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MultithreadMutex.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PackageProvider.h" />
