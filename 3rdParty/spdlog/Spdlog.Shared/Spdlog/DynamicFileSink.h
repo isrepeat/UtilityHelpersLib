@@ -39,7 +39,7 @@ namespace LOGGER_NS {
         }
 
         void SwitchFile() {
-            std::scoped_lock lk(this->mutex_);
+            std::scoped_lock lk(_MyBase::mutex_);
             std::filesystem::path filePath(fileHelper.filename());
 
             if (IsAltFile(filePath)) {
@@ -54,7 +54,7 @@ namespace LOGGER_NS {
         }
 
         void SetFilename(const spdlog::filename_t& filename, bool truncate = false) {
-            std::scoped_lock lk(this->mutex_);
+            std::scoped_lock lk(_MyBase::mutex_);
             SetFilenameInternal(filename, truncate);
         }
 
@@ -101,7 +101,7 @@ namespace LOGGER_NS {
             }
 
             spdlog::memory_buf_t formatted;
-            spdlog::sinks::base_sink<Mutex>::formatter_->format(msg, formatted);
+            _MyBase::formatter_->format(msg, formatted);
             fileHelper.write(formatted);
         }
 
@@ -110,6 +110,8 @@ namespace LOGGER_NS {
         }
 
     private:
+        using _MyBase = spdlog::sinks::base_sink<Mutex>;
+
         void SetFilenameInternal(const spdlog::filename_t& filename, bool truncate = false) {
             fileHelper.close();
             fileHelper.open(filename, truncate);
