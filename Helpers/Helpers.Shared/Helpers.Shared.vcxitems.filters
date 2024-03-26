@@ -123,6 +123,8 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSettings.cpp">
       <Filter>Dx</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Semaphore.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\EventObject.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Gate.h">
@@ -347,6 +349,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSettings.h">
       <Filter>Dx</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Semaphore.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\EventObject.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />
