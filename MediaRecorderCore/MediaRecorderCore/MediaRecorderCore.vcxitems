@@ -53,6 +53,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\IAudioCodecSettings.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\IVideoCodecSettings.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\MediaFormat.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\VideoRateControlModeDef.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\VideoCodecSimpleSettings.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\VideoCodecType.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\VideoCodecTypeDef.h" />

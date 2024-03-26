@@ -57,6 +57,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\MediaContainerExtension.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MFOutputTexResize\IMFOutputTexResize.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MFOutputTexResize\MFOutputTexResizeRgbaToNV12.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaFormat\VideoRateControlModeDef.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)pch.cpp">
