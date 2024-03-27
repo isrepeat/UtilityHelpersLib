@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "MediaRecorder.h"
 #include "CodecsTable.h"
 #include "MediaFormat/MediaFormatCodecsSupport.h"

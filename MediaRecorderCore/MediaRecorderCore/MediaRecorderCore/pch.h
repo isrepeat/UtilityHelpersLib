@@ -7,3 +7,5 @@
 #endif
 
 #include <windows.h>
+
+#define HELPERS_NS_ALIAS HMedia
