@@ -230,6 +230,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderCore\MediaFormat\VideoCodecTypeDef.h">
       <Filter>Sources</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderCore\MediaFormat\VideoRateControlModeDef.h">
+      <Filter>Sources</Filter>
+    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderCore\MediaFormat\AudioCodecSettingsItemSort\AbsOptionalDistance.h">
       <Filter>Sources</Filter>
     </ClInclude>

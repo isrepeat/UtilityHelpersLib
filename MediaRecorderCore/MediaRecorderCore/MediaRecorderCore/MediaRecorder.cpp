@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "MediaRecorder.h"
 #include "CodecsTable.h"
 #include "MediaFormat/MediaFormatCodecsSupport.h"
@@ -6,11 +7,14 @@
 
 #include <limits>
 #include <filesystem>
+#include <libhelpers/MediaFoundation/MFHelpers.h>
 #include <libhelpers/HardDrive.h>
 #include <libhelpers/HSystem.h>
 #include <libhelpers/HMathCP.h>
 #include <libhelpers/HTime.h>
 #include <mfapi.h>
+#include <codecapi.h>
+#include <strmif.h>
 
 
 // encoder restrictions can be found here : https://msdn.microsoft.com/en-us/library/windows/desktop/dd742785(v=vs.85).aspx
@@ -454,11 +458,12 @@ void MediaRecorder::InitializeSinkWriter(
 
     if (this->params.mediaFormat.GetVideoCodecSettings()) {
         auto settings = this->params.mediaFormat.GetVideoCodecSettings();
+        auto basicSettings = settings->GetBasicSettings();
         Microsoft::WRL::ComPtr<IMFMediaType> typeOut, typeIn;
 
-        if (auto basicSettings = settings->GetBasicSettings()) {
-            if (!static_cast<bool>(useNv12VideoSamples) && basicSettings->height > 1080 && settings->GetCodecType() == VideoCodecType::HEVC) {
-                // TODO check why crash with useNv12VideoSamples == false and >1080(2k, 4k) HEVC
+        if (basicSettings) {
+            if (!static_cast<bool>(nv12VideoSamples) && basicSettings->height > 1080 && settings->GetCodecType() == VideoCodecType::HEVC) {
+                // TODO check why crash with nv12VideoSamples == false and >1080(2k, 4k) HEVC
                 assert(false);
                 H::System::ThrowIfFailed(E_FAIL);
             }
@@ -470,8 +475,37 @@ void MediaRecorder::InitializeSinkWriter(
         hr = this->sinkWriter->AddStream(typeOut.Get(), &this->videoStreamIdx);
         H::System::ThrowIfFailed(hr);
 
-        hr = this->sinkWriter->SetInputMediaType(this->videoStreamIdx, typeIn.Get(), NULL);
+        hr = this->sinkWriter->SetInputMediaType(this->videoStreamIdx, typeIn.Get(), nullptr);
         H::System::ThrowIfFailed(hr);
+
+		if (basicSettings && settings->GetCodecType() == VideoCodecType::H264) {
+			Microsoft::WRL::ComPtr<ICodecAPI> codecApi;
+			hr = this->sinkWriter->GetServiceForStream(this->videoStreamIdx, GUID_NULL, IID_PPV_ARGS(&codecApi));
+			H::System::ThrowIfFailed(hr);
+
+			eAVEncCommonRateControlMode rateControlMode{eAVEncCommonRateControlMode_UnconstrainedVBR};
+			switch (basicSettings->rateControlMode) {
+			case VideoRateControlMode::CBR:
+				rateControlMode = eAVEncCommonRateControlMode_CBR;
+				break;
+
+            case VideoRateControlMode::PeakConstrainedVBR: {
+                rateControlMode = eAVEncCommonRateControlMode_PeakConstrainedVBR;
+                auto bitrate = MFHelpers::MakeVariantUINT(basicSettings->bitrate);
+                codecApi->SetValue(&CODECAPI_AVEncCommonMaxBitRate, &bitrate);
+                break;
+            }
+
+			default:
+				break;
+			}
+
+            // Ignore default value
+            if (rateControlMode != eAVEncCommonRateControlMode_UnconstrainedVBR) {
+                auto rateControlModeVal = MFHelpers::MakeVariantUINT(rateControlMode);
+                codecApi->SetValue(&CODECAPI_AVEncCommonRateControlMode, &rateControlModeVal);
+            }
+		}
 
         this->videoTypeIn = typeIn;
         this->videoTypeOut = typeOut;

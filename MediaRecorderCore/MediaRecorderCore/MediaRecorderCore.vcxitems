@@ -89,6 +89,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderCore\MediaFormat\VideoCodecSimpleSettings.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderCore\MediaFormat\VideoCodecType.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderCore\MediaFormat\VideoCodecTypeDef.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderCore\MediaFormat\VideoRateControlModeDef.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderCore\MediaRecorder.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderCore\MediaRecorderFactory.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaRecorderCore\MediaRecorderMessageEnum.h" />
