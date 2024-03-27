@@ -410,11 +410,7 @@ void MediaRecorder::InitializeSinkWriter(
         hr = this->sinkWriter->AddStream(typeOut.Get(), &this->videoStreamIdx);
         H::System::ThrowIfFailed(hr);
 
-        Microsoft::WRL::ComPtr<IMFAttributes> attributes;
-        hr = MFCreateAttributes(&attributes, 1);
-        H::System::ThrowIfFailed(hr);
-
-        hr = this->sinkWriter->SetInputMediaType(this->videoStreamIdx, typeIn.Get(), attributes.Get());
+        hr = this->sinkWriter->SetInputMediaType(this->videoStreamIdx, typeIn.Get(), nullptr);
         H::System::ThrowIfFailed(hr);
 
 		if (basicSettings && settings->GetCodecType() == VideoCodecType::H264) {
