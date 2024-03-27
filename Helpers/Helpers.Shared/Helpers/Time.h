@@ -6,22 +6,66 @@
 #include <thread>
 #include <future>
 
-using namespace std::chrono_literals;
-
 namespace HELPERS_NS {
-	namespace Literals {
-		constexpr uint64_t nanoSecond = 1'000'000'000;
-		constexpr uint64_t Hns = nanoSecond / 100; // resolution = 100-nanosecond intervals
+	namespace Chrono {
+		template <class _To, class _Rep, class _Period>
+		constexpr const std::chrono::duration<float, typename _To::period> duration_cast_float(const std::chrono::duration<_Rep, _Period>& _Dur) noexcept {
+			return std::chrono::duration_cast<std::chrono::duration<float, typename _To::period>>(_Dur);
+		}
 
-		constexpr double HnsToSeconds = 1.0 / Hns;
-		constexpr double HnsToMilliseconds = 1000 * HnsToSeconds;
+		template <typename _Rep, typename _Period>
+		struct DurationBase : std::chrono::duration<_Rep, _Period> {
+			using _MyBase = std::chrono::duration<_Rep, _Period>;
+			using _MyBase::duration;
+
+			operator uint64_t() const {
+				return this->count();
+			}
+			operator int64_t() const {
+				return this->count();
+			}
+			operator uint32_t() const {
+				return this->count();
+			}
+			operator int32_t() const {
+				return this->count();
+			}
+			explicit operator float() const {
+				return duration_cast_float<_MyBase>(*this).count();
+			}
+			explicit operator double() const {
+				// TODO: add duration_cast_double
+				return duration_cast_float<_MyBase>(*this).count();
+			}
+		};
+
+		template <typename _Rep, typename _Period>
+		constexpr DurationBase<_Rep, _Period> operator+(const DurationBase<_Rep, _Period>& _Left, const DurationBase<_Rep, _Period>& _Right) noexcept {
+			return std::chrono::operator+(_Left, _Right);
+		}
+
+		template <typename _Rep, typename _Period>
+		constexpr DurationBase<_Rep, _Period> operator-(const DurationBase<_Rep, _Period>& _Left, const DurationBase<_Rep, _Period>& _Right) noexcept {
+			return std::chrono::operator-(_Left, _Right);
+		}
+
+
+		using Hns = DurationBase<unsigned long long, std::ratio<1, 10'000'000>>;
 	}
 
-	constexpr uint64_t HnsToSeconds(uint64_t Hns) {
-		return static_cast<uint64_t>(Hns * Literals::HnsToSeconds + 0.5); // + 0.5 fix precision problem
+	inline namespace Literals {
+		inline namespace ChronoLiterals {
+			constexpr Chrono::Hns operator"" _hns(unsigned long long _Val) noexcept {
+				return Chrono::Hns(_Val);
+			}
+		}
 	}
-	constexpr uint64_t HnsToMilliseconds(uint64_t Hns) {
-		return static_cast<uint64_t>(Hns * Literals::HnsToMilliseconds + 0.5);
+	
+	constexpr float HnsToSeconds(Chrono::Hns countHns) {
+		return Chrono::duration_cast_float<std::chrono::seconds>(countHns).count();
+	}
+	constexpr float HnsToMilliseconds(Chrono::Hns countHns) {
+		return Chrono::duration_cast_float<std::chrono::milliseconds>(countHns).count();
 	}
 
 
@@ -129,11 +173,11 @@ namespace HELPERS_NS {
 
 	class MeasureTimeScoped {
 	public:
-		MeasureTimeScoped(std::function<void(uint64_t dtMs)> completedCallback);
+		MeasureTimeScoped(std::function<void(std::chrono::duration<double, std::milli> dt)> completedCallback);
 		~MeasureTimeScoped();
 
 	private:
-		std::function<void(uint64_t dtMs)> completedCallback;
+		std::function<void(std::chrono::duration<double, std::milli>)> completedCallback;
 		std::chrono::time_point<std::chrono::high_resolution_clock> start;
 	};
 
@@ -145,14 +189,29 @@ namespace HELPERS_NS {
 	std::string GetTimezone();
 };
 
-#ifdef _DEBUG
+using namespace std::chrono_literals;
+using namespace HELPERS_NS::ChronoLiterals;
+
+
+
+#if _DEBUG
 // https://stackoverflow.com/questions/1597007/creating-c-macro-with-and-line-token-concatenation-with-positioning-macr
-#define MEASURE_TIME_TOKENPASTE(x, y) x ## y
 // use it with __LINE__ to fix "hides declaration of the same name in outer scope"
-#define MEASURE_TIME_TOKENPASTE2(x, y) MEASURE_TIME_TOKENPASTE(x, y)
-#define MEASURE_TIME HELPERS_NS::MeasureTime MEASURE_TIME_TOKENPASTE2(_measureTimeScoped, __LINE__);
-#define MEASURE_TIME_WITH_CALLBACK(callback) HELPERS_NS::MeasureTimeScoped MEASURE_TIME_TOKENPASTE2(_measureTimeScoped, __LINE__)(callback);
+//#define MEASURE_TIME HELPERS_NS::MeasureTime H_CONCAT(_measureTimeScoped, __LINE__);
+//#define MEASURE_TIME_WITH_CALLBACK(callback) HELPERS_NS::MeasureTimeScoped H_CONCAT(_measureTimeScoped, __LINE__)(callback);
 #else
-#define MEASURE_TIME
-#define MEASURE_TIME_WITH_CALLBACK(callback)
+//#define MEASURE_TIME
+//#define MEASURE_TIME_WITH_CALLBACK(callback)
+#endif
+
+
+#if _DEBUG && SPDLOG_SUPPORT
+#define MEASURE_TIME_SCOPED(name) HELPERS_NS::MeasureTimeScoped H_CONCAT(_measureTimeScoped, __LINE__)([] (std::chrono::duration<double, std::milli> dt) {	\
+		LOG_DEBUG_D("[" ##name "] dt = {}", dt.count());																									\
+		})
+
+#define LOG_DELTA_TIME_POINTS(tpNameB, tpNameA) LOG_DEBUG_D("" #tpNameB " - " #tpNameA " = {}", std::chrono::duration<double, std::milli>(tpNameB - tpNameA).count());
+#else
+#define MEASURE_TIME_SCOPED(name)
+#define LOG_DELTA_TIME_POINTS(tpNameB, tpNameA)
 #endif

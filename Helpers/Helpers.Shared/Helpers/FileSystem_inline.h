@@ -38,5 +38,29 @@ namespace HELPERS_NS {
             }
             outFile.write(fileData.data(), fileData.size());
         }
+
+        inline void PrependToFile(const std::filesystem::path& filePath, const char* data, size_t dataSize) {
+            std::ifstream inFile(filePath, std::ios::binary);
+            if (!inFile.is_open()) {
+                return;
+            }
+
+            inFile.seekg(0, std::ios::end);
+            uintmax_t oldDataSize = inFile.tellg();
+            inFile.seekg(0, std::ios::beg);
+            std::vector<char> oldData;
+            oldData.resize(oldDataSize);
+            inFile.read(oldData.data(), oldData.size());
+            inFile.close();
+
+            std::ofstream outFile(filePath, std::ios::binary);
+            if (!outFile.is_open()) {
+                return;
+            }
+
+            outFile.write(data, dataSize);
+            outFile.write(oldData.data(), oldData.size());
+            outFile.close();
+        }
     }
 }

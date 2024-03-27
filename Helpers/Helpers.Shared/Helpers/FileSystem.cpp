@@ -2,6 +2,7 @@
 #if COMPILE_FOR_DESKTOP
 #include "Helpers.h"
 #include "Logger.h"
+#include "Scope.h"
 #include <filesystem>
 #include <algorithm>
 #include <fstream>

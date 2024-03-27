@@ -6,102 +6,135 @@
 #include <atomic>
 #include <span>
 
+#define READ_FILE_BUFFER_SIZE_DEFAULT 1024
+#define READ_FILE_BUFFER_SIZE_MAX (10*1024*1024) // 10 mb
+
 namespace HELPERS_NS {
     inline BOOL CloseHandleSafe(HANDLE h) {
         return h && h != INVALID_HANDLE_VALUE ? CloseHandle(h) : TRUE;
     }
 
+    enum class StatusReadFile {
+        Error,
+        Stopped,
+        Completed,
+        NeedMoreBuffer,
+    };
+
+    enum class StatusWriteFile {
+        Error,
+        Stopped,
+        Completed,
+    };
+
+
+    inline StatusReadFile GetOverlappedResultRoutine(HANDLE hFile, LPOVERLAPPED lpOverlapped, LPDWORD numberOfBytesTransfered, const std::atomic<bool>& stop) {
+        StatusReadFile status;
+
+        while (true) {
+            // Check break conditions in while scope (if we chek it after while may be status conflicts)
+            if (stop) {
+                return StatusReadFile::Stopped;
+            }
+
+            if (GetOverlappedResult(hFile, lpOverlapped, numberOfBytesTransfered, FALSE)) {
+                return StatusReadFile::Completed;
+            }
+            else { // pending ...
+                auto lastErrorGetOverlappedResult = GetLastError();
+                switch (lastErrorGetOverlappedResult) {
+                case ERROR_IO_INCOMPLETE:
+                    break; // continue call GetOverlappedResult() until it finish or error
+
+                case ERROR_MORE_DATA:
+                    return StatusReadFile::NeedMoreBuffer;
+
+                default:
+                    LogLastError;
+                    return StatusReadFile::Error;
+                }
+            }
+        }
+    }
+
+
     // TODO: rewrite this without blocking current thread
     template<typename T = uint8_t>
-    void ReadFileAsync(HANDLE hFile, const std::atomic<bool>& stop, std::vector<T>& outBuffer, DWORD numberOfBytesToRead) {
-        enum StatusIO {
-            Error,
-            Stopped,
-            Completed,
-        };
-        StatusIO status;
+    StatusReadFile ReadFileAsync(HANDLE hFile, const std::atomic<bool>& stop, std::vector<T>& outBuffer, DWORD numberOfBytesToRead) {
+        StatusReadFile status;
 
         DWORD dwBytesRead = 0;
         OVERLAPPED stOverlapped = { 0 };
+        std::size_t outBufferOldSize = 0;
+        
+        do {
+            outBufferOldSize = outBuffer.size();
+            outBuffer.resize(outBufferOldSize + numberOfBytesToRead);
 
-        auto outBufferOldSize = outBuffer.size();
-        outBuffer.resize(outBufferOldSize + numberOfBytesToRead);
+            // Read new data after outBuffer.data() + outBufferOldSize to save old data
+            if (ReadFile(hFile, outBuffer.data() + outBufferOldSize, numberOfBytesToRead * sizeof(T), &dwBytesRead, &stOverlapped)) {
+                // ReadFile completed synchronously ...
+                // NOTE: if dwBytesRead == 0 it is mean that other side call WriteFile with zero data
+                status = StatusReadFile::Completed;
+            }
+            else {
+                auto lastErrorReadFile = GetLastError();
+                switch (lastErrorReadFile) {
+                case ERROR_IO_PENDING:
+                    status = GetOverlappedResultRoutine(hFile, &stOverlapped, &dwBytesRead, stop);
+                    break;
 
-        // Read new data after outBuffer.data() + outBufferOldSize to save old data
-        if (ReadFile(hFile, outBuffer.data() + outBufferOldSize, numberOfBytesToRead * sizeof(T), &dwBytesRead, &stOverlapped)) {
-            // ReadFile completed synchronously ...
-            // NOTE: if dwBytesRead == 0 it is mean that other side call WriteFile with zero data
-            status = StatusIO::Completed;
-        }
-        else {
-            auto lastErrorReadFile = GetLastError();
-            switch (lastErrorReadFile) {
-            case ERROR_IO_PENDING:
-                while (true) {
-                    // Check break conditions in while scope (if we chek it after while may be status conflicts)
-                    if (stop) {
-                        status = StatusIO::Stopped;
+                case ERROR_MORE_DATA:
+                    status = StatusReadFile::NeedMoreBuffer;
+                    break;
+
+                default:
+                    LogLastError; 
+                    status = StatusReadFile::Error;
+                }
+
+                if (status == StatusReadFile::NeedMoreBuffer) {
+                    numberOfBytesToRead += READ_FILE_BUFFER_SIZE_DEFAULT * 100;
+                    if (numberOfBytesToRead >= READ_FILE_BUFFER_SIZE_MAX) {
+                        status = StatusReadFile::Error;
+                        LogLastError;
                         break;
-                    }
-
-                    if (GetOverlappedResult(hFile, &stOverlapped, &dwBytesRead, FALSE)) {
-                        // ReadFile operation completed
-                        status = StatusIO::Completed;
-                        break;
-                    }
-                    else {
-                        // pending ...
-                        auto lastErrorGetOverlappedResult = GetLastError();
-                        if (lastErrorGetOverlappedResult != ERROR_IO_INCOMPLETE) {
-                            // remote side was closed or smth else
-                            status = StatusIO::Error;
-                            LogLastError;
-                            break;
-                        }
                     }
                 }
-                break;
-
-            default:
-                LogLastError;
-                status = StatusIO::Error;
             }
-        }
+        } while (status == StatusReadFile::NeedMoreBuffer);
 
         switch (status) {
-        case StatusIO::Error:
+        case StatusReadFile::Error:
             throw std::exception("ReadFile error");
             break;
 
-        case StatusIO::Stopped:
+        case StatusReadFile::Stopped:
             throw std::exception("Was stopped signal");
             break;
 
-        case StatusIO::Completed:
+        case StatusReadFile::Completed:
             if (outBufferOldSize + dwBytesRead == 0) {
                 throw std::exception("Zero data was read: 'outBufferOldSize + dwBytesRead == 0'");
             }
         }
 
-        outBuffer.resize((outBufferOldSize + dwBytesRead) / sizeof(T)); // truncate
+        // TODO: Check if "(dwBytesRead) / sizeof(T)" is correct expression on uint16_t+
+        outBuffer.resize(outBufferOldSize + (dwBytesRead) / sizeof(T)); // truncate
+        return status;
     }
 
 
     template<typename T = uint8_t>
-    void WriteFileAsync(HANDLE hFile, const std::atomic<bool>& stop, std::span<T> writeData) {
-        enum StatusIO {
-            Error,
-            Stopped,
-            Completed,
-        };
-        StatusIO status;
+    StatusWriteFile WriteFileAsync(HANDLE hFile, const std::atomic<bool>& stop, std::span<T> writeData) {
+        StatusWriteFile status;
 
         DWORD cbWritten = 0;
         OVERLAPPED stOverlapped = { 0 };
 
         if (WriteFile(hFile, writeData.data(), writeData.size() * sizeof(T), &cbWritten, &stOverlapped)) {
             // WriteFile completed synchronously ...
-            status = StatusIO::Completed;
+            status = StatusWriteFile::Completed;
         }
         else {
             auto lastErrorReadFile = GetLastError();
@@ -110,13 +143,13 @@ namespace HELPERS_NS {
                 while (true) {
                     // Check break conditions in while scope (if we chek it after while may be status conflicts)
                     if (stop) {
-                        status = StatusIO::Stopped;
+                        status = StatusWriteFile::Stopped;
                         break;
                     }
 
                     if (GetOverlappedResult(hFile, &stOverlapped, &cbWritten, FALSE)) {
                         // ReadFile operation completed
-                        status = StatusIO::Completed;
+                        status = StatusWriteFile::Completed;
                         break;
                     }
                     else {
@@ -124,7 +157,7 @@ namespace HELPERS_NS {
                         auto lastErrorGetOverlappedResult = GetLastError();
                         if (lastErrorGetOverlappedResult != ERROR_IO_INCOMPLETE) {
                             // remote side was closed or smth else
-                            status = StatusIO::Error;
+                            status = StatusWriteFile::Error;
                             LogLastError;
                             break;
                         }
@@ -134,23 +167,25 @@ namespace HELPERS_NS {
 
             default:
                 LogLastError;
-                status = StatusIO::Error;
+                status = StatusWriteFile::Error;
             }
         }
 
         switch (status) {
-        case StatusIO::Error:
+        case StatusWriteFile::Error:
             throw std::exception("WriteFile error");
             break;
 
-        case StatusIO::Stopped:
+        case StatusWriteFile::Stopped:
             throw std::exception("Was stopped signal");
             break;
 
-        case StatusIO::Completed: // mb unreachable
+        case StatusWriteFile::Completed: // mb unreachable
             if (cbWritten == 0) {
                 throw std::exception("Zero bytes written: 'cbWritten == 0'");
             }
         }
+
+        return status;
     }
 }

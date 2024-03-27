@@ -80,7 +80,6 @@ public:
             }
         }
 
-        H::System::ThrowIfFailed(E_FAIL); // was not able to find transform
         return nullptr;
     }
 

@@ -1,6 +1,8 @@
 #pragma once
 #include "Thread.h"
 #include "Logger.h"
+#include <Windows.h>
+#include <processthreadsapi.h>
 
 
 namespace HELPERS_NS {
@@ -58,7 +60,7 @@ namespace HELPERS_NS {
 
 	void ThreadNameHelper::SetThreadName(const std::wstring& name) {
 		threadName = name;
-		SetThreadDescription(GetCurrentThread(), threadName.c_str());
+		SetThreadDescription(::GetCurrentThread(), threadName.c_str());
 	}
 
 	const std::wstring& ThreadNameHelper::GetThreadName() {

@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- Make sure this file are imported in .vcxitems -->
+  <!-- ================ Import UtilityHelpersLibCommon.targets =====================-->
+  <PropertyGroup>
+    <RegExToCaptureUtilityHelpersLibDir>(.*\\)(UtilityHelpersLib)(\\.*)</RegExToCaptureUtilityHelpersLibDir>
+    <UtilityHelpersLibSolutionDir>$([System.Text.RegularExpressions.Regex]::Replace('$(MSBuildThisFileDirectory)', $(RegExToCaptureUtilityHelpersLibDir), '$1$2' ))</UtilityHelpersLibSolutionDir>
+  </PropertyGroup>
+  <Import Project="$(UtilityHelpersLibSolutionDir)\UtilityHelpersLibCommon.targets" />
+  <!-- ============================================================================== -->
+  
   <PropertyGroup>
     <HelpersSourcesDir>$(MSBuildThisFileDirectory)Helpers</HelpersSourcesDir>
     <!-- Expose own dir for other projects -->
@@ -14,11 +22,16 @@
     <HelpersCommonHeaders Include="$(HelpersSourcesDir)\Callback_CLR.hpp" />
     <HelpersCommonHeaders Include="$(HelpersSourcesDir)\TokenContext.hpp" />
     <HelpersCommonHeaders Include="$(HelpersSourcesDir)\FunctionTraits.hpp" />
+    <HelpersCommonHeaders Include="@(UtilityHelpersLibSharedHeaders)" />
   </ItemGroup>
 
-  
+
   <ItemDefinitionGroup>
     <ClCompile>
+      <AdditionalIncludeDirectories>
+        $(MSBuildThisFileDirectory);
+        %(AdditionalIncludeDirectories)
+      </AdditionalIncludeDirectories>
       <PreprocessorDefinitions>
         INSIDE_HELPERS_PROJECT;
         %(PreprocessorDefinitions)

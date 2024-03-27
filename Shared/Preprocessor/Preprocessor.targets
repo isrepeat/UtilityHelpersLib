@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Make sure this file are imported in .vcxitems -->
+  <PropertyGroup>
+    <PreprocessorSourcesDir>$(MSBuildThisFileDirectory)</PreprocessorSourcesDir>
+    <PreprocessorIncludeDirs>$(PreprocessorSourcesDir);$(MSBuildThisFileDirectory)</PreprocessorIncludeDirs>
+    <!-- Expose own dir for other projects -->
+    <PublicIncludeDirectories>$(PreprocessorIncludeDirs);$(PublicIncludeDirectories)</PublicIncludeDirectories>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <UtilityHelpersLibSharedHeaders Include="$(PreprocessorSourcesDir)\Preprocessor.h" />
+  </ItemGroup>
+
+  <!-- Add Preprocessor path as additional includes dirs to whoever imports this project -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>
+        $(PreprocessorSourcesDir);
+        %(AdditionalIncludeDirectories)
+      </AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>
+        PREPROCESSOR_SOURCES;
+        %(PreprocessorDefinitions)
+      </PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+</Project>

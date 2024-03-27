@@ -20,7 +20,7 @@
 #include <queue>
 
 
-#define BUFFER_PIPE 512
+#define BUFFER_PIPE READ_FILE_BUFFER_SIZE_DEFAULT
 
 enum class PipeConnectionStatus {
     Error,
@@ -42,7 +42,7 @@ PipeConnectionStatus WaitOpenPipe(OUT HANDLE& hPipe, const std::wstring& pipeNam
 template <typename T = uint8_t>
 void ReadFromPipeAsync(HANDLE hNamedPipe, const std::atomic<bool>& stop, std::vector<T>& outBuffer) {
     try {
-        return HELPERS_NS::ReadFileAsync<T>(hNamedPipe, stop, outBuffer, BUFFER_PIPE);
+        HELPERS_NS::ReadFileAsync<T>(hNamedPipe, stop, outBuffer, BUFFER_PIPE);
     }
     catch (const std::exception& ex) {
         LOG_ERROR_D("Catch ReadFileAsync exception = {}", ex.what());
@@ -56,7 +56,7 @@ void WriteToPipeAsync(HANDLE hNamedPipe, const std::atomic<bool>& stop, std::spa
         return;
 
     try {
-        return HELPERS_NS::WriteFileAsync<T>(hNamedPipe, stop, writeData);
+        HELPERS_NS::WriteFileAsync<T>(hNamedPipe, stop, writeData);
     }
     catch (const std::exception& ex) {
         LOG_ERROR_D("Catch WriteFileAsync exception = {}", ex.what());
@@ -408,9 +408,10 @@ private:
             while (!stopSignal) {
                 bool clearStreamBuffer = true;
                 ReadFromPipeAsync<T>(hNamedPipe, stopSignal, readStreamBuffer);
-
+                
                 uint32_t processedBytes = 0;
 
+                // TODO: Write tests for cases when 'while' really need (mb remove?) 
                 while (processedBytes < readStreamBuffer.size()) {
                     if (!ParseMessage(readStreamBuffer, processedBytes, messageInternal)) {
                         clearStreamBuffer = false;
@@ -427,6 +428,9 @@ private:
                 }
 
                 if (clearStreamBuffer) {
+                    // readStreamBuffer does not contain part of the next message
+                    // (even if it resized inside ReadFromPipeAsync), so cleansing is safe. 
+                    LOG_ASSERT(processedBytes == readStreamBuffer.size());
                     readStreamBuffer.clear(); // can clear buffer because payload was saved/moved in messagesQueue
                 }
             }

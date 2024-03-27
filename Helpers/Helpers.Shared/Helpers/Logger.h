@@ -1,11 +1,46 @@
 #pragma once
 #include "common.h"
+#if SPDLOG_SUPPORT
 #include <Spdlog/LogHelpers.h>
 #include "Helpers.h"
 #include "Thread.h"
 #include "System.h"
 #include "Macros.h"
 #include "Scope.h"
+#else
+// TODO: try rewrite this workaround (mb use logger as dll)
+#define LOG_CTX
+#define LOG_RAW(fmt, ...)
+#define LOG_TIME(fmt, ...)
+
+#define LOG_DEBUG(fmt, ...)
+#define LOG_ERROR(fmt, ...)
+#define LOG_WARNING(fmt, ...)
+
+#define LOG_DEBUG_S(_This, fmt, ...)
+#define LOG_ERROR_S(_This, fmt, ...)
+#define LOG_WARNING_S(_This, fmt, ...)
+
+#define LOG_DEBUG_D(fmt, ...)
+#define LOG_ERROR_D(fmt, ...)
+#define LOG_WARNING_D(fmt, ...)
+
+#define LOG_FUNCTION_ENTER_S(_This, fmt, ...)
+#define LOG_FUNCTION_ENTER_C(fmt, ...)
+#define LOG_FUNCTION_ENTER(fmt, ...)
+
+#define LOG_FUNCTION_SCOPE_S(_This, fmt, ...)
+#define LOG_FUNCTION_SCOPE_C(fmt, ...)
+#define LOG_FUNCTION_SCOPE(fmt, ...)
+
+#define CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(className)
+
+#define DISABLE_ERROR_LOGGING
+#define DISABLE_ASSERT_LOGGING
+#define DISABLE_MULTIFILE_LOGGING
+#define DISABLE_VERBOSE_LOGGING
+#define DISABLE_THREAD_LOGGING
+#endif
 
 // NOTE: DISABLE_..._LOGGING macros must be defined at global level to guarantee that all files disabled this macros.
 //       If you want disable some log marco for specific file do it manually by redefining this macro with empty body.
@@ -33,6 +68,7 @@
 #define LOG_THROW_STD_EXCEPTION(fmt, ...) throw std::exception(fmt)
 #define LOG_THROW_IF_FAILED(hr) HELPERS_NS::System::ThrowIfFailed(hr)
 #endif
+
 
 #if !defined(DISABLE_ASSERT_LOGGING) && !defined(DISABLE_ERROR_LOGGING)
 // NOTE 1: 
@@ -93,6 +129,7 @@
 #endif
 
 
+#if !defined(DISABLE_THREAD_LOGGING)
 #define LOG_THREAD(name)                                                                                                     \
 	LOG_DEBUG_D(L"Thread START '{}'", std::wstring(name));                                                                   \
 	HELPERS_NS::ThreadNameHelper::SetThreadName(name);                                                                       \
@@ -100,3 +137,6 @@
 	auto threadFinishLogScoped = HELPERS_NS::MakeScope([&] {                                                                 \
 		LOG_DEBUG_D(L"Thread END '{}'", std::wstring(name));                                                                 \
 		});
+#else
+#define LOG_THREAD(name)
+#endif

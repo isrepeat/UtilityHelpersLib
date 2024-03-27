@@ -1,32 +1,45 @@
 #pragma once
-// define these macros before first include spdlog headers
-#define SPDLOG_WCHAR_TO_ANSI_SUPPORT
-#define SPDLOG_WCHAR_FILENAMES
+#include <Preprocessor.h>
+#pragma message(PREPROCESSOR_FILE_INCLUDED("LogHelpers.h"))
 
 // You can compile static library with "dllexport" to export symbols through dll.
 // WARNING: Client must use "dllimport" if this project compiled as dll otherwise will be problems, for example:
 //          - DefaultLoggers singleton may exist in two instances.
+// NOTE: This macro must be redefined at global level (in <PreprocessorDefinitions>)
 #ifndef LOGGER_API
-#define LOGGER_API __declspec(dllexport) 
+#define LOGGER_API
+#else
+#pragma message(PREPROCESSOR_MSG("LOGGER_API already defined = '" PP_STRINGIFY(LOGGER_API) "'"))
 #endif
 
 #ifndef LOGGER_NS_ALIAS
 #define LOGGER_NS_ALIAS lg
+#else
+#pragma message(PREPROCESSOR_MSG("LOGGER_NS_ALIAS already defined = '" PP_STRINGIFY(LOGGER_NS_ALIAS) "'"))
 #endif
 
 #define LOGGER_NS __lg_ns
 namespace LOGGER_NS {} // create uniq "logger namespace" for this project
 namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger namespace" (defined via macro)
 
+// define these macros before first include spdlog headers
+#define SPDLOG_WCHAR_TO_ANSI_SUPPORT
+#define SPDLOG_WCHAR_FILENAMES
+
+#include "DynamicFileSink.h"
+
 #include <spdlog/spdlog.h>
 #include <spdlog/logger.h>
 #include <spdlog/sinks/msvc_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/callback_sink.h>
+#include <Helpers/Time.h>
 #include <Helpers/Flags.h>
 #include <Helpers/Scope.h>
 #include <Helpers/Macros.h>
 #include <Helpers/String.hpp>
+#include <Helpers/Semaphore.h>
 #include <Helpers/Singleton.hpp>
 #include <Helpers/TypeTraits.hpp>
 #include "CustomTypeSpecialization.h"
@@ -35,13 +48,12 @@ namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger na
 #include <string>
 #include <memory>
 #include <array>
-
+#include <set>
 
 namespace LOGGER_NS {
     // define a "__classFullnameLogging" "member checker" class
     define_has_member(__ClassFullnameLogging);
-
-
+   
     struct LOGGER_API StandardLoggers {
         std::shared_ptr<spdlog::logger> logger;
         std::shared_ptr<spdlog::logger> rawLogger;
@@ -52,11 +64,14 @@ namespace LOGGER_NS {
         std::shared_ptr<spdlog::logger> debugLogger;
 #endif
 
-        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSink;
-        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkRaw;
-        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkTime;
-        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkFunc;
-        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkExtend;
+        std::shared_ptr<DynamicFileSinkMt> fileSink;
+        std::shared_ptr<DynamicFileSinkMt> fileSinkRaw;
+        std::shared_ptr<DynamicFileSinkMt> fileSinkTime;
+        std::shared_ptr<DynamicFileSinkMt> fileSinkFunc;
+        std::shared_ptr<DynamicFileSinkMt> fileSinkExtend;
+
+        std::shared_ptr<HELPERS_NS::Timer> logSizeLimitChecker;
+        std::shared_ptr<HELPERS_NS::EventObject> pauseLoggingEvent;
     };
 
 
@@ -85,10 +100,12 @@ namespace LOGGER_NS {
         struct UnscopedData;
 
         static constexpr uintmax_t maxSizeLogFile = 5 * 1024 * 1024; // 5 MB (~ 50'000 rows)
+        static constexpr std::chrono::milliseconds logSizeCheckInterval{30'000};
         static constexpr size_t maxLoggers = 2;
 
         static void Init(std::filesystem::path logFilePath, HELPERS_NS::Flags<InitFlags> initFlags = InitFlags::DefaultFlags);
         static void InitForId(uint8_t loggerId, std::filesystem::path logFilePath, HELPERS_NS::Flags<InitFlags> initFlags = InitFlags::DefaultFlags);
+        static bool IsInitialized(uint8_t id = 0);
         static std::string GetLastMessage();
 
         static std::shared_ptr<spdlog::logger> Logger(uint8_t id = 0);
@@ -108,7 +125,7 @@ namespace LOGGER_NS {
         //{
         //    Log<T, TClass, Args...>(classPtr, logger, location, level, formatSv, std::forward<Args>(args)...);
         //}
-
+        
         template<typename T, typename TClass, typename... Args>
         static void Log(
             TClass* classPtr,
@@ -130,6 +147,10 @@ namespace LOGGER_NS {
         }
 
     private:
+        static void CheckLogFileSize(StandardLoggers& loggers);
+
+        //const std::unordered_map<uint8_t, bool> initializedLoggersById;
+        std::set<uint8_t> initializedLoggersById;
 #ifdef _DEBUG
         const std::shared_ptr<spdlog::sinks::msvc_sink_mt> debugSink;
 #endif
@@ -145,6 +166,10 @@ namespace LOGGER_NS {
         std::function<void(const std::string&)> postfixCallback = nullptr;
 
         std::shared_ptr<int> token = std::make_shared<int>();
+
+        HELPERS_NS::Semaphore logSizeCheckSem;
+
+        static constexpr std::string_view logTruncationMessage{"... [truncated] \n\n"};
     };
 
     constexpr HELPERS_NS::nothing* nullctx = nullptr; // used to pass null ctx for logger explicilty

@@ -7,16 +7,21 @@
 #define H_CONCAT(a, b) H_CONCAT_BASE(a,b)
 
 #ifdef _DEBUG
+#define NOOP int H_CONCAT(noop__,__LINE__) = 1234
+
+#define Dbreak __debugbreak()
+
+#define BEEP(ton, duration) Beep(ton, duration > 500 ? duration : 500) // 500ms - min beep duration
+
 #define assertm(expression, message) (void)(												                          \
             (!!(expression)) ||                                                                                       \
             (_wassert(L" " message L"  {" _CRT_WIDE(#expression) L"}", _CRT_WIDE(__FILE__), (unsigned)(__LINE__)), 0) \
         )
-
-
-#define NOOP int H_CONCAT(noop__,__LINE__) = 1234
 #else
-#define assertm(expression, message) ((void)0)
 #define NOOP
+#define Dbreak
+#define BEEP(ton, ms) (void)(0)
+#define assertm(expression, message) ((void)0)
 #endif
 
 
