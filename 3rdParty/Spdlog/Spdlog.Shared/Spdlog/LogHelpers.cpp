@@ -144,10 +144,10 @@ namespace LOGGER_NS {
 
 
     DefaultLoggers::DefaultLoggers()
+        : logSizeCheckSem{L"DefaultLoggers::CheckLogFileSize"}
 #ifdef _DEBUG
-        : debugSink{ std::make_shared<spdlog::sinks::msvc_sink_mt>() },
+        , debugSink{ std::make_shared<spdlog::sinks::msvc_sink_mt>() }
 #endif
-        logSizeCheckSem{L"DefaultLoggers::CheckLogFileSize"}
     {
         prefixCallback = [this] {
             return className;
