@@ -50,6 +50,9 @@ namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger na
 #include <array>
 #include <set>
 
+
+#define USE_DYNAMIC_SINK 0
+
 namespace LOGGER_NS {
     // define a "__classFullnameLogging" "member checker" class
     define_has_member(__ClassFullnameLogging);
@@ -64,6 +67,7 @@ namespace LOGGER_NS {
         std::shared_ptr<spdlog::logger> debugLogger;
 #endif
 
+#if USE_DYNAMIC_SINK
         std::shared_ptr<DynamicFileSinkMt> fileSink;
         std::shared_ptr<DynamicFileSinkMt> fileSinkRaw;
         std::shared_ptr<DynamicFileSinkMt> fileSinkTime;
@@ -72,6 +76,13 @@ namespace LOGGER_NS {
 
         std::shared_ptr<HELPERS_NS::Timer> logSizeLimitChecker;
         std::shared_ptr<HELPERS_NS::EventObject> pauseLoggingEvent;
+#else
+        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSink;
+        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkRaw;
+        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkTime;
+        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkFunc;
+        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkExtend;
+#endif
     };
 
 
@@ -147,7 +158,9 @@ namespace LOGGER_NS {
         }
 
     private:
+#if USE_DYNAMIC_SINK
         static void CheckLogFileSize(StandardLoggers& loggers);
+#endif
 
         //const std::unordered_map<uint8_t, bool> initializedLoggersById;
         std::set<uint8_t> initializedLoggersById;
@@ -167,7 +180,9 @@ namespace LOGGER_NS {
 
         std::shared_ptr<int> token = std::make_shared<int>();
 
+#if USE_DYNAMIC_SINK
         HELPERS_NS::Semaphore logSizeCheckSem;
+#endif
 
         static constexpr std::string_view logTruncationMessage{"... [truncated] \n\n"};
     };
