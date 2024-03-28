@@ -7,7 +7,7 @@ namespace Helpers {
         namespace Dx {
             public value struct LUID {
                 uint32_t LowPart;
-                int HighPart;
+                int32_t HighPart;
             };
 
             public ref class Adapter sealed {
