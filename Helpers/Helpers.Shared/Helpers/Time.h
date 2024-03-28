@@ -49,8 +49,7 @@ namespace HELPERS_NS {
 			return std::chrono::operator-(_Left, _Right);
 		}
 
-
-		using Hns = DurationBase<unsigned long long, std::ratio<1, 10'000'000>>;
+		using Hns = DurationBase<long long, std::ratio<1, 10'000'000>>; // Do not use unsigned bacause may be sideeffects when cast to float
 	}
 
 	inline namespace Literals {

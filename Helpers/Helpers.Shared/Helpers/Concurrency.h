@@ -54,7 +54,7 @@ namespace HELPERS_NS {
 
 
         // if we here so Predicate(nullptr) returned true (CV::NO_WAIT)
-        return CvExecuteCallbackAfterWaitWithPredicateInternal<Callback, Result>(Predicate, userCallback, executeCallbackInPredicate);
+        return CvExecuteCallbackAfterWaitWithPredicateInternal<Callback, Result>(Predicate, std::move(userCallback), executeCallbackInPredicate);
     }
 
     template <class _Rep, class _Period, typename Callback, typename Result = typename FunctionTraits<Callback>::Ret>
@@ -70,6 +70,6 @@ namespace HELPERS_NS {
         }
 
         // if we here so eather Predicate(nullptr) returned true or waitTime expired (CV::WAIT or CV::NO_WAIT)
-        return CvExecuteCallbackAfterWaitWithPredicateInternal<Callback, Result>(Predicate, userCallback, executeCallbackInPredicate);
+        return CvExecuteCallbackAfterWaitWithPredicateInternal<Callback, Result>(Predicate, std::move(userCallback), executeCallbackInPredicate);
     }
 }
