@@ -349,8 +349,15 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSettings.h">
       <Filter>Dx</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Semaphore.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\EventObject.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Memory.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Semaphore.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\EventObject.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />
