@@ -30,7 +30,7 @@ public:
 	DirectX::XMFLOAT4 GetRTColor() const;
 	void SetRTColor(DirectX::XMFLOAT4 color);
 
-	Helpers_WinRt::Dx::DxSettings^ GetDxSettings() const;
+	Helpers::WinRt::Dx::DxSettings^ GetDxSettings() const;
 	Windows::UI::Xaml::Controls::SwapChainPanel^ GetSwapChainPanel() const;
 
 	void SetLogicalDpi(float v);
@@ -63,7 +63,7 @@ private:
 private:
 	std::mutex mx;
 	raw_ptr<DxDevice> dxDev;
-	Helpers_WinRt::Dx::DxSettings^ dxSettings;
+	Helpers::WinRt::Dx::DxSettings^ dxSettings;
 	Windows::Foundation::EventRegistrationToken dxSettingsMsaaChangedToken;
 	Windows::Foundation::EventRegistrationToken dxSettingsCurrentAdapterChangedToken;
 

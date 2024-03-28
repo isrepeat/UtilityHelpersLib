@@ -83,9 +83,8 @@ namespace HELPERS_NS {
 		movable_function(movable_function&& other) = default;
 		movable_function& operator=(movable_function&& other) = default;
 
-		template<class... Args>
-		auto operator()(Args&& ...args) -> ReturnType {
-			return ptr->callFunc(std::forward<Args>(args)...);
+		ReturnType operator()(ParamTypes&& ...args) {
+			return ptr->callFunc(std::forward<ParamTypes>(args)...);
 		}
 
 		explicit operator bool() const {

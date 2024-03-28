@@ -47,7 +47,7 @@ namespace ScreenRotation
 
 SwapChainPanelOutput::SwapChainPanelOutput(raw_ptr<DxDevice> dxDev, Windows::UI::Xaml::Controls::SwapChainPanel^ swapChainPanel)
 	: dxDev(dxDev)
-	, dxSettings{ ref new Helpers_WinRt::Dx::DxSettings() }
+	, dxSettings{ ref new Helpers::WinRt::Dx::DxSettings() }
 	, swapChainPanel(swapChainPanel)
 	, physicalSize(1.0f, 1.0f)
 	, d2dOrientationTransform(D2D1::IdentityMatrix())
@@ -73,10 +73,10 @@ SwapChainPanelOutput::SwapChainPanelOutput(raw_ptr<DxDevice> dxDev, Windows::UI:
 	this->CreateWindowSizeDependentResources();
 
 	// TODO: add guards for destroyed 'this'
-	this->dxSettingsMsaaChangedToken = this->dxSettings->MsaaChanged += ref new Helpers_WinRt::EventHandler([this] {
+	this->dxSettingsMsaaChangedToken = this->dxSettings->MsaaChanged += ref new Helpers::WinRt::EventHandler([this] {
 		this->CreateWindowSizeDependentResources();
 	});
-	this->dxSettingsCurrentAdapterChangedToken = this->dxSettings->CurrentAdapterChanged += ref new Helpers_WinRt::EventHandler([this] {
+	this->dxSettingsCurrentAdapterChangedToken = this->dxSettings->CurrentAdapterChanged += ref new Helpers::WinRt::EventHandler([this] {
 		// recreate dxDev ...
 		});
 }
@@ -170,7 +170,7 @@ OrientationTypes SwapChainPanelOutput::GetNativeOrientation() const {
 	}
 }
 
-Helpers_WinRt::Dx::DxSettings^ SwapChainPanelOutput::GetDxSettings() const {
+Helpers::WinRt::Dx::DxSettings^ SwapChainPanelOutput::GetDxSettings() const {
 	return this->dxSettings;
 }
 

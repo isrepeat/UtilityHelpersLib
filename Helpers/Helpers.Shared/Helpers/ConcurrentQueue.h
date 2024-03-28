@@ -1,6 +1,7 @@
 #pragma once
 #include "common.h"
 #include "Concurrency.h"
+#include "MoveLambda.hpp"
 #include "Logger.h"
 
 #include <condition_variable>
@@ -10,7 +11,8 @@
 namespace HELPERS_NS {
 	struct TaskItemWithDescription {
 		std::string descrtiption;
-		std::function<void()> task;
+		//std::function<void()> task;
+		H::movable_function<void()> task;
 	};
 
 	enum class ConcurrentQueueBehaviour {
@@ -26,14 +28,16 @@ namespace HELPERS_NS {
 		ConcurrentQueue() = default;
 		~ConcurrentQueue() = default;
 
-		ConcurrentQueue(const ConcurrentQueue& other) {
-			std::lock_guard lkOther{ other.mx };
-			this->working = other.working;
-			this->behaviour = other.behaviour;
-			this->bufferSize = other.bufferSize;
-		}
+		// TODO: write move Ctor
+		ConcurrentQueue(const ConcurrentQueue& other) = delete;
+		//ConcurrentQueue(const ConcurrentQueue& other) {
+		//	std::lock_guard lkOther{ other.mx };
+		//	this->working = other.working;
+		//	this->behaviour = other.behaviour;
+		//	this->bufferSize = other.bufferSize;
+		//}
 
-		void Push(const T& item) {
+		void Push(T&& item) {
 			if constexpr (std::is_same_v<T, TaskItemWithDescription>) {
 				LOG_FUNCTION_ENTER_C("Push(item) <{}>", item.descrtiption);
 			}
@@ -59,12 +63,13 @@ namespace HELPERS_NS {
 				return CV::NO_WAIT;
 			};
 
+			HELPERS_NS::movable_function<void()> pushCallback = [this, itemMoved = std::move(item)] () mutable {
+				items.push(std::move(itemMoved));
+			};
+
 			// Use cv wait helper to avoid double checking for pushing (poping)
 			std::unique_lock lk(mx);
-			HELPERS_NS::CvExecuteCallbackAfterWaitWithPredicate(lk, cv, pushPredicate, [this, &item] {
-				items.push(item);
-				});
-
+			HELPERS_NS::CvExecuteCallbackAfterWaitWithPredicate(lk, cv, pushPredicate, pushCallback);
 			cv.notify_one(); // signal to can pop 1 item
 		}
 
@@ -116,6 +121,11 @@ namespace HELPERS_NS {
 		bool HasItems() {
 			std::lock_guard lk(mx);
 			return !items.empty();
+		}
+
+		int ItemsCount() {
+			std::lock_guard lk(mx);
+			return items.size();
 		}
 
 		void SetBufferSize(const uint32_t size, ConcurrentQueueBehaviour behaviour = ConcurrentQueueBehaviour::WaitWhenQueueSizeGreaterThanOrEqualBuffer) {

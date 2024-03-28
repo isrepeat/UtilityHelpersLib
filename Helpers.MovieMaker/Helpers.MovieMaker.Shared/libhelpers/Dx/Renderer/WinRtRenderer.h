@@ -171,7 +171,7 @@ public:
     DirectX::XMFLOAT4 GetRTColor();
     void SetRTColor(DirectX::XMFLOAT4 color);
     
-    Helpers_WinRt::Dx::DxSettings^ GetDxSettings() {
+    Helpers::WinRt::Dx::DxSettings^ GetDxSettings() {
         return this->output.GetDxSettings();
     }
 
