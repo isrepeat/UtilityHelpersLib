@@ -41,7 +41,9 @@ namespace HELPERS_NS {
             }
             H::System::ThrowIfFailed(hr);
 
-            return Adapter{ adapter, details::GetAdapterDescription(adapter).Description, this->idx - 1 };
+            auto adapterDesc = details::GetAdapterDescription(adapter);
+
+            return Adapter{ adapter, adapterDesc.Description, this->idx - 1, adapterDesc.AdapterLuid };
         }
     }
 }

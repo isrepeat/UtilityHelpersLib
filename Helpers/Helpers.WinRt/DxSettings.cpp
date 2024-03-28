@@ -14,6 +14,17 @@ namespace Helpers {
             uint32_t Adapter::Idx::get() {
                 return adapter.idx;
             }
+            LUID Adapter::AdapterLUID::get() {
+                LUID luid;
+
+                static_assert(sizeof(luid.LowPart) == sizeof(adapter.adapterLUID.LowPart));
+                static_assert(sizeof(luid.HighPart) == sizeof(adapter.adapterLUID.HighPart));
+
+                luid.LowPart = adapter.adapterLUID.LowPart;
+                luid.HighPart = adapter.adapterLUID.HighPart;
+
+                return luid;
+            }
 
 
             DxSettings::DxSettings() {

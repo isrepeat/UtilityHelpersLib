@@ -5,6 +5,11 @@
 namespace Helpers {
     namespace WinRt {
         namespace Dx {
+            public value struct LUID {
+                uint32_t LowPart;
+                int HighPart;
+            };
+
             public ref class Adapter sealed {
             internal:
                 Adapter(H::Dx::Adapter adapter);
@@ -15,6 +20,9 @@ namespace Helpers {
                 }
                 property uint32_t Idx {
                     uint32_t get();
+                }
+                property LUID AdapterLUID {
+                    LUID get();
                 }
 
             internal:
