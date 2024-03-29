@@ -10,7 +10,8 @@ namespace HELPERS_NS {
         struct Adapter {
             Microsoft::WRL::ComPtr<IDXGIAdapter> dxgiAdapter;
             std::wstring description;
-            uint32_t idx;
+            uint32_t idx = (std::numeric_limits<uint32_t>::max)();
+            LUID adapterLUID = {};
 
             operator bool() const {
                 return static_cast<bool>(dxgiAdapter);
