@@ -1,6 +1,7 @@
 #pragma once
 #include "common.h"
 #include <type_traits>
+#include <memory>
 
 _STD_BEGIN
 /* --------------------------------------------------- */
@@ -19,4 +20,37 @@ _STD_END
 
 namespace HELPERS_NS {
 	 struct nothing {};
+
+     template <typename T>
+     struct TypeExtractor {
+         using type = T;
+     };
+
+     template <template<typename> typename ContainerT, typename ItemT>
+     struct TypeExtractor<ContainerT<ItemT>> {
+         using type = ItemT;
+     };
+
+	 class PointerGetter {
+	 public:
+		 template<class T>
+		 static T* Get(T* v) {
+			 return v;
+		 }
+
+		 template<class T>
+		 static T* Get(T& v) {
+			 return &v;
+		 }
+
+		 template<class T>
+		 static T* Get(std::unique_ptr<T>& v) {
+			 return v.get();
+		 }
+
+		 template<class T>
+		 static T* Get(std::shared_ptr<T>& v) {
+			 return v.get();
+		 }
+	 };
 }
