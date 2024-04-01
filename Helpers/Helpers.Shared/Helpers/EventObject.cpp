@@ -3,11 +3,11 @@
 
 namespace HELPERS_NS {
 	EventObject::EventObject(const std::wstring& name) {
-		auto fullName = L"Global\\" + name;
-		event = CreateEvent(nullptr, TRUE, TRUE, fullName.c_str());
-		auto lastError = GetLastError();
-		if (event == INVALID_HANDLE_VALUE) {
-			HELPERS_NS::System::ThrowIfFailed(E_FAIL);
+		auto fullName = L"EventObject_" + name;
+		event = CreateEventEx(nullptr, fullName.c_str(), CREATE_EVENT_INITIAL_SET | CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS);
+		if (!event) {
+			auto lastErrorHr = HRESULT_FROM_WIN32(GetLastError());
+			HELPERS_NS::System::ThrowIfFailed(lastErrorHr);
 		}
 	}
 
