@@ -8,21 +8,19 @@ namespace Helpers {
                 : adapter{ adapter }
             {}
 
-            Platform::String^ Adapter::Description::get() {
-                return ref new Platform::String(adapter.description.c_str());
-            }
             uint32_t Adapter::Idx::get() {
-                return adapter.idx;
+                return adapter.GetIndex();
+            }
+            Platform::String^ Adapter::Description::get() {
+                return ref new Platform::String(adapter.GetDescription().c_str());
             }
             LUID Adapter::AdapterLUID::get() {
                 LUID luid;
+                static_assert(sizeof(luid.LowPart) == sizeof(adapter.GetAdapterLUID().LowPart));
+                static_assert(sizeof(luid.HighPart) == sizeof(adapter.GetAdapterLUID().HighPart));
 
-                static_assert(sizeof(luid.LowPart) == sizeof(adapter.adapterLUID.LowPart));
-                static_assert(sizeof(luid.HighPart) == sizeof(adapter.adapterLUID.HighPart));
-
-                luid.LowPart = adapter.adapterLUID.LowPart;
-                luid.HighPart = adapter.adapterLUID.HighPart;
-
+                luid.LowPart = adapter.GetAdapterLUID().LowPart;
+                luid.HighPart = adapter.GetAdapterLUID().HighPart;
                 return luid;
             }
 

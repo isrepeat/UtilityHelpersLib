@@ -6,6 +6,8 @@ namespace HELPERS_NS {
         namespace details {
             DXGI_ADAPTER_DESC1 GetAdapterDescription(const Microsoft::WRL::ComPtr<IDXGIAdapter>& dxgiAdapter) {
                 HRESULT hr = S_OK;
+                if (!dxgiAdapter)
+                    return {};
 
                 Microsoft::WRL::ComPtr<IDXGIAdapter1> dxgiAdapter1;
                 hr = dxgiAdapter.As(&dxgiAdapter1);
@@ -20,6 +22,70 @@ namespace HELPERS_NS {
 
                 return {};
             }
+
+            DXGI_OUTPUT_DESC GetOutputDescription(const Microsoft::WRL::ComPtr<IDXGIOutput>& dxgiOutput) {
+                HRESULT hr = S_OK;
+                if (!dxgiOutput)
+                    return {};
+
+                DXGI_OUTPUT_DESC dxgiOutputDesc;
+                hr = dxgiOutput->GetDesc(&dxgiOutputDesc);
+
+                if (SUCCEEDED(hr))
+                    return dxgiOutputDesc;
+
+                return {};
+            }
+        }
+
+
+        Adapter::Adapter()
+            : Adapter(nullptr, -1)
+        {}
+        Adapter::Adapter(Microsoft::WRL::ComPtr<IDXGIAdapter> dxgiAdapter, uint32_t idx)
+            : dxgiAdapter{ dxgiAdapter }
+            , idx{ idx }
+            , dxgiAdapterDesc1{ details::GetAdapterDescription(dxgiAdapter) }
+        {}
+
+        Microsoft::WRL::ComPtr<IDXGIAdapter> Adapter::GetDXGIAdapter() const {
+            return dxgiAdapter;
+        }
+        uint32_t Adapter::GetIndex() const {
+            return idx;
+        }
+        DXGI_ADAPTER_DESC1 Adapter::GetDXGIDescription() const {
+            return dxgiAdapterDesc1;
+        }
+        std::wstring Adapter::GetDescription() const {
+            return dxgiAdapterDesc1.Description;
+        }
+        LUID Adapter::GetAdapterLUID() const {
+            return dxgiAdapterDesc1.AdapterLuid;
+        }
+
+
+        Output::Output()
+            : Output(nullptr, -1, Adapter{})
+        {}
+        Output::Output(Microsoft::WRL::ComPtr<IDXGIOutput> output, uint32_t idx, Adapter adapter)
+            : dxgiOutput{ output }
+            , idx{ idx }
+            , adapter{ adapter }
+            , dxgiOutputDesc{ details::GetOutputDescription(dxgiOutput) }
+        {}
+
+        Microsoft::WRL::ComPtr<IDXGIOutput> Output::GetDXGIOutput() const {
+            return dxgiOutput;
+        }
+        uint32_t Output::GetIndex() const {
+            return idx;
+        }
+        Adapter Output::GetAdapter() const {
+            return adapter;
+        }
+        DXGI_OUTPUT_DESC Output::GetDXGIDescription() const {
+            return dxgiOutputDesc;
         }
 
 
@@ -37,13 +103,57 @@ namespace HELPERS_NS {
 
             hr = this->dxgiFactory->EnumAdapters(this->idx++, adapter.GetAddressOf());
             if (hr == DXGI_ERROR_NOT_FOUND) {
-                return { nullptr };
+                return {};
             }
             H::System::ThrowIfFailed(hr);
+            return Adapter{ adapter, this->idx - 1 };
+        }
 
-            auto adapterDesc = details::GetAdapterDescription(adapter);
 
-            return Adapter{ adapter, adapterDesc.Description, this->idx - 1, adapterDesc.AdapterLuid };
+        EnumOutputsState::EnumOutputsState(Adapter adapter)
+            : adapter{ adapter }
+        {}
+        
+        Output EnumOutputsState::Next() {
+            HRESULT hr = S_OK;
+            Microsoft::WRL::ComPtr<IDXGIOutput> output;
+
+            hr = this->adapter.GetDXGIAdapter()->EnumOutputs(this->idx++, output.GetAddressOf());
+            if (hr == DXGI_ERROR_NOT_FOUND) {
+                return {};
+            }
+            H::System::ThrowIfFailed(hr);
+            return Output{ output, this->idx - 1, adapter };
+        }
+
+
+        void LogDeviceInfo() {
+            std::vector<Adapter> adapters;
+            std::vector<Output> outputs;
+
+            EnumAdaptersState enumAdapters;
+            while (auto adapter = enumAdapters.Next()) {
+                adapters.push_back(adapter);
+
+                EnumOutputsState enumOutputs(adapter);
+                while (auto output = enumOutputs.Next()) {
+                    outputs.push_back(output);
+                }
+            }
+
+            LOG_DEBUG_D("Enum adapters:");
+            for (auto& adapter : adapters) {
+                LOG_DEBUG_D(L"[{}] Adapter = {}", adapter.GetIndex(), adapter.GetDescription());
+            }
+
+            LOG_DEBUG_D("");
+            LOG_DEBUG_D("Enum outputs:");
+            for (auto& output : outputs) {
+                RECT rect = output.GetDXGIDescription().DesktopCoordinates;
+                LOG_DEBUG_D(L"[{}] Output [{}]", output.GetIndex(), output.GetAdapter().GetDescription());
+                LOG_DEBUG_D(L"     - device name = {}", output.GetDXGIDescription().DeviceName);
+                LOG_DEBUG_D(L"     - desktop coords = {{LT({}, {}) RB({}, {})}} [{}x{}]", rect.left, rect.top, rect.right, rect.bottom, (rect.right - rect.left), (rect.bottom - rect.top));
+            }
         }
     }
 }

@@ -15,11 +15,11 @@ namespace Helpers {
                 Adapter(H::Dx::Adapter adapter);
 
             public:
-                property Platform::String^ Description {
-                    Platform::String^ get();
-                }
                 property uint32_t Idx {
                     uint32_t get();
+                }
+                property Platform::String^ Description {
+                    Platform::String^ get();
                 }
                 property LUID AdapterLUID {
                     LUID get();
