@@ -8,9 +8,11 @@
 namespace HELPERS_NS {
     namespace Dx {
         class Adapter {
+        private:
+            friend class EnumAdaptersState;
+            Adapter(Microsoft::WRL::ComPtr<IDXGIAdapter> dxgiAdapter, uint32_t idx);
         public:
             Adapter();
-            Adapter(Microsoft::WRL::ComPtr<IDXGIAdapter> dxgiAdapter, uint32_t idx);
 
             Microsoft::WRL::ComPtr<IDXGIAdapter> GetDXGIAdapter() const;
             uint32_t GetIndex() const;
@@ -31,9 +33,11 @@ namespace HELPERS_NS {
 
 
         class Output {
+        private:
+            friend class EnumOutputsState;
+            Output(Microsoft::WRL::ComPtr<IDXGIOutput> output, uint32_t idx, Adapter adapter);
         public:
             Output();
-            Output(Microsoft::WRL::ComPtr<IDXGIOutput> output, uint32_t idx, Adapter adapter);
 
             Microsoft::WRL::ComPtr<IDXGIOutput> GetDXGIOutput() const;
             uint32_t GetIndex() const;
@@ -65,6 +69,7 @@ namespace HELPERS_NS {
 
 
         class EnumOutputsState {
+            friend Output;
         public:
             EnumOutputsState(Adapter adapter);
             Output Next();
@@ -76,5 +81,6 @@ namespace HELPERS_NS {
 
 
         void LogDeviceInfo();
+        DXGI_RATIONAL GetRefreshRateForDXGIOutput(Microsoft::WRL::ComPtr<IDXGIOutput> dxgiOutput);
     }
 }

@@ -111,7 +111,8 @@ namespace HELPERS_NS {
 
 
         EnumOutputsState::EnumOutputsState(Adapter adapter)
-            : adapter{ adapter }
+            : idx(0)
+            , adapter{ adapter }
         {}
         
         Output EnumOutputsState::Next() {
@@ -154,6 +155,23 @@ namespace HELPERS_NS {
                 LOG_DEBUG_D(L"     - device name = {}", output.GetDXGIDescription().DeviceName);
                 LOG_DEBUG_D(L"     - desktop coords = {{LT({}, {}) RB({}, {})}} [{}x{}]", rect.left, rect.top, rect.right, rect.bottom, (rect.right - rect.left), (rect.bottom - rect.top));
             }
+        }
+
+        DXGI_RATIONAL GetRefreshRateForDXGIOutput(Microsoft::WRL::ComPtr<IDXGIOutput> dxgiOutput) {
+            HRESULT hr = S_OK;
+            UINT num = 0;
+            hr = dxgiOutput->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &num, 0);
+            H::System::ThrowIfFailed(hr);
+
+            std::vector<DXGI_MODE_DESC> modeDescs(num);
+            hr = dxgiOutput->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &num, modeDescs.data());
+            H::System::ThrowIfFailed(hr);
+
+            // TODO: may be need return for current monitor resolution {width, height}
+            if (modeDescs.size() > 0) {
+                return modeDescs[0].RefreshRate;
+            }
+            return { 0, 0 };
         }
     }
 }
