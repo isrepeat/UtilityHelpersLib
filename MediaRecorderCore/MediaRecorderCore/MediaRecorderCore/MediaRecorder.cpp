@@ -14,6 +14,9 @@
 #include <libhelpers/HTime.h>
 #include <mfapi.h>
 #include <codecapi.h>
+#if COMPILE_FOR_CX_or_WINRT
+#include <icodecapi.h>
+#endif
 #include <strmif.h>
 
 
