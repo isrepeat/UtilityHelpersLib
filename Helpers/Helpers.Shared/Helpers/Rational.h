@@ -1,5 +1,7 @@
 #pragma once
 #include "common.h"
+#include <chrono>
+#include <ratio>
 
 template<class T>
 class Rational {
@@ -106,3 +108,84 @@ private:
         return res;
     }
 };
+
+
+namespace HELPERS_NS {   
+    //
+    // Another Rational version
+    //
+    template <typename _Rep>
+    struct Rational {
+        Rational()
+            : num{ 0 }
+            , den{ 1 }
+            , valueRep{ 1 }
+            , rational{ 0 }
+        {}
+        Rational(intmax_t num, intmax_t den, _Rep valueRep = 1)
+            : num{ num }
+            , den{ den }
+            , valueRep{ valueRep }
+        {
+            if (den == 0) {
+                throw std::exception("Divide by zero");
+            }
+            rational = static_cast<double>(num) / den; // Compute once
+        }
+
+        intmax_t Numerator() {
+            return num;
+        }
+        intmax_t Denumerator() {
+            return den;
+        }
+        _Rep Value() {
+            return valueRep;
+        }
+
+        template <typename _ToRep>
+        _ToRep To() {
+            return static_cast<_ToRep>(rational);
+        }
+
+        template <typename _ToRep, typename _OtherRep>
+        Rational<_ToRep> CastToRational(Rational<_OtherRep> other) {
+            return Rational<_ToRep>(
+                other.Numerator(),
+                other.Denumerator(),
+                static_cast<_ToRep>(this->valueRep * this->To<double>() / other.To<double>()));
+        }
+
+        Rational Inversed() {
+            return Rational(den, num, valueRep);
+        }
+
+    private:
+        // TODO: make const members and write custom copy Ctor
+        intmax_t num;
+        intmax_t den;
+        _Rep valueRep; // representation value
+        double rational;
+    };
+
+    //
+    // Helpers class Ratio that allow you to get double rational value, self-inversed instance and get chrono::duration after multiplication
+    //
+    template <intmax_t _Nx, intmax_t _Dx = 1>
+    struct Ratio : std::ratio<_Nx, _Dx> {
+        using _MyBase = std::ratio<_Nx, _Dx>;
+
+        static constexpr double value = (double)_MyBase::num / _MyBase::den;
+        static constexpr Ratio<_Dx, _Nx> inversed() { return Ratio<_Dx, _Nx>{}; };
+    };
+
+    template <typename ValueT, intmax_t _Nx, intmax_t _Dx>
+    constexpr std::chrono::duration<ValueT, std::ratio<_Nx, _Dx>> operator*(ValueT value, Ratio<_Nx, _Dx> /*ratio*/) {
+        return std::chrono::duration<ValueT, std::ratio<_Nx, _Dx>>(value);
+    }
+
+    template <typename ValueT, intmax_t _Nx, intmax_t _Dx>
+    constexpr std::chrono::duration<ValueT, std::ratio<_Nx, _Dx>> operator*(Ratio<_Nx, _Dx> /*ratio*/, ValueT value) {
+        return std::chrono::duration<ValueT, std::ratio<_Nx, _Dx>>(value);
+    }
+}
