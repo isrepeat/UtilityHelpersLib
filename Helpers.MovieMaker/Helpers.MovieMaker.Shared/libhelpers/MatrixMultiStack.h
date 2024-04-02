@@ -1,13 +1,14 @@
 #pragma once
 #include "MatrixStack.h"
 #include "Aligned.h"
-#include "ScopedPushBase.h"
+#include "PushStackScoped.h"
 #include "Macros.h"
 
 #include <d2d1.h>
 #include <DirectXMath.h>
 #include <vector>
 
+// TODO: rewrite PushScope with PushStackScoped wrapper (like DxLayerStack)
 class MatrixMultiStack {
 public:
 	class PushScope {
