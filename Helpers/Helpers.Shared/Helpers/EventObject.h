@@ -1,9 +1,9 @@
 #pragma once
 #include "common.h"
+#include "HWindows.h"
 #include "Scope.h"
-#include <windows.h>
-#include <string>
 #include <functional>
+#include <string>
 
 namespace HELPERS_NS {
 	class EventObject {

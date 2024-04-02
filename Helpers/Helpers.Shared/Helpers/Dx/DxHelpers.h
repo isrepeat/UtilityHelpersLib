@@ -1,5 +1,6 @@
 #pragma once
 #include <Helpers/common.h>
+#include <Helpers/Rational.h>
 #include <vector>
 #include <string>
 #include <dxgi.h>
@@ -81,6 +82,6 @@ namespace HELPERS_NS {
 
 
         void LogDeviceInfo();
-        DXGI_RATIONAL GetRefreshRateForDXGIOutput(Microsoft::WRL::ComPtr<IDXGIOutput> dxgiOutput);
+        HELPERS_NS::Rational<double> GetRefreshRateForDXGIOutput(Microsoft::WRL::ComPtr<IDXGIOutput> dxgiOutput);
     }
 }

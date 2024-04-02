@@ -94,7 +94,7 @@ namespace HELPERS_NS {
         {
             HRESULT hr = S_OK;
             hr = CreateDXGIFactory1(IID_PPV_ARGS(this->dxgiFactory.GetAddressOf()));
-            H::System::ThrowIfFailed(hr);
+            HELPERS_NS::System::ThrowIfFailed(hr);
         }
 
         Adapter EnumAdaptersState::Next() {
@@ -105,7 +105,7 @@ namespace HELPERS_NS {
             if (hr == DXGI_ERROR_NOT_FOUND) {
                 return {};
             }
-            H::System::ThrowIfFailed(hr);
+            HELPERS_NS::System::ThrowIfFailed(hr);
             return Adapter{ adapter, this->idx - 1 };
         }
 
@@ -123,7 +123,7 @@ namespace HELPERS_NS {
             if (hr == DXGI_ERROR_NOT_FOUND) {
                 return {};
             }
-            H::System::ThrowIfFailed(hr);
+            HELPERS_NS::System::ThrowIfFailed(hr);
             return Output{ output, this->idx - 1, adapter };
         }
 
@@ -157,21 +157,23 @@ namespace HELPERS_NS {
             }
         }
 
-        DXGI_RATIONAL GetRefreshRateForDXGIOutput(Microsoft::WRL::ComPtr<IDXGIOutput> dxgiOutput) {
+        HELPERS_NS::Rational<double> GetRefreshRateForDXGIOutput(Microsoft::WRL::ComPtr<IDXGIOutput> dxgiOutput) {
             HRESULT hr = S_OK;
+
             UINT num = 0;
             hr = dxgiOutput->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &num, 0);
-            H::System::ThrowIfFailed(hr);
+            HELPERS_NS::System::ThrowIfFailed(hr);
 
             std::vector<DXGI_MODE_DESC> modeDescs(num);
             hr = dxgiOutput->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &num, modeDescs.data());
-            H::System::ThrowIfFailed(hr);
+            HELPERS_NS::System::ThrowIfFailed(hr);
 
             // TODO: may be need return for current monitor resolution {width, height}
             if (modeDescs.size() > 0) {
-                return modeDescs[0].RefreshRate;
+                auto refreshRate = modeDescs[0].RefreshRate;
+                return HELPERS_NS::Rational<double>{ refreshRate.Numerator, refreshRate.Denominator };
             }
-            return { 0, 0 };
+            return {};
         }
     }
 }
