@@ -8,6 +8,14 @@
 
 namespace HELPERS_NS {
 	namespace Chrono {
+		template <class _Duration, class _ToRep>
+		struct CastTo { // mb rename
+			using type = std::chrono::duration<_ToRep, typename _Duration::period>;
+		};
+
+		using milliseconds_f = typename CastTo<std::chrono::milliseconds, float>::type;
+		using seconds_f = typename CastTo<std::chrono::seconds, float>::type;
+
 		template <class _To, class _Rep, class _Period>
 		constexpr const std::chrono::duration<float, typename _To::period> duration_cast_float(const std::chrono::duration<_Rep, _Period>& _Dur) noexcept {
 			return std::chrono::duration_cast<std::chrono::duration<float, typename _To::period>>(_Dur);
@@ -60,9 +68,12 @@ namespace HELPERS_NS {
 		}
 	}
 	
+	[[deprecated("HnsToSeconds(Chrono::Hns countHns) is deprecated, use duration_cast instead")]]
 	constexpr float HnsToSeconds(Chrono::Hns countHns) {
 		return Chrono::duration_cast_float<std::chrono::seconds>(countHns).count();
 	}
+
+	[[deprecated("HnsToMilliseconds(Chrono::Hns countHns) is deprecated, use duration_cast instead")]]
 	constexpr float HnsToMilliseconds(Chrono::Hns countHns) {
 		return Chrono::duration_cast_float<std::chrono::milliseconds>(countHns).count();
 	}
