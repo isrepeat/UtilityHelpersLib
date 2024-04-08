@@ -23,6 +23,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\CrashInfo.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxHelpers.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSettings.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSharedTexture.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\EventObject.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\FilesCollection.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\FileSystem.cpp" />
@@ -48,6 +49,8 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\UniqueHandle.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxgiDeviceLock.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSharedTexture.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\EventObject.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Semaphore.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Action.h" />
