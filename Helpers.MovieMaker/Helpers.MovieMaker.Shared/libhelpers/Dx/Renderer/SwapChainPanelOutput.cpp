@@ -229,7 +229,9 @@ void SwapChainPanelOutput::BeginRender() {
 }
 
 void SwapChainPanelOutput::EndRender() {
+	this->dxDev->GetD3DMultithreadCPtr()->Enter();
 	this->Present();
+	this->dxDev->GetD3DMultithreadCPtr()->Leave();
 }
 
 void SwapChainPanelOutput::Present() {

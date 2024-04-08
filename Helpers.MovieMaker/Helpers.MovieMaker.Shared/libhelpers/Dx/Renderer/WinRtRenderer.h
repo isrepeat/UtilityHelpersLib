@@ -37,8 +37,6 @@ public:
         this->visChangedToken = window->VisibilityChanged += H::System::MakeTypedEventHandler(
             [=](Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::VisibilityChangedEventArgs ^args)
         {
-            thread::critical_section::scoped_lock lk(this->renderThreadStateCs);
-
             if (!args->Visible) {
                 this->renderThreadState = RenderThreadState::Pause;
             }
@@ -195,7 +193,7 @@ private:
     std::thread inputThread;
 
     thread::critical_section renderThreadStateCs;
-    RenderThreadState renderThreadState;
+    std::atomic<RenderThreadState> renderThreadState;
 
     bool pointerMoves;
 
@@ -262,25 +260,14 @@ private:
     }
 
     void Render() {
-        while (this->CheckRenderThreadState()) {
-            thread::critical_section::scoped_yield_lock lk(this->cs);
+        while (this->renderThreadState != RenderThreadState::Stop) {
+            thread::critical_section::scoped_lock lk(this->cs);
             this->output.Render([this] {
                 this->renderer.Render();
                 });
         }
     }
 
-    bool CheckRenderThreadState() {
-        bool continueWork = true;
-        thread::critical_section::scoped_yield_lock lk(this->renderThreadStateCs);
-
-        if (this->renderThreadState != RenderThreadState::Work) {
-            continueWork = false;
-            this->renderThreadState = RenderThreadState::Stop;
-        }
-
-        return continueWork;
-    }
 
     void StartRenderThread() {
         if (this->renderThreadState != RenderThreadState::Work) {
