@@ -3,64 +3,111 @@
 #include "libhelpers\HSystem.h"
 #include <cmath>
 
-DxLayerStack::PushScope0::PushScope0() {}
+namespace DxLayerStackItems {
+	DxLayerStackItemBase::DxLayerStackItemBase(DxLayerStack* dxLayerStack)
+		: dxLayerStack{ dxLayerStack }
+	{}
 
-DxLayerStack::PushScope0::PushScope0(PushScope0 &&other) 
-	: ScopedPushBase(std::move(other))
-{
-}
 
-DxLayerStack::PushScope0::~PushScope0() {
-	if (this->parent) {
-		this->parent->PopRenderTarget();
+	D2DLayer::D2DLayer(DxLayerStack* dxLayerStack)
+		: DxLayerStackItemBase{ dxLayerStack }
+	{}
+
+	void D2DLayer::Push(const D2D1_LAYER_PARAMETERS& params, ID2D1Layer* layer) {
+		HRESULT hr = S_OK;
+		D2D1_MATRIX_3X2_F transform;
+		D2D1_RECT_F layerRect = dxLayerStack->GetCurrentRect();
+		auto d2dCtx = dxLayerStack->dxCtxProv->D2D();
+
+		d2dCtx->GetTransform(&transform);
+
+		layerRect = DxLayerStack::ConcatRects(
+			layerRect,
+			params.contentBounds,
+			D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
+			transform);
+
+		if (params.geometricMask) {
+			D2D1_RECT_F geomBounds;
+			auto geomTransform = transform * params.maskTransform;
+
+			hr = params.geometricMask->GetBounds(geomTransform, &geomBounds);
+			H::System::ThrowIfFailed(hr);
+
+			layerRect = DxLayerStack::ConcatRects(layerRect, geomBounds, params.maskAntialiasMode);
+		}
+
+		dxLayerStack->layerSizes.push_back(layerRect);
+		d2dCtx->PushLayer(params, layer);
 	}
-}
 
-DxLayerStack::PushScope0 &DxLayerStack::PushScope0::operator=(PushScope0 &&other) {
-	ScopedPushBase::operator=(std::move(other));
-	return *this;
-}
+	void D2DLayer::Pop() {
+		auto d2dCtx = dxLayerStack->dxCtxProv->D2D();
 
-DxLayerStack::PushScope1::PushScope1() {}
-
-DxLayerStack::PushScope1::PushScope1(PushScope1 &&other) 
-	: ScopedPushBase(std::move(other))
-{
-}
-
-DxLayerStack::PushScope1::~PushScope1() {
-	if (this->parent) {
-		this->parent->PopLayer();
+		dxLayerStack->layerSizes.pop_back();
+		d2dCtx->PopLayer();
 	}
-}
 
-DxLayerStack::PushScope1 &DxLayerStack::PushScope1::operator=(PushScope1 &&other) {
-	ScopedPushBase::operator=(std::move(other));
-	return *this;
-}
 
-DxLayerStack::PushScope2::PushScope2() {}
 
-DxLayerStack::PushScope2::PushScope2(PushScope2 &&other)
-	: ScopedPushBase(std::move(other))
-{
-}
+	RenderTarget::RenderTarget(DxLayerStack* dxLayerStack)
+		: DxLayerStackItemBase{ dxLayerStack }
+	{}
 
-DxLayerStack::PushScope2::~PushScope2() {
-	if (this->parent) {
-		this->parent->PopAxisAlignedClip();
+	void RenderTarget::Push() {
+		HRESULT hr = S_OK;
+		auto d2dCtx = dxLayerStack->dxCtxProv->D2D();
+
+		hr = d2dCtx->Flush();
+		H::System::ThrowIfFailed(hr);
+
+		dxLayerStack->layerSizesStack.push_back(std::move(dxLayerStack->layerSizes));
 	}
-}
 
-DxLayerStack::PushScope2 &DxLayerStack::PushScope2::operator=(PushScope2 &&other) {
-	ScopedPushBase::operator=(std::move(other));
-	return *this;
-}
+	void RenderTarget::Pop() {
+		dxLayerStack->layerSizes = std::move(dxLayerStack->layerSizesStack.back());
+		dxLayerStack->layerSizesStack.pop_back();
+	}
 
-DxLayerStack::DxLayerStack(
-	DxDeviceCtxProvider *dxCtxProv,
-	DxLayerStackResources *resources)
-	: dxCtxProv(dxCtxProv), resources(resources)
+
+
+	AxisAlignedClip::AxisAlignedClip(DxLayerStack* dxLayerStack)
+		: DxLayerStackItemBase{ dxLayerStack }
+	{}
+
+	void AxisAlignedClip::Push(const D2D1_RECT_F& rect, D2D1_ANTIALIAS_MODE antialiasMode) {
+		HRESULT hr = S_OK;
+		D2D1_MATRIX_3X2_F transform;
+		D2D1_RECT_F layerRect = dxLayerStack->GetCurrentRect();
+		auto d2dCtx = dxLayerStack->dxCtxProv->D2D();
+
+		d2dCtx->GetTransform(&transform);
+
+		layerRect = DxLayerStack::ConcatRects(
+			layerRect,
+			rect,
+			antialiasMode,
+			transform);
+
+		dxLayerStack->layerSizes.push_back(layerRect);
+		d2dCtx->PushAxisAlignedClip(rect, antialiasMode);
+	}
+
+	void AxisAlignedClip::Pop() {
+		auto d2dCtx = dxLayerStack->dxCtxProv->D2D();
+
+		dxLayerStack->layerSizes.pop_back();
+		d2dCtx->PopAxisAlignedClip();
+	}
+} // namespace DxLayerStackItems
+
+
+DxLayerStack::DxLayerStack(DxDeviceCtxProvider* dxCtxProv, DxLayerStackResources* resources)
+	: dxCtxProv(dxCtxProv)
+	, resources(resources)
+	, dxLayerD2DLayer{ this }
+	, dxLayerRenderTarget{ this }
+	, dxLayerAxisAlignedClip{ this }
 {
 }
 
@@ -121,114 +168,25 @@ DxLayerStackState DxLayerStack::BeginD3D() {
 	return state;
 }
 
-DxLayerStack::RenderTargetScope DxLayerStack::PushRenderTargetScoped() {
-	this->PushRenderTarget();
-	return RenderTargetScope(this);
+
+PushStackScoped<DxLayerStackItems::D2DLayer> DxLayerStack::PushD2DLayerScoped(const D2D1_LAYER_PARAMETERS& params, ID2D1Layer* layer) {
+	return PushStackScoped<DxLayerStackItems::D2DLayer>(&this->dxLayerD2DLayer, params, layer);
 }
 
-void DxLayerStack::PushRenderTarget() {
-	HRESULT hr = S_OK;
-	auto d2dCtx = this->dxCtxProv->D2D();
-
-	hr = d2dCtx->Flush();
-	H::System::ThrowIfFailed(hr);
-
-	this->layerSizesStack.push_back(std::move(this->layerSizes));
+PushStackScoped<DxLayerStackItems::RenderTarget> DxLayerStack::PushRenderTargetScoped() {
+	return PushStackScoped<DxLayerStackItems::RenderTarget>(&this->dxLayerRenderTarget);
 }
 
-void DxLayerStack::PopRenderTarget() {
-	this->layerSizes = std::move(this->layerSizesStack.back());
-	this->layerSizesStack.pop_back();
+PushStackScoped<DxLayerStackItems::AxisAlignedClip> DxLayerStack::PushAxisAlignedClipScoped(const D2D1_RECT_F& rect, D2D1_ANTIALIAS_MODE antialiasMode) {
+	return PushStackScoped<DxLayerStackItems::AxisAlignedClip>(&this->dxLayerAxisAlignedClip, rect, antialiasMode);
 }
 
-DxLayerStack::LayerScope DxLayerStack::PushLayerScoped(const D2D1_LAYER_PARAMETERS &params, ID2D1Layer *layer) {
-	this->PushLayer(params, layer);
-	return LayerScope(this);
-}
-
-void DxLayerStack::PushLayer(const D2D1_LAYER_PARAMETERS &params, ID2D1Layer *layer) {
-	HRESULT hr = S_OK;
-	D2D1_MATRIX_3X2_F transform;
-	D2D1_RECT_F layerRect = this->GetCurrentRect();
-	auto d2dCtx = this->dxCtxProv->D2D();
-
-	d2dCtx->GetTransform(&transform);
-
-	layerRect = DxLayerStack::ConcatRects(
-		layerRect, 
-		params.contentBounds, 
-		D2D1_ANTIALIAS_MODE_PER_PRIMITIVE, 
-		transform);
-
-	if (params.geometricMask) {
-		D2D1_RECT_F geomBounds;
-		auto geomTransform = transform * params.maskTransform;
-
-		hr = params.geometricMask->GetBounds(geomTransform, &geomBounds);
-		H::System::ThrowIfFailed(hr);
-
-		layerRect = DxLayerStack::ConcatRects(layerRect, geomBounds, params.maskAntialiasMode);
-	}
-
-	this->layerSizes.push_back(layerRect);
-	d2dCtx->PushLayer(params, layer);
-}
-
-void DxLayerStack::PopLayer() {
-	auto d2dCtx = this->dxCtxProv->D2D();
-
-	this->layerSizes.pop_back();
-	d2dCtx->PopLayer();
-}
-
-DxLayerStack::AxisAlignedClipScope DxLayerStack::PushAxisAlignedClipScoped(const D2D1_RECT_F &rect, D2D1_ANTIALIAS_MODE antialiasMode) {
-	this->PushAxisAlignedClip(rect, antialiasMode);
-	return AxisAlignedClipScope(this);
-}
-
-void DxLayerStack::PushAxisAlignedClip(const D2D1_RECT_F &rect, D2D1_ANTIALIAS_MODE antialiasMode) {
-	HRESULT hr = S_OK;
-	D2D1_MATRIX_3X2_F transform;
-	D2D1_RECT_F layerRect = this->GetCurrentRect();
-	auto d2dCtx = this->dxCtxProv->D2D();
-
-	d2dCtx->GetTransform(&transform);
-
-	layerRect = DxLayerStack::ConcatRects(
-		layerRect,
-		rect,
-		antialiasMode,
-		transform);
-
-	this->layerSizes.push_back(layerRect);
-	d2dCtx->PushAxisAlignedClip(rect, antialiasMode);
-}
-
-void DxLayerStack::PopAxisAlignedClip() {
-	auto d2dCtx = this->dxCtxProv->D2D();
-
-	this->layerSizes.pop_back();
-	d2dCtx->PopAxisAlignedClip();
-}
-
-D2D1_RECT_F DxLayerStack::GetCurrentRect() {
-	D2D1_RECT_F rect;
-
-	if (this->layerSizes.empty()) {
-		rect = D2D1::InfiniteRect();
-	}
-	else {
-		rect = this->layerSizes.back();
-	}
-
-	return rect;
-}
 
 D2D1_RECT_F DxLayerStack::ConcatRects(
 	D2D1_RECT_F existing,
 	D2D1_RECT_F other,
 	D2D1_ANTIALIAS_MODE antialiasMode,
-	const D2D1_MATRIX_3X2_F &transform)
+	const D2D1_MATRIX_3X2_F& transform)
 {
 	auto tmpTransform = D2D1::Matrix3x2F::ReinterpretBaseType(&transform);
 
@@ -260,8 +218,8 @@ D2D1_RECT_F DxLayerStack::ConcatRects(
 }
 
 D2D1_RECT_F DxLayerStack::ConcatRects(
-	const D2D1_RECT_F &existing,
-	const D2D1_RECT_F &other,
+	const D2D1_RECT_F& existing,
+	const D2D1_RECT_F& other,
 	D2D1_ANTIALIAS_MODE antialiasMode)
 {
 	D2D1_RECT_F result;
@@ -302,7 +260,7 @@ D2D1_RECT_F DxLayerStack::ConcatRects(
 	return result;
 }
 
-bool DxLayerStack::IsRectInfinite(const D2D1_RECT_F &v) {
+bool DxLayerStack::IsRectInfinite(const D2D1_RECT_F& v) {
 	const auto infRect = D2D1::InfiniteRect();
 	bool res =
 		v.left == infRect.left &&
@@ -311,4 +269,17 @@ bool DxLayerStack::IsRectInfinite(const D2D1_RECT_F &v) {
 		v.bottom == infRect.bottom;
 
 	return res;
+}
+
+D2D1_RECT_F DxLayerStack::GetCurrentRect() {
+	D2D1_RECT_F rect;
+
+	if (this->layerSizes.empty()) {
+		rect = D2D1::InfiniteRect();
+	}
+	else {
+		rect = this->layerSizes.back();
+	}
+
+	return rect;
 }

@@ -148,7 +148,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\RefWrapper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\result.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Scope.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\ScopedPushBase.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\PushStackScoped.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\ScopedTimer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\service\Operation.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\service\Service.h" />

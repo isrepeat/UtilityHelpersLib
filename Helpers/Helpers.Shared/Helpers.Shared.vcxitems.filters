@@ -129,6 +129,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Semaphore.cpp">
       <Filter>_Sources</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSharedTexture.cpp">
+      <Filter>Dx</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Gate.h">
@@ -361,6 +364,12 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\EventObject.h">
       <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSharedTexture.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxgiDeviceLock.h">
+      <Filter>Dx</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

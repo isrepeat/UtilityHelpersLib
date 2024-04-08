@@ -21,6 +21,10 @@ D2DCtxMt *DxDeviceMt::GetD2DCtxMt() {
 	return &this->d2dCtxMt;
 }
 
+Microsoft::WRL::ComPtr<ID3D10Multithread> DxDeviceMt::GetD3DMultithreadCPtr() const {
+	return this->d3dMultithread;
+}
+
 Microsoft::WRL::ComPtr<IDWriteFactory> DxDeviceMt::GetDwriteFactoryCPtr() const {
 	return this->dwriteFactory;
 }

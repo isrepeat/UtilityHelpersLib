@@ -22,12 +22,12 @@ namespace HELPERS_NS {
 	 struct nothing {};
 
      template <typename T>
-     struct TypeExtractor {
+     struct ExtractUnderlyingType {
          using type = T;
      };
 
      template <template<typename> typename ContainerT, typename ItemT>
-     struct TypeExtractor<ContainerT<ItemT>> {
+     struct ExtractUnderlyingType<ContainerT<ItemT>> {
          using type = ItemT;
      };
 

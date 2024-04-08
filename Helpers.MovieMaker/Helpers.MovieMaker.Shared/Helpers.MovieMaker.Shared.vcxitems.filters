@@ -454,7 +454,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Scope.h">
       <Filter>Sources</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\ScopedPushBase.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\PushStackScoped.h">
       <Filter>Sources</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\ScopedTimer.h">
