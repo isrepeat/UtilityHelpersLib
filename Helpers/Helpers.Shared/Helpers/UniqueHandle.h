@@ -4,18 +4,20 @@
 #include <type_traits>
 #include <memory>
 
-struct UniqueHandleDeleter {
-    void operator()(HANDLE handle) noexcept;
-};
+namespace HELPERS_NS {
+    struct UniqueHandleDeleter {
+        void operator()(HANDLE handle) noexcept;
+    };
 
-struct UniqueFindDeleter {
-    void operator()(HANDLE handle) noexcept;
-};
+    struct UniqueFindDeleter {
+        void operator()(HANDLE handle) noexcept;
+    };
 
-struct UniqueLibDeleter {
-    void operator()(HMODULE handle) noexcept;
-};
+    struct UniqueLibDeleter {
+        void operator()(HMODULE handle) noexcept;
+    };
 
-typedef std::unique_ptr<std::remove_pointer<HANDLE>::type, UniqueHandleDeleter> UHANDLE;
-typedef std::unique_ptr<std::remove_pointer<HANDLE>::type, UniqueFindDeleter> UFind;
-typedef std::unique_ptr<std::remove_pointer<HMODULE>::type, UniqueLibDeleter> UHMODULE;
+    using UHMODULE = std::unique_ptr<std::remove_pointer<HMODULE>::type, UniqueLibDeleter>;
+    using UHANDLE = std::unique_ptr<std::remove_pointer<HANDLE>::type, UniqueHandleDeleter>;
+    using UFind = std::unique_ptr<std::remove_pointer<HANDLE>::type, UniqueFindDeleter>;
+}
