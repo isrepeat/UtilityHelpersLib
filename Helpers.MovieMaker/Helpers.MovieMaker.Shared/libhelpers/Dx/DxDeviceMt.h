@@ -13,16 +13,21 @@ public:
 	ID2D1Factory1 *GetD2DFactory() const;
 	ID3D11Device *GetD3DDevice() const;
 	ID2D1Device *GetD2DDevice() const;
+
+	Microsoft::WRL::ComPtr<ID3D10Multithread> GetD3DMultithreadCPtr() const;
 	Microsoft::WRL::ComPtr<IDWriteFactory> GetDwriteFactoryCPtr() const;
 	Microsoft::WRL::ComPtr<ID2D1Factory1> GetD2DFactoryCPtr() const;
 	Microsoft::WRL::ComPtr<ID3D11Device> GetD3DDeviceCPtr() const;
 	Microsoft::WRL::ComPtr<ID2D1Device> GetD2DDeviceCPtr() const;
+	
 	D2DCtxMt *GetD2DCtxMt();
 
 protected:
+	Microsoft::WRL::ComPtr<ID3D10Multithread> d3dMultithread;
 	Microsoft::WRL::ComPtr<IDWriteFactory> dwriteFactory;
 	Microsoft::WRL::ComPtr<ID2D1Factory1> d2dFactory;
 	Microsoft::WRL::ComPtr<ID3D11Device> d3dDev;
 	Microsoft::WRL::ComPtr<ID2D1Device> d2dDevice;
+
 	D2DCtxMt d2dCtxMt;
 };

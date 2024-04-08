@@ -128,12 +128,11 @@ void DxDevice::CreateDeviceDependentResources(const DxDeviceParams *params) {
 
 void DxDevice::EnableD3DDeviceMultithreading() {
     HRESULT hr = S_OK;
-    Microsoft::WRL::ComPtr<ID3D10Multithread> multithread;
 
-    hr = this->d3dDev.As(&multithread);
+    hr = this->d3dDev.As(&this->d3dMultithread);
     H::System::ThrowIfFailed(hr);
 
-    multithread->SetMultithreadProtected(TRUE);
+    this->d3dMultithread->SetMultithreadProtected(TRUE);
 }
 
 void DxDevice::CreateD2DDevice() {
