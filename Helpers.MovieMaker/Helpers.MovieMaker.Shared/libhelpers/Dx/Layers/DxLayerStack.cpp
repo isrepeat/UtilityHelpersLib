@@ -99,15 +99,15 @@ namespace DxLayerStackItems {
 		dxLayerStack->layerSizes.pop_back();
 		d2dCtx->PopAxisAlignedClip();
 	}
-}
+} // namespace DxLayerStackItems
 
 
 DxLayerStack::DxLayerStack(DxDeviceCtxProvider* dxCtxProv, DxLayerStackResources* resources)
 	: dxCtxProv(dxCtxProv)
 	, resources(resources)
-	, dxLayerD2DLayer{ std::make_unique<DxLayerStackItems::D2DLayer>(this) }
-	, dxLayerRenderTarget{ std::make_unique<DxLayerStackItems::RenderTarget>(this) }
-	, dxLayerAxisAlignedClip{ std::make_unique<DxLayerStackItems::AxisAlignedClip>(this) }
+	, dxLayerD2DLayer{ this }
+	, dxLayerRenderTarget{ this }
+	, dxLayerAxisAlignedClip{ this }
 {
 }
 
@@ -169,25 +169,16 @@ DxLayerStackState DxLayerStack::BeginD3D() {
 }
 
 
-DxLayerStackItems::D2DLayer* DxLayerStack::GetD2DLayer() {
-	return this->dxLayerD2DLayer.get();
-}
 PushStackScoped<DxLayerStackItems::D2DLayer> DxLayerStack::PushD2DLayerScoped(const D2D1_LAYER_PARAMETERS& params, ID2D1Layer* layer) {
-	return PushStackScoped<DxLayerStackItems::D2DLayer>(this->dxLayerD2DLayer.get(), params, layer);
+	return PushStackScoped<DxLayerStackItems::D2DLayer>(&this->dxLayerD2DLayer, params, layer);
 }
 
-DxLayerStackItems::RenderTarget* DxLayerStack::GetRenderTarget() {
-	return this->dxLayerRenderTarget.get();
-}
 PushStackScoped<DxLayerStackItems::RenderTarget> DxLayerStack::PushRenderTargetScoped() {
-	return PushStackScoped<DxLayerStackItems::RenderTarget>(this->dxLayerRenderTarget.get());
+	return PushStackScoped<DxLayerStackItems::RenderTarget>(&this->dxLayerRenderTarget);
 }
 
-DxLayerStackItems::AxisAlignedClip* DxLayerStack::GetAxisAlignedClip() {
-	return this->dxLayerAxisAlignedClip.get();
-}
 PushStackScoped<DxLayerStackItems::AxisAlignedClip> DxLayerStack::PushAxisAlignedClipScoped(const D2D1_RECT_F& rect, D2D1_ANTIALIAS_MODE antialiasMode) {
-	return PushStackScoped<DxLayerStackItems::AxisAlignedClip>(this->dxLayerAxisAlignedClip.get(), rect, antialiasMode);
+	return PushStackScoped<DxLayerStackItems::AxisAlignedClip>(&this->dxLayerAxisAlignedClip, rect, antialiasMode);
 }
 
 

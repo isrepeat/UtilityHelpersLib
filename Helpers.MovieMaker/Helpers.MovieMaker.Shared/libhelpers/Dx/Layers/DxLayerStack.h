@@ -48,23 +48,21 @@ namespace DxLayerStackItems {
 	};
 }
 
-
+// TODO: add support move (for now if DxLayerStack was moved the pushed DxLayerStackItem was contain invalid DxLayerStack object)
+// TODO: rewrite without 'friend' keyword workaround 
 class DxLayerStack {
 public:
 	DxLayerStack(DxDeviceCtxProvider* dxCtxProv, DxLayerStackResources* resources);
 	~DxLayerStack() = default;
 
+	NO_COPY_MOVE(DxLayerStack);
+
 	// call before d3d draw calls to apply previous d2d layers to d3d rendering
 	DxLayerStackState BeginD3D();
 
-	DxLayerStackItems::D2DLayer* GetD2DLayer();
 	PushStackScoped<DxLayerStackItems::D2DLayer> PushD2DLayerScoped(const D2D1_LAYER_PARAMETERS& params, ID2D1Layer* layer = nullptr);
-
-	DxLayerStackItems::RenderTarget* GetRenderTarget();
 	// call when start rendering to new D3D or/and D2D render target
 	PushStackScoped<DxLayerStackItems::RenderTarget> PushRenderTargetScoped();
-
-	DxLayerStackItems::AxisAlignedClip* GetAxisAlignedClip();
 	PushStackScoped<DxLayerStackItems::AxisAlignedClip> PushAxisAlignedClipScoped(const D2D1_RECT_F& rect, D2D1_ANTIALIAS_MODE antialiasMode);
 
 private:
@@ -91,11 +89,11 @@ private:
 	std::vector<std::vector<D2D1_RECT_F>> layerSizesStack;
 
 	friend DxLayerStackItems::D2DLayer;
-	std::unique_ptr<DxLayerStackItems::D2DLayer> dxLayerD2DLayer;
+	DxLayerStackItems::D2DLayer dxLayerD2DLayer;
 
 	friend DxLayerStackItems::RenderTarget;
-	std::unique_ptr<DxLayerStackItems::RenderTarget> dxLayerRenderTarget;
+	DxLayerStackItems::RenderTarget dxLayerRenderTarget;
 
 	friend DxLayerStackItems::AxisAlignedClip;
-	std::unique_ptr<DxLayerStackItems::AxisAlignedClip> dxLayerAxisAlignedClip;
+	DxLayerStackItems::AxisAlignedClip dxLayerAxisAlignedClip;
 };
