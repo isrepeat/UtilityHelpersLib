@@ -57,11 +57,11 @@ public:
 	// call before d3d draw calls to apply previous d2d layers to d3d rendering
 	DxLayerStackState BeginD3D();
 
-	// call when start rendering to new D3D or/and D2D render target
 	DxLayerStackItems::D2DLayer* GetD2DLayer();
 	PushStackScoped<DxLayerStackItems::D2DLayer> PushD2DLayerScoped(const D2D1_LAYER_PARAMETERS& params, ID2D1Layer* layer = nullptr);
 
 	DxLayerStackItems::RenderTarget* GetRenderTarget();
+	// call when start rendering to new D3D or/and D2D render target
 	PushStackScoped<DxLayerStackItems::RenderTarget> PushRenderTargetScoped();
 
 	DxLayerStackItems::AxisAlignedClip* GetAxisAlignedClip();

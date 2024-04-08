@@ -8,6 +8,7 @@ public:
 	PushStackScoped(StackAccessorT* stackAccessor, Args&&... args)
 		: stackAccessor{ stackAccessor }
 	{
+		assert(stackAccessor);
 		stackAccessor->Push(std::forward<Args&&>(args)...);
 	}
 
@@ -28,7 +29,9 @@ public:
 	}
 
 	~PushStackScoped() {
-		stackAccessor->Pop();
+		if (stackAccessor) {
+			stackAccessor->Pop();
+		}
 	}
 
 private:
