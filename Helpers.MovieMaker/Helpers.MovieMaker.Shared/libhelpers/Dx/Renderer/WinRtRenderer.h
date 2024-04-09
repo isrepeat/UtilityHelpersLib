@@ -57,7 +57,7 @@ public:
         this->orientChangedToken = displayInformation->OrientationChanged += H::System::MakeTypedEventHandler(
             [=](Windows::Graphics::Display::DisplayInformation ^sender, Platform::Object ^args)
         {
-            thread::critical_section::scoped_lock lk(this->cs);
+            concurrency::critical_section::scoped_lock lk(this->cs);
             auto panel = this->output.GetSwapChainPanel();
             auto orientation = sender->CurrentOrientation;
             auto dpi = sender->LogicalDpi;
@@ -76,7 +76,7 @@ public:
         this->dpiChangedToken = displayInformation->DpiChanged += H::System::MakeTypedEventHandler(
             [=](Windows::Graphics::Display::DisplayInformation ^sender, Platform::Object ^args)
         {
-            thread::critical_section::scoped_lock lk(this->cs);
+            concurrency::critical_section::scoped_lock lk(this->cs);
             auto panel = this->output.GetSwapChainPanel();
             auto orientation = sender->CurrentOrientation;
             auto dpi = sender->LogicalDpi;
@@ -91,7 +91,7 @@ public:
         {
             auto displayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
 
-            thread::critical_section::scoped_lock lk(this->cs);
+            concurrency::critical_section::scoped_lock lk(this->cs);
             auto orientation = displayInformation->CurrentOrientation;
             auto dpi = displayInformation->LogicalDpi;
             auto scale = DirectX::XMFLOAT2(sender->CompositionScaleX, sender->CompositionScaleY);
@@ -106,7 +106,7 @@ public:
             auto displayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
             auto size = DirectX::XMFLOAT2(args->NewSize.Width, args->NewSize.Height);
 
-            thread::critical_section::scoped_lock lk(this->cs);
+            concurrency::critical_section::scoped_lock lk(this->cs);
             auto panel = this->output.GetSwapChainPanel();
             auto orientation = displayInformation->CurrentOrientation;
             auto dpi = displayInformation->LogicalDpi;
@@ -185,14 +185,14 @@ private:
     T renderer;
     Windows::UI::Xaml::Window ^wnd;
 
-    thread::critical_section cs;
+    concurrency::critical_section cs;
 
     Windows::UI::Core::CoreIndependentInputSource ^coreInput;
 
     std::thread renderThread;
     std::thread inputThread;
 
-    thread::critical_section renderThreadStateCs;
+    concurrency::critical_section renderThreadStateCs;
     std::atomic<RenderThreadState> renderThreadState;
 
     bool pointerMoves;
@@ -261,7 +261,7 @@ private:
 
     void Render() {
         while (this->renderThreadState != RenderThreadState::Stop) {
-            thread::critical_section::scoped_lock lk(this->cs);
+            concurrency::critical_section::scoped_lock lk(this->cs);
             this->output.Render([this] {
                 this->renderer.Render();
                 });
