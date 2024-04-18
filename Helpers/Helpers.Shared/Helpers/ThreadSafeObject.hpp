@@ -7,10 +7,10 @@ namespace HELPERS_NS {
     template<class MutexT, class T>
     class ThreadSafeObjectBase {
     public:
+        static constexpr std::string_view templateNotes = "Primary template for value types";
+
         class Locked {
         public:
-            static constexpr std::string_view templateNotes = "Primary template";
-
             Locked(MutexT& mtx, T& obj)
                 : lk(mtx)
                 , obj(obj)
@@ -40,8 +40,8 @@ namespace HELPERS_NS {
         ThreadSafeObjectBase(ThreadSafeObjectBase& other) = delete;
         ThreadSafeObjectBase& operator=(ThreadSafeObjectBase& other) = delete;
 
-        ThreadSafeObjectBase(T& objOther) = delete;
-        ThreadSafeObjectBase& operator=(T& objOther) = delete;
+        //ThreadSafeObjectBase(T& objOther) = delete;
+        //ThreadSafeObjectBase& operator=(T& objOther) = delete;
 
         ThreadSafeObjectBase(T&& objOther)
             : obj(std::move(objOther))
@@ -62,16 +62,70 @@ namespace HELPERS_NS {
         T obj;
     };
 
+
     //
+    // Partial template specializatoin where T is reference type.
+    //
+    template<class MutexT, class T>
+    class ThreadSafeObjectBase<MutexT, T&> {
+    public:
+        static constexpr std::string_view templateNotes = "Reference specialization";
+
+        class Locked {
+        public:
+            Locked(MutexT& mtx, T& obj)
+                : lk(mtx)
+                , obj(obj)
+            {}
+
+            //T* operator->() const {
+            //    return &this->obj;
+            //}
+
+            T& Get() const {
+                return this->obj;
+            }
+
+        private:
+            std::unique_lock<MutexT> lk;
+            T& obj;
+        };
+
+
+        ThreadSafeObjectBase() = default;
+
+        template <typename... Args>
+        ThreadSafeObjectBase(Args&&... args)
+            : obj(std::forward<Args>(args)...)
+        {}
+
+        ThreadSafeObjectBase(ThreadSafeObjectBase& other) = delete;
+        ThreadSafeObjectBase& operator=(ThreadSafeObjectBase& other) = delete;
+
+        ThreadSafeObjectBase(T& objOther) = delete;
+        ThreadSafeObjectBase& operator=(T& objOther) = delete;
+
+        Locked Lock() {
+            return Locked(this->mtx, this->obj);
+        }
+
+    private:
+        MutexT mtx;
+        T& obj;
+    };
+
+
+    //
+    // Partial template specializatoin where T is container = C<Args...>.
     // Can be used for pointer classes with overloaded operator->
     //
     template<class MutexT, template<class> class C, class... Args>
     class ThreadSafeObjectBase<MutexT, C<Args...>> {
     public:
+        static constexpr std::string_view templateNotes = "Pointer specialization. Obj must overload operator->.";
+        
         class Locked {
         public:
-            static constexpr std::string_view templateNotes = "Pointer specialization. Obj must overload operator->.";
-
             Locked(MutexT& mtx, C<Args...>& obj)
                 : lk(mtx)
                 , obj(obj)
