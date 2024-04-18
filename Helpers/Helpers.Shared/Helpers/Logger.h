@@ -62,11 +62,17 @@
 		HELPERS_NS::System::ThrowIfFailed(hr);                                                                                \
 	}
 
+#define LOG_FAILED(hr)																				                          \
+	if (FAILED(hr)) {																					                      \
+		LOG_ERROR_D(L"FAILED hr = [{:#10x}]: {}", static_cast<unsigned int>(hr), H::GetFormatedErrorMessage(hr));             \
+	}
+
 #else
 #define LogLastError
 #define LogWSALastError
 #define LOG_THROW_STD_EXCEPTION(fmt, ...) throw std::exception(fmt)
 #define LOG_THROW_IF_FAILED(hr) HELPERS_NS::System::ThrowIfFailed(hr)
+#define LOG_FAILED(hr)
 #endif
 
 

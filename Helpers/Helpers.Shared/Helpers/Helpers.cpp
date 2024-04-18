@@ -205,8 +205,8 @@ namespace HELPERS_NS {
 #endif
 
 
-    std::wstring GetFormatedLastErrorMessage(DWORD errorMessageID) {
-        if (errorMessageID == 0) {
+    std::wstring GetFormatedErrorMessage(DWORD errorMessageId) {
+        if (errorMessageId == 0) {
             return L""; //No error message has been recorded
         }
 
@@ -215,7 +215,7 @@ namespace HELPERS_NS {
         //Ask Win32 to give us the string version of that message ID.
         //The parameters we pass in, tell Win32 to create the buffer that holds the message for us (because we don't yet know how long the message string will be).
         size_t size = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-            NULL, errorMessageID, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), (LPWSTR)&messageBuffer, 0, NULL);
+            NULL, errorMessageId, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), (LPWSTR)&messageBuffer, 0, NULL);
 
         //Copy the error message into a std::string.
         std::wstring message(messageBuffer, size);
@@ -228,12 +228,12 @@ namespace HELPERS_NS {
 
 
     std::wstring GetLastErrorAsString() {
-        return GetFormatedLastErrorMessage(::GetLastError());
+        return GetFormatedErrorMessage(::GetLastError());
     }
 
 #if COMPILE_FOR_DESKTOP
     std::wstring GetWSALastErrorAsString() {
-        return GetFormatedLastErrorMessage(::WSAGetLastError());
+        return GetFormatedErrorMessage(::WSAGetLastError());
     }
 
     BOOL IsWow64(HANDLE process) {

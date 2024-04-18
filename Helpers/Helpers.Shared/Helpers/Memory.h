@@ -26,6 +26,11 @@ namespace HELPERS_NS {
     }
 
 
+	template<class T, class D>
+	std::unique_ptr<T, D> WrapUnique(T* ptr, const D& deleter) {
+		return std::unique_ptr<T, D>(ptr, deleter);
+	}
+
     template <typename SmartPointerT>
     SmartPointerT& EmptyPointerRef() {
         static std::remove_reference_t<SmartPointerT> emptyPoiner = nullptr;
@@ -60,8 +65,22 @@ namespace HELPERS_NS {
 		return GetAddressOfUnique<T, D>(v);
 	}
 
-	template<class T, class D>
-	std::unique_ptr<T, D> WrapUnique(T* ptr, const D& deleter) {
-		return std::unique_ptr<T, D>(ptr, deleter);
-	}
+
+	template<class T>
+	struct CoDeleter {
+		void operator()(T* ptr) {
+			CoTaskMemFree(ptr);
+		}
+	};
+
+	//template<class T>
+	//using CoUniquePtr = std::unique_ptr<T, CoDeleter<T>>;
+
+	// Unique pointer for objects that were allocated with CoTaskMemAlloc
+	template<class T> 
+	struct CoUniquePtr : public std::unique_ptr<T, CoDeleter<T>> {
+		GetAddressOfUnique<T, CoDeleter<T>> GetAddressOf() {
+			return GetAddressOfUnique<T, CoDeleter<T>>(*this);
+		}
+	};
 }
