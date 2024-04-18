@@ -1,6 +1,7 @@
 #pragma once
 #include <Helpers/common.h>
 #include <Helpers/UniqueHandle.h>
+#include <Helpers/System.h>
 #include <Helpers/Memory.h>
 #include <Helpers/Macros.h>
 #include <mfobjects.h>
@@ -56,6 +57,20 @@ namespace HELPERS_NS {
 				hr = deviceManager->LockDevice(hDevice, __uuidof(DeviceInterfaceT), (void**)deviceInterface, TRUE);
 				if (SUCCEEDED(hr)) {
 					locked = true;
+				}
+				return hr;
+			}
+
+			HRESULT UnlockDevice() {
+				HRESULT hr = S_OK;
+
+				if (!locked) {
+					hr = E_FAIL;
+				}
+
+				hr = deviceManager->UnlockDevice(hDevice, FALSE);
+				if (SUCCEEDED(hr)) {
+					locked = false;
 				}
 				return hr;
 			}

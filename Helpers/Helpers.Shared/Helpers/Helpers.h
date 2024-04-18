@@ -44,6 +44,7 @@ namespace HELPERS_NS {
     std::wstring GetKnownFolder(GUID knownFolderGUID);
 #endif
 
+    std::wstring GetFormatedErrorMessage(DWORD errorMessageId);
     std::wstring GetLastErrorAsString();
 #if COMPILE_FOR_DESKTOP
     std::wstring GetWSALastErrorAsString(); // return last sockets error
