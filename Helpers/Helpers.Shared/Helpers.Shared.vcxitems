@@ -105,6 +105,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MultithreadMutex.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PackageProvider.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Passkey.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Span.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TypeSwitch.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Rational.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\RegistryManager.h" />
