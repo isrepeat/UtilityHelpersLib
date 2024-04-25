@@ -6,7 +6,7 @@
 
 class IRenderer {
 public:
-	IRenderer(raw_ptr<DxDevice> dxDev, raw_ptr<IOutput> output);
+	IRenderer(raw_ptr<DxDevice> dxDeviceSafeObj, raw_ptr<IOutput> output);
 	virtual ~IRenderer();
 
 	virtual void Render() = 0;
@@ -14,6 +14,6 @@ public:
 
 
 protected:
-	raw_ptr<DxDevice> dxDev;
+	raw_ptr<DxDevice> dxDeviceSafeObj;
 	raw_ptr<IOutput> output;
 };

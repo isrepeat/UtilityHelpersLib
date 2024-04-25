@@ -2,6 +2,9 @@
 #include "DxDeviceCtx.h"
 #include "DxDeviceMt.h"
 
+#include <Helpers/ThreadSafeObject.hpp>
+#include <Helpers/MultithreadMutex.h>
+
 #include <d3d11.h>
 #include <d2d1.h>
 #include <d2d1_1.h>
@@ -13,43 +16,49 @@
 
 #include <libhelpers\Thread\PPL\critical_section_guard.h>
 
-struct DxDeviceParams {
-	static const uint32_t DefaultD3D11CreateFlags;
+namespace details {
+	struct DxDeviceParams {
+		static const uint32_t DefaultD3D11CreateFlags;
 
-	uint32_t d3d11CreateFlags;
+		uint32_t d3d11CreateFlags;
 
-	DxDeviceParams();
-	DxDeviceParams(uint32_t d3d11CreateFlags);
-};
+		DxDeviceParams();
+		DxDeviceParams(uint32_t d3d11CreateFlags);
+	};
 
-class DxDevice : public DxDeviceMt {
-public:
-	DxDevice(const DxDeviceParams *params = nullptr);
-	~DxDevice();
 
-	// Returns DxDeviceCtx wrapped in critical_section_guard
-	// destroy wrapped DxDeviceCtx only when objects from DxDeviceCtx aren't needed.
-	critical_section_guard<DxDeviceCtx>::Accessor GetContext();
+	class DxDevice : public DxDeviceMt {
+	public:
+		DxDevice(const DxDeviceParams* params = nullptr);
+		~DxDevice();
 
-	D3D_FEATURE_LEVEL GetDeviceFeatureLevel() const;
+		// Returns DxDeviceCtx wrapped in critical_section_guard
+		// destroy wrapped DxDeviceCtx only when objects from DxDeviceCtx aren't needed.
+		critical_section_guard<DxDeviceCtx>::Accessor GetContext();
 
-private:
-	// cs-protected
-	critical_section_guard<DxDeviceCtx> ctx;
+		D3D_FEATURE_LEVEL GetDeviceFeatureLevel() const;
 
-	D3D_FEATURE_LEVEL featureLevel;
+	private:
+		// cs-protected
+		critical_section_guard<DxDeviceCtx> ctx;
 
-	void CreateDeviceIndependentResources();
-	void CreateDeviceDependentResources(const DxDeviceParams *params);
-	void EnableD3DDeviceMultithreading();
-	void CreateD2DDevice();
-	Microsoft::WRL::ComPtr<ID2D1DeviceContext> CreateD2DDeviceContext();
+		D3D_FEATURE_LEVEL featureLevel;
 
-	// Check for SDK Layer support.
-	static bool SdkLayersAvailable();
-};
+		void CreateDeviceIndependentResources();
+		void CreateDeviceDependentResources(const DxDeviceParams* params);
+		void EnableD3DDeviceMultithreading();
+		void CreateD2DDevice();
+		Microsoft::WRL::ComPtr<ID2D1DeviceContext> CreateD2DDeviceContext();
 
-class DxVideoDevice : public DxDevice {
-public:
-	DxVideoDevice();
-};
+		// Check for SDK Layer support.
+		static bool SdkLayersAvailable();
+	};
+
+	class DxVideoDevice : public DxDevice {
+	public:
+		DxVideoDevice();
+	};
+}
+
+using DxDevice = HH::ThreadSafeObjectBaseUniq<HH::MultithreadMutexRecursive, details::DxDevice>;
+using DxVideoDevice = HH::ThreadSafeObjectBaseUniq<HH::MultithreadMutexRecursive, details::DxVideoDevice>;

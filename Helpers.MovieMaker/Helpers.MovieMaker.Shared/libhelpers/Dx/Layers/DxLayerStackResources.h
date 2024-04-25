@@ -6,7 +6,7 @@
 
 class DxLayerStackResources {
 public:
-	DxLayerStackResources(ID3D11Device *d3dDev);
+	DxLayerStackResources(DxDevice* dxDeviceSafeObj);
 
 	RSState SetToCtx(ID3D11DeviceContext *d3dCtx);
 

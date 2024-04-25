@@ -5,14 +5,16 @@
 #include "..\..\HMath.h"
 #include "..\..\HSystem.h"
 
-FakeIOutput::FakeIOutput(raw_ptr<DxDevice> dxDev) 
-    : dxDev(dxDev)
+FakeIOutput::FakeIOutput(raw_ptr<DxDevice> dxDeviceSafeObj)
+    : dxDeviceSafeObj(dxDeviceSafeObj)
 {
     HRESULT hr = S_OK;
     Microsoft::WRL::ComPtr<ID3D11Texture2D> tex2d;
     Microsoft::WRL::ComPtr<IDXGISurface> dxgiBackBuffer;
-    auto d3dDev = this->dxDev->GetD3DDevice();
-    auto d2dCtxMt = this->dxDev->GetD2DCtxMt();
+    auto dxDev = this->dxDeviceSafeObj->Lock();
+
+    auto d3dDev = dxDev->GetD3DDevice();
+    auto d2dCtxMt = dxDev->GetD2DCtxMt();
 
     D3D11_TEXTURE2D_DESC tex2dDesc;
     D2D1_BITMAP_PROPERTIES1 bitmapProperties =
@@ -75,11 +77,11 @@ D3D11_VIEWPORT FakeIOutput::GetD3DViewport() const {
     return viewport;
 }
 
-ID3D11RenderTargetView *FakeIOutput::GetD3DRtView() const {
+ID3D11RenderTargetView* FakeIOutput::GetD3DRtView() const {
     return this->d3dRtView.Get();
 }
 
-ID2D1Bitmap1 *FakeIOutput::GetD2DRtView() const {
+ID2D1Bitmap1* FakeIOutput::GetD2DRtView() const {
     return this->d2dBitmap.Get();
 }
 
@@ -101,8 +103,9 @@ OrientationTypes FakeIOutput::GetNativeOrientation() const {
 
 void FakeIOutput::BeginRender() {
     auto rtView = this->GetD3DRtView();
-    ID3D11RenderTargetView *const targets[1] = { this->GetD3DRtView() };
-    auto ctx = this->dxDev->GetContext();
+    ID3D11RenderTargetView* const targets[1] = { this->GetD3DRtView() };
+    auto dxDev = this->dxDeviceSafeObj->Lock();
+    auto ctx = dxDev->GetContext();
     auto viewport = this->GetD3DViewport();
 
     ctx->D3D()->OMSetRenderTargets(1, targets, nullptr);

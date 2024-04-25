@@ -21,7 +21,8 @@ struct BlendState {
 
 class BlendStateCache {
 public:
-	BlendStateCache(ID3D11Device* dev);
+	//BlendStateCache(DxDevice* dxDeviceSafeObj);
+	BlendStateCache(ID3D11Device* d3dDev);
 	~BlendStateCache();
 
 	std::shared_ptr<BlendState> GetDefaultState();
@@ -31,7 +32,8 @@ public:
 	std::shared_ptr<BlendState> GetAlphaBlendingBlendState();
 
 private:
-	ID3D11Device* dxDev;
+	//DxDevice* dxDeviceSafeObj;
+	ID3D11Device* d3dDev;
 
 	thread::critical_section cs;
 	std::shared_ptr<BlendState> defaultState;
