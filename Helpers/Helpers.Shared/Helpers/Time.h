@@ -1,5 +1,6 @@
 #pragma once
 #include "common.h"
+#include "Rational.h"
 #include <condition_variable>
 #include <functional>
 #include <chrono>
@@ -26,6 +27,11 @@ namespace HELPERS_NS {
 			using _MyBase = std::chrono::duration<_Rep, _Period>;
 			using _MyBase::duration;
 
+			template <typename _OtherRep>
+			DurationBase(Rational<_OtherRep> rational)
+				: _MyBase::duration{ rational.CastToRational<_Rep>(this->ToRational()).Value() }
+			{}
+
 			operator uint64_t() const {
 				return this->count();
 			}
@@ -44,6 +50,15 @@ namespace HELPERS_NS {
 			explicit operator double() const {
 				// TODO: add duration_cast_double
 				return duration_cast_float<_MyBase>(*this).count();
+			}
+
+			Rational<_Rep> ToRational() const {
+				return { _Period::num, _Period::den, this->count() };
+			}
+
+			template <typename _OtherRep>
+			Rational<_Rep> CastToRational(Rational<_OtherRep> other) const {
+				return this->ToRational().CastToRational<_Rep>(other);
 			}
 		};
 
