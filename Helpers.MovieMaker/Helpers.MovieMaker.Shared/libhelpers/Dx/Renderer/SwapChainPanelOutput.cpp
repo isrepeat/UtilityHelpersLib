@@ -277,9 +277,10 @@ void SwapChainPanelOutput::EndRender() {
 }
 
 void SwapChainPanelOutput::Present() {
-	//if (m_msaaRenderTarget) {
-	//	this->dxDev->GetContext()->D3D()->ResolveSubresource(backBuffer.Get(), 0, m_msaaRenderTarget.Get(), 0, SwapChainPanelOutput::BufferFmt);
-	//}
+	auto dxDev = this->dxDeviceSafeObj->Lock();
+	if (m_msaaRenderTarget) {
+		dxDev->GetContext()->D3D()->ResolveSubresource(backBuffer.Get(), 0, m_msaaRenderTarget.Get(), 0, SwapChainPanelOutput::BufferFmt);
+	}
 
 	// The first argument instructs DXGI to block until VSync, putting the application
 	// to sleep until the next VSync. This ensures we don't waste any cycles rendering
@@ -287,7 +288,6 @@ void SwapChainPanelOutput::Present() {
 	HRESULT hr = this->swapChain->Present(dxSettings->VSync, 0);
 
 	{
-		auto dxDev = this->dxDeviceSafeObj->Lock();
 		auto ctx = dxDev->GetContext();
 
 		// Discard the contents of the render target.
