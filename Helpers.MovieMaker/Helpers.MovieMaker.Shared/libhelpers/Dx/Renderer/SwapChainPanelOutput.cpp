@@ -45,8 +45,8 @@ namespace ScreenRotation
 	);
 };
 
-SwapChainPanelOutput::SwapChainPanelOutput(raw_ptr<DxDevice> dxDev, Windows::UI::Xaml::Controls::SwapChainPanel^ swapChainPanel)
-	: dxDev(dxDev)
+SwapChainPanelOutput::SwapChainPanelOutput(raw_ptr<DxDevice> dxDeviceSafeObj, Windows::UI::Xaml::Controls::SwapChainPanel^ swapChainPanel)
+	: dxDeviceSafeObj(dxDeviceSafeObj)
 	, dxSettings{ ref new Helpers::WinRt::Dx::DxSettings() }
 	, swapChainPanel(swapChainPanel)
 	, physicalSize(1.0f, 1.0f)
@@ -207,17 +207,61 @@ void SwapChainPanelOutput::Resize() {
 }
 
 void SwapChainPanelOutput::Render(std::function<void()> renderHandler) {
+	auto tp1 = std::chrono::high_resolution_clock::now();
+
+	// save to tmp because while unlocked m_frameLatencyWaitableObject can change in resize
+	auto tmpFrameLatencyWaitableObject = this->frameLatencyWaitableObject;
+	DWORD result = WaitForSingleObjectEx(
+		tmpFrameLatencyWaitableObject,
+		1000, // 1 second timeout (shouldn't ever occur)
+		true
+	);
+
+	auto tp2 = std::chrono::high_resolution_clock::now();
+
+	//LOG_DEBUG_D("\n"
+	//	"dt [Vsync] = {}ms\n"
+	//	, std::chrono::duration_cast<HH::Chrono::milliseconds_f>(tp2 - tp1).count()
+	//);
+
+
+
+	auto tp3 = std::chrono::high_resolution_clock::now();
 	std::lock_guard lk{ mx };
-	BeginRender();
+
+	auto dxDeviceLocked = this->dxDeviceSafeObj->Lock();
+
+	auto tp4 = std::chrono::high_resolution_clock::now();
+	
+	this->BeginRender();
+	
+	auto tp5 = std::chrono::high_resolution_clock::now();
+	
 	if (renderHandler) {
 		renderHandler();
 	}
-	EndRender();
+	
+	auto tp6 = std::chrono::high_resolution_clock::now();
+	
+	this->EndRender();
+	
+	auto tp7 = std::chrono::high_resolution_clock::now();
+	//LOG_DEBUG_D("\n"
+	//	"dt [BeginRender] = {}ms\n"
+	//	"dt [Render] = {}ms\n"
+	//	"dt [EndRender] = {}ms\n"
+	//	"SwapChainRender iteration = {}ms\n"
+	//	, std::chrono::duration_cast<HH::Chrono::milliseconds_f>(tp5 - tp4).count()
+	//	, std::chrono::duration_cast<HH::Chrono::milliseconds_f>(tp6 - tp5).count()
+	//	, std::chrono::duration_cast<HH::Chrono::milliseconds_f>(tp7 - tp6).count()
+	//);
 }
 
 void SwapChainPanelOutput::BeginRender() {
+	auto dxDev = this->dxDeviceSafeObj->Lock();
+
 	ID3D11RenderTargetView *const targets[1] = { this->GetD3DRtView() };
-	auto ctx = this->dxDev->GetContext();
+	auto ctx = dxDev->GetContext();
 
 	ctx->D3D()->OMSetRenderTargets(1, targets, nullptr);
 	DirectX::XMVECTORF32 tmp = { 
@@ -233,8 +277,9 @@ void SwapChainPanelOutput::EndRender() {
 }
 
 void SwapChainPanelOutput::Present() {
+	auto dxDev = this->dxDeviceSafeObj->Lock();
 	if (m_msaaRenderTarget) {
-		this->dxDev->GetContext()->D3D()->ResolveSubresource(backBuffer.Get(), 0, m_msaaRenderTarget.Get(), 0, SwapChainPanelOutput::BufferFmt);
+		dxDev->GetContext()->D3D()->ResolveSubresource(backBuffer.Get(), 0, m_msaaRenderTarget.Get(), 0, SwapChainPanelOutput::BufferFmt);
 	}
 
 	// The first argument instructs DXGI to block until VSync, putting the application
@@ -243,7 +288,7 @@ void SwapChainPanelOutput::Present() {
 	HRESULT hr = this->swapChain->Present(dxSettings->VSync, 0);
 
 	{
-		auto ctx = this->dxDev->GetContext();
+		auto ctx = dxDev->GetContext();
 
 		// Discard the contents of the render target.
 		// This is a valid operation only when the existing contents will be entirely
@@ -274,8 +319,10 @@ void SwapChainPanelOutput::CreateWindowSizeDependentResources() {
 	// Clear the previous window size specific context.
 	HRESULT hr = S_OK;
 	ID3D11RenderTargetView* nullViews[] = { nullptr };
-	auto d3dDev = this->dxDev->GetD3DDevice();
-	auto d2dCtxMt = this->dxDev->GetD2DCtxMt();
+	auto dxDev = this->dxDeviceSafeObj->Lock();
+
+	auto d3dDev = dxDev->GetD3DDevice();
+	auto d2dCtxMt = dxDev->GetD2DCtxMt();
 	D2D1_BITMAP_PROPERTIES1 bitmapProperties =
 		D2D1::BitmapProperties1(
 			D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
@@ -292,7 +339,7 @@ void SwapChainPanelOutput::CreateWindowSizeDependentResources() {
 	backBuffer.Reset();
 
 	{
-		auto ctx = this->dxDev->GetContext();
+		auto ctx = dxDev->GetContext();
 
 		ctx->D2D()->SetTarget(nullptr);
 		ctx->D3D()->OMSetRenderTargets(ARRAYSIZE(nullViews), nullViews, nullptr);
@@ -311,7 +358,13 @@ void SwapChainPanelOutput::CreateWindowSizeDependentResources() {
 			lround(this->physicalSize.x),
 			lround(this->physicalSize.y),
 			SwapChainPanelOutput::BufferFmt,
-			0);
+			DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT
+			// 0
+		);
+
+		if (this->frameLatencyWaitableObject) {
+			CloseHandle(this->frameLatencyWaitableObject);
+		}
 	}
 	else {
 		this->CreateSwapChain();
@@ -363,9 +416,10 @@ void SwapChainPanelOutput::CreateWindowSizeDependentResources() {
 	this->SetRotationMatrices(displayRotation);
 
 	Microsoft::WRL::ComPtr<IDXGISwapChain2> swapChain2;
-
 	hr = this->swapChain.As(&swapChain2);
 	H::System::ThrowIfFailed(hr);
+
+	this->frameLatencyWaitableObject = swapChain2->GetFrameLatencyWaitableObject();
 
 	hr = swapChain2->SetRotation(displayRotation);
 	H::System::ThrowIfFailed(hr);
@@ -380,7 +434,7 @@ void SwapChainPanelOutput::CreateWindowSizeDependentResources() {
 
 	{
 		auto viewport = this->GetD3DViewport();
-		auto ctx = this->dxDev->GetContext();
+		auto ctx = dxDev->GetContext();
 
 		ctx->D3D()->RSSetViewports(1, &viewport);
 
@@ -399,7 +453,8 @@ void SwapChainPanelOutput::CreateSwapChain() {
 	Microsoft::WRL::ComPtr<IDXGIAdapter> dxgiAdapter;
 	Microsoft::WRL::ComPtr<IDXGIFactory2> dxgiFactory;
 	Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChainTmp;
-	auto d3dDev = this->dxDev->GetD3DDeviceCPtr();
+	auto dxDev = this->dxDeviceSafeObj->Lock();
+	auto d3dDev = dxDev->GetD3DDeviceCPtr();
 
 	swapChainDesc.Width = lround(this->physicalSize.x);		// Match the size of the window.
 	swapChainDesc.Height = lround(this->physicalSize.y);
@@ -410,7 +465,8 @@ void SwapChainPanelOutput::CreateSwapChain() {
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDesc.BufferCount = SwapChainPanelOutput::BufferCount;									// Use double-buffering to minimize latency.
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;	// All Windows Store apps must use _FLIP_ SwapEffects.
-	swapChainDesc.Flags = 0;
+	//swapChainDesc.Flags = 0;
+	swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 	swapChainDesc.Scaling = scaling;
 	swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
 

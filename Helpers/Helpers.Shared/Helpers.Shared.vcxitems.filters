@@ -371,6 +371,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxgiDeviceLock.h">
       <Filter>Dx</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Span.hpp">
+      <Filter>_Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />

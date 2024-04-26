@@ -2,7 +2,6 @@
 #include "Thread.h"
 #include "Logger.h"
 #include <Windows.h>
-#include <processthreadsapi.h>
 
 
 namespace HELPERS_NS {

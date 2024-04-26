@@ -26,9 +26,13 @@ BlendState::BlendState(
 
 
 
-BlendStateCache::BlendStateCache(ID3D11Device * dev)
-	: dxDev(dev) {
-}
+//BlendStateCache::BlendStateCache(DxDevice* dxDeviceSafeObj)
+//	: dxDeviceSafeObj(dxDeviceSafeObj)
+//{}
+
+BlendStateCache::BlendStateCache(ID3D11Device* d3dDev)
+	: d3dDev(d3dDev)
+{}
 
 BlendStateCache::~BlendStateCache() {
 }
@@ -58,7 +62,10 @@ std::shared_ptr<BlendState> BlendStateCache::GetDefaultState() {
 			i = rtBlend;
 		}
 
-		hr = this->dxDev->CreateBlendState(&blendDesc, state.GetAddressOf());
+		//auto dxDev = dxDeviceSafeObj->Lock();
+		//auto d3dDev = dxDev->GetD3DDevice();
+		//hr = d3dDev->CreateBlendState(&blendDesc, state.GetAddressOf());
+		hr = this->d3dDev->CreateBlendState(&blendDesc, state.GetAddressOf());
 		H::System::ThrowIfFailed(hr);
 
 		this->defaultState = std::make_shared<BlendState>(state, DirectX::g_XMOne, UINT_MAX);
@@ -91,7 +98,10 @@ std::shared_ptr<BlendState> BlendStateCache::GetAlphaBlendState() {
 			i = rtBlend;
 		}
 
-		hr = this->dxDev->CreateBlendState(&blendDesc, state.GetAddressOf());
+		//auto dxDev = dxDeviceSafeObj->Lock();
+		//auto d3dDev = dxDev->GetD3DDevice();
+		//hr = d3dDev->CreateBlendState(&blendDesc, state.GetAddressOf());
+		hr = this->d3dDev->CreateBlendState(&blendDesc, state.GetAddressOf());
 		H::System::ThrowIfFailed(hr);
 
 		this->alphaBlendState = std::make_shared<BlendState>(state, DirectX::g_XMOne, UINT_MAX);
@@ -125,7 +135,10 @@ std::shared_ptr<BlendState> BlendStateCache::GetMultiplyBlendState() {
 			i = rtBlend;
 		}
 
-		hr = this->dxDev->CreateBlendState(&blendDesc, state.GetAddressOf());
+		//auto dxDev = dxDeviceSafeObj->Lock();
+		//auto d3dDev = dxDev->GetD3DDevice();
+		//hr = d3dDev->CreateBlendState(&blendDesc, state.GetAddressOf());
+		hr = this->d3dDev->CreateBlendState(&blendDesc, state.GetAddressOf());
 		H::System::ThrowIfFailed(hr);
 
 		this->multiplyBlendState = std::make_shared<BlendState>(state, DirectX::g_XMOne, UINT_MAX);
@@ -159,7 +172,10 @@ std::shared_ptr<BlendState> BlendStateCache::GetHighlightBlendState() {
 			i = rtBlend;
 		}
 
-		hr = this->dxDev->CreateBlendState(&blendDesc, state.GetAddressOf());
+		//auto dxDev = dxDeviceSafeObj->Lock();
+		//auto d3dDev = dxDev->GetD3DDevice();
+		//hr = d3dDev->CreateBlendState(&blendDesc, state.GetAddressOf());
+		hr = this->d3dDev->CreateBlendState(&blendDesc, state.GetAddressOf());
 		H::System::ThrowIfFailed(hr);
 
 		this->highlightingBlendState = std::make_shared<BlendState>(state, DirectX::g_XMOne, UINT_MAX);
@@ -193,7 +209,10 @@ std::shared_ptr<BlendState> BlendStateCache::GetAlphaBlendingBlendState() {
 			i = rtBlend;
 		}
 
-		hr = this->dxDev->CreateBlendState(&blendDesc, state.GetAddressOf());
+		//auto dxDev = dxDeviceSafeObj->Lock();
+		//auto d3dDev = dxDev->GetD3DDevice();
+		//hr = d3dDev->CreateBlendState(&blendDesc, state.GetAddressOf());
+		hr = this->d3dDev->CreateBlendState(&blendDesc, state.GetAddressOf());
 		H::System::ThrowIfFailed(hr);
 
 		this->alphaBlendingBlendState = std::make_shared<BlendState>(state, DirectX::g_XMOne, UINT_MAX);

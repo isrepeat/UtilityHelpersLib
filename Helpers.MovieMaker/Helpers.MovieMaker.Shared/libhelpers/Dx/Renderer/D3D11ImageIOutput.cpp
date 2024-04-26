@@ -4,8 +4,8 @@
 #include <libhelpers\HSystem.h>
 #include <libhelpers\HMath.h>
 
-D3D11ImageIOutput::D3D11ImageIOutput(raw_ptr<DxDevice> dxDev)
-	: dxDev(dxDev), logicalDpi(96.0f), logicalSize(0, 0),
+D3D11ImageIOutput::D3D11ImageIOutput(raw_ptr<DxDevice> dxDeviceSafeObj)
+	: dxDeviceSafeObj(dxDeviceSafeObj), logicalDpi(96.0f), logicalSize(0, 0),
 	d2dOrientationTransform(D2D1::IdentityMatrix()),
 	d3dOrientationTransform(H::Math::Identity<DirectX::XMFLOAT4X4>())
 {
@@ -38,11 +38,11 @@ D3D11_VIEWPORT D3D11ImageIOutput::GetD3DViewport() const {
 	return viewport;
 }
 
-ID3D11RenderTargetView *D3D11ImageIOutput::GetD3DRtView() const {
+ID3D11RenderTargetView* D3D11ImageIOutput::GetD3DRtView() const {
 	return this->d3dRenderTargetView.Get();
 }
 
-ID2D1Bitmap1 *D3D11ImageIOutput::GetD2DRtView() const {
+ID2D1Bitmap1* D3D11ImageIOutput::GetD2DRtView() const {
 	return this->d2dTargetBitmap.Get();
 }
 
@@ -54,12 +54,14 @@ DirectX::XMFLOAT4X4 D3D11ImageIOutput::GetD3DOrientationTransform() const {
 	return this->d3dOrientationTransform;
 }
 
-void D3D11ImageIOutput::ResetRenderTarget(void *surface) {
+void D3D11ImageIOutput::ResetRenderTarget(void* surface) {
 	HRESULT hr = S_OK;
 	Microsoft::WRL::ComPtr<IDXGISurface> dxgiOutputSurface;
 	auto outputResource = this->GetOutputResource(surface);
-	auto d3dDev = this->dxDev->GetD3DDevice();
-	auto d2dCtxMt = this->dxDev->GetD2DCtxMt();
+
+	auto dxDev = this->dxDeviceSafeObj->Lock();
+	auto d3dDev = dxDev->GetD3DDevice();
+	auto d2dCtxMt = dxDev->GetD2DCtxMt();
 
 	hr = outputResource.As(&dxgiOutputSurface);
 	H::System::ThrowIfFailed(hr);
@@ -92,7 +94,7 @@ void D3D11ImageIOutput::ResetRenderTarget(void *surface) {
 
 	{
 		auto viewport = this->GetD3DViewport();
-		auto ctx = this->dxDev->GetContext();
+		auto ctx = dxDev->GetContext();
 
 		ctx->D3D()->RSSetViewports(1, &viewport);
 
@@ -108,8 +110,9 @@ bool D3D11ImageIOutput::BeginRender() {
 		return false;
 	}
 
-	ID3D11RenderTargetView *const targets[1] = { rtView };
-	auto ctx = this->dxDev->GetContext();
+	ID3D11RenderTargetView* const targets[1] = { rtView };
+	auto dxDev = this->dxDeviceSafeObj->Lock();
+	auto ctx = dxDev->GetContext();
 
 	ctx->D3D()->OMSetRenderTargets(1, targets, nullptr);
 
@@ -120,7 +123,8 @@ bool D3D11ImageIOutput::BeginRender() {
 
 void D3D11ImageIOutput::EndRender() {
 	{
-		auto ctx = this->dxDev->GetContext();
+		auto dxDev = this->dxDeviceSafeObj->Lock();
+		auto ctx = dxDev->GetContext();
 		auto d3dCtx = ctx->D3D();
 
 		d3dCtx->Flush(); // not renders on D3DImage without flush
@@ -146,18 +150,20 @@ Structs::RgbaF D3D11ImageIOutput::GetRTColor() {
 	return this->rtColor;
 }
 
-void D3D11ImageIOutput::SetRTColor(const Structs::RgbaF &color) {
+void D3D11ImageIOutput::SetRTColor(const Structs::RgbaF& color) {
 	this->rtColor = color;
 }
 
-Microsoft::WRL::ComPtr<ID3D11Texture2D> D3D11ImageIOutput::GetOutputResource(void *surface) {
+Microsoft::WRL::ComPtr<ID3D11Texture2D> D3D11ImageIOutput::GetOutputResource(void* surface) {
 	HRESULT hr = S_OK;
 	HANDLE sharedHandle;
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> outputResource;
 	Microsoft::WRL::ComPtr<IUnknown> tempResource11;
 	Microsoft::WRL::ComPtr<IDXGIResource> dxgiResource;
 	Microsoft::WRL::ComPtr<IUnknown> pUnk = (IUnknown*)surface;
-	auto d3dDev = this->dxDev->GetD3DDevice();
+	
+	auto dxDev = this->dxDeviceSafeObj->Lock();
+	auto d3dDev = dxDev->GetD3DDevice();
 
 	hr = pUnk.As(&dxgiResource);
 	H::System::ThrowIfFailed(hr);

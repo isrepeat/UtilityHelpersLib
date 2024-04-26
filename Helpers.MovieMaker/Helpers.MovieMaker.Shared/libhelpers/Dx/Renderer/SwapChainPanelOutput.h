@@ -13,7 +13,7 @@ class SwapChainPanelOutput : public IOutput {
 	static const DXGI_FORMAT BufferFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
 public:
 	SwapChainPanelOutput(
-		raw_ptr<DxDevice> dxDev,
+		raw_ptr<DxDevice> dxDeviceSafeObj,
 		Windows::UI::Xaml::Controls::SwapChainPanel^ swapChainPanel);
 	virtual ~SwapChainPanelOutput();
 
@@ -62,7 +62,7 @@ private:
 
 private:
 	std::mutex mx;
-	raw_ptr<DxDevice> dxDev;
+	raw_ptr<DxDevice> dxDeviceSafeObj;
 	Helpers::WinRt::Dx::DxSettings^ dxSettings;
 	Windows::Foundation::EventRegistrationToken dxSettingsMsaaChangedToken;
 	Windows::Foundation::EventRegistrationToken dxSettingsCurrentAdapterChangedToken;
@@ -70,13 +70,14 @@ private:
 	Windows::UI::Xaml::Controls::SwapChainPanel^ swapChainPanel;
 	Microsoft::WRL::ComPtr<IDXGISwapChain> swapChain;
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> backBuffer;
+	HANDLE frameLatencyWaitableObject = nullptr;
 
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
 	Microsoft::WRL::ComPtr<ID2D1Bitmap1> d2dTargetBitmap;
 
 	// MSAA resources
-	Microsoft::WRL::ComPtr<ID3D11Texture2D>         m_msaaRenderTarget;
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView>  m_msaaRenderTargetView;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> m_msaaRenderTarget;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_msaaRenderTargetView;
 
 	Windows::Graphics::Display::DisplayOrientations nativeOrientation;
 	Windows::Graphics::Display::DisplayOrientations currentOrientation;

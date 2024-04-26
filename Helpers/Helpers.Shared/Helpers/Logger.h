@@ -64,7 +64,7 @@
 
 #define LOG_FAILED(hr)																				                          \
 	if (FAILED(hr)) {																					                      \
-		LOG_ERROR_D(L"FAILED hr = [{:#10x}]: {}", static_cast<unsigned int>(hr), H::GetFormatedErrorMessage(hr));             \
+		LOG_ERROR_D(L"FAILED hr = [{:#10x}]: {}", static_cast<unsigned int>(hr), HELPERS_NS::GetFormatedErrorMessage(hr));    \
 	}
 
 #else

@@ -51,7 +51,7 @@ void AvDxgiBufferFactory::SetAttributes(IMFAttributes *attr) {
         hr = this->createDxMan(&resetToken, &this->dxMan);
         H::System::ThrowIfFailed(hr);
 
-        hr = this->dxMan->ResetDevice(dxDev->GetD3DDevice(), resetToken);
+        hr = this->dxMan->ResetDevice(dxDev->Lock()->GetD3DDevice(), resetToken);
         H::System::ThrowIfFailed(hr);
     }
 

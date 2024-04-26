@@ -2,7 +2,7 @@
 #include "DxLayerStackResources.h"
 #include "libhelpers\HSystem.h"
 
-DxLayerStackResources::DxLayerStackResources(ID3D11Device *d3dDev) {
+DxLayerStackResources::DxLayerStackResources(DxDevice* dxDeviceSafeObj) {
 	HRESULT hr = S_OK;
 	D3D11_RASTERIZER_DESC rsDesc = {};
 
@@ -17,6 +17,8 @@ DxLayerStackResources::DxLayerStackResources(ID3D11Device *d3dDev) {
 	rsDesc.MultisampleEnable = FALSE;
 	rsDesc.AntialiasedLineEnable = FALSE;
 
+	auto dxDev = dxDeviceSafeObj->Lock();
+	auto d3dDev = dxDev->GetD3DDevice();
 	hr = d3dDev->CreateRasterizerState(&rsDesc, this->rsState.GetAddressOf());
 	H::System::ThrowIfFailed(hr);
 }
