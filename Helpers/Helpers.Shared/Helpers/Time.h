@@ -9,19 +9,6 @@
 
 namespace HELPERS_NS {
 	namespace Chrono {
-		template <class _Duration, class _ToRep>
-		struct CastTo { // mb rename
-			using type = std::chrono::duration<_ToRep, typename _Duration::period>;
-		};
-
-		using milliseconds_f = typename CastTo<std::chrono::milliseconds, float>::type;
-		using seconds_f = typename CastTo<std::chrono::seconds, float>::type;
-
-		template <class _To, class _Rep, class _Period>
-		constexpr const std::chrono::duration<float, typename _To::period> duration_cast_float(const std::chrono::duration<_Rep, _Period>& _Dur) noexcept {
-			return std::chrono::duration_cast<std::chrono::duration<float, typename _To::period>>(_Dur);
-		}
-
 		template <typename _Rep, typename _Period>
 		struct DurationBase : std::chrono::duration<_Rep, _Period> {
 			using _MyBase = std::chrono::duration<_Rep, _Period>;
@@ -32,24 +19,9 @@ namespace HELPERS_NS {
 				: _MyBase::duration{ rational.CastToRational<_Rep>(this->ToRational()).Value() }
 			{}
 
-			operator uint64_t() const {
-				return this->count();
-			}
-			operator int64_t() const {
-				return this->count();
-			}
-			operator uint32_t() const {
-				return this->count();
-			}
-			operator int32_t() const {
-				return this->count();
-			}
-			explicit operator float() const {
-				return duration_cast_float<_MyBase>(*this).count();
-			}
-			explicit operator double() const {
-				// TODO: add duration_cast_double
-				return duration_cast_float<_MyBase>(*this).count();
+			template <typename _OtherDuration>
+			DurationBase<typename _OtherDuration::rep, typename _OtherDuration::period> ToDuration() const {
+				return std::chrono::duration_cast<std::chrono::duration<typename _OtherDuration::rep, typename _OtherDuration::period>>(*this);
 			}
 
 			Rational<_Rep> ToRational() const {
@@ -59,6 +31,25 @@ namespace HELPERS_NS {
 			template <typename _OtherRep>
 			Rational<_Rep> CastToRational(Rational<_OtherRep> other) const {
 				return this->ToRational().CastToRational<_Rep>(other);
+			}
+
+			explicit operator uint64_t() const {
+				return this->count();
+			}
+			explicit operator int64_t() const {
+				return this->count();
+			}
+			explicit operator uint32_t() const {
+				return this->count();
+			}
+			explicit operator int32_t() const {
+				return this->count();
+			}
+			explicit operator float() const {
+				return this->ToDuration<DurationBase<float, _Period>>().count();
+			}
+			explicit operator double() const {
+				return this->ToDuration<DurationBase<float, _Period>>().count();
 			}
 		};
 
@@ -72,6 +63,8 @@ namespace HELPERS_NS {
 			return std::chrono::operator-(_Left, _Right);
 		}
 
+		using milliseconds_f = DurationBase<float, typename std::chrono::milliseconds::period>;
+		using seconds_f = DurationBase<float, typename std::chrono::seconds::period>;
 		using Hns = DurationBase<long long, std::ratio<1, 10'000'000>>; // Do not use unsigned bacause may be sideeffects when cast to float
 	}
 
@@ -81,16 +74,6 @@ namespace HELPERS_NS {
 				return Chrono::Hns(_Val);
 			}
 		}
-	}
-	
-	[[deprecated("HnsToSeconds(Chrono::Hns countHns) is deprecated, use duration_cast instead")]]
-	constexpr float HnsToSeconds(Chrono::Hns countHns) {
-		return Chrono::duration_cast_float<std::chrono::seconds>(countHns).count();
-	}
-
-	[[deprecated("HnsToMilliseconds(Chrono::Hns countHns) is deprecated, use duration_cast instead")]]
-	constexpr float HnsToMilliseconds(Chrono::Hns countHns) {
-		return Chrono::duration_cast_float<std::chrono::milliseconds>(countHns).count();
 	}
 
 

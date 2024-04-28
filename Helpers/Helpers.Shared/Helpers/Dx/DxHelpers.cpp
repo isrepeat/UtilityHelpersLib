@@ -160,20 +160,22 @@ namespace HELPERS_NS {
         HELPERS_NS::Rational<double> GetRefreshRateForDXGIOutput(Microsoft::WRL::ComPtr<IDXGIOutput> dxgiOutput) {
             HRESULT hr = S_OK;
 
-            UINT num = 0;
-            hr = dxgiOutput->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &num, 0);
-            HELPERS_NS::System::ThrowIfFailed(hr);
+            if (dxgiOutput) {
+                UINT num = 0;
+                hr = dxgiOutput->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &num, 0);
+                HELPERS_NS::System::ThrowIfFailed(hr);
 
-            std::vector<DXGI_MODE_DESC> modeDescs(num);
-            hr = dxgiOutput->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &num, modeDescs.data());
-            HELPERS_NS::System::ThrowIfFailed(hr);
+                std::vector<DXGI_MODE_DESC> modeDescs(num);
+                hr = dxgiOutput->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &num, modeDescs.data());
+                HELPERS_NS::System::ThrowIfFailed(hr);
 
-            // TODO: may be need return for current monitor resolution {width, height}
-            if (modeDescs.size() > 0) {
-                auto refreshRate = modeDescs[0].RefreshRate;
-                return HELPERS_NS::Rational<double>{ refreshRate.Numerator, refreshRate.Denominator };
+                // TODO: may be need return for current monitor resolution {width, height}
+                if (modeDescs.size() > 0) {
+                    auto refreshRate = modeDescs[0].RefreshRate;
+                    return HELPERS_NS::Rational<double>{ refreshRate.Numerator, refreshRate.Denominator };
+                }
             }
-            return {};
+            return {0, 1};
         }
     }
 }
