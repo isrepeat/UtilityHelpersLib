@@ -10,7 +10,7 @@ namespace H {
             logging::Logger::ReportMessage(str);
         }
 #if defined(HAVE_VISUAL_STUDIO) && defined(_DEBUG)
-        __debugbreak();
+        Dbreak;
 #else
         // Just place breakpoint on this line:
         int stop = 234;
