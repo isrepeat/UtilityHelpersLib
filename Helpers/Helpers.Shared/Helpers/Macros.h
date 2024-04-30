@@ -9,7 +9,10 @@
 #ifdef _DEBUG
 #define NOOP int H_CONCAT(noop__,__LINE__) = 1234
 
-#define Dbreak __debugbreak()
+#define Dbreak              \
+if (IsDebuggerPresent()) {  \
+    __debugbreak();         \
+}
 
 #define BEEP(ton, duration) Beep(ton, duration > 500 ? duration : 500) // 500ms - min beep duration
 

@@ -10,7 +10,7 @@ namespace H {
             logging::Logger::ReportMessage(str);
         }
 #if defined(HAVE_VISUAL_STUDIO) && defined(_DEBUG)
-        __debugbreak();
+        Dbreak;
 #else
         // Just place breakpoint on this line:
         int stop = 234;
@@ -82,7 +82,7 @@ namespace H {
     void System::ThrowIfFailed(HRESULT hr, wchar_t* str) {
 #if HAVE_WINRT == 1
         if (FAILED(hr)) {
-            __debugbreak();
+            Dbreak;
             auto exception = ref new Platform::Exception(hr);
             if (str) {
                 logging::Logger::ReportMessage(str);
@@ -95,7 +95,7 @@ namespace H {
         }
 #else
         if (FAILED(hr)) {
-            __debugbreak();
+            Dbreak;
             throw HResultException(hr);
         }
 #endif
