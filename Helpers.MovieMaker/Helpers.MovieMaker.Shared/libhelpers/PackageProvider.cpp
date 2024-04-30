@@ -16,7 +16,18 @@ using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Wrappers;
 using namespace ABI::Windows::Storage;
 
-#define CheckHr(hr) do { if (FAILED(hr)) __debugbreak(); } while (false)
+#ifndef Dbreak
+#ifdef _DEBUG
+#define Dbreak              \
+if (IsDebuggerPresent()) {  \
+    __debugbreak();         \
+}
+#else
+#define Dbreak
+#endif
+#endif
+
+#define CheckHr(hr) do { if (FAILED(hr)) Dbreak; } while (false)
 
 #if HAVE_WINRT == 0
 class CCoInitialize {

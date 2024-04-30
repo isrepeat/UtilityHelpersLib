@@ -22,6 +22,18 @@
 #define hAssert(expression)
 #endif
 
+#ifndef Dbreak
+#ifdef _DEBUG
+#define Dbreak              \
+if (IsDebuggerPresent()) {  \
+    __debugbreak();         \
+}
+#else
+#define Dbreak
+#endif
+#endif
+
+
 namespace H {
     class System {
     public:
