@@ -9,12 +9,12 @@ namespace MEDIA_FOUNDATION_NS {
         const HELPERS_NS::Chrono::Hns nextSamplePts;
 
         SampleInfo()
-            : pts{ 0 }
-            , duration{ 0 }
-            , nextSamplePts{ 0 }
+            : pts{ 0_hns }
+            , duration{ 0_hns }
+            , nextSamplePts{ 0_hns }
         {}
 
-        SampleInfo(int64_t pts, int64_t duration)
+        SampleInfo(HH::Chrono::Hns pts, HH::Chrono::Hns duration)
             : pts{ pts }
             , duration{ duration }
             , nextSamplePts{ pts + duration }

@@ -60,5 +60,8 @@ namespace details {
 	};
 }
 
+// TODO: split on two wrapper:
+//		 1) Root wrapper - used to lock dxDevice on top of the stack of current thread (it helps avoid deadlocks)
+//		 2) Sub wrapper - will be passed down the stack
 using DxDevice = HH::ThreadSafeObjectBaseUniq<HH::MultithreadMutexRecursive, details::DxDevice>;
 using DxVideoDevice = HH::ThreadSafeObjectBaseUniq<HH::MultithreadMutexRecursive, details::DxVideoDevice>;

@@ -8,12 +8,12 @@ class Rational {
 public:
     Rational() = default;
 
-    constexpr Rational(const T &num, const T &den)
+    constexpr Rational(const T& num, const T& den)
         : num(num), den(den)
     {}
 
     template<class RationalT>
-    Rational(const RationalT&r)
+    Rational(const RationalT& r)
         : num(static_cast<T>(r.num)), den(static_cast<T>(r.den))
     {}
 
@@ -27,7 +27,7 @@ public:
     }
 
     // converts value with rounding +0.5
-    T ConvertValueTo(const T &value, const Rational<T> &other) const {
+    T ConvertValueTo(const T& value, const Rational<T>& other) const {
         T d = this->den * other.num;
         /*
         perform +0.5 rounding to save info about fractional part converting in both directions
@@ -51,14 +51,14 @@ public:
     }
 
     // converts value with trunation of fractional part
-    T ConvertTruncValueTo(const T &value, const Rational<T> &other) const {
+    T ConvertTruncValueTo(const T& value, const Rational<T>& other) const {
         T d = this->den * other.num;
         T res = Rational::Mul3Div(value, other.den, this->num, d);
         return res;
     }
 
     // converts value with ceiling
-    T ConvertCeilValueTo(const T &value, const Rational<T> &other) const {
+    T ConvertCeilValueTo(const T& value, const Rational<T>& other) const {
         T d = this->den * other.num;
         T res = Rational::Mul3Div(value, other.den, this->num, d - 1, d);
         return res;
@@ -68,10 +68,10 @@ public:
     T den = T(1);
 
 private:
-     /*
-        Performs (a * b * c) / d minimizing chance for overflow even on big numbers.
-        a should be greatest value of a,b,c, b middle, c smallest to have better precision
-     */
+    /*
+       Performs (a * b * c) / d minimizing chance for overflow even on big numbers.
+       a should be greatest value of a,b,c, b middle, c smallest to have better precision
+    */
     template<class T> static T Mul3Div(T a, T b, T c, T d) {
         T q = a / d;
         T r = a % d;
@@ -110,82 +110,206 @@ private:
 };
 
 
-namespace HELPERS_NS {   
+namespace HELPERS_NS {
     //
     // Another Rational version
     //
     template <typename _Rep>
     struct Rational {
-        Rational()
-            : num{ 0 }
-            , den{ 1 }
-            , valueRep{ 1 }
-            , rational{ 0 }
+
+        // This struct helps you to initialize many similar Rational-objects with same {num, den}
+        struct Units {
+            intmax_t num = 0;
+            intmax_t den = 1;
+        };
+
+        Rational(Units units)
+            : num{ units.num }
+            , den{ units.den }
+            , rational{ this->GetRationalValue() }
         {}
+
         Rational(intmax_t num, intmax_t den, _Rep valueRep = 1)
             : num{ num }
             , den{ den }
+            , rational{ this->GetRationalValue() }
             , valueRep{ valueRep }
-        {
-            if (den == 0) {
-                throw std::exception("Divide by zero");
-            }
-            rational = static_cast<double>(num) / den; // Compute once
-        }
+        {}
 
-        intmax_t Numerator() {
-            return num;
+        template <typename _OtherRep, typename _OtherPeriod>
+        Rational(intmax_t num, intmax_t den, const std::chrono::duration<_OtherRep, _OtherPeriod>& duration)
+            : num{ num }
+            , den{ den }
+            , rational{ this->GetRationalValue() }
+            , valueRep{ Rational<_OtherRep>{ _OtherPeriod::num, _OtherPeriod::den, duration.count() }.CastToRational<_Rep>(*this).Value() }
+        {}
+
+        intmax_t Numerator() const {
+            return this->num;
         }
-        intmax_t Denumerator() {
-            return den;
+        intmax_t Denumerator() const {
+            return this->den;
         }
-        _Rep Value() {
-            return valueRep;
+        _Rep Value() const {
+            return this->valueRep;
         }
 
         template <typename _ToRep>
-        _ToRep To() {
+        _ToRep As() const {
             return static_cast<_ToRep>(rational);
         }
 
         template <typename _ToRep, typename _OtherRep>
-        Rational<_ToRep> CastToRational(Rational<_OtherRep> other) {
-            return Rational<_ToRep>(
-                other.Numerator(),
-                other.Denumerator(),
-                static_cast<_ToRep>(this->valueRep * this->To<double>() / other.To<double>()));
+        Rational<_ToRep> CastToRational(Rational<_OtherRep> other) const {
+            if (this->num == other.Numerator() && this->den == other.Denumerator()) {
+                return Rational<_ToRep>(this->num, this->den, this->valueRep);
+            }
+            else {
+                return Rational<_ToRep>(
+                    other.Numerator(),
+                    other.Denumerator(),
+                    static_cast<_ToRep>(std::round(this->valueRep * this->As<double>() / other.As<double>())));
+            }
         }
 
-        Rational Inversed() {
-            return Rational(den, num, valueRep);
+        Rational Inversed() const {
+            return Rational(this->den, this->num, this->valueRep);
+        }
+
+        //
+        // Assign operators
+        //
+        Rational& operator=(_Rep newValueRep) {
+            this->valueRep = newValueRep;
+            return *this;
+        }
+        Rational& operator=(const Rational& other) {
+            this->valueRep = other.CastToRational<_Rep>(*this).Value();
+            return *this;
+        }
+        template <typename _OtherRep, typename _OtherPeriod>
+        Rational& operator=(const std::chrono::duration<_OtherRep, _OtherPeriod>& duration) {
+            return *this = Rational<_OtherRep>{ _OtherPeriod::num, _OtherPeriod::den, duration.count() }.CastToRational<_Rep>(*this);
+        }
+
+        //
+        // Arithmetic operators
+        //
+        Rational operator+(const Rational& other) const {
+            return Rational{ this->num, this->den, this->valueRep + other.CastToRational<_Rep>(*this).Value() };
+        }
+        Rational operator-(const Rational& other) const {
+            return Rational{ this->num, this->den, this->valueRep - other.CastToRational<_Rep>(*this).Value() };
+        }
+        Rational& operator+=(const Rational& other) {
+            this->valueRep += other.CastToRational<_Rep>(*this).Value();
+            return *this;
+        }
+        Rational& operator-=(const Rational& other) {
+            this->valueRep -= other.CastToRational<_Rep>(*this).Value();
+            return *this;
+        }
+        bool operator < (const Rational& other) const {
+            return this->valueRep < other.CastToRational<_Rep>(*this).Value();
+        }
+        bool operator > (const Rational& other) const {
+            return this->valueRep > other.CastToRational<_Rep>(*this).Value();
+        }
+        bool operator <= (const Rational& other) const {
+            return this->valueRep <= other.CastToRational<_Rep>(*this).Value();
+        }
+        bool operator >= (const Rational& other) const {
+            return this->valueRep >= other.CastToRational<_Rep>(*this).Value();
+        }
+        bool operator==(const Rational& other) const {
+            return this->valueRep == other.CastToRational<_Rep>(*this).Value();
+        }
+        bool operator!=(const Rational& other) const {
+            return this->valueRep != other.CastToRational<_Rep>(*this).Value();
+        }
+
+        template <typename _OtherRep, typename _OtherPeriod>
+        Rational operator+(const std::chrono::duration<_OtherRep, _OtherPeriod>& duration) const {
+            return *this + Rational<_OtherRep>{ _OtherPeriod::num, _OtherPeriod::den, duration.count() }.CastToRational<_Rep>(*this);
+        }
+        template <typename _OtherRep, typename _OtherPeriod>
+        Rational operator-(const std::chrono::duration<_OtherRep, _OtherPeriod>& duration) const {
+            return *this - Rational<_OtherRep>{ _OtherPeriod::num, _OtherPeriod::den, duration.count() }.CastToRational<_Rep>(*this);
+        }
+        template <typename _OtherRep, typename _OtherPeriod>
+        Rational& operator+=(const std::chrono::duration<_OtherRep, _OtherPeriod>& duration) {
+            return *this += Rational<_OtherRep>{ _OtherPeriod::num, _OtherPeriod::den, duration.count() }.CastToRational<_Rep>(*this);
+        }
+        template <typename _OtherRep, typename _OtherPeriod>
+        Rational& operator-=(const std::chrono::duration<_OtherRep, _OtherPeriod>& duration) {
+            return *this -= Rational<_OtherRep>{ _OtherPeriod::num, _OtherPeriod::den, duration.count() }.CastToRational<_Rep>(*this);
+        }
+
+        template <typename _OtherRep, typename _OtherPeriod>
+        bool operator < (const std::chrono::duration<_OtherRep, _OtherPeriod>& duration) const {
+            return *this < Rational<_OtherRep>{ _OtherPeriod::num, _OtherPeriod::den, duration.count() }.CastToRational<_Rep>(*this);
+        }
+        template <typename _OtherRep, typename _OtherPeriod>
+        bool operator > (const std::chrono::duration<_OtherRep, _OtherPeriod>& duration) const {
+            return *this > Rational<_OtherRep>{ _OtherPeriod::num, _OtherPeriod::den, duration.count() }.CastToRational<_Rep>(*this);
+        }
+        template <typename _OtherRep, typename _OtherPeriod>
+        bool operator <= (const std::chrono::duration<_OtherRep, _OtherPeriod>& duration) const {
+            return *this <= Rational<_OtherRep>{ _OtherPeriod::num, _OtherPeriod::den, duration.count() }.CastToRational<_Rep>(*this);
+        }
+        template <typename _OtherRep, typename _OtherPeriod>
+        bool operator >= (const std::chrono::duration<_OtherRep, _OtherPeriod>& duration) const {
+            return *this >= Rational<_OtherRep>{ _OtherPeriod::num, _OtherPeriod::den, duration.count() }.CastToRational<_Rep>(*this);
+        }
+        template <typename _OtherRep, typename _OtherPeriod>
+        bool operator==(const std::chrono::duration<_OtherRep, _OtherPeriod>& duration) const {
+            return *this == Rational<_OtherRep>{ _OtherPeriod::num, _OtherPeriod::den, duration.count() }.CastToRational<_Rep>(*this);
+        }
+        template <typename _OtherRep, typename _OtherPeriod>
+        bool operator!=(const std::chrono::duration<_OtherRep, _OtherPeriod>& duration) const {
+            return *this != Rational<_OtherRep>{ _OtherPeriod::num, _OtherPeriod::den, duration.count() }.CastToRational<_Rep>(*this);
         }
 
     private:
-        // TODO: make const members and write custom copy Ctor
-        intmax_t num;
-        intmax_t den;
+        double GetRationalValue() {
+            if (den == 0) {
+                throw std::exception("Divide by zero");
+            }
+            return static_cast<double>(num) / den;
+        }
+
+    private:
+        const intmax_t num;
+        const intmax_t den;
+        const double rational;
         _Rep valueRep; // representation value
-        double rational;
     };
 
-    //
-    // Helpers class Ratio that allow you to get double rational value, self-inversed instance and get chrono::duration after multiplication
-    //
-    template <intmax_t _Nx, intmax_t _Dx = 1>
-    struct Ratio : std::ratio<_Nx, _Dx> {
-        using _MyBase = std::ratio<_Nx, _Dx>;
 
-        static constexpr double value = (double)_MyBase::num / _MyBase::den;
-        static constexpr Ratio<_Dx, _Nx> inversed() { return Ratio<_Dx, _Nx>{}; };
-    };
 
-    template <typename ValueT, intmax_t _Nx, intmax_t _Dx>
-    constexpr std::chrono::duration<ValueT, std::ratio<_Nx, _Dx>> operator*(ValueT value, Ratio<_Nx, _Dx> /*ratio*/) {
-        return std::chrono::duration<ValueT, std::ratio<_Nx, _Dx>>(value);
+    // TODO: overload for any integer types
+    template<typename _Rep>
+    bool operator < (const Rational<_Rep>& rational, int value) {
+        return rational.Value() < value;
     }
-
-    template <typename ValueT, intmax_t _Nx, intmax_t _Dx>
-    constexpr std::chrono::duration<ValueT, std::ratio<_Nx, _Dx>> operator*(Ratio<_Nx, _Dx> /*ratio*/, ValueT value) {
-        return std::chrono::duration<ValueT, std::ratio<_Nx, _Dx>>(value);
+    template<typename _Rep>
+    bool operator > (const Rational<_Rep>& rational, int value) {
+        return rational.Value() > value;
+    }
+    template<typename _Rep>
+    bool operator <= (const Rational<_Rep>& rational, int value) {
+        return rational.Value() <= value;
+    }
+    template<typename _Rep>
+    bool operator >= (const Rational<_Rep>& rational, int value) {
+        return rational.Value() >= value;
+    }
+    template<typename _Rep>
+    bool operator==(const Rational<_Rep>& rational, int value) {
+        return rational.Value() == value;
+    }
+    template<typename _Rep>
+    bool operator!=(const Rational<_Rep>& rational, int value) {
+        return rational.Value() != value;
     }
 }

@@ -181,7 +181,7 @@ void MediaRecorder::RecordVideoSample(const Microsoft::WRL::ComPtr<IMFSample>& s
     }
 
     HRESULT hr = S_OK;
-    hr = sample->SetSampleTime(this->LastWritedVideoSample().nextSamplePts);
+    hr = sample->SetSampleTime((int64_t)this->LastWritedVideoSample().nextSamplePts);
     H::System::ThrowIfFailed(hr);
 
     // NOTE: sample duration is set outside because it depend on frameRate
@@ -242,7 +242,7 @@ void MediaRecorder::RecordAudioBuffer(const float* audioSamples, size_t samplesC
         (int64_t)basicSettings->sampleRate,
         (int64_t)H::Time::HNSResolution);
 
-    this->WriteSample(buffer, this->LastWritedAudioSample().nextSamplePts, durationHns, this->audioStreamIdx);
+    this->WriteSample(buffer, (int64_t)this->LastWritedAudioSample().nextSamplePts, durationHns, this->audioStreamIdx);
     this->samplesNumber += samplesCountPerChannel;
 }
 
@@ -991,11 +991,11 @@ void MediaRecorder::WriteSample(const Microsoft::WRL::ComPtr<IMFSample> &sample,
 
         if (streamIndex == this->videoStreamIdx) {
             //LOG_DEBUG_D("WriteSample VIDEO: samplePts = {}, sampleDuration = {}  (videoFrameNumber = {})", samplePts, sampleDuration, framesNumber);
-            lastWritedVideoSample.emplace(samplePts, sampleDuration);
+            lastWritedVideoSample.emplace(HH::Chrono::Hns{ samplePts }, HH::Chrono::Hns{ sampleDuration });
         }
         else {
             //LOG_DEBUG_D("WriteSample AUDIO: samplePts = {}, sampleDuration = {}  (audioSampleNumber = {})", samplePts, sampleDuration, samplesNumber);
-            lastWritedAudioSample.emplace(samplePts, sampleDuration);
+            lastWritedAudioSample.emplace(HH::Chrono::Hns{ samplePts }, HH::Chrono::Hns{ sampleDuration });
         }
 
         hr = this->sinkWriter->WriteSample(streamIndex, sample.Get());
