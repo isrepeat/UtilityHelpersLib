@@ -38,6 +38,10 @@ namespace HELPERS_NS {
             return files;
         }
 
+        HELPERS_NS::Flags<MappedFilesCollection::Format> MappedFilesCollection::GetFormatFlags() const {
+            return formatFlags;
+        }
+
         const MappedFileItem& MappedFilesCollection::operator[](int i) const {
             return files[i];
         }
