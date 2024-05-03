@@ -63,6 +63,8 @@ namespace HELPERS_NS {
             const std::vector<MappedFileItem>& GetDirs() const;
             const std::vector<MappedFileItem>& GetFiles() const;
 
+            HELPERS_NS::Flags<Format> GetFormatFlags() const;
+
             const MappedFileItem& operator[](int i) const;
 
         private:
