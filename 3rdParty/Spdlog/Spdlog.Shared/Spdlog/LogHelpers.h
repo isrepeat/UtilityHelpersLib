@@ -246,6 +246,18 @@ LOGGER_API HELPERS_NS::nothing* __LgCtx(); // may be overwritten as class method
 #define LOG_FUNCTION_ENTER(fmt, ...) LOG_FUNCTION_ENTER_S(LOGGER_NS::nullctx, fmt, __VA_ARGS__)
 
 
+#define LOG_SCOPED(__LOGGER__, _This, fmt, ...)                                                                                                                          \
+    auto __fnCtx = LOG_CTX;                                                                                                                                              \
+    LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, __LOGGER__, __fnCtx, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__));                          \
+                                                                                                                                                                         \
+    auto __functionFinishLogScoped = HELPERS_NS::MakeScope([&] {                                                                                                         \
+        LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, __LOGGER__, __fnCtx, spdlog::level::debug, EXPAND_1_VA_ARGS_(JOIN_STRING("<= ", fmt), __VA_ARGS__));  \
+        });
+
+
+#define LOG_DEBUG_SCOPE_D(fmt, ...)  LOG_SCOPED(LOGGER_NS::DefaultLoggers::DebugLogger(), __LgCtx(), fmt, __VA_ARGS__)
+
+
 #define LOG_FUNCTION_SCOPE_S(_This, fmt, ...)                                                                                                                                                         \
     auto __fnCtx = LOG_CTX;                                                                                                                                                                           \
 	LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::FuncLogger(), __fnCtx, spdlog::level::debug, EXPAND_1_VA_ARGS_(fmt, __VA_ARGS__));                          \

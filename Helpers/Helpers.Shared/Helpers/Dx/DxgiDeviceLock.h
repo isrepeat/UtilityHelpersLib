@@ -19,15 +19,19 @@ namespace HELPERS_NS {
 				, hDevice{ nullptr }
 				, locked{ false }
 			{
-				deviceManager->OpenDeviceHandle(&hDevice);
+				if (this->deviceManager) {
+					this->deviceManager->OpenDeviceHandle(&hDevice);
+				}
 			}
 
 			~DxgiDeviceLockBase() {
-				if (hDevice) {
-					if (locked) {
-						deviceManager->UnlockDevice(hDevice, FALSE);
+				if (this->deviceManager) {
+					if (this->hDevice) {
+						if (this->locked) {
+							this->deviceManager->UnlockDevice(hDevice, FALSE);
+						}
+						this->deviceManager->CloseDeviceHandle(hDevice);
 					}
-					deviceManager->CloseDeviceHandle(hDevice);
 				}
 			}
 
@@ -48,29 +52,37 @@ namespace HELPERS_NS {
 
 			template <typename DeviceInterfaceT>
 			HRESULT LockDevice(_Out_ DeviceInterfaceT** deviceInterface) {
+				if (!this->deviceManager) {
+					return S_OK;
+				}
+				
 				HRESULT hr = S_OK;
 
-				if (locked) {
+				if (this->locked) {
 					hr = E_FAIL;
 				}
 
-				hr = deviceManager->LockDevice(hDevice, __uuidof(DeviceInterfaceT), (void**)deviceInterface, TRUE);
+				hr = this->deviceManager->LockDevice(this->hDevice, __uuidof(DeviceInterfaceT), (void**)deviceInterface, TRUE);
 				if (SUCCEEDED(hr)) {
-					locked = true;
+					this->locked = true;
 				}
 				return hr;
 			}
 
 			HRESULT UnlockDevice() {
+				if (!this->deviceManager) {
+					return S_OK;
+				}
+
 				HRESULT hr = S_OK;
 
-				if (!locked) {
+				if (!this->locked) {
 					hr = E_FAIL;
 				}
 
-				hr = deviceManager->UnlockDevice(hDevice, FALSE);
+				hr = this->deviceManager->UnlockDevice(hDevice, FALSE);
 				if (SUCCEEDED(hr)) {
-					locked = false;
+					this->locked = false;
 				}
 				return hr;
 			}
