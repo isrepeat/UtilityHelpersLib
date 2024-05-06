@@ -6,7 +6,9 @@
 namespace HELPERS_NS {
     //
     // LockedObjBase
-    // NOTE: keep "LockedObj..." constructors params as const-members to allow make "LockedObj" object from CreatorT with non-const members
+    // NOTE: CreatorT::MutexT must be declared as mutable. 
+    //       Keep other "LockedObj..." constructors params as const-members 
+    //       to allow make "LockedObj" object from CreatorT with non-const members.
     //
     template <typename CreatorT>
     struct LockedObjBase {
@@ -18,11 +20,17 @@ namespace HELPERS_NS {
     struct LockedObjBase<CreatorT<MutexT, ObjT, CustomLockableT>>
     {
         static constexpr std::string_view templateNotes = "Specialized for <CreatorT<MutexT, ObjT, CustomLockableT>";
-        LockedObjBase(const MutexT& mx, const ObjT& obj, const CreatorT<MutexT, ObjT, CustomLockableT>* creator)
-            : lk{ const_cast<MutexT&>(mx) }
+        
+        _Acquires_lock_(this->lk) // suppress warning - "C26115: Falling release lock 'mx'"
+        LockedObjBase(MutexT& mx, const ObjT& obj, const CreatorT<MutexT, ObjT, CustomLockableT>* creator)
+            : lk{ mx }
             , creator{ creator }
-            , customLockableObj{ obj } // CHECK: why warning "C26115: Falling release lock 'mx'" is occured
+            , customLockableObj{ obj }
         {}
+
+        _Releases_lock_(this->lk)
+        ~LockedObjBase() {
+        }
 
         const CreatorT<MutexT, ObjT, CustomLockableT>* GetCreator() const {
             return this->creator;
@@ -39,8 +47,8 @@ namespace HELPERS_NS {
     struct LockedObjBase<CreatorT<MutexT, ObjT, void>>
     {
         static constexpr std::string_view templateNotes = "Specialized for <CreatorT<MutexT, ObjT, void>";
-        LockedObjBase(const MutexT& mx, const ObjT& obj, const CreatorT<MutexT, ObjT, void>* creator)
-            : lk{ const_cast<MutexT&>(mx) }
+        LockedObjBase(MutexT& mx, const ObjT& /*obj*/, const CreatorT<MutexT, ObjT, void>* creator)
+            : lk{ mx }
             , creator{ creator }
         {}
 
@@ -71,11 +79,11 @@ namespace HELPERS_NS {
         using _MyBase = LockedObjBase<CreatorT<MutexT, ObjT, CustomLockableT>>;
 
         LockedObj(
-            const MutexT& mx, 
-            const ObjT& obj, 
+            MutexT& mx,
+            const ObjT& obj,
             const CreatorT<MutexT, ObjT, CustomLockableT>* creator)
             : _MyBase(mx, obj, creator)
-            , obj{ const_cast<ObjT&>(obj) } // [by designed]
+            , obj{ const_cast<ObjT&>(obj) } // [by design]
         {}
 
         ~LockedObj() {
@@ -101,11 +109,11 @@ namespace HELPERS_NS {
         using _MyBase = LockedObjBase<CreatorT<MutexT, std::unique_ptr<ObjT, Args...>, CustomLockableT>>;
 
         LockedObj(
-            const MutexT& mx,
+            MutexT& mx,
             const std::unique_ptr<ObjT, Args...>& obj,
             const CreatorT<MutexT, std::unique_ptr<ObjT, Args...>, CustomLockableT>* creator)
             : _MyBase(mx, obj, creator)
-            , obj{ const_cast<std::unique_ptr<ObjT, Args...>&>(obj) } // [by designed]
+            , obj{ const_cast<std::unique_ptr<ObjT, Args...>&>(obj) } // [by design]
         {}
 
         ~LockedObj() {
@@ -162,7 +170,7 @@ namespace HELPERS_NS {
         }
 
     private:
-        MutexT mx;
+        mutable MutexT mx;
         ObjT obj;
     };
 
@@ -203,7 +211,7 @@ namespace HELPERS_NS {
         }
 
     private:
-        MutexT mx;
+        mutable MutexT mx;
         std::unique_ptr<ObjT> obj;
     };
 

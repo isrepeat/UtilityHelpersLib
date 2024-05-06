@@ -3,7 +3,7 @@
 #include "HWindows.h"
 #include "Exception.h"
 #include "Helpers.h"
-#include "Logger.h"
+#include "Logger.h" // TODO: because of System.h implicitly included in Logger.h the Logger.h macros not defined, fix in future
 #include "Macros.h"
 
 #include <stdexcept>
