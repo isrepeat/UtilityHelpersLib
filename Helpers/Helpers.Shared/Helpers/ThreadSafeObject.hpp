@@ -4,186 +4,216 @@
 #include <mutex>
 
 namespace HELPERS_NS {
-    template <typename MutexT, typename T>
-    class LockedObj {
-    public:
-        static constexpr std::string_view templateNotes = "Primary template for value types";
+    //
+    // LockedObjBase
+    // NOTE: CreatorT::MutexT must be declared as mutable. 
+    //       Keep other "LockedObj..." constructors params as const-members 
+    //       to allow make "LockedObj" object from CreatorT with non-const members.
+    //
+    template <typename CreatorT>
+    struct LockedObjBase {
+        static constexpr std::string_view templateNotes = "Primary template";
+    };
 
-        LockedObj(MutexT& mtx, T& obj)
-            : lk(mtx)
-            , obj(obj)
+
+    template <template<typename, typename, typename> class CreatorT, typename MutexT, typename ObjT, typename CustomLockableT>
+    struct LockedObjBase<CreatorT<MutexT, ObjT, CustomLockableT>>
+    {
+        static constexpr std::string_view templateNotes = "Specialized for <CreatorT<MutexT, ObjT, CustomLockableT>";
+        
+        _Acquires_lock_(this->lk) // suppress warning - "C26115: Falling release lock 'mx'"
+        LockedObjBase(MutexT& mx, const ObjT& obj, const CreatorT<MutexT, ObjT, CustomLockableT>* creator)
+            : lk{ mx }
+            , creator{ creator }
+            , customLockableObj{ obj }
         {}
 
-        LockedObj(LockedObj&& other)
-            : lk{ std::move(other.lk) }
-            , obj{ std::move(other.obj) }
-        {}
-
-        LockedObj& operator=(LockedObj&& other) {
-            if (this != &other) {
-                this->lk = std::move(other.lk);
-                this->obj = std::move(other.obj);
-            }
-            return *this;
+        _Releases_lock_(this->lk)
+        ~LockedObjBase() {
         }
 
-        T* operator->() const {
+        const CreatorT<MutexT, ObjT, CustomLockableT>* GetCreator() const {
+            return this->creator;
+        }
+
+    private:
+        std::unique_lock<MutexT> lk;
+        const CreatorT<MutexT, ObjT, CustomLockableT>* creator;
+        CustomLockableT customLockableObj;
+    };
+
+
+    template <template<typename, typename, typename> class CreatorT, typename MutexT, typename ObjT>
+    struct LockedObjBase<CreatorT<MutexT, ObjT, void>>
+    {
+        static constexpr std::string_view templateNotes = "Specialized for <CreatorT<MutexT, ObjT, void>";
+        LockedObjBase(MutexT& mx, const ObjT& /*obj*/, const CreatorT<MutexT, ObjT, void>* creator)
+            : lk{ mx }
+            , creator{ creator }
+        {}
+
+        const CreatorT<MutexT, ObjT, void>* GetCreator() const {
+            return this->creator;
+        }
+
+    private:
+        std::unique_lock<MutexT> lk;
+        const CreatorT<MutexT, ObjT, void>* creator;
+    };
+
+
+    //
+    // LockedObj
+    //
+    template <typename CreatorT>
+    struct LockedObj {
+        static constexpr std::string_view templateNotes = "Primary template";
+    };
+
+
+    template <template<typename, typename, typename> class CreatorT, typename MutexT, typename ObjT, typename CustomLockableT>
+    struct LockedObj<CreatorT<MutexT, ObjT, CustomLockableT>>
+        : LockedObjBase<CreatorT<MutexT, ObjT, CustomLockableT>>
+    {
+        static constexpr std::string_view templateNotes = "Specialized for <CreatorT<MutexT, ObjT, CustomLockableT>>";
+        using _MyBase = LockedObjBase<CreatorT<MutexT, ObjT, CustomLockableT>>;
+
+        LockedObj(
+            MutexT& mx,
+            const ObjT& obj,
+            const CreatorT<MutexT, ObjT, CustomLockableT>* creator)
+            : _MyBase(mx, obj, creator)
+            , obj{ const_cast<ObjT&>(obj) } // [by design]
+        {}
+
+        ~LockedObj() {
+        }
+
+        ObjT* operator->() const {
             return &this->obj;
         }
-
-        T& Get() const {
+        ObjT& Get() const {
             return this->obj;
         }
 
     private:
-        std::unique_lock<MutexT> lk;
-        T& obj;
+        ObjT& obj;
     };
 
-    //
-    // Partial template specializatoin where T is container = C<Args...>.
-    // Can be used for pointer classes with overloaded operator->
-    //
-    template<typename MutexT, template<typename> class C, typename... Args>
-    class LockedObj<MutexT, C<Args...>> {
-    public:
-        static constexpr std::string_view templateNotes = "Pointer specialization. Obj must overload operator->.";
 
-        LockedObj(MutexT& mtx, C<Args...>& obj)
-            : lk(mtx)
-            , obj(obj)
+    template<template<typename, typename, typename> class CreatorT, typename MutexT, typename ObjT, typename... Args, typename CustomLockableT>
+    struct LockedObj<CreatorT<MutexT, std::unique_ptr<ObjT, Args...>, CustomLockableT>>
+        : LockedObjBase<CreatorT<MutexT, std::unique_ptr<ObjT, Args...>, CustomLockableT>>
+    {
+        static constexpr std::string_view templateNotes = "Specialized for <MutexT, std::unique_ptr<ObjT, Args...>, CustomLockableT>";
+        using _MyBase = LockedObjBase<CreatorT<MutexT, std::unique_ptr<ObjT, Args...>, CustomLockableT>>;
+
+        LockedObj(
+            MutexT& mx,
+            const std::unique_ptr<ObjT, Args...>& obj,
+            const CreatorT<MutexT, std::unique_ptr<ObjT, Args...>, CustomLockableT>* creator)
+            : _MyBase(mx, obj, creator)
+            , obj{ const_cast<std::unique_ptr<ObjT, Args...>&>(obj) } // [by design]
         {}
 
-        LockedObj(LockedObj&& other)
-            : lk{ std::move(other.lk) }
-            , obj{ std::move(other.obj) }
-        {}
-
-        LockedObj& operator=(LockedObj&& other) {
-            if (this != &other) {
-                this->lk = std::move(other.lk);
-                this->obj = std::move(other.obj);
-            }
-            return *this;
+        ~LockedObj() {
         }
 
-        C<Args...>& operator->() const {
+        std::unique_ptr<ObjT, Args...>& operator->() const {
             return this->obj;
         }
-
-        C<Args...>& Get() const {
+        std::unique_ptr<ObjT, Args...>& Get() const {
             return this->obj;
         }
 
     private:
-        std::unique_lock<MutexT> lk;
-        C<Args...>& obj;
+        std::unique_ptr<ObjT, Args...>& obj;
     };
 
 
-
-    template<typename MutexT, typename T>
-    class ThreadSafeObjectBase {
+    //
+    // ThreadSafeObject
+    //
+    template <typename MutexT, typename ObjT, typename CustomLockableT = void>
+    class ThreadSafeObject {
     public:
-        using Locked = LockedObj<MutexT, T>;
+        static constexpr std::string_view templateNotes = "Primary temlpate";
+        using _Locked = LockedObj<ThreadSafeObject<MutexT, ObjT, CustomLockableT>>;
 
-        ThreadSafeObjectBase() = default;
+        ThreadSafeObject()
+            : obj{}
+        {}
 
         template <typename... Args>
-        ThreadSafeObjectBase(Args&&... args)
+        ThreadSafeObject(Args&&... args)
             : obj{ std::forward<Args>(args)... }
         {}
 
-        ThreadSafeObjectBase(ThreadSafeObjectBase& other) = delete;
-        ThreadSafeObjectBase& operator=(ThreadSafeObjectBase& other) = delete;
+        ThreadSafeObject(ThreadSafeObject& other) = delete;
+        ThreadSafeObject& operator=(ThreadSafeObject& other) = delete;
 
-        template<typename OtherT, std::enable_if_t<std::is_convertible_v<OtherT, T>, int> = 0>
-        ThreadSafeObjectBase(OtherT&& otherObj)
+        template<typename OtherT, std::enable_if_t<std::is_convertible_v<OtherT, ObjT>, int> = 0>
+        ThreadSafeObject(OtherT&& otherObj)
             : obj{ std::move(otherObj) }
         {}
 
-        template<typename OtherT, std::enable_if_t<std::is_convertible_v<OtherT, T>, int> = 0>
-        ThreadSafeObjectBase& operator=(OtherT&& otherObj) {
+        template<typename OtherT, std::enable_if_t<std::is_convertible_v<OtherT, ObjT>, int> = 0>
+        ThreadSafeObject& operator=(OtherT&& otherObj) {
             if (&this->obj != &otherObj) {
                 this->obj = std::move(otherObj);
             }
             return *this;
         }
 
-        Locked Lock() {
-            return Locked(this->mtx, this->obj);
-        }
-
-        std::unique_ptr<Locked> LockUniq() {
-            return std::make_unique<Locked>(this->mtx, this->obj);
+        _Locked Lock() const {
+            return _Locked{ this->mx, this->obj, this };
         }
 
     private:
-        template<typename, typename>
-        friend class ThreadSafeObjectBase;
-
-        MutexT mtx;
-        T obj;
+        mutable MutexT mx;
+        ObjT obj;
     };
 
 
-
-    template<typename MutexT, typename T>
-    class ThreadSafeObjectBaseUniq {
+    template <typename MutexT, typename ObjT, typename CustomLockableT>
+    class ThreadSafeObject<MutexT, std::unique_ptr<ObjT>, CustomLockableT> {
     public:
-        using Locked = LockedObj<MutexT, T>;
+        static constexpr std::string_view templateNotes = "Specialized for <MutexT, std::unique_ptr<ObjT>, CustomLockableObj>";
+        using _Locked = LockedObj<ThreadSafeObject<MutexT, std::unique_ptr<ObjT>, CustomLockableT>>;
 
-        ThreadSafeObjectBaseUniq()
-            : obj{ std::make_unique<T>() }
+        ThreadSafeObject()
+            : obj{ std::make_unique<ObjT>() }
         {}
 
         template <typename... Args>
-        ThreadSafeObjectBaseUniq(Args&&... args)
-            : obj{ std::make_unique<T>(std::forward<Args>(args)...) }
+        ThreadSafeObject(Args&&... args)
+            : obj{ std::make_unique<ObjT>(std::forward<Args>(args)...) }
         {}
 
-        ThreadSafeObjectBaseUniq(ThreadSafeObjectBaseUniq& other) = delete;
-        ThreadSafeObjectBaseUniq& operator=(ThreadSafeObjectBaseUniq& other) = delete;
+        ThreadSafeObject(ThreadSafeObject& other) = delete;
+        ThreadSafeObject& operator=(ThreadSafeObject& other) = delete;
 
-
-        template <typename OtherT, std::enable_if_t<std::is_convertible_v<std::unique_ptr<OtherT>, std::unique_ptr<T>>, int> = 0>
-        ThreadSafeObjectBaseUniq(std::unique_ptr<OtherT>&& otherObj)
+        template <typename OtherT, std::enable_if_t<std::is_convertible_v<std::unique_ptr<OtherT>, std::unique_ptr<ObjT>>, int> = 0>
+        ThreadSafeObject(std::unique_ptr<OtherT>&& otherObj)
             : obj{ std::move(otherObj) }
         {}
 
-        template <typename OtherT, std::enable_if_t<std::is_convertible_v<std::unique_ptr<OtherT>, std::unique_ptr<T>>, int> = 0>
-        ThreadSafeObjectBaseUniq& operator=(std::unique_ptr<OtherT>&& otherObj) {
+        template <typename OtherT, std::enable_if_t<std::is_convertible_v<std::unique_ptr<OtherT>, std::unique_ptr<ObjT>>, int> = 0>
+        ThreadSafeObject& operator=(std::unique_ptr<OtherT>&& otherObj) {
             if (this->obj.get() != otherObj.get()) {
                 this->obj = std::move(otherObj);
             }
             return *this;
         }
 
-        Locked Lock() {
-            return Locked(this->mtx, *this->obj);
-        }
-
-        std::unique_ptr<Locked> LockUniq() {
-            return std::make_unique<Locked>(this->mtx, *this->obj);
+        _Locked Lock() const {
+            return _Locked{ this->mx, this->obj, this };
         }
 
     private:
-        MutexT mtx;
-        std::unique_ptr<T> obj;
+        mutable MutexT mx;
+        std::unique_ptr<ObjT> obj;
     };
-
-    template<class T>
-    using ThreadSafeObject = ThreadSafeObjectBase<std::mutex, T>;
-
-    template<class T>
-    using ThreadSafeObjectRecusrive = ThreadSafeObjectBase<std::recursive_mutex, T>;
-
-
-    template<class T>
-    using ThreadSafeObjectUniq = ThreadSafeObjectBaseUniq<std::mutex, T>;
-
-    template<class T>
-    using ThreadSafeObjectUniqRecusrive = ThreadSafeObjectBaseUniq<std::recursive_mutex, T>;
 
 
     // TODO: overload for ENSURE_METHOD_IS_GUARDED(lockClass) and ENSURE_METHOD_IS_GUARDED(lockClass, mutexClass)

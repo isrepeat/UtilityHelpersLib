@@ -14,7 +14,7 @@ namespace MEDIA_FOUNDATION_NS {
             , nextSamplePts{ 0_hns }
         {}
 
-        SampleInfo(HH::Chrono::Hns pts, HH::Chrono::Hns duration)
+        SampleInfo(HELPERS_NS::Chrono::Hns pts, HELPERS_NS::Chrono::Hns duration)
             : pts{ pts }
             , duration{ duration }
             , nextSamplePts{ pts + duration }
