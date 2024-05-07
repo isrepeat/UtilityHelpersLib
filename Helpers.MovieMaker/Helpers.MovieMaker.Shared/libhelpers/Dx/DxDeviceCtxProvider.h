@@ -1,5 +1,4 @@
 #pragma once
-
 #include <d3d11.h>
 #include <d3d11_1.h>
 #include <d2d1.h>
@@ -10,11 +9,13 @@
 #include <DirectXColors.h>
 #include <wrl.h>
 #define WIN32_LEAN_AND_MEAN
+
+// TODO: adapt the code to use Microsoft::WRL::ComPtr<...>
 class DxDeviceCtxProvider {
 public:
 	DxDeviceCtxProvider();
 	virtual ~DxDeviceCtxProvider();
 
-	virtual ID3D11DeviceContext1 *D3D() const = 0;
-	virtual ID2D1DeviceContext *D2D() const = 0;
+	virtual ID2D1DeviceContext* D2D() const = 0;
+	virtual ID3D11DeviceContext1* D3D() const = 0;
 };

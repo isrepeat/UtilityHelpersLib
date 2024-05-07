@@ -2,8 +2,13 @@
 #include "DxDeviceCtx.h"
 #include "DxDeviceMt.h"
 
+#include <Helpers/Dx/DxgiDeviceLock.h>
 #include <Helpers/ThreadSafeObject.hpp>
 #include <Helpers/MultithreadMutex.h>
+#include <Helpers/Thread.h>
+
+#include <mfapi.h>
+#include <mfobjects.h>
 
 #include <d3d11.h>
 #include <d2d1.h>
@@ -16,6 +21,62 @@
 
 #include <libhelpers\Thread\PPL\critical_section_guard.h>
 
+class MFDXGIDeviceManagerCustom : public Microsoft::WRL::RuntimeClass<
+	Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::RuntimeClassType::WinRtClassicComMix>,
+	IMFDXGIDeviceManager> 
+{
+public:
+	MFDXGIDeviceManagerCustom(Microsoft::WRL::ComPtr<IMFDXGIDeviceManager> mfDxgiDeviceManagerOrig);
+	~MFDXGIDeviceManagerCustom() = default;
+
+	HRESULT STDMETHODCALLTYPE CloseDeviceHandle(
+		/* [annotation] */
+		_In_  HANDLE hDevice) override;
+
+	HRESULT STDMETHODCALLTYPE GetVideoService(
+		/* [annotation] */
+		_In_  HANDLE hDevice,
+		/* [annotation] */
+		_In_  REFIID riid,
+		/* [annotation] */
+		_Outptr_  void** ppService) override;
+
+	HRESULT STDMETHODCALLTYPE LockDevice(
+		/* [annotation] */
+		_In_  HANDLE hDevice,
+		/* [annotation] */
+		_In_  REFIID riid,
+		/* [annotation] */
+		_Outptr_  void** ppUnkDevice,
+		/* [annotation] */
+		_In_  BOOL fBlock) override;
+
+	HRESULT STDMETHODCALLTYPE OpenDeviceHandle(
+		/* [annotation] */
+		_Out_  HANDLE* phDevice) override;
+
+	HRESULT STDMETHODCALLTYPE ResetDevice(
+		/* [annotation] */
+		_In_  IUnknown* pUnkDevice,
+		/* [annotation] */
+		_In_  UINT resetToken) override;
+
+	HRESULT STDMETHODCALLTYPE TestDevice(
+		/* [annotation] */
+		_In_  HANDLE hDevice) override;
+
+	HRESULT STDMETHODCALLTYPE UnlockDevice(
+		/* [annotation] */
+		_In_  HANDLE hDevice,
+		/* [annotation] */
+		_In_  BOOL fSaveState) override;
+
+private:
+	Microsoft::WRL::ComPtr<IMFDXGIDeviceManager> mfDxgiDeviceManagerOrig;
+	Microsoft::WRL::ComPtr<ID3D10Multithread> d3dMultithread;
+};
+
+
 namespace details {
 	struct DxDeviceParams {
 		static const uint32_t DefaultD3D11CreateFlags;
@@ -26,21 +87,16 @@ namespace details {
 		DxDeviceParams(uint32_t d3d11CreateFlags);
 	};
 
-
 	class DxDevice : public DxDeviceMt {
 	public:
 		DxDevice(const DxDeviceParams* params = nullptr);
 		~DxDevice();
 
-		// Returns DxDeviceCtx wrapped in critical_section_guard
-		// destroy wrapped DxDeviceCtx only when objects from DxDeviceCtx aren't needed.
-		critical_section_guard<DxDeviceCtx>::Accessor GetContext();
-
+		DxDeviceCtxSafeObj_t::_Locked LockContext() const;
 		D3D_FEATURE_LEVEL GetDeviceFeatureLevel() const;
 
-	private:
-		// cs-protected
-		critical_section_guard<DxDeviceCtx> ctx;
+	private:		
+		DxDeviceCtxSafeObj_t ctxSafeObj;
 
 		D3D_FEATURE_LEVEL featureLevel;
 
@@ -54,14 +110,42 @@ namespace details {
 		static bool SdkLayersAvailable();
 	};
 
-	class DxVideoDevice : public DxDevice {
+	class DxDeviceMF : public DxDevice {
 	public:
-		DxVideoDevice();
+		DxDeviceMF::DxDeviceMF(const DxDeviceParams* params = nullptr);
+		
+		void CreateMFDXGIDeviceManager();
+		Microsoft::WRL::ComPtr<IMFDXGIDeviceManager> GetMFDXGIDeviceManager();
+
+	private:		
+		Microsoft::WRL::ComPtr<MFDXGIDeviceManagerCustom> mfDxgiDeviceManagerCustom;
+	};
+
+
+	class DxVideoDeviceMF : public DxDeviceMF {
+	public:
+		DxVideoDeviceMF();
+	};
+
+
+	class DxDeviceMFLock {
+	public:
+		DxDeviceMFLock(const std::unique_ptr<details::DxDeviceMF>& dxDeviceMf);
+		~DxDeviceMFLock();
+
+	private:
+		HH::Dx::MFDXGIDeviceManagerLock mfDxgiDeviceManagerLock;
 	};
 }
 
 // TODO: split on two wrapper:
 //		 1) Root wrapper - used to lock dxDevice on top of the stack of current thread (it helps avoid deadlocks)
 //		 2) Sub wrapper - will be passed down the stack
-using DxDevice = HH::ThreadSafeObjectBaseUniq<HH::MultithreadMutexRecursive, details::DxDevice>;
-using DxVideoDevice = HH::ThreadSafeObjectBaseUniq<HH::MultithreadMutexRecursive, details::DxVideoDevice>;
+//using DxDevice = HH::ThreadSafeObjectBaseUniq<HH::MultithreadMutexRecursive, details::DxDevice>;
+//using DxVideoDevice = HH::ThreadSafeObjectBaseUniq<HH::MultithreadMutexRecursive, details::DxVideoDevice>;
+
+
+
+// TODO: rename to DxDeviceSafeObj
+using DxDevice = HH::ThreadSafeObject<std::recursive_mutex, std::unique_ptr<details::DxDeviceMF>, details::DxDeviceMFLock>;
+using DxVideoDevice = HH::ThreadSafeObject<std::recursive_mutex, std::unique_ptr<details::DxVideoDeviceMF>, details::DxDeviceMFLock>;
