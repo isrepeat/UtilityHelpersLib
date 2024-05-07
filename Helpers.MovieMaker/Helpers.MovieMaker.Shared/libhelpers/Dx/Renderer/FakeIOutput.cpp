@@ -105,14 +105,14 @@ void FakeIOutput::BeginRender() {
     auto rtView = this->GetD3DRtView();
     ID3D11RenderTargetView* const targets[1] = { this->GetD3DRtView() };
     auto dxDev = this->dxDeviceSafeObj->Lock();
-    auto ctx = dxDev->GetContext();
+    auto dxCtx = dxDev->LockContext();
     auto viewport = this->GetD3DViewport();
 
-    ctx->D3D()->OMSetRenderTargets(1, targets, nullptr);
-    ctx->D3D()->RSSetViewports(1, &viewport);
-    ctx->D3D()->ClearRenderTargetView(this->GetD3DRtView(), DirectX::Colors::Transparent);
+    dxCtx->D3D()->OMSetRenderTargets(1, targets, nullptr);
+    dxCtx->D3D()->RSSetViewports(1, &viewport);
+    dxCtx->D3D()->ClearRenderTargetView(this->GetD3DRtView(), DirectX::Colors::Transparent);
 
-    ctx->D2D()->SetTarget(this->d2dBitmap.Get());
-    ctx->D2D()->SetDpi(DxHelpers::standartDpi.x, DxHelpers::standartDpi.y);
-    ctx->D2D()->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+    dxCtx->D2D()->SetTarget(this->d2dBitmap.Get());
+    dxCtx->D2D()->SetDpi(DxHelpers::standartDpi.x, DxHelpers::standartDpi.y);
+    dxCtx->D2D()->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
 }

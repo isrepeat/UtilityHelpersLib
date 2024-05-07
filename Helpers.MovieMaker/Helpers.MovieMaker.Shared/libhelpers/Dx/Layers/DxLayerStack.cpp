@@ -16,8 +16,9 @@ namespace DxLayerStackItems {
 	void D2DLayer::Push(const D2D1_LAYER_PARAMETERS& params, ID2D1Layer* layer) {
 		HRESULT hr = S_OK;
 		D2D1_MATRIX_3X2_F transform;
-		D2D1_RECT_F layerRect = dxLayerStack->GetCurrentRect();
-		auto d2dCtx = dxLayerStack->dxCtxProv->D2D();
+		D2D1_RECT_F layerRect = this->dxLayerStack->GetCurrentRect();
+		auto dxCtx = this->dxLayerStack->dxCtxSafeObj->Lock();
+		auto d2dCtx = dxCtx->D2D();
 
 		d2dCtx->GetTransform(&transform);
 
@@ -37,14 +38,15 @@ namespace DxLayerStackItems {
 			layerRect = DxLayerStack::ConcatRects(layerRect, geomBounds, params.maskAntialiasMode);
 		}
 
-		dxLayerStack->layerSizes.push_back(layerRect);
+		this->dxLayerStack->layerSizes.push_back(layerRect);
 		d2dCtx->PushLayer(params, layer);
 	}
 
 	void D2DLayer::Pop() {
-		auto d2dCtx = dxLayerStack->dxCtxProv->D2D();
+		auto dxCtx = this->dxLayerStack->dxCtxSafeObj->Lock();
+		auto d2dCtx = dxCtx->D2D();
 
-		dxLayerStack->layerSizes.pop_back();
+		this->dxLayerStack->layerSizes.pop_back();
 		d2dCtx->PopLayer();
 	}
 
@@ -56,17 +58,18 @@ namespace DxLayerStackItems {
 
 	void RenderTarget::Push() {
 		HRESULT hr = S_OK;
-		auto d2dCtx = dxLayerStack->dxCtxProv->D2D();
+		auto dxCtx = this->dxLayerStack->dxCtxSafeObj->Lock();
+		auto d2dCtx = dxCtx->D2D();
 
 		hr = d2dCtx->Flush();
 		H::System::ThrowIfFailed(hr);
 
-		dxLayerStack->layerSizesStack.push_back(std::move(dxLayerStack->layerSizes));
+		this->dxLayerStack->layerSizesStack.push_back(std::move(this->dxLayerStack->layerSizes));
 	}
 
 	void RenderTarget::Pop() {
-		dxLayerStack->layerSizes = std::move(dxLayerStack->layerSizesStack.back());
-		dxLayerStack->layerSizesStack.pop_back();
+		this->dxLayerStack->layerSizes = std::move(this->dxLayerStack->layerSizesStack.back());
+		this->dxLayerStack->layerSizesStack.pop_back();
 	}
 
 
@@ -78,8 +81,9 @@ namespace DxLayerStackItems {
 	void AxisAlignedClip::Push(const D2D1_RECT_F& rect, D2D1_ANTIALIAS_MODE antialiasMode) {
 		HRESULT hr = S_OK;
 		D2D1_MATRIX_3X2_F transform;
-		D2D1_RECT_F layerRect = dxLayerStack->GetCurrentRect();
-		auto d2dCtx = dxLayerStack->dxCtxProv->D2D();
+		D2D1_RECT_F layerRect = this->dxLayerStack->GetCurrentRect();
+		auto dxCtx = this->dxLayerStack->dxCtxSafeObj->Lock();
+		auto d2dCtx = dxCtx->D2D();
 
 		d2dCtx->GetTransform(&transform);
 
@@ -89,21 +93,22 @@ namespace DxLayerStackItems {
 			antialiasMode,
 			transform);
 
-		dxLayerStack->layerSizes.push_back(layerRect);
+		this->dxLayerStack->layerSizes.push_back(layerRect);
 		d2dCtx->PushAxisAlignedClip(rect, antialiasMode);
 	}
 
 	void AxisAlignedClip::Pop() {
-		auto d2dCtx = dxLayerStack->dxCtxProv->D2D();
+		auto dxCtx = this->dxLayerStack->dxCtxSafeObj->Lock();
+		auto d2dCtx = dxCtx->D2D();
 
-		dxLayerStack->layerSizes.pop_back();
+		this->dxLayerStack->layerSizes.pop_back();
 		d2dCtx->PopAxisAlignedClip();
 	}
 } // namespace DxLayerStackItems
 
 
-DxLayerStack::DxLayerStack(DxDeviceCtxProvider* dxCtxProv, DxLayerStackResources* resources)
-	: dxCtxProv(dxCtxProv)
+DxLayerStack::DxLayerStack(std::shared_ptr<DxDeviceCtxDynamic> dxCtxSafeObj, DxLayerStackResources* resources)
+	: dxCtxSafeObj(dxCtxSafeObj)
 	, resources(resources)
 	, dxLayerD2DLayer{ this }
 	, dxLayerRenderTarget{ this }
@@ -116,8 +121,9 @@ DxLayerStackState DxLayerStack::BeginD3D() {
 	uint32_t numViewports = 1;
 	D3D11_VIEWPORT viewport;
 	D3D11_RECT d3dRect;
-	auto d3dCtx = this->dxCtxProv->D3D();
-	auto d2dCtx = this->dxCtxProv->D2D();
+	auto dxCtx = this->dxCtxSafeObj->Lock();
+	auto d3dCtx = dxCtx->D3D();
+	auto d2dCtx = dxCtx->D2D();
 	auto rect = this->GetCurrentRect();
 	auto resourcesState = this->resources->SetToCtx(d3dCtx);
 	DxLayerStackState state(std::move(resourcesState), RSScissorState<1>(d3dCtx));

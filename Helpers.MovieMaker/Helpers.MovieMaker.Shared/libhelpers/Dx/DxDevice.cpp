@@ -5,20 +5,72 @@
 
 #include <dxgi1_3.h>
 
+MFDXGIDeviceManagerCustom::MFDXGIDeviceManagerCustom(Microsoft::WRL::ComPtr<IMFDXGIDeviceManager> mfDxgiDeviceManagerOrig)
+    : mfDxgiDeviceManagerOrig{ mfDxgiDeviceManagerOrig }
+{}
+
+HRESULT __stdcall MFDXGIDeviceManagerCustom::CloseDeviceHandle(HANDLE hDevice) {
+    return mfDxgiDeviceManagerOrig->CloseDeviceHandle(hDevice);
+}
+
+HRESULT __stdcall MFDXGIDeviceManagerCustom::GetVideoService(HANDLE hDevice, REFIID riid, void** ppService) {
+    return mfDxgiDeviceManagerOrig->GetVideoService(hDevice, riid, ppService);
+}
+
+HRESULT __stdcall MFDXGIDeviceManagerCustom::LockDevice(HANDLE hDevice, REFIID riid, void** ppUnkDevice, BOOL fBlock) {
+    ////LOG_DEBUG_D(L"LockDevice [th = ({}) | \"{}\"]", HH::GetThreadId(), HH::ThreadNameHelper::GetThreadName());
+    HRESULT hr = S_OK;
+    hr = mfDxgiDeviceManagerOrig->LockDevice(hDevice, riid, ppUnkDevice, fBlock);
+    //if (SUCCEEDED(hr)) {
+    //    this->d3dMultithread.Reset();
+    //    Microsoft::WRL::ComPtr<IUnknown> unkDevice = reinterpret_cast<IUnknown*>(*ppUnkDevice);
+
+    //    Microsoft::WRL::ComPtr<ID3D11Device> d3dDevice;
+    //    unkDevice.As(&d3dDevice);
+    //    LOG_FAILED(hr);
+
+    //    hr = d3dDevice.As(&this->d3dMultithread);
+    //    LOG_FAILED(hr);
+    //    if (SUCCEEDED(hr)) {
+    //        this->d3dMultithread->Enter();
+    //    }
+    //}
+    return hr;
+}
+
+HRESULT __stdcall MFDXGIDeviceManagerCustom::OpenDeviceHandle(HANDLE* phDevice) {
+    return mfDxgiDeviceManagerOrig->OpenDeviceHandle(phDevice);
+}
+
+HRESULT __stdcall MFDXGIDeviceManagerCustom::ResetDevice(IUnknown* pUnkDevice, UINT resetToken) {
+    return mfDxgiDeviceManagerOrig->ResetDevice(pUnkDevice, resetToken);
+}
+
+HRESULT __stdcall MFDXGIDeviceManagerCustom::TestDevice(HANDLE hDevice) {
+    return mfDxgiDeviceManagerOrig->TestDevice(hDevice);
+}
+
+HRESULT __stdcall MFDXGIDeviceManagerCustom::UnlockDevice(HANDLE hDevice, BOOL fSaveState) {
+    HRESULT hr = mfDxgiDeviceManagerOrig->UnlockDevice(hDevice, fSaveState);
+    //if (this->d3dMultithread) {
+    //    this->d3dMultithread->Leave();
+    //    this->d3dMultithread.Reset();
+    //}
+    ////LOG_DEBUG_D(L"UnlockDevice [th = ({}) | \"{}\"]", HH::GetThreadId(), HH::ThreadNameHelper::GetThreadName());
+    return hr;
+}
+
+
 namespace details {
     const uint32_t DxDeviceParams::DefaultD3D11CreateFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
     DxDeviceParams::DxDeviceParams()
         : d3d11CreateFlags(0)
-    {
-    }
+    {}
 
     DxDeviceParams::DxDeviceParams(uint32_t d3d11CreateFlags)
         : d3d11CreateFlags(d3d11CreateFlags)
-    {
-    }
-
-
+    {}
 
 
     DxDevice::DxDevice(const DxDeviceParams* params)
@@ -38,16 +90,16 @@ namespace details {
             // https://msdn.microsoft.com/en-us/library/windows/desktop/dn280346(v=vs.85).aspx
             // apps should call ID3D11DeviceContext::ClearState before calling Trim
             {
-                auto ctx = this->ctx.Get();
-                ctx->D3D()->ClearState();
+                auto dxCtx = this->ctxSafeObj.Lock();
+                dxCtx->D3D()->ClearState();
             }
 
             dxgiDev->Trim();
         }
     }
 
-    critical_section_guard<DxDeviceCtx>::Accessor DxDevice::GetContext() {
-        return this->ctx.Get();
+    DxDeviceCtxSafeObj_t::_Locked DxDevice::LockContext() const {
+        return this->ctxSafeObj.Lock();
     }
 
     D3D_FEATURE_LEVEL DxDevice::GetDeviceFeatureLevel() const {
@@ -119,12 +171,11 @@ namespace details {
 
         this->EnableD3DDeviceMultithreading();
         this->CreateD2DDevice();
+
         d2dCtx = this->CreateD2DDeviceContext();
-
         this->d2dCtxMt = D2DCtxMt(d2dCtx);
-
-        auto ctxAcc = this->ctx.Get();
-        *ctxAcc = DxDeviceCtx(d3dCtx, d2dCtx);
+        //this->ctxSafeObj = std::make_unique<DxDeviceCtx>(d2dCtx, d3dCtx, this->d3dMultithread);
+        this->ctxSafeObj = std::make_unique<DxDeviceCtx>(d2dCtx, d3dCtx);
     }
 
     void DxDevice::EnableD3DDeviceMultithreading() {
@@ -196,11 +247,52 @@ namespace details {
 
 
 
+    DxDeviceMF::DxDeviceMF(const DxDeviceParams* params)
+        : DxDevice(params)
+    {}
 
-    DxVideoDevice::DxVideoDevice()
-        : DxDevice(
-            &DxDeviceParams(
-                DxDeviceParams::DefaultD3D11CreateFlags | D3D11_CREATE_DEVICE_VIDEO_SUPPORT))
+    const IID IID_IMFDXGIDeviceManager__;
+    DEFINE_GUID(IID_IMFDXGIDeviceManager__, 0xEB533D5D, 0x2DB6, 0x40F8, 0x97, 0xA9, 0x49, 0x46, 0x92, 0x01, 0x4F, 0x07);
+
+    void DxDeviceMF::CreateMFDXGIDeviceManager() {
+        assert(this->mfDxgiDeviceManagerCustom == nullptr);
+        HRESULT hr = S_OK;
+
+        uint32_t resetToken = 0;
+        Microsoft::WRL::ComPtr<IMFDXGIDeviceManager> mfDxgiDeviceManager;
+        hr = MFCreateDXGIDeviceManager(&resetToken, mfDxgiDeviceManager.ReleaseAndGetAddressOf());
+        H::System::ThrowIfFailed(hr);
+
+        hr = mfDxgiDeviceManager->ResetDevice(this->GetD3DDevice(), resetToken);
+        H::System::ThrowIfFailed(hr);
+
+        hr = this->d3dDev->SetPrivateDataInterface(IID_IMFDXGIDeviceManager__, mfDxgiDeviceManager.Get());
+        H::System::ThrowIfFailed(hr);
+
+        this->mfDxgiDeviceManagerCustom = Microsoft::WRL::Make<MFDXGIDeviceManagerCustom>(mfDxgiDeviceManager);
+    }
+
+    Microsoft::WRL::ComPtr<IMFDXGIDeviceManager> DxDeviceMF::GetMFDXGIDeviceManager() {
+        return this->mfDxgiDeviceManagerCustom;
+    }
+
+
+
+    DxVideoDeviceMF::DxVideoDeviceMF()
+        : DxDeviceMF(&DxDeviceParams(DxDeviceParams::DefaultD3D11CreateFlags | D3D11_CREATE_DEVICE_VIDEO_SUPPORT))
+    {}
+
+
+
+    DxDeviceMFLock::DxDeviceMFLock(const std::unique_ptr<details::DxDeviceMF>& dxDeviceMf)
+        : mfDxgiDeviceManagerLock{ dxDeviceMf->GetMFDXGIDeviceManager() }
+        //: mfDxgiDeviceManagerLock{ nullptr }
     {
+        Microsoft::WRL::ComPtr<ID3D11Device> mfD3dDeviceTmp;
+        this->mfDxgiDeviceManagerLock.LockDevice(mfD3dDeviceTmp.GetAddressOf());
+    }
+
+    DxDeviceMFLock::~DxDeviceMFLock() {
+        this->mfDxgiDeviceManagerLock.UnlockDevice();
     }
 }

@@ -221,15 +221,14 @@ void SwapChainPanelOutput::Render(std::function<void()> renderHandler) {
 
 	//LOG_DEBUG_D("\n"
 	//	"dt [Vsync] = {}ms\n"
-	//	, std::chrono::duration_cast<HH::Chrono::milliseconds_f>(tp2 - tp1).count()
+	//	, HH::Chrono::milliseconds_f{ tp2 - tp1 }.count()
 	//);
-
 
 
 	auto tp3 = std::chrono::high_resolution_clock::now();
 	std::lock_guard lk{ mx };
 
-	auto dxDeviceLocked = this->dxDeviceSafeObj->Lock();
+	auto dxDev = this->dxDeviceSafeObj->Lock();
 
 	auto tp4 = std::chrono::high_resolution_clock::now();
 	
@@ -246,30 +245,33 @@ void SwapChainPanelOutput::Render(std::function<void()> renderHandler) {
 	this->EndRender();
 	
 	auto tp7 = std::chrono::high_resolution_clock::now();
-	//LOG_DEBUG_D("\n"
-	//	"dt [BeginRender] = {}ms\n"
-	//	"dt [Render] = {}ms\n"
-	//	"dt [EndRender] = {}ms\n"
-	//	"SwapChainRender iteration = {}ms\n"
-	//	, std::chrono::duration_cast<HH::Chrono::milliseconds_f>(tp5 - tp4).count()
-	//	, std::chrono::duration_cast<HH::Chrono::milliseconds_f>(tp6 - tp5).count()
-	//	, std::chrono::duration_cast<HH::Chrono::milliseconds_f>(tp7 - tp6).count()
-	//);
+	LOG_DEBUG_D("\n"
+		"dt [Vsync] = {}ms\n"
+		"dt [BeginRender] = {}ms\n"
+		"dt [Render] = {}ms\n"
+		"dt [EndRender] = {}ms\n"
+		"SwapChainRender iteration = {}ms\n"
+		, HH::Chrono::milliseconds_f{ tp2 - tp1 }.count()
+		, HH::Chrono::milliseconds_f{ tp5 - tp4 }.count()
+		, HH::Chrono::milliseconds_f{ tp6 - tp5 }.count()
+		, HH::Chrono::milliseconds_f{ tp7 - tp6 }.count()
+		, HH::Chrono::milliseconds_f{ tp7 - tp1 }.count()
+	);
 }
 
 void SwapChainPanelOutput::BeginRender() {
 	auto dxDev = this->dxDeviceSafeObj->Lock();
 
 	ID3D11RenderTargetView *const targets[1] = { this->GetD3DRtView() };
-	auto ctx = dxDev->GetContext();
+	auto dxCtx = dxDev->LockContext();
 
-	ctx->D3D()->OMSetRenderTargets(1, targets, nullptr);
+	dxCtx->D3D()->OMSetRenderTargets(1, targets, nullptr);
 	DirectX::XMVECTORF32 tmp = { 
         this->rtColor.x * this->rtColor.w,
 		this->rtColor.y * this->rtColor.w,
 		this->rtColor.z * this->rtColor.w,
 		this->rtColor.w };
-	ctx->D3D()->ClearRenderTargetView(this->GetD3DRtView(), tmp);
+	dxCtx->D3D()->ClearRenderTargetView(this->GetD3DRtView(), tmp);
 }
 
 void SwapChainPanelOutput::EndRender() {
@@ -279,7 +281,7 @@ void SwapChainPanelOutput::EndRender() {
 void SwapChainPanelOutput::Present() {
 	auto dxDev = this->dxDeviceSafeObj->Lock();
 	if (m_msaaRenderTarget) {
-		dxDev->GetContext()->D3D()->ResolveSubresource(backBuffer.Get(), 0, m_msaaRenderTarget.Get(), 0, SwapChainPanelOutput::BufferFmt);
+		dxDev->LockContext()->D3D()->ResolveSubresource(backBuffer.Get(), 0, m_msaaRenderTarget.Get(), 0, SwapChainPanelOutput::BufferFmt);
 	}
 
 	// The first argument instructs DXGI to block until VSync, putting the application
@@ -288,15 +290,15 @@ void SwapChainPanelOutput::Present() {
 	HRESULT hr = this->swapChain->Present(dxSettings->VSync, 0);
 
 	{
-		auto ctx = dxDev->GetContext();
+		auto dxCtx = dxDev->LockContext();
 
 		// Discard the contents of the render target.
 		// This is a valid operation only when the existing contents will be entirely
 		// overwritten. If dirty or scroll rects are used, this call should be modified.
-		ctx->D3D()->DiscardView1(this->d3dRenderTargetView.Get(), nullptr, 0);
+		dxCtx->D3D()->DiscardView1(this->d3dRenderTargetView.Get(), nullptr, 0);
 
 		if (m_msaaRenderTargetView) {
-			ctx->D3D()->DiscardView1(m_msaaRenderTargetView.Get(), nullptr, 0);
+			dxCtx->D3D()->DiscardView1(m_msaaRenderTargetView.Get(), nullptr, 0);
 		}
 	}
 
@@ -339,11 +341,11 @@ void SwapChainPanelOutput::CreateWindowSizeDependentResources() {
 	backBuffer.Reset();
 
 	{
-		auto ctx = dxDev->GetContext();
+		auto dxCtx = dxDev->LockContext();
 
-		ctx->D2D()->SetTarget(nullptr);
-		ctx->D3D()->OMSetRenderTargets(ARRAYSIZE(nullViews), nullViews, nullptr);
-		ctx->D3D()->Flush();
+		dxCtx->D2D()->SetTarget(nullptr);
+		dxCtx->D3D()->OMSetRenderTargets(ARRAYSIZE(nullViews), nullViews, nullptr);
+		dxCtx->D3D()->Flush();
 	}
 
 	this->UpdatePresentationParameters();
@@ -434,13 +436,13 @@ void SwapChainPanelOutput::CreateWindowSizeDependentResources() {
 
 	{
 		auto viewport = this->GetD3DViewport();
-		auto ctx = dxDev->GetContext();
+		auto dxCtx = dxDev->LockContext();
 
-		ctx->D3D()->RSSetViewports(1, &viewport);
+		dxCtx->D3D()->RSSetViewports(1, &viewport);
 
-		ctx->D2D()->SetTarget(this->d2dTargetBitmap.Get());
-		ctx->D2D()->SetDpi(this->logicalDpi, this->logicalDpi);
-		ctx->D2D()->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+		dxCtx->D2D()->SetTarget(this->d2dTargetBitmap.Get());
+		dxCtx->D2D()->SetDpi(this->logicalDpi, this->logicalDpi);
+		dxCtx->D2D()->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
 	}
 }
 
