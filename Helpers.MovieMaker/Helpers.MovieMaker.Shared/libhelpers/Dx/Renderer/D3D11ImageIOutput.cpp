@@ -94,13 +94,13 @@ void D3D11ImageIOutput::ResetRenderTarget(void* surface) {
 
 	{
 		auto viewport = this->GetD3DViewport();
-		auto ctx = dxDev->GetContext();
+		auto dxCtx = dxDev->LockContext();
 
-		ctx->D3D()->RSSetViewports(1, &viewport);
+		dxCtx->D3D()->RSSetViewports(1, &viewport);
 
-		ctx->D2D()->SetTarget(this->d2dTargetBitmap.Get());
-		ctx->D2D()->SetDpi(this->logicalDpi, this->logicalDpi);
-		ctx->D2D()->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+		dxCtx->D2D()->SetTarget(this->d2dTargetBitmap.Get());
+		dxCtx->D2D()->SetDpi(this->logicalDpi, this->logicalDpi);
+		dxCtx->D2D()->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
 	}
 }
 
@@ -112,20 +112,18 @@ bool D3D11ImageIOutput::BeginRender() {
 
 	ID3D11RenderTargetView* const targets[1] = { rtView };
 	auto dxDev = this->dxDeviceSafeObj->Lock();
-	auto ctx = dxDev->GetContext();
+	auto dxCtx = dxDev->LockContext();
 
-	ctx->D3D()->OMSetRenderTargets(1, targets, nullptr);
-
-	ctx->D3D()->ClearRenderTargetView(rtView, this->rtColor.m);
-
+	dxCtx->D3D()->OMSetRenderTargets(1, targets, nullptr);
+	dxCtx->D3D()->ClearRenderTargetView(rtView, this->rtColor.m);
 	return true;
 }
 
 void D3D11ImageIOutput::EndRender() {
 	{
 		auto dxDev = this->dxDeviceSafeObj->Lock();
-		auto ctx = dxDev->GetContext();
-		auto d3dCtx = ctx->D3D();
+		auto dxCtx = dxDev->LockContext();
+		auto d3dCtx = dxCtx->D3D();
 
 		d3dCtx->Flush(); // not renders on D3DImage without flush
 

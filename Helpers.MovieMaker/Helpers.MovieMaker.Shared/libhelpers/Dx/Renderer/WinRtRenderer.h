@@ -272,7 +272,10 @@ private:
     void StartRenderThread() {
         if (this->renderThreadState != RenderThreadState::Work) {
             this->renderThreadState = RenderThreadState::Work;
-            this->renderThread = std::thread([=]() { this->Render(); });
+            this->renderThread = std::thread([=]() {
+                LOG_THREAD(L"Video render thread");
+                this->Render();
+                });
         }
     }
 

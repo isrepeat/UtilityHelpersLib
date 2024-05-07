@@ -52,7 +52,7 @@ namespace DxLayerStackItems {
 // TODO: rewrite without 'friend' keyword workaround 
 class DxLayerStack {
 public:
-	DxLayerStack(DxDeviceCtxProvider* dxCtxProv, DxLayerStackResources* resources);
+	DxLayerStack(std::shared_ptr<DxDeviceCtxDynamic> dxCtxSafeObj, DxLayerStackResources* resources);
 	~DxLayerStack() = default;
 
 	NO_COPY_MOVE(DxLayerStack);
@@ -82,7 +82,7 @@ private:
 	D2D1_RECT_F GetCurrentRect();
 
 private:
-	DxDeviceCtxProvider* dxCtxProv;
+	std::shared_ptr<DxDeviceCtxDynamic> dxCtxSafeObj;
 	DxLayerStackResources* resources;
 
 	std::vector<D2D1_RECT_F> layerSizes;
