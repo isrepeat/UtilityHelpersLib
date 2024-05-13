@@ -30,8 +30,7 @@ namespace MEDIA_FOUNDATION_NS_ALIAS = MEDIA_FOUNDATION_NS;
 #endif
 
 #if (_MANAGED == 1) || (_M_CEE == 1)
-// COMPILE_FOR_DESKTOP also == 1
-#define COMPILE_FOR_CLR 1
+#define COMPILE_FOR_CLR 1 // COMPILE_FOR_DESKTOP here also == 1
 #else
 #if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 #define COMPILE_FOR_CX_or_WINRT 1
@@ -58,9 +57,9 @@ namespace WStorage = Windows::Storage;
 #endif
 
 
-/* ------------------------------------ */
-/*   Check external includes / nugets   */
-/* ------------------------------------ */
+//
+// Check external includes / nugets
+//
 #if !defined(__has_include)
 #pragma message("'__has_include' directive not found")
 #endif
@@ -76,3 +75,8 @@ namespace WStorage = Windows::Storage;
 #if __has_include("boost/asio.hpp")
 #define BOOST_SUPPORTED 1
 #endif
+
+//
+// Force include some hedaers at the top to avoid compile error
+//
+#include <Helpers/HWindows.h>
