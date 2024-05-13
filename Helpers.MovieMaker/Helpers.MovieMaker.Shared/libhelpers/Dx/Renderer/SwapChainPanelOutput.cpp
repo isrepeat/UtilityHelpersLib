@@ -245,18 +245,18 @@ void SwapChainPanelOutput::Render(std::function<void()> renderHandler) {
 	this->EndRender();
 	
 	auto tp7 = std::chrono::high_resolution_clock::now();
-	LOG_DEBUG_D("\n"
-		"dt [Vsync] = {}ms\n"
-		"dt [BeginRender] = {}ms\n"
-		"dt [Render] = {}ms\n"
-		"dt [EndRender] = {}ms\n"
-		"SwapChainRender iteration = {}ms\n"
-		, HH::Chrono::milliseconds_f{ tp2 - tp1 }.count()
-		, HH::Chrono::milliseconds_f{ tp5 - tp4 }.count()
-		, HH::Chrono::milliseconds_f{ tp6 - tp5 }.count()
-		, HH::Chrono::milliseconds_f{ tp7 - tp6 }.count()
-		, HH::Chrono::milliseconds_f{ tp7 - tp1 }.count()
-	);
+	//LOG_DEBUG_D("\n"
+	//	"dt [Vsync] = {}ms\n"
+	//	"dt [BeginRender] = {}ms\n"
+	//	"dt [Render] = {}ms\n"
+	//	"dt [EndRender] = {}ms\n"
+	//	"SwapChainRender iteration = {}ms\n"
+	//	, HH::Chrono::milliseconds_f{ tp2 - tp1 }.count()
+	//	, HH::Chrono::milliseconds_f{ tp5 - tp4 }.count()
+	//	, HH::Chrono::milliseconds_f{ tp6 - tp5 }.count()
+	//	, HH::Chrono::milliseconds_f{ tp7 - tp6 }.count()
+	//	, HH::Chrono::milliseconds_f{ tp7 - tp1 }.count()
+	//);
 }
 
 void SwapChainPanelOutput::BeginRender() {
