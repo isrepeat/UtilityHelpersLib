@@ -30,7 +30,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Gate.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Helpers.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Input.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Logger.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\MappedFilesCollection.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MFUser.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\MultithreadMutex.cpp" />
@@ -40,7 +39,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Socket.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\StdRedirection.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\String.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\System.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Exceptions.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\SystemDataProvider.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\SystemInfo.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Thread.cpp" />
@@ -52,6 +51,12 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxgiDeviceLock.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSharedTexture.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\EventObject.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingAssert.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingErrors.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingHresult.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingMultifile.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingThread.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingVerbose.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Semaphore.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Action.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AlignedAllocator.h" />
@@ -76,7 +81,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxHelpers.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSettings.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Event.hpp" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Exception.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\File.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\FilesCollection.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\FilesObserver.h" />
@@ -106,6 +110,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PackageProvider.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Passkey.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Span.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\System.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TypeSwitch.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Rational.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\RegistryManager.h" />
@@ -116,7 +121,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StdRedirection.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\String.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\String.hpp" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\System.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Exceptions.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SystemDataProvider.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SystemInfo.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TaskChain.h" />

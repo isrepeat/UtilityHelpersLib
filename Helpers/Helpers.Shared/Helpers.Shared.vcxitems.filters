@@ -84,9 +84,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Input.cpp">
       <Filter>_Sources</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Logger.cpp">
-      <Filter>_Sources</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\PackageProvider.cpp">
       <Filter>_Sources</Filter>
     </ClCompile>
@@ -102,7 +99,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\String.cpp">
       <Filter>_Sources</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\System.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Exceptions.cpp">
       <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\SystemInfo.cpp">
@@ -230,9 +227,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Event.hpp">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Exception.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\File.h">
       <Filter>_Headers</Filter>
     </ClInclude>
@@ -299,7 +293,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\String.hpp">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\System.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Exceptions.h">
       <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SystemDataProvider.h">
@@ -372,6 +366,27 @@
       <Filter>Dx</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Span.hpp">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\System.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingAssert.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingErrors.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingMultifile.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingThread.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingVerbose.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingHresult.h">
       <Filter>_Headers</Filter>
     </ClInclude>
   </ItemGroup>
