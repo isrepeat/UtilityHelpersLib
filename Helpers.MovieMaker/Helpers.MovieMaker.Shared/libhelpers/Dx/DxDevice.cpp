@@ -255,7 +255,10 @@ namespace details {
     DEFINE_GUID(IID_IMFDXGIDeviceManager__, 0xEB533D5D, 0x2DB6, 0x40F8, 0x97, 0xA9, 0x49, 0x46, 0x92, 0x01, 0x4F, 0x07);
 
     void DxDeviceMF::CreateMFDXGIDeviceManager() {
-        assert(this->mfDxgiDeviceManagerCustom == nullptr);
+        if (this->mfDxgiDeviceManagerCustom) {
+            LOG_WARNING_D("mfDxgiDeviceManagerCustom already initialized, ignore");
+            return;
+        }
         HRESULT hr = S_OK;
 
         uint32_t resetToken = 0;

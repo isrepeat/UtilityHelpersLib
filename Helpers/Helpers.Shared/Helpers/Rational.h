@@ -125,13 +125,13 @@ namespace HELPERS_NS {
 
         Rational(Units units)
             : num{ units.num }
-            , den{ units.den }
+            , den{ this->GetSafeDenumerator(units.den) }
             , rational{ this->GetRationalValue() }
         {}
 
         Rational(intmax_t num, intmax_t den, _Rep valueRep = 1)
             : num{ num }
-            , den{ den }
+            , den{ this->GetSafeDenumerator(den) }
             , rational{ this->GetRationalValue() }
             , valueRep{ valueRep }
         {}
@@ -139,7 +139,7 @@ namespace HELPERS_NS {
         template <typename _OtherRep, typename _OtherPeriod>
         Rational(intmax_t num, intmax_t den, const std::chrono::duration<_OtherRep, _OtherPeriod>& duration)
             : num{ num }
-            , den{ den }
+            , den{ this->GetSafeDenumerator(den) }
             , rational{ this->GetRationalValue() }
             , valueRep{ Rational<_OtherRep>{ _OtherPeriod::num, _OtherPeriod::den, duration.count() }.CastToRational<_Rep>(*this).Value() }
         {}
@@ -271,6 +271,15 @@ namespace HELPERS_NS {
         }
 
     private:
+        intmax_t GetSafeDenumerator(intmax_t denumerator) {
+            if (denumerator == 0) {
+                LOG_WARNING_D("Was attempt dividing by zero (denumerator == 0)");
+                Dbreak;
+                return 1;
+            }
+            return denumerator;
+        }
+
         double GetRationalValue() {
             if (den == 0) {
                 throw std::exception("Divide by zero");
