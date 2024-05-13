@@ -1,5 +1,7 @@
 #pragma once
 #include "common.h"
+#include "Macros.h"
+#include "Logger.h"
 #include <chrono>
 #include <ratio>
 
