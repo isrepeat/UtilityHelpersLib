@@ -22,4 +22,13 @@
 #endif
 
 
-//#pragma message(PREPROCESSOR_FILE_INCLUDED("Preprocessor.h"))
+//
+// Define global macros here
+//
+#ifndef _DEBUG
+// UWP projects do not define 'NDEBUG' macro so abort() can be called when use assert(...).
+// It is preferable to define this macro at top level, but as workaround it's norm for now
+#ifndef NDEBUG
+#define NDEBUG
+#endif
+#endif
