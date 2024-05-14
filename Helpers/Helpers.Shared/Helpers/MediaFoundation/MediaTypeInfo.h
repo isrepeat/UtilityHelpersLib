@@ -201,10 +201,10 @@ namespace {
 	{                                                                                                         \
 		HRESULT hr = GetAttributeFn(pMediaType, ATTRIBUTE_NAME, EXPAND_1_VA_ARGS_(refResult, __VA_ARGS__));   \
 		if (FAILED(hr)) {                                                                                     \
-			/*LOG_DEBUG_VERBOSE("- {}: ...", #ATTRIBUTE_NAME);*/                                                    \
+			/*LOG_DEBUG_D("- {}: ...", #ATTRIBUTE_NAME);*/                                                    \
 		}                                                                                                     \
 		else {                                                                                                \
-			LOG_DEBUG_VERBOSE("- {}: {}", #ATTRIBUTE_NAME, refResult);                                              \
+			LOG_DEBUG_D("- {}: {}", #ATTRIBUTE_NAME, refResult);                                              \
 		}                                                                                                     \
 	}
 
@@ -213,10 +213,10 @@ namespace {
 		auto resultTmp = GetAttributeFn(pMediaType, ATTRIBUTE_NAME, 12345);    \
 		if (resultTmp == 12345) {                                              \
 			resultTmp = 0;                                                     \
-			/*LOG_DEBUG_VERBOSE("- {}: ...", #ATTRIBUTE_NAME);*/                     \
+			/*LOG_DEBUG_D("- {}: ...", #ATTRIBUTE_NAME);*/                     \
 		}                                                                      \
 		else {                                                                 \
-			LOG_DEBUG_VERBOSE("- {}: {}", #ATTRIBUTE_NAME, resultTmp);               \
+			LOG_DEBUG_D("- {}: {}", #ATTRIBUTE_NAME, resultTmp);               \
 		}                                                                      \
 		refResult = decltype(refResult)(resultTmp);                            \
 	}
@@ -225,10 +225,10 @@ namespace {
 	{                                                                                  \
 		HRESULT hr = pMediaType->GetGUID(GUID_KEY, &refResultGUID);                    \
 		if (FAILED(hr)) {                                                              \
-			/*LOG_DEBUG_VERBOSE("- {}: ...", #GUID_KEY);*/                                   \
+			/*LOG_DEBUG_D("- {}: ...", #GUID_KEY);*/                                   \
 		}                                                                              \
 		else {                                                                         \
-			LOG_DEBUG_VERBOSE("- {}: {}", #GUID_KEY, MFGuidToString(refResultGUID));         \
+			LOG_DEBUG_D("- {}: {}", #GUID_KEY, MFGuidToString(refResultGUID));         \
 		}                                                                              \
 	}
 
@@ -237,10 +237,10 @@ namespace {
 		auto resultTmp = GetAttributeFn(pMediaType, ATTRIBUTE_NAME, 12345);                          \
 		if (resultTmp == 12345) {                                                                    \
 			resultTmp = 0;                                                                           \
-			/*LOG_DEBUG_VERBOSE("- {}: ...", #ATTRIBUTE_NAME);*/                                           \
+			/*LOG_DEBUG_D("- {}: ...", #ATTRIBUTE_NAME);*/                                           \
 		}                                                                                            \
 		else {                                                                                       \
-			LOG_DEBUG_VERBOSE("- {}: 0x{:08}", #ATTRIBUTE_NAME, resultTmp);                                \
+			LOG_DEBUG_D("- {}: 0x{:08}", #ATTRIBUTE_NAME, resultTmp);                                \
 		}                                                                                            \
 		result = decltype(result)(resultTmp);                                                        \
 	}
@@ -253,7 +253,7 @@ namespace {
 			/*LOG_DEBUG_D("- {}: ...", #ATTRIBUTE_NAME);*/                                              \
 		}                                                                                               \
 		else {                                                                                          \
-			LOG_DEBUG_VERBOSE("- {}: {}", #ATTRIBUTE_NAME, MagicEnum::ToString(decltype(result)(resultTmp))); \
+			LOG_DEBUG_D("- {}: {}", #ATTRIBUTE_NAME, MagicEnum::ToString(decltype(result)(resultTmp))); \
 		}                                                                                               \
 		result = decltype(result)(resultTmp);                                                           \
 	}
@@ -266,7 +266,7 @@ namespace MEDIA_FOUNDATION_NS {
 	namespace Helpers {
 		struct GeneralMediaTypeInfo {
 			GeneralMediaTypeInfo(IMFMediaType* pMediaType, const std::string& description = {}) {
-				LOG_DEBUG("GeneralMediaTypeInfo: {}", description);
+				LOG_DEBUG_D("GeneralMediaTypeInfo: {}", description);
 				GET_ATTRIBUTE_GUID(pMediaType, MF_MT_MAJOR_TYPE, majorType);
 				GET_ATTRIBUTE_GUID(pMediaType, MF_MT_SUBTYPE, subType);
 				GET_ATTRIBUTE(MFGetAttributeUINT32, pMediaType, MF_MT_ALL_SAMPLES_INDEPENDENT, allSamplesIndependent);
@@ -278,7 +278,7 @@ namespace MEDIA_FOUNDATION_NS {
 				//GET_ATTRIBUTE(..., pMediaType, MF_MT_AM_FORMAT_TYPE, ...);
 				//GET_ATTRIBUTE_BLOB(..., pMediaType, MF_MT_USER_DATA, ...);
 				//GET_ATTRIBUTE_BLOB(..., pMediaType, MF_MT_WRAPPED_TYPE, ...);
-				LOG_DEBUG_VERBOSE(" -------------------------------------------");
+				LOG_DEBUG_D(" -------------------------------------------");
 			}
 
 			GUID majorType;
@@ -294,7 +294,7 @@ namespace MEDIA_FOUNDATION_NS {
 			VideoMediaTypeInfo(IMFMediaType* pVideoType, const std::string& description = {}) 
 				: GeneralMediaTypeInfo(pVideoType, description)
 			{
-				LOG_DEBUG_VERBOSE("VideoMediaTypeInfo: {}", description);
+				LOG_DEBUG_D("VideoMediaTypeInfo: {}", description);
 				// VIDEO core data
 				READ_ATTRIBUTE_TO(_MFGetAttributeRatio, pVideoType, MF_MT_FRAME_SIZE, frameSize);
 				READ_ATTRIBUTE_TO(_MFGetAttributeRatio, pVideoType, MF_MT_FRAME_RATE, frameRate);
@@ -339,7 +339,7 @@ namespace MEDIA_FOUNDATION_NS {
 				GET_ATTRIBUTE(MFGetAttributeUINT32, pVideoType, MF_MT_VIDEO_PROFILE, videoProfile);
 				GET_ATTRIBUTE(MFGetAttributeUINT32, pVideoType, MF_MT_VIDEO_LEVEL, videoLevel);
 
-				LOG_DEBUG_VERBOSE("");
+				LOG_DEBUG_D("");
 			}
 
 			// VIDEO core data
@@ -398,7 +398,7 @@ namespace MEDIA_FOUNDATION_NS {
 			AudioMediaTypeInfo(IMFMediaType* pAudioType, const std::string& description = {})
 				: GeneralMediaTypeInfo(pAudioType, description)
 			{
-				LOG_DEBUG_VERBOSE("AudioMediaTypeInfo: {}", description);
+				LOG_DEBUG_D("AudioMediaTypeInfo: {}", description);
 				GET_ATTRIBUTE(MFGetAttributeUINT32, pAudioType, MF_MT_AUDIO_NUM_CHANNELS, numChannels);
 				GET_ATTRIBUTE(MFGetAttributeUINT32, pAudioType, MF_MT_AUDIO_SAMPLES_PER_SECOND, samplesPerSecond);
 				//GET_ATTRIBUTE(MFGetAttributeUINT32, pAudioType, MF_MT_AUDIO_FLOAT_SAMPLES_PER_SECOND, floatSamplesPerSecond);
@@ -417,7 +417,7 @@ namespace MEDIA_FOUNDATION_NS {
 				GET_ATTRIBUTE(MFGetAttributeUINT32, pAudioType, MF_MT_AAC_PAYLOAD_TYPE, aacPayloadType);
 				GET_ATTRIBUTE(MFGetAttributeUINT32, pAudioType, MF_MT_AAC_AUDIO_PROFILE_LEVEL_INDICATION, aacAudioProfileLevelIndication);
 				GET_ATTRIBUTE(MFGetAttributeUINT32, pAudioType, MF_MT_AUDIO_FLAC_MAX_BLOCK_SIZE, flacMaxBlockSize);
-				LOG_DEBUG_VERBOSE("");
+				LOG_DEBUG_D("");
 			}
 
 			UINT32 numChannels;
