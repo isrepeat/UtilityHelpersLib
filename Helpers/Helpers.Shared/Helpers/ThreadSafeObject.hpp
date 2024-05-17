@@ -38,10 +38,6 @@ namespace HELPERS_NS {
             return this->creator;
         }
 
-        int GetOwnerThreadId() const {
-            return this->ownerThreadId;
-        }
-
     private:
         std::unique_lock<MutexT> lk;
         const CreatorT<MutexT, ObjT, CustomLockableT>* creator;
@@ -65,10 +61,6 @@ namespace HELPERS_NS {
 
         const CreatorT<MutexT, ObjT, void>* GetCreator() const {
             return this->creator;
-        }
-
-        int GetOwnerThreadId() const {
-            return this->ownerThreadId;
         }
 
     private:
