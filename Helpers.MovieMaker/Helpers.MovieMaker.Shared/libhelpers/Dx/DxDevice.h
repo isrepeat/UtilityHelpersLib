@@ -135,6 +135,7 @@ namespace details {
 
 	private:
 		HH::Dx::MFDXGIDeviceManagerLock mfDxgiDeviceManagerLock;
+		const std::unique_ptr<details::DxDeviceMF>& dxDeviceMf;
 	};
 }
 

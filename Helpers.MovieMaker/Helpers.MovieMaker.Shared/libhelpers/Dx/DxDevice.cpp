@@ -290,12 +290,15 @@ namespace details {
     DxDeviceMFLock::DxDeviceMFLock(const std::unique_ptr<details::DxDeviceMF>& dxDeviceMf)
         : mfDxgiDeviceManagerLock{ dxDeviceMf->GetMFDXGIDeviceManager() }
         //: mfDxgiDeviceManagerLock{ nullptr }
+        , dxDeviceMf{ dxDeviceMf }
     {
         Microsoft::WRL::ComPtr<ID3D11Device> mfD3dDeviceTmp;
         this->mfDxgiDeviceManagerLock.LockDevice(mfD3dDeviceTmp.GetAddressOf());
+        //this->dxDeviceMf->GetD3DMultithreadCPtr()->Enter();
     }
 
     DxDeviceMFLock::~DxDeviceMFLock() {
+        //this->dxDeviceMf->GetD3DMultithreadCPtr()->Leave();
         this->mfDxgiDeviceManagerLock.UnlockDevice();
     }
 }

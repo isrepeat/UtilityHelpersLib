@@ -22,11 +22,13 @@ namespace HELPERS_NS {
         static constexpr std::string_view templateNotes = "Specialized for <CreatorT<MutexT, ObjT, CustomLockableT>";
         
         _Acquires_lock_(this->lk) // suppress warning - "C26115: Falling release lock 'mx'"
-        LockedObjBase(MutexT& mx, const ObjT& obj, const CreatorT<MutexT, ObjT, CustomLockableT>* creator)
+        LockedObjBase(MutexT& mx, const ObjT& obj, const CreatorT<MutexT, ObjT, CustomLockableT>* creator, int& ownerThreadId)
             : lk{ mx }
             , creator{ creator }
             , customLockableObj{ obj }
-        {}
+        {
+            ownerThreadId = ::GetCurrentThreadId();
+        }
 
         _Releases_lock_(this->lk)
         ~LockedObjBase() {
@@ -47,10 +49,15 @@ namespace HELPERS_NS {
     struct LockedObjBase<CreatorT<MutexT, ObjT, void>>
     {
         static constexpr std::string_view templateNotes = "Specialized for <CreatorT<MutexT, ObjT, void>";
-        LockedObjBase(MutexT& mx, const ObjT& /*obj*/, const CreatorT<MutexT, ObjT, void>* creator)
+        LockedObjBase(MutexT& mx, const ObjT& /*obj*/, const CreatorT<MutexT, ObjT, void>* creator, int& ownerThreadId)
             : lk{ mx }
             , creator{ creator }
-        {}
+        {
+            ownerThreadId = ::GetCurrentThreadId();
+        }
+
+        ~LockedObjBase() {
+        }
 
         const CreatorT<MutexT, ObjT, void>* GetCreator() const {
             return this->creator;
@@ -81,8 +88,9 @@ namespace HELPERS_NS {
         LockedObj(
             MutexT& mx,
             const ObjT& obj,
-            const CreatorT<MutexT, ObjT, CustomLockableT>* creator)
-            : _MyBase(mx, obj, creator)
+            const CreatorT<MutexT, ObjT, CustomLockableT>* creator,
+            int& ownerThreadId)
+            : _MyBase(mx, obj, creator, ownerThreadId)
             , obj{ const_cast<ObjT&>(obj) } // [by design]
         {}
 
@@ -111,8 +119,9 @@ namespace HELPERS_NS {
         LockedObj(
             MutexT& mx,
             const std::unique_ptr<ObjT, Args...>& obj,
-            const CreatorT<MutexT, std::unique_ptr<ObjT, Args...>, CustomLockableT>* creator)
-            : _MyBase(mx, obj, creator)
+            const CreatorT<MutexT, std::unique_ptr<ObjT, Args...>, CustomLockableT>* creator,
+            int& ownerThreadId)
+            : _MyBase(mx, obj, creator, ownerThreadId)
             , obj{ const_cast<std::unique_ptr<ObjT, Args...>&>(obj) } // [by design]
         {}
 
@@ -166,11 +175,16 @@ namespace HELPERS_NS {
         }
 
         _Locked Lock() const {
-            return _Locked{ this->mx, this->obj, this };
+            return _Locked{ this->mx, this->obj, this, this->ownerThreadId };
+        }
+
+        std::unique_ptr<_Locked> LockUniq() const {
+            return std::make_unique<_Locked>(this->mx, this->obj, this, this->ownerThreadId);
         }
 
     private:
         mutable MutexT mx;
+        mutable int ownerThreadId = -1;
         ObjT obj;
     };
 
@@ -207,11 +221,16 @@ namespace HELPERS_NS {
         }
 
         _Locked Lock() const {
-            return _Locked{ this->mx, this->obj, this };
+            return _Locked{ this->mx, this->obj, this, this->ownerThreadId };
+        }
+
+        std::unique_ptr<_Locked> LockUniq() const {
+            return std::make_unique<_Locked>(this->mx, this->obj, this, this->ownerThreadId);
         }
 
     private:
         mutable MutexT mx;
+        mutable int ownerThreadId = -1;
         std::unique_ptr<ObjT> obj;
     };
 
