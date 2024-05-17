@@ -1,74 +1,87 @@
 #pragma once
 #include "common.h"
+#include "FunctionTraits.hpp"
 #include <functional>
 #include <utility>
 #include <vector>
 
 
 namespace HELPERS_NS {
-	class Signal { // Functor
-	public:
-		enum Type {
-			Multi,
-			Once,
-		};
+    enum class SignalType {
+        Multi,
+        Once,
+    };
 
-		Signal(Type type = Type::Multi) 
-			: type{ type } 
-		{
-		}
-		Signal(std::function<void()> handler, Type type = Type::Multi) 
-			: type{ type }
-		{
-			handlers.push_back(handler);
-		}
+    namespace details {
+        template <SignalType _SignalType, typename _Fn>
+        class SignalBase {
+        };
 
-		// [Not thread safe]
-		Signal& Add(std::function<void()> handler) {
-			handlers.push_back(handler);
-			return *this;
-		}
 
-		Signal& AddFinish(std::function<void()> finishHandler) {
-			finishHandlers.push_back(finishHandler);
-			return *this;
-		}
+        template <SignalType _SignalType, typename _Ret, typename... _Args>
+        class SignalBase<_SignalType, _Ret(_Args...)> {
+        public:
+            SignalBase() {}
+            SignalBase(std::function<_Ret(_Args...)> handler) {
+                handlers.push_back(handler);
+            }
 
-		void Clear() {
-			finishHandlers.clear();
-			handlers.clear();
-		}
+            // [Not thread safe]
+            SignalBase& Add(std::function<_Ret(_Args...)> handler) {
+                handlers.push_back(handler);
+                return *this;
+            }
 
-		bool IsTriggeredAtLeastOnce() const {
-			return triggerCounter;
-		}
+            SignalBase& AddFinish(std::function<_Ret(_Args...)> finishHandler) {
+                finishHandlers.push_back(finishHandler);
+                return *this;
+            }
 
-		// Qualify as const to use in lambda captures by value
-		void operator() () const {
-			for (auto& handler : handlers) {
-				if (handler) {
-					handler();
-				}
-			}
-			for (auto& finishHandler : finishHandlers) {
-				if (finishHandler) {
-					finishHandler();
-				}
-			}
+            void Clear() {
+                finishHandlers.clear();
+                handlers.clear();
+            }
 
-			triggerCounter++;
+            //bool IsTriggeredAtLeastOnce() const {
+            //    return triggerCounter;
+            //}
 
-			if (type == Type::Once && (handlers.size() || finishHandlers.size())) {
-				finishHandlers.clear();
-				handlers.clear();
-			}
-		}
+            // Qualify as const to use in lambda captures by value
+            _Ret operator() (_Args... args) const { // NOTE: _Args must be trivial copyable
+                for (auto& handler : handlers) {
+                    if (handler) {
+                        handler(args...);
+                    }
+                }
+                for (auto& finishHandler : finishHandlers) {
+                    if (finishHandler) {
+                        finishHandler(args...);
+                    }
+                }
 
-	private:
-		Type type;
-		mutable std::atomic<int> triggerCounter = 0; // default copy Ctor deleted for std::atomic
-		mutable std::vector<std::function<void()>> handlers;
-		mutable std::vector<std::function<void()>> finishHandlers;
-		//std::mutex mx; // We cannot use mutex as mebmer because its copy constructor removed
-	};
+                //triggerCounter++;
+
+                if (_SignalType == SignalType::Once && (this->handlers.size() || this->finishHandlers.size())) {
+                    this->finishHandlers.clear();
+                    this->handlers.clear();
+                }
+            }
+
+            operator bool() const {
+                return this->handlers.size() || this->finishHandlers.size();
+            }
+
+        private:
+            //std::mutex mx; // We cannot use mutex as mebmer because its copy constructor removed
+            //mutable std::atomic<int> triggerCounter = 0; // default copy Ctor deleted for std::atomic
+            mutable std::vector<std::function<_Ret(_Args...)>> handlers;
+            mutable std::vector<std::function<_Ret(_Args...)>> finishHandlers;
+        };
+    }
+
+    template <typename _Fn, SignalType _SignalType = SignalType::Multi>
+    using Signal = details::SignalBase<_SignalType, _Fn>;
+
+    template <typename _Fn>
+    using SignalOnce = details::SignalBase<SignalType::Once, _Fn>;
 }
