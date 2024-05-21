@@ -201,6 +201,61 @@ using namespace std::chrono_literals;
 using namespace HELPERS_NS::ChronoLiterals;
 
 
+#if SPDLOG_SUPPORT
+// TODO: Add smth like TimeConverter template class to be able sprsizlize this converter for logger. 
+//       Developer may specialize it for log duration to other units. (Also need handle "ms" string)
+
+//
+// For 'DurationBase'
+//
+template<typename _Rep, typename _Period>
+struct fmt::formatter<HELPERS_NS::Chrono::DurationBase<_Rep, _Period>, char> {
+	constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+		return ctx.end();
+	}
+	auto format(const HELPERS_NS::Chrono::DurationBase<_Rep, _Period>& duration, format_context& ctx) -> decltype(ctx.out()) {
+		return fmt::format_to(ctx.out(), "{}ms", HELPERS_NS::Chrono::milliseconds_f{ duration }.count());
+	}
+};
+
+template<typename _Rep, typename _Period>
+struct fmt::formatter<HELPERS_NS::Chrono::DurationBase<_Rep, _Period>, wchar_t> {
+	constexpr auto parse(wformat_parse_context& ctx) -> decltype(ctx.begin()) {
+		return ctx.end();
+	}
+	auto format(const HELPERS_NS::Chrono::DurationBase<_Rep, _Period>& duration, wformat_context& ctx) -> decltype(ctx.out()) {
+		return fmt::format_to(ctx.out(), L"{}ms", HELPERS_NS::Chrono::milliseconds_f{ duration }.count());
+	}
+};
+
+
+//
+// For 'std::chrono::duration'
+//
+template<typename _Rep, typename _Period>
+struct fmt::formatter<std::chrono::duration<_Rep, _Period>, char> {
+	constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+		return ctx.end();
+	}
+	auto format(const std::chrono::duration<_Rep, _Period>& duration, format_context& ctx) -> decltype(ctx.out()) {
+		return fmt::format_to(ctx.out(), "{}ms", HELPERS_NS::Chrono::milliseconds_f{ duration }.count());
+	}
+};
+
+template<typename _Rep, typename _Period>
+struct fmt::formatter<std::chrono::duration<_Rep, _Period>, wchar_t> {
+	constexpr auto parse(wformat_parse_context& ctx) -> decltype(ctx.begin()) {
+		return ctx.end();
+	}
+	auto format(const std::chrono::duration<_Rep, _Period>& duration, wformat_context& ctx) -> decltype(ctx.out()) {
+		return fmt::format_to(ctx.out(), L"{}ms", HELPERS_NS::Chrono::milliseconds_f{ duration }.count());
+	}
+};
+#endif
+
+
+
+
 
 #if _DEBUG
 // https://stackoverflow.com/questions/1597007/creating-c-macro-with-and-line-token-concatenation-with-positioning-macr
