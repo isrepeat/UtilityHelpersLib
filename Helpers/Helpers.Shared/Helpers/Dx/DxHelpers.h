@@ -3,7 +3,9 @@
 #include <Helpers/Rational.h>
 #include <vector>
 #include <string>
+#include <d3d11.h>
 #include <dxgi.h>
+#include <cmath>
 #include <wrl.h>
 
 namespace HELPERS_NS {
@@ -83,5 +85,14 @@ namespace HELPERS_NS {
 
         void LogDeviceInfo();
         HELPERS_NS::Rational<double> GetRefreshRateForDXGIOutput(Microsoft::WRL::ComPtr<IDXGIOutput> dxgiOutput);
+
+
+        // Converts a length in device-independent pixels (DIPs) to a length in physical pixels.
+        float ConvertDipsToPixels(float dips, float dpi);
+
+#if defined(_DEBUG)
+        // Check for SDK Layer support.
+        bool SdkLayersAvailable();
+#endif
     }
 }

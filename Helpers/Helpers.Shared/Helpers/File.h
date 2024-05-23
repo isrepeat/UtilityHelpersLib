@@ -2,14 +2,23 @@
 #include "common.h"
 #include "HWindows.h"
 #include "Logger.h"
+
 #include <vector>
+#if COMPILE_FOR_DESKTOP
 #include <atomic>
 #include <span>
+#endif
 
+#if COMPILE_FOR_WINRT
+#include <ppltasks.h>	// For create_task
+#endif
+
+
+namespace HELPERS_NS {
+#if COMPILE_FOR_DESKTOP
 #define READ_FILE_BUFFER_SIZE_DEFAULT 1024
 #define READ_FILE_BUFFER_SIZE_MAX (10*1024*1024) // 10 mb
 
-namespace HELPERS_NS {
     inline BOOL CloseHandleSafe(HANDLE h) {
         return h && h != INVALID_HANDLE_VALUE ? CloseHandle(h) : TRUE;
     }
@@ -188,4 +197,28 @@ namespace HELPERS_NS {
 
         return status;
     }
+#endif
+
+#if COMPILE_FOR_WINRT
+    // Function that reads from a binary file asynchronously.
+    inline Concurrency::task<std::vector<BYTE>> ReadDataAsync(const std::wstring& filename) {
+        using namespace Windows::Storage;
+        using namespace Concurrency;
+
+        auto folder = Windows::ApplicationModel::Package::Current->InstalledLocation;
+
+        return create_task(folder->GetFileAsync(Platform::StringReference(filename.c_str())))
+            .then([](StorageFile^ file)
+                {
+                    return FileIO::ReadBufferAsync(file);
+                })
+            .then([](Streams::IBuffer^ fileBuffer) -> std::vector<BYTE>
+                {
+                    std::vector<BYTE> returnBuffer;
+                    returnBuffer.resize(fileBuffer->Length);
+                    Streams::DataReader::FromBuffer(fileBuffer)->ReadBytes(Platform::ArrayReference<BYTE>(returnBuffer.data(), fileBuffer->Length));
+                    return returnBuffer;
+                });
+    }
+#endif
 }
