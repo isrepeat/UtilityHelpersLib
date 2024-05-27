@@ -4,7 +4,7 @@
 #include "Logger.h"
 
 #include <vector>
-#if COMPILE_FOR_DESKTOP
+#if !COMPILE_FOR_WINRT
 #include <atomic>
 #include <span>
 #endif
@@ -15,7 +15,7 @@
 
 
 namespace HELPERS_NS {
-#if COMPILE_FOR_DESKTOP
+#if !COMPILE_FOR_WINRT
 #define READ_FILE_BUFFER_SIZE_DEFAULT 1024
 #define READ_FILE_BUFFER_SIZE_MAX (10*1024*1024) // 10 mb
 
@@ -201,24 +201,37 @@ namespace HELPERS_NS {
 
 #if COMPILE_FOR_WINRT
     // Function that reads from a binary file asynchronously.
-    inline Concurrency::task<std::vector<BYTE>> ReadDataAsync(const std::wstring& filename) {
-        using namespace Windows::Storage;
-        using namespace Concurrency;
+    inline Concurrency::task<std::vector<BYTE>> ReadDataAsync(const std::filesystem::path& filepath) {
+        auto installedFolder = Windows::ApplicationModel::Package::Current->InstalledLocation;
+        std::filesystem::path installedLocation = installedFolder->Path->Data();
 
-        auto folder = Windows::ApplicationModel::Package::Current->InstalledLocation;
+        LOG_ASSERT(std::filesystem::exists(installedLocation / filepath), "File not exist");
+        
+        auto filepathParentDirs = filepath;
+        filepathParentDirs._Remove_filename_and_separator();
+        
+        auto taskGetFolder = Concurrency::task_from_result(installedFolder);
 
-        return create_task(folder->GetFileAsync(Platform::StringReference(filename.c_str())))
-            .then([](StorageFile^ file)
-                {
-                    return FileIO::ReadBufferAsync(file);
+        for (auto& pathItem : filepathParentDirs) {
+            taskGetFolder = taskGetFolder.then([pathItem](Windows::Storage::StorageFolder^ folder) {
+                std::filesystem::path folderPath = folder->Path->Data();
+                return Concurrency::create_task(folder->GetFolderAsync(Platform::StringReference(pathItem.wstring().c_str())));
+                });
+        }
+
+        return taskGetFolder.then([filepath](Windows::Storage::StorageFolder^ folder) {
+            std::filesystem::path folderPath = folder->Path->Data();
+            return Concurrency::create_task(folder->GetFileAsync(Platform::StringReference(filepath.filename().wstring().c_str())));
+            })
+            .then([](Windows::Storage::StorageFile^ file) {
+                return Windows::Storage::FileIO::ReadBufferAsync(file);
                 })
-            .then([](Streams::IBuffer^ fileBuffer) -> std::vector<BYTE>
-                {
+                .then([](Windows::Storage::Streams::IBuffer^ fileBuffer) -> std::vector<BYTE> {
                     std::vector<BYTE> returnBuffer;
                     returnBuffer.resize(fileBuffer->Length);
-                    Streams::DataReader::FromBuffer(fileBuffer)->ReadBytes(Platform::ArrayReference<BYTE>(returnBuffer.data(), fileBuffer->Length));
+                    Windows::Storage::Streams::DataReader::FromBuffer(fileBuffer)->ReadBytes(Platform::ArrayReference<BYTE>(returnBuffer.data(), fileBuffer->Length));
                     return returnBuffer;
-                });
+                    });
     }
 #endif
 }
