@@ -31,6 +31,9 @@
     <Filter Include="Dx">
       <UniqueIdentifier>{7b934efc-d218-41b0-958f-42602b5fa9fc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Com">
+      <UniqueIdentifier>{25bf8ad9-f450-42a3-96be-5db7ca952699}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Gate.cpp">
@@ -130,6 +133,18 @@
       <Filter>Dx</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\SwapChainPanel.cpp">
+      <Filter>Dx</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxDevice.cpp">
+      <Filter>Dx</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxDeviceCtx.cpp">
+      <Filter>Dx</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxDeviceMt.cpp">
+      <Filter>Dx</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\MFDXGIManagerCustom.cpp">
       <Filter>Dx</Filter>
     </ClCompile>
   </ItemGroup>
@@ -400,6 +415,27 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxLibs.h">
       <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxDevice.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxDeviceCtx.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxDeviceMt.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\MFDXGIManagerCustom.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\IUnknownValue.h">
+      <Filter>Com</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\UnknownValue.h">
+      <Filter>Com</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\ComMutex.h">
+      <Filter>Com</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

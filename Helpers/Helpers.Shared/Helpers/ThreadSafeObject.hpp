@@ -153,6 +153,9 @@ namespace HELPERS_NS {
             : obj{}
         {}
 
+        ~ThreadSafeObject() {
+        }
+
         template <typename... Args>
         ThreadSafeObject(Args&&... args)
             : obj{ std::forward<Args>(args)... }
@@ -198,6 +201,9 @@ namespace HELPERS_NS {
         ThreadSafeObject()
             : obj{ std::make_unique<ObjT>() }
         {}
+
+        ~ThreadSafeObject() {
+        }
 
         template <typename... Args>
         ThreadSafeObject(Args&&... args)
