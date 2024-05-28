@@ -5,6 +5,7 @@
 #include <Helpers/PackageProvider.h> // need link with Helpers.lib
 #include <Helpers/TokenSingleton.hpp>
 #include <Helpers/Macros.h>
+#include <Helpers/Helpers.h>
 #include <ComAPI/ComAPI.h>
 #include <set>
 
@@ -66,7 +67,8 @@ namespace LOGGER_NS {
 
             if (prefixCallback) {
                 std::wstring prefix = std::wstring(padinfo_.width_, ' ') + prefixCallback();
-                dest.append(prefix.data(), prefix.data() + prefix.size());
+                auto prefixUtf8 = HELPERS_NS::WStrToStr(prefix, CP_UTF8);
+                dest.append(prefixUtf8.data(), prefixUtf8.data() + prefixUtf8.size());
             }
             if (postfixCallback) {
                 postfixCallback(std::string{ logMsg.payload.begin(), logMsg.payload.end() });
