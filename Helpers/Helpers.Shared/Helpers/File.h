@@ -2,14 +2,23 @@
 #include "common.h"
 #include "HWindows.h"
 #include "Logger.h"
+
 #include <vector>
+#if !COMPILE_FOR_WINRT
 #include <atomic>
 #include <span>
+#endif
 
+#if COMPILE_FOR_WINRT
+#include <ppltasks.h>	// For create_task
+#endif
+
+
+namespace HELPERS_NS {
+#if !COMPILE_FOR_WINRT
 #define READ_FILE_BUFFER_SIZE_DEFAULT 1024
 #define READ_FILE_BUFFER_SIZE_MAX (10*1024*1024) // 10 mb
 
-namespace HELPERS_NS {
     inline BOOL CloseHandleSafe(HANDLE h) {
         return h && h != INVALID_HANDLE_VALUE ? CloseHandle(h) : TRUE;
     }
@@ -188,4 +197,41 @@ namespace HELPERS_NS {
 
         return status;
     }
+#endif
+
+#if COMPILE_FOR_WINRT
+    // Function that reads from a binary file asynchronously.
+    inline Concurrency::task<std::vector<BYTE>> ReadDataAsync(const std::filesystem::path& filepath) {
+        auto installedFolder = Windows::ApplicationModel::Package::Current->InstalledLocation;
+        std::filesystem::path installedLocation = installedFolder->Path->Data();
+
+        LOG_ASSERT(std::filesystem::exists(installedLocation / filepath), "File not exist");
+        
+        auto filepathParentDirs = filepath;
+        filepathParentDirs._Remove_filename_and_separator();
+        
+        auto taskGetFolder = Concurrency::task_from_result(installedFolder);
+
+        for (auto& pathItem : filepathParentDirs) {
+            taskGetFolder = taskGetFolder.then([pathItem](Windows::Storage::StorageFolder^ folder) {
+                std::filesystem::path folderPath = folder->Path->Data();
+                return Concurrency::create_task(folder->GetFolderAsync(Platform::StringReference(pathItem.wstring().c_str())));
+                });
+        }
+
+        return taskGetFolder.then([filepath](Windows::Storage::StorageFolder^ folder) {
+            std::filesystem::path folderPath = folder->Path->Data();
+            return Concurrency::create_task(folder->GetFileAsync(Platform::StringReference(filepath.filename().wstring().c_str())));
+            })
+            .then([](Windows::Storage::StorageFile^ file) {
+                return Windows::Storage::FileIO::ReadBufferAsync(file);
+                })
+                .then([](Windows::Storage::Streams::IBuffer^ fileBuffer) -> std::vector<BYTE> {
+                    std::vector<BYTE> returnBuffer;
+                    returnBuffer.resize(fileBuffer->Length);
+                    Windows::Storage::Streams::DataReader::FromBuffer(fileBuffer)->ReadBytes(Platform::ArrayReference<BYTE>(returnBuffer.data(), fileBuffer->Length));
+                    return returnBuffer;
+                    });
+    }
+#endif
 }

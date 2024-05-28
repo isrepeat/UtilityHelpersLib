@@ -2,16 +2,22 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="DxSettings.cpp">
+    <ClCompile Include="Dx\DxSettings.cpp">
+      <Filter>Dx</Filter>
+    </ClCompile>
+    <ClCompile Include="Dx\SwapChainPanel.cpp">
       <Filter>Dx</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="DxSettings.h">
+    <ClInclude Include="Delegates.h" />
+    <ClInclude Include="Dx\DxSettings.h">
       <Filter>Dx</Filter>
     </ClInclude>
-    <ClInclude Include="Delegates.h" />
+    <ClInclude Include="Dx\SwapChainPanel.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Dx">
