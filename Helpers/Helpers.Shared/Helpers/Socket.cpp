@@ -1,7 +1,8 @@
 #pragma once
+#include "BoostAsioSafe.h" // must be first to have no errors with boost/asio and winsock
+
 #include "Socket.h"
 #ifdef BOOST_SUPPORTED
-#include <boost/asio.hpp>
 #include "Logger.h"
 
 using namespace boost;

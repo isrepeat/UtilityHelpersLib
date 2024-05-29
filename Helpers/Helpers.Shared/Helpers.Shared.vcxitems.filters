@@ -437,6 +437,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\ComMutex.h">
       <Filter>Com</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\BoostAsioSafe.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\BoostIsSupported.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />

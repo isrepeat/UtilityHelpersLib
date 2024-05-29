@@ -1,7 +1,7 @@
 #pragma once
 #include "common.h"
 #if SPDLOG_SUPPORT
-#include <Spdlog/LogHelpers.h>"
+#include <Spdlog/LogHelpers.h>
 #include "Thread.h"
 #else
 #define DISABLE_THREAD_LOGGING

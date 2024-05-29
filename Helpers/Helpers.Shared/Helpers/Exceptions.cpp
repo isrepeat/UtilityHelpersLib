@@ -4,6 +4,9 @@
 #include <CrashHandling/CrashHandling.h>
 #endif
 
+#include "Helpers.h"
+#include "Logger.h"
+
 
 namespace HELPERS_NS {
     namespace System {
@@ -15,7 +18,9 @@ namespace HELPERS_NS {
             , errorMessage{message}
             , errorCode{hr}
         {
+#ifdef CRASH_HANDLING_NUGET
             LOG_ERROR_D(L"Com exception = [{:#08x}] {}", static_cast<unsigned int>(hr), message);
+#endif
         }
 
         const std::shared_ptr<CrashHandling::Backtrace>& ComException::GetBacktrace() const throw(NugetNotFoundException) {
