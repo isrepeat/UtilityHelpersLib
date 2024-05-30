@@ -37,6 +37,8 @@ namespace HELPERS_NS {
                 beginWriteHandler(outFile);
             }
             outFile.write(fileData.data(), fileData.size());
+
+            return true;
         }
 
         inline void PrependToFile(const std::filesystem::path& filePath, const char* data, size_t dataSize) {

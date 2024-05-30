@@ -72,9 +72,7 @@ namespace WStorage = Windows::Storage;
 #define SPDLOG_SUPPORT 1
 #endif
 
-#if __has_include("boost/asio.hpp")
-#define BOOST_SUPPORTED 1
-#endif
+#include <Helpers/BoostIsSupported.h>
 
 //
 // Force include some hedaers at the top to avoid compile error

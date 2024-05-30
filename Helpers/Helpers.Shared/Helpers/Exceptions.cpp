@@ -4,6 +4,9 @@
 #include <CrashHandling/CrashHandling.h>
 #endif
 
+#include "Helpers.h"
+#include "Logger.h"
+
 
 namespace HELPERS_NS {
     namespace System {
