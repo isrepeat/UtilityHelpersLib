@@ -444,73 +444,73 @@ namespace LOGGER_NS {
         }
         return GetInstance().standardLoggersList[id].extendLogger;
     }
-}
 
 #if USE_DYNAMIC_SINK
-void TryDeleteFile(const std::filesystem::path& filePath) {
-    try {
-        std::filesystem::remove(filePath);
-    }
-    catch (...) {
-        // Ignore
-    }
-}
+	void TryDeleteFile(const std::filesystem::path& filePath) {
+		try {
+			std::filesystem::remove(filePath);
+		}
+		catch (...) {
+			// Ignore
+		}
+	}
 
-bool TryRenameFile(const std::filesystem::path& filePath, const std::filesystem::path& newName) {
-    try {
-        std::filesystem::rename(filePath, std::filesystem::path(filePath).remove_filename() / newName);
-        return true;
-    }
-    catch (...) {
-        return false;
-    }
-}
+	bool TryRenameFile(const std::filesystem::path& filePath, const std::filesystem::path& newName) {
+		try {
+			std::filesystem::rename(filePath, std::filesystem::path(filePath).remove_filename() / newName);
+			return true;
+		}
+		catch (...) {
+			return false;
+		}
+	}
 
-void DefaultLoggers::CheckLogFileSize(StandardLoggers& loggers) {
-    auto& _this = GetInstance();
-    auto lk = _this.logSizeCheckSem.LockScoped();
-    auto logLk = loggers.pauseLoggingEvent->ResetScoped();
+	void DefaultLoggers::CheckLogFileSize(StandardLoggers& loggers) {
+		auto& _this = GetInstance();
+		auto lk = _this.logSizeCheckSem.LockScoped();
+		auto logLk = loggers.pauseLoggingEvent->ResetScoped();
 
-    std::filesystem::path path(loggers.fileSink->GetFilename());
-    auto fileSize = std::filesystem::file_size(path);
-    if (fileSize > maxSizeLogFile || !std::filesystem::exists(path)) {
-        std::initializer_list sinks{
-            loggers.fileSink.get(), loggers.fileSinkRaw.get(), loggers.fileSinkTime.get(),
-            loggers.fileSinkFunc.get(), loggers.fileSinkExtend.get() };
+		std::filesystem::path path(loggers.fileSink->GetFilename());
+		auto fileSize = std::filesystem::file_size(path);
+		if (fileSize > maxSizeLogFile || !std::filesystem::exists(path)) {
+			std::initializer_list sinks{
+				loggers.fileSink.get(), loggers.fileSinkRaw.get(), loggers.fileSinkTime.get(),
+				loggers.fileSinkFunc.get(), loggers.fileSinkExtend.get() };
 
-        for (auto& sink : sinks) {
-            sink->SwitchFile();
-        }
+			for (auto& sink : sinks) {
+				sink->SwitchFile();
+			}
 
-        // Rename old file and copy last `maxSizeLogFile / 2` bytes from it to new file
-        std::filesystem::path tmpName(path.filename().wstring() + L".tmp");
-        if (TryRenameFile(path, tmpName)) { // If this succeeds, we are the last process to switch to new file
-            auto tmpPath = std::filesystem::path(path).remove_filename() / tmpName;
-            auto truncatedBytes = fileSize - maxSizeLogFile / 2;
+			// Rename old file and copy last `maxSizeLogFile / 2` bytes from it to new file
+			std::filesystem::path tmpName(path.filename().wstring() + L".tmp");
+			if (TryRenameFile(path, tmpName)) { // If this succeeds, we are the last process to switch to new file
+				auto tmpPath = std::filesystem::path(path).remove_filename() / tmpName;
+				auto truncatedBytes = fileSize - maxSizeLogFile / 2;
 
-            std::ifstream oldFile(tmpPath, std::ios::binary);
-            if (!oldFile.is_open()) { // This shouldn't happen
-                TryDeleteFile(tmpPath);
-                return;
-            }
+				std::ifstream oldFile(tmpPath, std::ios::binary);
+				if (!oldFile.is_open()) { // This shouldn't happen
+					TryDeleteFile(tmpPath);
+					return;
+				}
 
-            oldFile.seekg(0, std::ios::end);
-            uintmax_t oldFileSize = oldFile.tellg();
-            uintmax_t newFilesize = oldFileSize - std::min(oldFileSize, truncatedBytes);
-            oldFile.seekg(truncatedBytes, std::ios::beg);
+				oldFile.seekg(0, std::ios::end);
+				uintmax_t oldFileSize = oldFile.tellg();
+				uintmax_t newFilesize = oldFileSize - std::min(oldFileSize, truncatedBytes);
+				oldFile.seekg(truncatedBytes, std::ios::beg);
 
-            std::vector<char> data(logTruncationMessage.begin(), logTruncationMessage.end());
-            data.resize(newFilesize + logTruncationMessage.size());
-            oldFile.read(data.data() + logTruncationMessage.size(), data.size());
-            oldFile.close();
+				std::vector<char> data(logTruncationMessage.begin(), logTruncationMessage.end());
+				data.resize(newFilesize + logTruncationMessage.size());
+				oldFile.read(data.data() + logTruncationMessage.size(), data.size());
+				oldFile.close();
 
-            HELPERS_NS::FS::PrependToFile(loggers.fileSink->GetFilename(), data.data(), data.size());
-            TryDeleteFile(tmpPath);
-        }
-    }
-}
+				HELPERS_NS::FS::PrependToFile(loggers.fileSink->GetFilename(), data.data(), data.size());
+				TryDeleteFile(tmpPath);
+			}
+		}
+	}
 #endif
 
+}
 
 LOGGER_API HELPERS_NS::nothing* __LgCtx() {
     return nullptr;

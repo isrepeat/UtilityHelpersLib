@@ -3,10 +3,11 @@
 
 namespace HELPERS_NS {
 	Semaphore::Semaphore(const std::wstring& name) {
-		auto fullName = L"Global\\" + name;
-		semaphore = CreateSemaphore(nullptr, 1, 1, fullName.data());
-		if (semaphore == INVALID_HANDLE_VALUE) {
-			HELPERS_NS::System::ThrowIfFailed(E_FAIL);
+		auto fullName = L"Semaphore_" + name;
+		semaphore = CreateSemaphoreEx(nullptr, 1, 1, fullName.c_str(), 0, SEMAPHORE_ALL_ACCESS);
+		if (!semaphore) {
+			auto lastErrorHr = HRESULT_FROM_WIN32(GetLastError());
+			HELPERS_NS::System::ThrowIfFailed(lastErrorHr);
 		}
 	}
 
