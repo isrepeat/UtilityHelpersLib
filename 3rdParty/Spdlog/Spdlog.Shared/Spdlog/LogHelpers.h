@@ -254,8 +254,10 @@ namespace LOGGER_NS {
         EnableLogToStdout = 0x08,
         RedirectRawTimeLogToStdout = 0x10,
         DisableEOLforRawLogger = 0x20, // not append '\n' at the end of line
+        CreateInExeFolderForDesktop = 0x40,
 
-        DefaultFlags = AppendNewSessionMsg
+        DefaultFlags = AppendNewSessionMsg,
+        CreateInAppFolder = CreateInPackageFolder | CreateInExeFolderForDesktop
     };
 
     // mb rename?
