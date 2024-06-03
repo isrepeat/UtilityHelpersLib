@@ -16,6 +16,7 @@ namespace HELPERS_NS {
 #if COMPILE_FOR_DESKTOP
         class ComException : public std::exception {
         public:
+            ComException(HRESULT hr, const std::string& message);
             ComException(HRESULT hr, const std::wstring& message);
             ~ComException() = default;
 
