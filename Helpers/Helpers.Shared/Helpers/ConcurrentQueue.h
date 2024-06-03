@@ -69,7 +69,7 @@ namespace HELPERS_NS {
 
 			// Use cv wait helper to avoid double checking for pushing (poping)
 			std::unique_lock lk(mx);
-			HELPERS_NS::CvExecuteCallbackAfterWaitWithPredicate(lk, cv, pushPredicate, pushCallback);
+			HELPERS_NS::CvExecuteCallbackAfterWaitWithPredicate(lk, cv, pushPredicate, std::move(pushCallback));
 			cv.notify_one(); // signal to can pop 1 item
 		}
 

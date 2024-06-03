@@ -212,7 +212,7 @@ namespace HELPERS_NS {
             template <typename Caller, typename... Args>
             PromiseDefault(Caller& caller, InstanceName instanceName, Args&...)
                 : _MyBase(caller, instanceName)
-                , resumeSignal{ std::make_shared<HELPERS_NS::Signal>() }
+                , resumeSignal{ std::make_shared<HELPERS_NS::Signal<void()>>() }
             {
                 this->SetFullClassNameSilent(instanceName.name);
                 LOG_FUNCTION_ENTER_VERBOSE_C(L"PromiseDefault(Caller)");
@@ -222,18 +222,18 @@ namespace HELPERS_NS {
             template <typename LambdaT, typename... Args>
             PromiseDefault(LambdaBindCoroKey key, LambdaT& lambda, Args&...)
                 : _MyBase(L"LambdaBindCoroKey")
-                , resumeSignal{ std::make_shared<HELPERS_NS::Signal>() }
+                , resumeSignal{ std::make_shared<HELPERS_NS::Signal<void()>>() }
             {
                 this->SetFullClassNameSilent(L"LambdaBindCoroKey");
                 LOG_FUNCTION_ENTER_VERBOSE_C(L"PromiseDefault(LambdaCtorKey, LambdaT)");
             }
 
-            std::weak_ptr<HELPERS_NS::Signal> get_resume_signal() {
+            std::weak_ptr<HELPERS_NS::Signal<void()>> get_resume_signal() {
                 return resumeSignal;
             }
 
         private:
-            std::shared_ptr<HELPERS_NS::Signal> resumeSignal;
+            std::shared_ptr<HELPERS_NS::Signal<void()>> resumeSignal;
         };
 
 
@@ -463,7 +463,7 @@ namespace HELPERS_NS {
             using promiseImpl_t = PromiseImplT;
         };
 
-        inline void ResumeCoroutineViaSignal(std::weak_ptr<H::Signal> resumeSignalWeak) {
+        inline void ResumeCoroutineViaSignal(std::weak_ptr<H::Signal<void()>> resumeSignalWeak) {
             LOG_FUNCTION_ENTER("ResumeCoroutineViaSignal()");
             auto resumeSignal = resumeSignalWeak.lock();
             if (!resumeSignal) {

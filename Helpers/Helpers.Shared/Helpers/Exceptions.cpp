@@ -10,20 +10,31 @@
 
 namespace HELPERS_NS {
     namespace System {
+        ComException::ComException(HRESULT hr, const std::string& message)
+            : std::exception(message.c_str())
+#ifdef CRASH_HANDLING_NUGET
+            , backtrace{ std::make_shared<CrashHandling::Backtrace>() }
+#endif
+            , errorMessage{ HELPERS_NS::StrToWStr(message) }
+            , errorCode{hr}
+        {
+            LOG_ERROR_D(L"Com exception = [{:#08x}] {}", static_cast<unsigned int>(hr), this->errorMessage);
+        }
+
         ComException::ComException(HRESULT hr, const std::wstring& message)
             : std::exception(HELPERS_NS::WStrToStr(message).c_str())
 #ifdef CRASH_HANDLING_NUGET
             , backtrace{ std::make_shared<CrashHandling::Backtrace>() }
 #endif
-            , errorMessage{message}
-            , errorCode{hr}
+            , errorMessage{ message }
+            , errorCode{ hr }
         {
-            LOG_ERROR_D(L"Com exception = [{:#08x}] {}", static_cast<unsigned int>(hr), message);
+            LOG_ERROR_D(L"Com exception = [{:#08x}] {}", static_cast<unsigned int>(hr), this->errorMessage);
         }
 
         const std::shared_ptr<CrashHandling::Backtrace>& ComException::GetBacktrace() const throw(NugetNotFoundException) {
 #ifdef CRASH_HANDLING_NUGET
-            return backtrace;
+            return this->backtrace;
 #else
             throw NugetNotFoundException();
 #endif
@@ -31,19 +42,19 @@ namespace HELPERS_NS {
 
         void ComException::LogBacktrace() const throw(NugetNotFoundException) {
 #ifdef CRASH_HANDLING_NUGET
-            LOG_ERROR_D(L"Com exception = [{:#08x}] {}", static_cast<unsigned int>(errorCode), errorMessage);
-            LOG_ERROR_D(L"\nBacktrace: \n{}", backtrace->GetBacktraceStr());
+            LOG_ERROR_D(L"Com exception = [{:#08x}] {}", static_cast<unsigned int>(this->errorCode), this->errorMessage);
+            LOG_ERROR_D(L"\nBacktrace: \n{}", this->backtrace->GetBacktraceStr());
 #else
             throw NugetNotFoundException();
 #endif
         }
 
         std::wstring ComException::ErrorMessage() const {
-            return errorMessage;
+            return this->errorMessage;
         }
 
         HRESULT ComException::ErrorCode() const {
-            return errorCode;
+            return this->errorCode;
         }
     }
 }

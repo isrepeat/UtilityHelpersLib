@@ -70,11 +70,11 @@ namespace HELPERS_NS {
 
 
 
-        auto AsyncOperationWithResumeSignal(std::function<void(std::weak_ptr<HELPERS_NS::Signal>)> asyncOperation) noexcept {
+        auto AsyncOperationWithResumeSignal(std::function<void(std::weak_ptr<HELPERS_NS::Signal<void()>>)> asyncOperation) noexcept {
             LOG_FUNCTION_SCOPE_VERBOSE("AsyncOperationWithResumeSignal(asyncOperationTask)");
 
             struct Awaitable {
-                explicit Awaitable(std::function<void(std::weak_ptr<HELPERS_NS::Signal>)> asyncOperation)
+                explicit Awaitable(std::function<void(std::weak_ptr<HELPERS_NS::Signal<void()>>)> asyncOperation)
                     : asyncOperation{ asyncOperation }
                 {
                     LOG_FUNCTION_ENTER_VERBOSE("Awaitable(asyncOperationTask)");
@@ -118,7 +118,7 @@ namespace HELPERS_NS {
                 }
 
             private:
-                std::function<void(std::weak_ptr<HELPERS_NS::Signal>)> asyncOperation;
+                std::function<void(std::weak_ptr<HELPERS_NS::Signal<void()>>)> asyncOperation;
             };
 
             return Awaitable{ asyncOperation };
