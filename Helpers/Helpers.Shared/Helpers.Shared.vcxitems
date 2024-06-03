@@ -56,6 +56,7 @@
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\BoostAsioSafe.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\BoostIsSupported.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Byteswap.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\ComMutex.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\IUnknownValue.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\UnknownValue.h" />

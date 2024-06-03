@@ -445,6 +445,7 @@
       <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SmartVARIANT.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Byteswap.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />
