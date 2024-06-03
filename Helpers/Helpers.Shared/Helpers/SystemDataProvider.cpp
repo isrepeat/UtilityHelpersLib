@@ -3,6 +3,7 @@
 #if COMPILE_FOR_DESKTOP
 #include "Helpers.h"
 #include "Logger.h"
+#include "SmartVARIANT.h"
 
 #include <sysinfoapi.h>
 #include <Wbemidl.h>
@@ -93,7 +94,7 @@ namespace HELPERS_NS {
 				break;
 			}
 
-			VARIANT vtProp;
+			SmartVARIANT vtProp;
 
 			//hr = pclsObj->Get(L"Name", 0, &vtProp, 0, 0);
 			//os = vtProp.bstrVal;
@@ -108,10 +109,13 @@ namespace HELPERS_NS {
 			os += ws2s(vtProp.bstrVal);
 			VariantClear(&vtProp);*/
 
-			hr = pclsObj->Get(L"TotalVisibleMemorySize", 0, &vtProp, 0, 0);
-			auto bytesString = vtProp.bstrVal;
+			hr = pclsObj->Get(L"TotalVisibleMemorySize", 0, vtProp.GetAddressOf(), 0, 0);
+			if (FAILED(hr) || !vtProp->bstrVal) {
+				continue;
+			}
+
+			auto bytesString = vtProp->bstrVal;
 			ram = (int)std::floor((float)_wtoi(bytesString) / 1000000);
-			VariantClear(&vtProp);
 		}
 
 		FetchLangInfo();

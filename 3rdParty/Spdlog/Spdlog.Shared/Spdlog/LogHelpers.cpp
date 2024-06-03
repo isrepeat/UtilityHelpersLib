@@ -186,8 +186,16 @@ namespace LOGGER_NS {
         // TODO: Use H::Bimap<"loggerPath", loggerId> and move to class member (combine with initializedLoggersById)
         static std::set<std::wstring> initializedLoggersByPath;
 
-        if (initFlags.Has(InitFlags::CreateInPackageFolder) && HELPERS_NS::PackageProvider::IsRunningUnderPackage()) {
-            logFilePath = ComApi::GetPackageFolder() / logFilePath.relative_path();
+        if (HELPERS_NS::PackageProvider::IsRunningUnderPackage()) {
+            if (initFlags.Has(InitFlags::CreateInPackageFolder)) {
+                logFilePath = ComApi::GetPackageFolder() / logFilePath.relative_path();
+            }
+        }
+        else {
+            if (initFlags.Has(InitFlags::CreateInExeFolderForDesktop)) {
+                // dont use exe path when IsRunningUnderPackage() == true because uwp package exe folder protected for writing
+                logFilePath = HELPERS_NS::ExePath() / logFilePath.relative_path();
+            }
         }
 
         if (initializedLoggersByPath.count(logFilePath) > 0) {

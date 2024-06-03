@@ -41,6 +41,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\PackageProvider.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\RegistryManager.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Semaphore.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\SmartVARIANT.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Socket.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\StdRedirection.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\String.cpp" />
@@ -55,6 +56,7 @@
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\BoostAsioSafe.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\BoostIsSupported.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Byteswap.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\ComMutex.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\IUnknownValue.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\UnknownValue.h" />
@@ -126,6 +128,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MultithreadMutex.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PackageProvider.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Passkey.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SmartVARIANT.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Span.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\System.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TypeSwitch.h" />
