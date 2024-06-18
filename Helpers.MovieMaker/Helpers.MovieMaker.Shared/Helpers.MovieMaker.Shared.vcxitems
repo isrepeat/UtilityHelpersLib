@@ -184,6 +184,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Thread\PPL\critical_section_guard.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Thread\PPL\critical_section_lock.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Thread\PPL\safe_task.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Thread\ProgressRange.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Thread\QueuedLock.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Thread\QueuedLockItem.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Thread\SyncQueuedLockItem.h" />

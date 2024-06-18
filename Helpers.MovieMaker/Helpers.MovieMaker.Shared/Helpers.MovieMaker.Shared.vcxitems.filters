@@ -565,6 +565,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\jsonNative\jsoncpp_git_info.h">
       <Filter>Sources</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Thread\ProgressRange.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)libhelpers\AABB.cpp">
