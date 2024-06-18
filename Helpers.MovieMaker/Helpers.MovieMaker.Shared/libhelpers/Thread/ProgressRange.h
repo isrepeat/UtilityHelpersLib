@@ -1,12 +1,13 @@
 #pragma once
 #include "IProgress.h"
+#include "..\movable_ptr.h"
 
 #include <utility>
 #include <memory>
 #include <cassert>
 
 namespace thread {
-    template<class T>
+    template<typename T>
     class ProgressRange {
     public:
         ProgressRange() = default;
@@ -16,17 +17,6 @@ namespace thread {
             , distance(this->end - this->start)
             , progress(progress)
         {}
-
-        ProgressRange(const ProgressRange&) = delete;
-        ProgressRange(ProgressRange&& other) = default;
-
-        ~ProgressRange() {
-            // unique_ptr used for move semantics, lifetime not managed
-            this->progress.release();
-        }
-
-        ProgressRange& operator=(const ProgressRange&) = delete;
-        ProgressRange& operator=(ProgressRange&& other) = default;
 
         // normalizedValue = 0...1
         void Report(T normalizedValue) {
@@ -61,6 +51,6 @@ namespace thread {
         T end = {};
         T distance = {};
         // unique_ptr used for move semantics, lifetime not managed
-        std::unique_ptr<IProgress<T>> progress = nullptr;
+        H::movable_ptr<IProgress<T>> progress;
     };
 }

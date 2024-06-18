@@ -133,6 +133,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Metainfo\Signature.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Meta\ZeroDefaultValue.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\MFGenericAsyncResult.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\movable_ptr.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\msclr_auto_ptr.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\ObservableToken.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Observer.h" />
@@ -202,6 +203,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\VarArgAction.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\VarArgFunc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\WinRT\HDataWinRT.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\WinRT\RunOnUIThread.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\WrapperCache.h" />
   </ItemGroup>
   <ItemGroup>
