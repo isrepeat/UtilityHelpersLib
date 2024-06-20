@@ -18,6 +18,10 @@ namespace thread {
             , progress(progress)
         {}
 
+        explicit operator bool() const noexcept {
+            return static_cast<bool>(this->progress);
+        }
+
         // normalizedValue = 0...1
         void Report(T normalizedValue) {
             if (this->progress) {
