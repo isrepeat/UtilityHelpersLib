@@ -133,6 +133,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Metainfo\Signature.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Meta\ZeroDefaultValue.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\MFGenericAsyncResult.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\movable_ptr.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\msclr_auto_ptr.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\ObservableToken.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Observer.h" />
@@ -184,6 +185,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Thread\PPL\critical_section_guard.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Thread\PPL\critical_section_lock.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Thread\PPL\safe_task.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Thread\ProgressRange.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Thread\QueuedLock.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Thread\QueuedLockItem.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\Thread\SyncQueuedLockItem.h" />
@@ -201,6 +203,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\VarArgAction.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\VarArgFunc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\WinRT\HDataWinRT.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\WinRT\RunOnUIThread.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)libhelpers\WrapperCache.h" />
   </ItemGroup>
   <ItemGroup>

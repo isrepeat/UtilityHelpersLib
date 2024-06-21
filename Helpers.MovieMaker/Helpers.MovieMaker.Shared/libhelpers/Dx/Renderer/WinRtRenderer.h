@@ -4,6 +4,7 @@
 #include "../../Thread/critical_section.h"
 #include "../../HSystem.h"
 #include "../../HMath.h"
+#include "../../WinRT/RunOnUIThread.h"
 
 #include <memory>
 #include <thread>
@@ -29,91 +30,95 @@ public:
         , renderThreadState(RenderThreadState::Stop)
         , panel(panel)
     {
-        auto window = Windows::UI::Xaml::Window::Current->CoreWindow;
-        auto displayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
+        H::RunOnUIThread(this->panel->Dispatcher,
+            [&]
+            {
+                auto window = Windows::UI::Xaml::Window::Current->CoreWindow;
+                auto displayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
 
-        this->wnd = Windows::UI::Xaml::Window::Current;
+                this->wnd = Windows::UI::Xaml::Window::Current;
 
-        this->visChangedToken = window->VisibilityChanged += H::System::MakeTypedEventHandler(
-            [=](Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::VisibilityChangedEventArgs ^args)
-        {
-            if (!args->Visible) {
-                this->renderThreadState = RenderThreadState::Pause;
-            }
-            else {
-                if (this->renderThreadState == RenderThreadState::Stop) {
-                    if (this->renderThread.joinable()) {
-                        this->renderThread.join();
-                    }
+                this->visChangedToken = window->VisibilityChanged += H::System::MakeTypedEventHandler(
+                    [=](Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::VisibilityChangedEventArgs^ args)
+                    {
+                        if (!args->Visible) {
+                            this->renderThreadState = RenderThreadState::Pause;
+                        }
+                        else {
+                            if (this->renderThreadState == RenderThreadState::Stop) {
+                                if (this->renderThread.joinable()) {
+                                    this->renderThread.join();
+                                }
 
-                    this->StartRenderThread();
-                }
-                else {
-                    this->renderThreadState = RenderThreadState::Work;
-                }
-            }
-        });
+                                this->StartRenderThread();
+                            }
+                            else {
+                                this->renderThreadState = RenderThreadState::Work;
+                            }
+                        }
+                    });
 
-        this->orientChangedToken = displayInformation->OrientationChanged += H::System::MakeTypedEventHandler(
-            [=](Windows::Graphics::Display::DisplayInformation ^sender, Platform::Object ^args)
-        {
-            concurrency::critical_section::scoped_lock lk(this->cs);
-            auto panel = this->output.GetSwapChainPanel();
-            auto orientation = sender->CurrentOrientation;
-            auto dpi = sender->LogicalDpi;
-            auto scale = DirectX::XMFLOAT2(panel->CompositionScaleX, panel->CompositionScaleY);
-            auto size = DirectX::XMFLOAT2((float)panel->ActualWidth, (float)panel->ActualHeight);
+                this->orientChangedToken = displayInformation->OrientationChanged += H::System::MakeTypedEventHandler(
+                    [=](Windows::Graphics::Display::DisplayInformation^ sender, Platform::Object^ args)
+                    {
+                        concurrency::critical_section::scoped_lock lk(this->cs);
+                        auto panel = this->output.GetSwapChainPanel();
+                        auto orientation = sender->CurrentOrientation;
+                        auto dpi = sender->LogicalDpi;
+                        auto scale = DirectX::XMFLOAT2(panel->CompositionScaleX, panel->CompositionScaleY);
+                        auto size = DirectX::XMFLOAT2((float)panel->ActualWidth, (float)panel->ActualHeight);
 
-            this->TryResize(size, scale, dpi, orientation);
-        });
+                        this->TryResize(size, scale, dpi, orientation);
+                    });
 
-        this->dispContentInvalidatedToken = displayInformation->DisplayContentsInvalidated += H::System::MakeTypedEventHandler(
-            [=](Windows::Graphics::Display::DisplayInformation ^sender, Platform::Object ^args)
-        {
-            int stop = 324;
-        });
+                this->dispContentInvalidatedToken = displayInformation->DisplayContentsInvalidated += H::System::MakeTypedEventHandler(
+                    [=](Windows::Graphics::Display::DisplayInformation^ sender, Platform::Object^ args)
+                    {
+                        int stop = 324;
+                    });
 
-        this->dpiChangedToken = displayInformation->DpiChanged += H::System::MakeTypedEventHandler(
-            [=](Windows::Graphics::Display::DisplayInformation ^sender, Platform::Object ^args)
-        {
-            concurrency::critical_section::scoped_lock lk(this->cs);
-            auto panel = this->output.GetSwapChainPanel();
-            auto orientation = sender->CurrentOrientation;
-            auto dpi = sender->LogicalDpi;
-            auto scale = DirectX::XMFLOAT2(panel->CompositionScaleX, panel->CompositionScaleY);
-            auto size = DirectX::XMFLOAT2((float)panel->ActualWidth, (float)panel->ActualHeight);
+                this->dpiChangedToken = displayInformation->DpiChanged += H::System::MakeTypedEventHandler(
+                    [=](Windows::Graphics::Display::DisplayInformation^ sender, Platform::Object^ args)
+                    {
+                        concurrency::critical_section::scoped_lock lk(this->cs);
+                        auto panel = this->output.GetSwapChainPanel();
+                        auto orientation = sender->CurrentOrientation;
+                        auto dpi = sender->LogicalDpi;
+                        auto scale = DirectX::XMFLOAT2(panel->CompositionScaleX, panel->CompositionScaleY);
+                        auto size = DirectX::XMFLOAT2((float)panel->ActualWidth, (float)panel->ActualHeight);
 
-            this->TryResize(size, scale, dpi, orientation);
-        });
+                        this->TryResize(size, scale, dpi, orientation);
+                    });
 
-        this->compScaleChangedToken = panel->CompositionScaleChanged += H::System::MakeTypedEventHandler(
-            [=](Windows::UI::Xaml::Controls::SwapChainPanel ^sender, Platform::Object ^args)
-        {
-            auto displayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
+                this->compScaleChangedToken = panel->CompositionScaleChanged += H::System::MakeTypedEventHandler(
+                    [=](Windows::UI::Xaml::Controls::SwapChainPanel^ sender, Platform::Object^ args)
+                    {
+                        auto displayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
 
-            concurrency::critical_section::scoped_lock lk(this->cs);
-            auto orientation = displayInformation->CurrentOrientation;
-            auto dpi = displayInformation->LogicalDpi;
-            auto scale = DirectX::XMFLOAT2(sender->CompositionScaleX, sender->CompositionScaleY);
-            auto size = DirectX::XMFLOAT2((float)sender->ActualWidth, (float)sender->ActualHeight);
+                        concurrency::critical_section::scoped_lock lk(this->cs);
+                        auto orientation = displayInformation->CurrentOrientation;
+                        auto dpi = displayInformation->LogicalDpi;
+                        auto scale = DirectX::XMFLOAT2(sender->CompositionScaleX, sender->CompositionScaleY);
+                        auto size = DirectX::XMFLOAT2((float)sender->ActualWidth, (float)sender->ActualHeight);
 
-            this->TryResize(size, scale, dpi, orientation);
-        });
+                        this->TryResize(size, scale, dpi, orientation);
+                    });
 
-        this->sizeChangedToken = panel->SizeChanged += ref new Windows::UI::Xaml::SizeChangedEventHandler(
-            [=](Platform::Object ^sender, Windows::UI::Xaml::SizeChangedEventArgs ^args)
-        {
-            auto displayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
-            auto size = DirectX::XMFLOAT2(args->NewSize.Width, args->NewSize.Height);
+                this->sizeChangedToken = panel->SizeChanged += ref new Windows::UI::Xaml::SizeChangedEventHandler(
+                    [=](Platform::Object^ sender, Windows::UI::Xaml::SizeChangedEventArgs^ args)
+                    {
+                        auto displayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
+                        auto size = DirectX::XMFLOAT2(args->NewSize.Width, args->NewSize.Height);
 
-            concurrency::critical_section::scoped_lock lk(this->cs);
-            auto panel = this->output.GetSwapChainPanel();
-            auto orientation = displayInformation->CurrentOrientation;
-            auto dpi = displayInformation->LogicalDpi;
-            auto scale = DirectX::XMFLOAT2(panel->CompositionScaleX, panel->CompositionScaleY);
+                        concurrency::critical_section::scoped_lock lk(this->cs);
+                        auto panel = this->output.GetSwapChainPanel();
+                        auto orientation = displayInformation->CurrentOrientation;
+                        auto dpi = displayInformation->LogicalDpi;
+                        auto scale = DirectX::XMFLOAT2(panel->CompositionScaleX, panel->CompositionScaleY);
 
-            this->TryResize(size, scale, dpi, orientation);
-        });
+                        this->TryResize(size, scale, dpi, orientation);
+                    });
+            });
 
         this->renderer.OutputParametersChanged();
 
@@ -135,27 +140,22 @@ public:
             this->inputThread.join();
         }
 
-        auto tmpFn = [&]() {
-            auto window = Windows::UI::Xaml::Window::Current->CoreWindow;
-            auto displayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
+        try {
+            H::RunOnUIThread(this->panel->Dispatcher,
+                [&]
+                {
+                    auto window = Windows::UI::Xaml::Window::Current->CoreWindow;
+                    auto displayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
 
-            window->VisibilityChanged -= this->visChangedToken;
-            displayInformation->OrientationChanged -= this->orientChangedToken;
-            displayInformation->DisplayContentsInvalidated -= this->dispContentInvalidatedToken;
-            displayInformation->DpiChanged -= this->dpiChangedToken;
-            this->panel->CompositionScaleChanged -= this->compScaleChangedToken;
-            this->panel->SizeChanged -= this->sizeChangedToken;
-        };
-
-        if (!Windows::UI::Xaml::Window::Current) {
-            H::System::PerformSync(this->wnd->Dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::High, ref new Windows::UI::Core::DispatchedHandler(
-                [&]() {
-                tmpFn();
-            })));
+                    window->VisibilityChanged -= this->visChangedToken;
+                    displayInformation->OrientationChanged -= this->orientChangedToken;
+                    displayInformation->DisplayContentsInvalidated -= this->dispContentInvalidatedToken;
+                    displayInformation->DpiChanged -= this->dpiChangedToken;
+                    this->panel->CompositionScaleChanged -= this->compScaleChangedToken;
+                    this->panel->SizeChanged -= this->sizeChangedToken;
+                });
         }
-        else {
-            tmpFn();
-        }
+        catch(...) {}
     }
 
     T *operator->() {
