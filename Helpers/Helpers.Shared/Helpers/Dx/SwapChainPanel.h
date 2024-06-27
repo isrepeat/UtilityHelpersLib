@@ -64,8 +64,8 @@ namespace HELPERS_NS {
 			virtual DirectX::XMFLOAT4X4	STDMETHODCALLTYPE GetOrientationTransform3D() const = 0;
 
 			// D2D Accessors.
-			virtual ID2D1Bitmap1* GetD2DTargetBitmap() const = 0;
-			virtual D2D1::Matrix3x2F GetOrientationTransform2D() const = 0;
+			virtual ID2D1Bitmap1* STDMETHODCALLTYPE GetD2DTargetBitmap() const = 0;
+			virtual D2D1::Matrix3x2F STDMETHODCALLTYPE GetOrientationTransform2D() const = 0;
 		};
 		
 
@@ -78,9 +78,9 @@ namespace HELPERS_NS {
 			SwapChainPanel(Callback<void, IDXGISwapChain3*> swapChainCreateFn);
 			~SwapChainPanel();
 
-			H::Dx::DxDeviceSafeObj* GetDxDevice() override;
+			H::Dx::DxDeviceSafeObj* STDMETHODCALLTYPE GetDxDevice() override;
 
-			void InitSwapChainPanelInfo(
+			void STDMETHODCALLTYPE InitSwapChainPanelInfo(
 				H::Size_f logicalSize,
 				DisplayOrientations nativeOrientation,
 				DisplayOrientations currentOrientation,
@@ -89,36 +89,36 @@ namespace HELPERS_NS {
 				float dpi
 			) override;
 
-			void SetLogicalSize(H::Size_f logicalSize) override;
-			void SetNativeOrientation(DisplayOrientations nativeOrientation) override;
-			void SetCurrentOrientation(DisplayOrientations currentOrientation) override;
-			void SetDpi(float dpi) override;
-			void SetCompositionScale(float compositionScaleX, float compositionScaleY) override;
-			void SetRenderResolutionScale(float resolutionScale) override;
-			void ValidateDevice() override;
-			void HandleDeviceLost() override;
-			void RegisterDeviceNotify(IDeviceNotify* deviceNotify) override;
-			void Trim() override;
-			void Present() override;
+			void STDMETHODCALLTYPE SetLogicalSize(H::Size_f logicalSize) override;
+			void STDMETHODCALLTYPE SetNativeOrientation(DisplayOrientations nativeOrientation) override;
+			void STDMETHODCALLTYPE SetCurrentOrientation(DisplayOrientations currentOrientation) override;
+			void STDMETHODCALLTYPE SetDpi(float dpi) override;
+			void STDMETHODCALLTYPE SetCompositionScale(float compositionScaleX, float compositionScaleY) override;
+			void STDMETHODCALLTYPE SetRenderResolutionScale(float resolutionScale) override;
+			void STDMETHODCALLTYPE ValidateDevice() override;
+			void STDMETHODCALLTYPE HandleDeviceLost() override;
+			void STDMETHODCALLTYPE RegisterDeviceNotify(IDeviceNotify* deviceNotify) override;
+			void STDMETHODCALLTYPE Trim() override;
+			void STDMETHODCALLTYPE Present() override;
 
 			// The size of the render target, in pixels.
-			H::Size_f GetOutputSize() const override  { return m_outputSize; }
+			H::Size_f STDMETHODCALLTYPE GetOutputSize() const override  { return m_outputSize; }
 
 			// The size of the render target, in dips.
-			H::Size_f GetLogicalSize() const override  { return m_logicalSize; }
-			H::Size_f GetRenderTargetSize() const override { return m_d3dRenderTargetSize; }
-			float GetDpi() const override { return m_effectiveDpi; }
+			H::Size_f STDMETHODCALLTYPE GetLogicalSize() const override  { return m_logicalSize; }
+			H::Size_f STDMETHODCALLTYPE GetRenderTargetSize() const override { return m_d3dRenderTargetSize; }
+			float STDMETHODCALLTYPE GetDpi() const override { return m_effectiveDpi; }
 
 			// D3D Accessors.
-			IDXGISwapChain3* GetSwapChain() const override { return m_swapChain.Get(); }
-			ID3D11RenderTargetView1* GetBackBufferRenderTargetView() const override { return m_d3dRenderTargetView.Get(); }
-			ID3D11DepthStencilView* GetDepthStencilView() const override { return m_d3dDepthStencilView.Get(); }
-			D3D11_VIEWPORT GetScreenViewport() const override { return m_screenViewport; }
-			DirectX::XMFLOAT4X4	GetOrientationTransform3D() const override { return m_orientationTransform3D; }
+			IDXGISwapChain3* STDMETHODCALLTYPE GetSwapChain() const override { return m_swapChain.Get(); }
+			ID3D11RenderTargetView1* STDMETHODCALLTYPE GetBackBufferRenderTargetView() const override { return m_d3dRenderTargetView.Get(); }
+			ID3D11DepthStencilView* STDMETHODCALLTYPE GetDepthStencilView() const override { return m_d3dDepthStencilView.Get(); }
+			D3D11_VIEWPORT STDMETHODCALLTYPE GetScreenViewport() const override { return m_screenViewport; }
+			DirectX::XMFLOAT4X4	STDMETHODCALLTYPE GetOrientationTransform3D() const override { return m_orientationTransform3D; }
 
 			// D2D Accessors.
-			ID2D1Bitmap1* GetD2DTargetBitmap() const override { return m_d2dTargetBitmap.Get(); }
-			D2D1::Matrix3x2F GetOrientationTransform2D() const override { return m_orientationTransform2D; }
+			ID2D1Bitmap1* STDMETHODCALLTYPE GetD2DTargetBitmap() const override { return m_d2dTargetBitmap.Get(); }
+			D2D1::Matrix3x2F STDMETHODCALLTYPE GetOrientationTransform2D() const override { return m_orientationTransform2D; }
 
 		private:
 			void CreateWindowSizeDependentResources();

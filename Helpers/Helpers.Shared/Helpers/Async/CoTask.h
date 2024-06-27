@@ -463,6 +463,7 @@ namespace HELPERS_NS {
             using promiseImpl_t = PromiseImplT;
         };
 
+        // TODO: use another specific signal type that associated with coroutines (because H::Signal may be anything)
         inline void ResumeCoroutineViaSignal(std::weak_ptr<H::Signal<void()>> resumeSignalWeak) {
             LOG_FUNCTION_ENTER("ResumeCoroutineViaSignal()");
             auto resumeSignal = resumeSignalWeak.lock();
