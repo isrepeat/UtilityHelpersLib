@@ -13,17 +13,7 @@ namespace SlnInjectorWPF
     public class Solution
     {
         private Sln sln;
-        private const SlnItems DefaultItems =
-            SlnItems.Projects
-            | SlnItems.Header
-            | SlnItems.ExtItems
-            | SlnItems.SolutionConfPlatforms
-            | SlnItems.ProjectConfPlatforms
-            | SlnItems.Map
-            | SlnItems.SolutionItems
-            | SlnItems.ProjectDependenciesXml
-            | SlnItems.ProjectDependencies
-            | SlnItems.Env;
+        private const SlnItems DefaultItems = SlnItems.All & ~SlnItems.LoadDefaultData;
 
         private IList<Project> projects = new List<Project>();
 

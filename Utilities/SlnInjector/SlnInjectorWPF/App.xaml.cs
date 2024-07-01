@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Microsoft.Build.Locator;
 using System.Windows;
 
 namespace SlnInjectorWPF
@@ -13,5 +8,18 @@ namespace SlnInjectorWPF
     /// </summary>
     public partial class App : Application
     {
+        public App()
+        {
+            // Required for MvsSln to be able to resolve project Import sections
+            // with references to Microsoft.Cpp.Default.props, Microsoft.Cpp.targets, etc.
+
+            MSBuildLocator.AllowQueryAllRuntimeVersions = true;
+            MSBuildLocator.RegisterDefaults();
+
+            if (!MSBuildLocator.IsRegistered)
+            {
+                Dialogs.Error("Couldn't locate MSBuild assemblies.");
+            }
+        }
     }
 }
