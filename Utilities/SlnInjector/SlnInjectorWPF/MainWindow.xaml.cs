@@ -31,6 +31,12 @@ namespace SlnInjectorWPF
         public MainWindow()
         {
             InitializeComponent();
+            SetCanInject(false);
+        }
+
+        private void SetCanInject(bool canInject)
+        {
+            BtInjectProjects.IsEnabled = canInject;
         }
 
         private string? RequestOpenSolution()
@@ -128,6 +134,9 @@ namespace SlnInjectorWPF
                     selectedProjects.Remove(project);
                 }
             }
+
+            BtInjectProjects.Content = $"Inject {selectedProjects.Count} projects";
+            SetCanInject(selectedProjects.Count > 0 && outputSln != null);
         }
 
         private async void BtInjectProjects_Click(object sender, RoutedEventArgs e)
@@ -163,9 +172,9 @@ namespace SlnInjectorWPF
             var savePath = RequestSaveSolution();
             if (savePath != null)
             {
-                BtInjectProjects.IsEnabled = false;
+                SetCanInject(false);
                 await outputSln.Save(savePath);
-                BtInjectProjects.IsEnabled = true;
+                SetCanInject(true);
             }
         }
     }
