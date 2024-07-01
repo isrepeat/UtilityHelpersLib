@@ -16,6 +16,7 @@ namespace SlnInjectorWPF
         private const SlnItems DefaultItems = SlnItems.All & ~SlnItems.LoadDefaultData;
 
         private IList<Project> projects = new List<Project>();
+        private IList<SolutionFolder> solutionFolders = new List<SolutionFolder>();
 
         public Solution(string path, SlnItems itemsToLoad = DefaultItems) {
             sln = new Sln(path, itemsToLoad);
@@ -42,6 +43,15 @@ namespace SlnInjectorWPF
             };
 
             projects.Add(new Project(newItem));
+
+            var newFolders = project.GetParentSolutionFolders();
+            foreach (var folder in newFolders)
+            {
+                if (!solutionFolders.Contains(folder))
+                {
+                    solutionFolders.Add(folder);
+                }
+            }
         }
 
         public async Task Save(string outPath)
@@ -55,7 +65,7 @@ namespace SlnInjectorWPF
                 .SetProjectConfigs(Props.ProjectConfigs)
                 .SetSolutionConfigs(Props.SolutionConfigs)
                 .SetDependencies(Props.ProjectDependencies)
-                .SetFolders(Props.SolutionFolders)
+                .SetFolders(solutionFolders)
                 .SetExt(Props.ExtItems);
 
             using var writer = new SlnWriter(outPath, slnProto);

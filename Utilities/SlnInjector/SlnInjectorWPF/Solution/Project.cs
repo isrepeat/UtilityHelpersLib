@@ -18,9 +18,8 @@ namespace SlnInjectorWPF
             SolutionFolder = GetSolutionFolderPath();
         }
 
-        private String GetSolutionFolderPath()
+        private void ForEachParentSolutionFolder(Action<SolutionFolder> action)
         {
-            String path = "";
             SolutionFolder? parentFolder = projectItem.parent.Value;
 
             while (parentFolder != null)
@@ -31,11 +30,34 @@ namespace SlnInjectorWPF
                     break;
                 }
 
-                path = header?.name + (path.Count() > 0 ? "/" : "") + path;
+                action((SolutionFolder)parentFolder);
                 parentFolder = header?.parent.Value;
             }
+        }
+
+        private String GetSolutionFolderPath()
+        {
+            String path = "";
+            SolutionFolder? parentFolder = projectItem.parent.Value;
+
+            ForEachParentSolutionFolder(folder =>
+            {
+                path = folder.header.name + (path.Count() > 0 ? "/" : "") + path;
+            });
 
             return path;
+        }
+
+        public IList<SolutionFolder> GetParentSolutionFolders()
+        {
+            var folders = new List<SolutionFolder>();
+
+            ForEachParentSolutionFolder(folder =>
+            {
+                folders.Add(folder);
+            });
+
+            return folders;
         }
 
         public ProjectType Type { get { return projectItem.EpType; } }
