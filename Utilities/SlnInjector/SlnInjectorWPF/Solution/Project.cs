@@ -44,5 +44,6 @@ namespace SlnInjectorWPF
         public String RelativePath { get { return projectItem.path; } }
         public String AbsolutePath { get { return projectItem.fullPath; } }
         public String GUID { get { return projectItem.pGuid; } }
+        public ProjectItem Props { get { return projectItem; } }
     }
 }
