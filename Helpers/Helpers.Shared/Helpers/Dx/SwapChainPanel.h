@@ -75,7 +75,11 @@ namespace HELPERS_NS {
 			ISwapChainPanel>
 		{
 		public:
-			SwapChainPanel(Callback<void, IDXGISwapChain3*> swapChainCreateFn);
+			enum class Environment {
+				Desktop,
+				UWP,
+			};
+			SwapChainPanel(Environment environment, Callback<void, IDXGISwapChain3*> swapChainCreateFn, HWND hWnd = nullptr);
 			~SwapChainPanel();
 
 			H::Dx::DxDeviceSafeObj* STDMETHODCALLTYPE GetDxDevice() override;
@@ -102,23 +106,23 @@ namespace HELPERS_NS {
 			void STDMETHODCALLTYPE Present() override;
 
 			// The size of the render target, in pixels.
-			H::Size_f STDMETHODCALLTYPE GetOutputSize() const override  { return m_outputSize; }
+			H::Size_f STDMETHODCALLTYPE GetOutputSize() const override;
 
 			// The size of the render target, in dips.
-			H::Size_f STDMETHODCALLTYPE GetLogicalSize() const override  { return m_logicalSize; }
-			H::Size_f STDMETHODCALLTYPE GetRenderTargetSize() const override { return m_d3dRenderTargetSize; }
-			float STDMETHODCALLTYPE GetDpi() const override { return m_effectiveDpi; }
+			H::Size_f STDMETHODCALLTYPE GetLogicalSize() const override;
+			H::Size_f STDMETHODCALLTYPE GetRenderTargetSize() const override;
+			float STDMETHODCALLTYPE GetDpi() const override;
 
 			// D3D Accessors.
-			IDXGISwapChain3* STDMETHODCALLTYPE GetSwapChain() const override { return m_swapChain.Get(); }
-			ID3D11RenderTargetView1* STDMETHODCALLTYPE GetBackBufferRenderTargetView() const override { return m_d3dRenderTargetView.Get(); }
-			ID3D11DepthStencilView* STDMETHODCALLTYPE GetDepthStencilView() const override { return m_d3dDepthStencilView.Get(); }
-			D3D11_VIEWPORT STDMETHODCALLTYPE GetScreenViewport() const override { return m_screenViewport; }
-			DirectX::XMFLOAT4X4	STDMETHODCALLTYPE GetOrientationTransform3D() const override { return m_orientationTransform3D; }
+			IDXGISwapChain3* STDMETHODCALLTYPE GetSwapChain() const override;
+			ID3D11RenderTargetView1* STDMETHODCALLTYPE GetBackBufferRenderTargetView() const override;
+			ID3D11DepthStencilView* STDMETHODCALLTYPE GetDepthStencilView() const override;
+			D3D11_VIEWPORT STDMETHODCALLTYPE GetScreenViewport() const override;
+			DirectX::XMFLOAT4X4	STDMETHODCALLTYPE GetOrientationTransform3D() const override;
 
 			// D2D Accessors.
-			ID2D1Bitmap1* STDMETHODCALLTYPE GetD2DTargetBitmap() const override { return m_d2dTargetBitmap.Get(); }
-			D2D1::Matrix3x2F STDMETHODCALLTYPE GetOrientationTransform2D() const override { return m_orientationTransform2D; }
+			ID2D1Bitmap1* STDMETHODCALLTYPE GetD2DTargetBitmap() const override;
+			D2D1::Matrix3x2F STDMETHODCALLTYPE GetOrientationTransform2D() const override;
 
 		private:
 			void CreateWindowSizeDependentResources();
@@ -127,11 +131,13 @@ namespace HELPERS_NS {
 
 
 		private:
+			Environment environment;
 			Callback<void, IDXGISwapChain3*> swapChainCreateFn;
-			
+			HWND hWnd;
+
 			// Direct3D objects.
 			H::Dx::DxDeviceSafeObj dxDeviceSafeObj;
-			Microsoft::WRL::ComPtr<IDXGISwapChain3>	m_swapChain;
+			Microsoft::WRL::ComPtr<IDXGISwapChain3>	dxgiSwapChain;
 
 			// Direct3D rendering objects. Required for 3D.
 			Microsoft::WRL::ComPtr<ID3D11RenderTargetView1>	m_d3dRenderTargetView;

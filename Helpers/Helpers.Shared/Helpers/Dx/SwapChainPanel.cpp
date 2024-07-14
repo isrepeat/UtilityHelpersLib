@@ -58,9 +58,10 @@ namespace ScreenRotation {
 
 namespace HELPERS_NS {
 	namespace Dx {
-		// Constructor for SwapChainPanel.
-		SwapChainPanel::SwapChainPanel(Callback<void, IDXGISwapChain3*> swapChainCreateFn)
-			: swapChainCreateFn{ swapChainCreateFn }
+		SwapChainPanel::SwapChainPanel(Environment environment, Callback<void, IDXGISwapChain3*> swapChainCreateFn, HWND hWnd)
+			: environment{ environment }
+			, swapChainCreateFn{ swapChainCreateFn }
+			, hWnd{ hWnd }
 			, dxDeviceSafeObj{ std::make_unique<H::Dx::details::DxVideoDeviceMF>() }
 			, m_screenViewport{}
 			, m_d3dRenderTargetSize{}
@@ -138,9 +139,9 @@ namespace HELPERS_NS {
 			m_d3dRenderTargetSize.width = swapDimensions ? m_outputSize.height : m_outputSize.width;
 			m_d3dRenderTargetSize.height = swapDimensions ? m_outputSize.width : m_outputSize.height;
 
-			if (m_swapChain != nullptr) {
+			if (this->dxgiSwapChain != nullptr) {
 				// If the swap chain already exists, resize it.
-				HRESULT hr = m_swapChain->ResizeBuffers(
+				HRESULT hr = this->dxgiSwapChain->ResizeBuffers(
 					2, // Double-buffered swap chain.
 					lround(m_d3dRenderTargetSize.width),
 					lround(m_d3dRenderTargetSize.height),
@@ -191,24 +192,44 @@ namespace HELPERS_NS {
 				hr = dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory));
 				H::System::ThrowIfFailed(hr);
 
-				// When using XAML interop, the swap chain must be created for composition.
-				Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain;
-				hr = dxgiFactory->CreateSwapChainForComposition(
-					d3dDevice.Get(),
-					&swapChainDesc,
-					nullptr,
-					&swapChain
-				);
-				H::System::ThrowIfFailed(hr);
+				Microsoft::WRL::ComPtr<IDXGISwapChain1> dxgiSwapChain1;
 
-				hr = swapChain.As(&m_swapChain);
-				H::System::ThrowIfFailed(hr);
+				switch (this->environment) {
+				case Environment::Desktop: {
+					hr = dxgiFactory->CreateSwapChainForHwnd(
+						d3dDevice.Get(),
+						this->hWnd,
+						&swapChainDesc,
+						nullptr,
+						nullptr,
+						&dxgiSwapChain1
+					);
+					H::System::ThrowIfFailed(hr);
 
-				if (this->swapChainCreateFn) {
-					this->swapChainCreateFn(m_swapChain.Get());
+					hr = dxgiSwapChain1.As(&this->dxgiSwapChain);
+					H::System::ThrowIfFailed(hr);
+					break;
 				}
-				else {
-					throw std::exception{ "swapChainCreateFn is empty" };
+				
+				case Environment::UWP: {
+					// When using XAML interop, the swap chain must be created for composition.
+					hr = dxgiFactory->CreateSwapChainForComposition(
+						d3dDevice.Get(),
+						&swapChainDesc,
+						nullptr,
+						&dxgiSwapChain1
+					);
+					H::System::ThrowIfFailed(hr);
+
+					hr = dxgiSwapChain1.As(&this->dxgiSwapChain);
+					H::System::ThrowIfFailed(hr);
+
+					if (!this->swapChainCreateFn) {
+						throw std::exception{ "Cannot create swap chain for UWP environment bacause this->swapChainCreateFn is empty." };
+					}
+					this->swapChainCreateFn(this->dxgiSwapChain.Get());
+					break;
+				}
 				}
 
 				// Ensure that DXGI does not queue more than one frame at a time. This both reduces latency and
@@ -254,23 +275,25 @@ namespace HELPERS_NS {
 				throw std::exception{ "'displayRotation' unspecified" };
 			}
 
-			hr = m_swapChain->SetRotation(displayRotation);
+			hr = this->dxgiSwapChain->SetRotation(displayRotation);
 			H::System::ThrowIfFailed(hr);
 
-			// Setup inverse scale on the swap chain
-			DXGI_MATRIX_3X2_F inverseScale = { 0 };
-			inverseScale._11 = 1.0f / m_effectiveCompositionScaleX;
-			inverseScale._22 = 1.0f / m_effectiveCompositionScaleY;
-			Microsoft::WRL::ComPtr<IDXGISwapChain2> spSwapChain2;
-			hr = m_swapChain.As<IDXGISwapChain2>(&spSwapChain2);
-			H::System::ThrowIfFailed(hr);
+			if (this->environment == Environment::UWP) {
+				// Setup inverse scale on the swap chain
+				DXGI_MATRIX_3X2_F inverseScale = { 0 };
+				inverseScale._11 = 1.0f / m_effectiveCompositionScaleX;
+				inverseScale._22 = 1.0f / m_effectiveCompositionScaleY;
+				Microsoft::WRL::ComPtr<IDXGISwapChain2> swapChain2;
+				hr = this->dxgiSwapChain.As<IDXGISwapChain2>(&swapChain2);
+				H::System::ThrowIfFailed(hr);
 
-			hr = spSwapChain2->SetMatrixTransform(&inverseScale);
-			H::System::ThrowIfFailed(hr);
+				hr = swapChain2->SetMatrixTransform(&inverseScale);
+				H::System::ThrowIfFailed(hr);
+			}
 
 			// Create a render target view of the swap chain back buffer.
 			Microsoft::WRL::ComPtr<ID3D11Texture2D1> backBuffer;
-			hr = m_swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
+			hr = this->dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
 			H::System::ThrowIfFailed(hr);
 
 			hr = d3dDevice->CreateRenderTargetView1(
@@ -327,7 +350,7 @@ namespace HELPERS_NS {
 				);
 
 			Microsoft::WRL::ComPtr<IDXGISurface2> dxgiBackBuffer;
-			hr = m_swapChain->GetBuffer(0, IID_PPV_ARGS(&dxgiBackBuffer));
+			hr = this->dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&dxgiBackBuffer));
 			H::System::ThrowIfFailed(hr);
 
 			hr = d2dCtx->CreateBitmapFromDxgiSurface(
@@ -412,8 +435,7 @@ namespace HELPERS_NS {
 		}
 
 		// This method is called in the event handler for the CompositionScaleChanged event.
-		void SwapChainPanel::SetCompositionScale(float compositionScaleX, float compositionScaleY)
-		{
+		void SwapChainPanel::SetCompositionScale(float compositionScaleX, float compositionScaleY) {
 			if (m_compositionScaleX != compositionScaleX ||
 				m_compositionScaleY != compositionScaleY)
 			{
@@ -423,10 +445,8 @@ namespace HELPERS_NS {
 			}
 		}
 
-		void SwapChainPanel::SetRenderResolutionScale(float resolutionScale)
-		{
-			if (m_resolutionScale != resolutionScale)
-			{
+		void SwapChainPanel::SetRenderResolutionScale(float resolutionScale) {
+			if (m_resolutionScale != resolutionScale) {
 				m_resolutionScale = resolutionScale;
 				CreateWindowSizeDependentResources();
 			}
@@ -501,7 +521,7 @@ namespace HELPERS_NS {
 			// TODO: implement
 			//auto dxDev = this->dxDeviceSafeObj.Lock();
 
-			//m_swapChain = nullptr;
+			//this->dxgiSwapChain = nullptr;
 
 			//if (m_deviceNotify != nullptr) {
 			//	m_deviceNotify->OnDeviceLost();
@@ -543,7 +563,7 @@ namespace HELPERS_NS {
 			// to sleep until the next VSync. This ensures we don't waste any cycles rendering
 			// frames that will never be displayed to the screen.
 			DXGI_PRESENT_PARAMETERS parameters = { 0 };
-			HRESULT hr = m_swapChain->Present1(1, 0, &parameters);
+			HRESULT hr = this->dxgiSwapChain->Present1(1, 0, &parameters);
 
 			// Discard the contents of the render target.
 			// This is a valid operation only when the existing contents will be entirely
@@ -562,6 +582,53 @@ namespace HELPERS_NS {
 				H::System::ThrowIfFailed(hr);
 			}
 		}
+
+
+		H::Size_f SwapChainPanel::GetOutputSize() const {
+			return m_outputSize;
+		}
+
+		H::Size_f SwapChainPanel::GetLogicalSize() const {
+			return m_logicalSize;
+		}
+
+		H::Size_f SwapChainPanel::GetRenderTargetSize() const {
+			return m_d3dRenderTargetSize;
+		}
+
+		float SwapChainPanel::GetDpi() const {
+			return m_effectiveDpi;
+		}
+
+		IDXGISwapChain3* SwapChainPanel::GetSwapChain() const {
+			return this->dxgiSwapChain.Get();
+		}
+
+		ID3D11RenderTargetView1* SwapChainPanel::GetBackBufferRenderTargetView() const {
+			return m_d3dRenderTargetView.Get();
+		}
+
+		ID3D11DepthStencilView* SwapChainPanel::GetDepthStencilView() const {
+			return m_d3dDepthStencilView.Get();
+		}
+
+		D3D11_VIEWPORT SwapChainPanel::GetScreenViewport() const {
+			return m_screenViewport;
+		}
+
+		DirectX::XMFLOAT4X4 SwapChainPanel::GetOrientationTransform3D() const {
+			return m_orientationTransform3D;
+		}
+
+		ID2D1Bitmap1* SwapChainPanel::GetD2DTargetBitmap() const {
+			return m_d2dTargetBitmap.Get();
+		}
+
+		D2D1::Matrix3x2F SwapChainPanel::GetOrientationTransform2D() const {
+			return m_orientationTransform2D;
+		}
+
+
 
 		// This method determines the rotation between the display device's native orientation and the
 		// current display orientation.

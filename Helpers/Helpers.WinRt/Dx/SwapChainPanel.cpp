@@ -28,7 +28,9 @@ namespace Helpers {
 	namespace WinRt {
 		namespace Dx {
 			SwapChainPanel::SwapChainPanel()
-				: swapChainPanel{ Microsoft::WRL::Make<H::Dx::SwapChainPanel>(MakeWinRTCallback(this, &SwapChainPanel::CreateSwapChainPanel)) }
+				: swapChainPanel{ Microsoft::WRL::Make<H::Dx::SwapChainPanel>(
+					H::Dx::SwapChainPanel::Environment::UWP,
+					MakeWinRTCallback(this, &SwapChainPanel::CreateSwapChainPanel)) }
 			{
 			}
 
