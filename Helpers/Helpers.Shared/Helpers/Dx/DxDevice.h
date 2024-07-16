@@ -39,6 +39,8 @@ namespace HELPERS_NS {
 				DxDeviceCtxSafeObj_t::_Locked LockContext() const;
 				D3D_FEATURE_LEVEL GetDeviceFeatureLevel() const;
 
+				void CreateDxgiFactory();
+
 			private:
 				void CreateDeviceIndependentResources();
 				void CreateDeviceDependentResources(const std::optional<DxDeviceParams>& params);
