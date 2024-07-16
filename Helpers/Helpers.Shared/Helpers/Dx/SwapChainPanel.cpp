@@ -56,12 +56,36 @@ namespace ScreenRotation {
 	);
 };
 
+namespace Tools {
+	inline DXGI_FORMAT WithoutSRGB(DXGI_FORMAT fmt) noexcept {
+		switch (fmt) {
+		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: return DXGI_FORMAT_R8G8B8A8_UNORM;
+		case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB: return DXGI_FORMAT_B8G8R8A8_UNORM;
+		case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB: return DXGI_FORMAT_B8G8R8X8_UNORM;
+		default: return fmt;
+		}
+	}
+
+	inline DXGI_SWAP_EFFECT WithFlip(DXGI_SWAP_EFFECT effect) noexcept {
+		switch (effect) {
+		case DXGI_SWAP_EFFECT_DISCARD: return DXGI_SWAP_EFFECT_FLIP_DISCARD;
+		case DXGI_SWAP_EFFECT_SEQUENTIAL: return DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+		default: return effect;
+		}
+	}
+
+	inline long ComputeIntersectionArea(
+		long ax1, long ay1, long ax2, long ay2,
+		long bx1, long by1, long bx2, long by2) noexcept
+	{
+		return std::max(0l, std::min(ax2, bx2) - std::max(ax1, bx1)) * std::max(0l, std::min(ay2, by2) - std::max(ay1, by1));
+	}
+}
+
 namespace HELPERS_NS {
 	namespace Dx {
-		SwapChainPanel::SwapChainPanel(Environment environment, Callback<void, IDXGISwapChain3*> swapChainCreateFn, HWND hWnd)
-			: environment{ environment }
-			, swapChainCreateFn{ swapChainCreateFn }
-			, hWnd{ hWnd }
+		SwapChainPanel::SwapChainPanel(InitData initData)
+			: initData{ initData }
 			, dxDeviceSafeObj{ std::make_unique<H::Dx::details::DxVideoDeviceMF>() }
 			, m_screenViewport{}
 			, m_d3dRenderTargetSize{}
@@ -74,8 +98,23 @@ namespace HELPERS_NS {
 			, m_compositionScaleX{ 1.0f }
 			, m_compositionScaleY{ 1.0f }
 			, m_resolutionScale{ 1.0f }
+			, colorSpace{ DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709 }
 			, m_deviceNotify{ nullptr }
 		{
+			HRESULT hr = S_OK;
+
+			// Disable HDR if we are on an OS that can't support FLIP swap effects
+			if (this->initData.optionFlags.Has(InitData::Options::EnableHDR)) {
+				auto dxDev = this->dxDeviceSafeObj.Lock();
+				auto d3dDevice = dxDev->GetD3DDevice();
+				auto dxgiFactory = dxDev->GetDxgiFactory();
+
+				Microsoft::WRL::ComPtr<IDXGIFactory5> dxgiFactory5;
+				if (FAILED(dxgiFactory.As(&dxgiFactory5))) {
+					this->initData.optionFlags &= ~InitData::Options::EnableHDR;
+					LOG_WARNING_D("HDR swap chains not supported, disable 'InitData::Options::EnableHDR'");
+				}
+			}
 		}
 
 		SwapChainPanel::~SwapChainPanel() {
@@ -122,10 +161,10 @@ namespace HELPERS_NS {
 			// Clear the previous window size specific context.
 			ID3D11RenderTargetView* nullViews[] = { nullptr };
 			d3dCtx->OMSetRenderTargets(ARRAYSIZE(nullViews), nullViews, nullptr);
-			m_d3dRenderTargetView = nullptr;
+			m_d3dRenderTargetView.Reset();
 			d2dCtx->SetTarget(nullptr);
-			m_d2dTargetBitmap = nullptr;
-			m_d3dDepthStencilView = nullptr;
+			m_d2dTargetBitmap.Reset();
+			m_d3dDepthStencilView.Reset();
 			d3dCtx->Flush1(D3D11_CONTEXT_TYPE_ALL, nullptr);
 
 			UpdateRenderTargetSize();
@@ -138,14 +177,18 @@ namespace HELPERS_NS {
 			bool swapDimensions = displayRotation == DXGI_MODE_ROTATION_ROTATE90 || displayRotation == DXGI_MODE_ROTATION_ROTATE270;
 			m_d3dRenderTargetSize.width = swapDimensions ? m_outputSize.height : m_outputSize.width;
 			m_d3dRenderTargetSize.height = swapDimensions ? m_outputSize.width : m_outputSize.height;
+			
+			const DXGI_FORMAT backBufferFormat = (this->initData.optionFlags & (InitData::Options::EnableHDR)) 
+				? Tools::WithoutSRGB(this->initData.backBufferFormat)
+				: this->initData.backBufferFormat;
 
-			if (this->dxgiSwapChain != nullptr) {
+			if (this->dxgiSwapChain) {
 				// If the swap chain already exists, resize it.
 				HRESULT hr = this->dxgiSwapChain->ResizeBuffers(
 					2, // Double-buffered swap chain.
 					lround(m_d3dRenderTargetSize.width),
 					lround(m_d3dRenderTargetSize.height),
-					DXGI_FORMAT_B8G8R8A8_UNORM,
+					backBufferFormat,
 					0
 				);
 
@@ -168,37 +211,40 @@ namespace HELPERS_NS {
 
 				swapChainDesc.Width = lround(m_d3dRenderTargetSize.width);		// Match the size of the window.
 				swapChainDesc.Height = lround(m_d3dRenderTargetSize.height);
-				swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;				// This is the most common swap chain format.
+				swapChainDesc.Format = backBufferFormat;						// This is the most common swap chain format.
 				swapChainDesc.Stereo = false;
 				swapChainDesc.SampleDesc.Count = 1;								// Don't use multi-sampling.
 				swapChainDesc.SampleDesc.Quality = 0;
 				swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 				swapChainDesc.BufferCount = 2;									// Use double-buffering to minimize latency.
-				swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;	// All Microsoft Store apps must use _FLIP_ SwapEffects.
+				swapChainDesc.SwapEffect = (this->initData.optionFlags & (InitData::Options::EnableHDR))  // All Microsoft Store apps must use _FLIP_ SwapEffects.
+					? Tools::WithFlip(this->initData.dxgiSwapEffect)
+					: this->initData.dxgiSwapEffect;
 				swapChainDesc.Flags = 0;
 				swapChainDesc.Scaling = DXGI_SCALING_STRETCH;					// CreateSwapChainForComposition support only DXGI_SCALING_STRETCH
 				swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
 
-				// This sequence obtains the DXGI factory that was used to create the Direct3D device above.
-				Microsoft::WRL::ComPtr<IDXGIDevice3> dxgiDevice;
-				hr = d3dDevice.As(&dxgiDevice);
-				H::System::ThrowIfFailed(hr);
+				//// This sequence obtains the DXGI factory that was used to create the Direct3D device above.
+				//Microsoft::WRL::ComPtr<IDXGIDevice3> dxgiDevice;
+				//hr = d3dDevice.As(&dxgiDevice);
+				//H::System::ThrowIfFailed(hr);
 
-				Microsoft::WRL::ComPtr<IDXGIAdapter> dxgiAdapter;
-				hr = dxgiDevice->GetAdapter(&dxgiAdapter);
-				H::System::ThrowIfFailed(hr);
+				//Microsoft::WRL::ComPtr<IDXGIAdapter> dxgiAdapter;
+				//hr = dxgiDevice->GetAdapter(&dxgiAdapter);
+				//H::System::ThrowIfFailed(hr);
 
-				Microsoft::WRL::ComPtr<IDXGIFactory4> dxgiFactory;
-				hr = dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory));
-				H::System::ThrowIfFailed(hr);
+				//Microsoft::WRL::ComPtr<IDXGIFactory4> dxgiFactory;
+				//hr = dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory));
+				//H::System::ThrowIfFailed(hr);
 
+				auto dxgiFactory = dxDev->GetDxgiFactory();
 				Microsoft::WRL::ComPtr<IDXGISwapChain1> dxgiSwapChain1;
 
-				switch (this->environment) {
-				case Environment::Desktop: {
+				switch (this->initData.environment) {
+				case InitData::Environment::Desktop: {
 					hr = dxgiFactory->CreateSwapChainForHwnd(
 						d3dDevice.Get(),
-						this->hWnd,
+						this->initData.hWnd,
 						&swapChainDesc,
 						nullptr,
 						nullptr,
@@ -210,8 +256,8 @@ namespace HELPERS_NS {
 					H::System::ThrowIfFailed(hr);
 					break;
 				}
-				
-				case Environment::UWP: {
+
+				case InitData::Environment::UWP: {
 					// When using XAML interop, the swap chain must be created for composition.
 					hr = dxgiFactory->CreateSwapChainForComposition(
 						d3dDevice.Get(),
@@ -224,16 +270,20 @@ namespace HELPERS_NS {
 					hr = dxgiSwapChain1.As(&this->dxgiSwapChain);
 					H::System::ThrowIfFailed(hr);
 
-					if (!this->swapChainCreateFn) {
-						throw std::exception{ "Cannot create swap chain for UWP environment bacause this->swapChainCreateFn is empty." };
+					if (!this->initData.creatSwapChainPannelDxgiFn) {
+						throw std::exception{ "Cannot create swap chain for UWP environment bacause this->creatSwapChainPannelDxgiFn is empty." };
 					}
-					this->swapChainCreateFn(this->dxgiSwapChain.Get());
+					this->initData.creatSwapChainPannelDxgiFn(this->dxgiSwapChain.Get());
 					break;
 				}
 				}
 
 				// Ensure that DXGI does not queue more than one frame at a time. This both reduces latency and
 				// ensures that the application will only render after each VSync, minimizing power consumption.
+				Microsoft::WRL::ComPtr<IDXGIDevice3> dxgiDevice;
+				hr = d3dDevice.As(&dxgiDevice);
+				H::System::ThrowIfFailed(hr);
+
 				hr = dxgiDevice->SetMaximumFrameLatency(1);
 				H::System::ThrowIfFailed(hr);
 			}
@@ -278,7 +328,7 @@ namespace HELPERS_NS {
 			hr = this->dxgiSwapChain->SetRotation(displayRotation);
 			H::System::ThrowIfFailed(hr);
 
-			if (this->environment == Environment::UWP) {
+			if (this->initData.environment == InitData::Environment::UWP) {
 				// Setup inverse scale on the swap chain
 				DXGI_MATRIX_3X2_F inverseScale = { 0 };
 				inverseScale._11 = 1.0f / m_effectiveCompositionScaleX;
@@ -291,43 +341,78 @@ namespace HELPERS_NS {
 				H::System::ThrowIfFailed(hr);
 			}
 
+			// Handle color space settings for HDR
+			UpdateColorSpace();
+			
 			// Create a render target view of the swap chain back buffer.
-			Microsoft::WRL::ComPtr<ID3D11Texture2D1> backBuffer;
+			Microsoft::WRL::ComPtr<ID3D11Texture2D> backBuffer;
 			hr = this->dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
 			H::System::ThrowIfFailed(hr);
 
+			CD3D11_RENDER_TARGET_VIEW_DESC1 renderTargetViewDesc(
+				D3D11_RTV_DIMENSION_TEXTURE2D,
+				backBufferFormat
+			);
 			hr = d3dDevice->CreateRenderTargetView1(
 				backBuffer.Get(),
-				nullptr,
+				&renderTargetViewDesc, 
 				&m_d3dRenderTargetView
 			);
 			H::System::ThrowIfFailed(hr);
 
-			// Create a depth stencil view for use with 3D rendering if needed.
-			CD3D11_TEXTURE2D_DESC1 depthStencilDesc(
-				DXGI_FORMAT_D24_UNORM_S8_UINT,
-				lround(m_d3dRenderTargetSize.width),
-				lround(m_d3dRenderTargetSize.height),
-				1, // This depth stencil view has only one texture.
-				1, // Use a single mipmap level.
-				D3D11_BIND_DEPTH_STENCIL
-			);
 
-			Microsoft::WRL::ComPtr<ID3D11Texture2D1> depthStencil;
-			hr = d3dDevice->CreateTexture2D1(
-				&depthStencilDesc,
-				nullptr,
-				&depthStencil
-			);
-			H::System::ThrowIfFailed(hr);
+			if (this->initData.depthBufferFormat != DXGI_FORMAT_UNKNOWN) {
+				// Create a depth stencil view for use with 3D rendering if needed.
+				CD3D11_TEXTURE2D_DESC1 depthStencilDesc(
+					this->initData.depthBufferFormat, // DXGI_FORMAT_D24_UNORM_S8_UINT,
+					lround(m_d3dRenderTargetSize.width),
+					lround(m_d3dRenderTargetSize.height),
+					1, // This depth stencil view has only one texture.
+					1, // Use a single mipmap level.
+					D3D11_BIND_DEPTH_STENCIL
+				);
 
-			CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(D3D11_DSV_DIMENSION_TEXTURE2D);
-			hr = d3dDevice->CreateDepthStencilView(
-				depthStencil.Get(),
-				&depthStencilViewDesc,
-				&m_d3dDepthStencilView
-			);
-			H::System::ThrowIfFailed(hr);
+				Microsoft::WRL::ComPtr<ID3D11Texture2D1> depthStencil;
+				hr = d3dDevice->CreateTexture2D1(
+					&depthStencilDesc,
+					nullptr,
+					&depthStencil
+				);
+				H::System::ThrowIfFailed(hr);
+
+				CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(D3D11_DSV_DIMENSION_TEXTURE2D);
+				hr = d3dDevice->CreateDepthStencilView(
+					depthStencil.Get(),
+					&depthStencilViewDesc,
+					&m_d3dDepthStencilView
+				);
+				H::System::ThrowIfFailed(hr);
+			}
+
+			if (backBufferFormat == DXGI_FORMAT_B8G8R8A8_UNORM) {
+				// Create a Direct2D target bitmap associated with the
+				// swap chain back buffer and set it as the current target.
+				D2D1_BITMAP_PROPERTIES1 bitmapProperties =
+					D2D1::BitmapProperties1(
+						D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+						D2D1::PixelFormat(backBufferFormat, D2D1_ALPHA_MODE_PREMULTIPLIED),
+						m_dpi,
+						m_dpi
+					);
+
+				Microsoft::WRL::ComPtr<IDXGISurface2> dxgiBackBuffer;
+				hr = this->dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&dxgiBackBuffer));
+				H::System::ThrowIfFailed(hr);
+
+				hr = d2dCtx->CreateBitmapFromDxgiSurface(
+					dxgiBackBuffer.Get(),
+					&bitmapProperties,
+					&m_d2dTargetBitmap
+				);
+				H::System::ThrowIfFailed(hr);
+
+				d2dCtx->SetTarget(m_d2dTargetBitmap.Get());
+			}
 
 			// Set the 3D rendering viewport to target the entire window.
 			m_screenViewport = CD3D11_VIEWPORT(
@@ -336,31 +421,8 @@ namespace HELPERS_NS {
 				m_d3dRenderTargetSize.width,
 				m_d3dRenderTargetSize.height
 			);
-
 			d3dCtx->RSSetViewports(1, &m_screenViewport);
 
-			// Create a Direct2D target bitmap associated with the
-			// swap chain back buffer and set it as the current target.
-			D2D1_BITMAP_PROPERTIES1 bitmapProperties =
-				D2D1::BitmapProperties1(
-					D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
-					D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
-					m_dpi,
-					m_dpi
-				);
-
-			Microsoft::WRL::ComPtr<IDXGISurface2> dxgiBackBuffer;
-			hr = this->dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&dxgiBackBuffer));
-			H::System::ThrowIfFailed(hr);
-
-			hr = d2dCtx->CreateBitmapFromDxgiSurface(
-				dxgiBackBuffer.Get(),
-				&bitmapProperties,
-				&m_d2dTargetBitmap
-			);
-			H::System::ThrowIfFailed(hr);
-
-			d2dCtx->SetTarget(m_d2dTargetBitmap.Get());
 			d2dCtx->SetDpi(m_effectiveDpi, m_effectiveDpi);
 
 			// Grayscale text anti-aliasing is recommended for all Microsoft Store apps.
@@ -386,9 +448,9 @@ namespace HELPERS_NS {
 				//if (std::max(width, height) > DisplayMetrics::WidthThreshold && std::min(width, height) > DisplayMetrics::HeightThreshold)
 				//{
 					// To scale the app we change the effective DPI. Logical size does not change.
-					m_effectiveDpi /= this->m_resolutionScale;
-					m_effectiveCompositionScaleX /= this->m_resolutionScale;
-					m_effectiveCompositionScaleY /= this->m_resolutionScale;
+				m_effectiveDpi /= this->m_resolutionScale;
+				m_effectiveCompositionScaleX /= this->m_resolutionScale;
+				m_effectiveCompositionScaleY /= this->m_resolutionScale;
 				//}
 			}
 
@@ -570,8 +632,10 @@ namespace HELPERS_NS {
 			// overwritten. If dirty or scroll rects are used, this call should be modified.
 			d3dCtx->DiscardView1(m_d3dRenderTargetView.Get(), nullptr, 0);
 
-			// Discard the contents of the depth stencil.
-			d3dCtx->DiscardView1(m_d3dDepthStencilView.Get(), nullptr, 0);
+			if (m_d3dDepthStencilView) {
+				// Discard the contents of the depth stencil.
+				d3dCtx->DiscardView1(m_d3dDepthStencilView.Get(), nullptr, 0);
+			}
 
 			// If the device was removed either by a disconnection or a driver upgrade, we 
 			// must recreate all device resources.
@@ -600,16 +664,16 @@ namespace HELPERS_NS {
 			return m_effectiveDpi;
 		}
 
-		IDXGISwapChain3* SwapChainPanel::GetSwapChain() const {
-			return this->dxgiSwapChain.Get();
+		Microsoft::WRL::ComPtr<IDXGISwapChain3> SwapChainPanel::GetSwapChain() const {
+			return this->dxgiSwapChain;
 		}
 
-		ID3D11RenderTargetView1* SwapChainPanel::GetBackBufferRenderTargetView() const {
-			return m_d3dRenderTargetView.Get();
+		Microsoft::WRL::ComPtr<ID3D11RenderTargetView1> SwapChainPanel::GetRenderTargetView() const {
+			return m_d3dRenderTargetView;
 		}
 
-		ID3D11DepthStencilView* SwapChainPanel::GetDepthStencilView() const {
-			return m_d3dDepthStencilView.Get();
+		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> SwapChainPanel::GetDepthStencilView() const {
+			return m_d3dDepthStencilView;
 		}
 
 		D3D11_VIEWPORT SwapChainPanel::GetScreenViewport() const {
@@ -620,12 +684,16 @@ namespace HELPERS_NS {
 			return m_orientationTransform3D;
 		}
 
-		ID2D1Bitmap1* SwapChainPanel::GetD2DTargetBitmap() const {
-			return m_d2dTargetBitmap.Get();
+		Microsoft::WRL::ComPtr<ID2D1Bitmap1> SwapChainPanel::GetD2DTargetBitmap() const {
+			return m_d2dTargetBitmap;
 		}
 
 		D2D1::Matrix3x2F SwapChainPanel::GetOrientationTransform2D() const {
 			return m_orientationTransform2D;
+		}
+
+		DXGI_COLOR_SPACE_TYPE __stdcall SwapChainPanel::GetColorSpace() const {
+			return this->colorSpace;
 		}
 
 
@@ -681,6 +749,120 @@ namespace HELPERS_NS {
 				break;
 			}
 			return rotation;
+		}
+
+		// TODO: implement for UWP. Check ATK Dx samples.
+		// Sets the color space for the swap chain in order to handle HDR output.
+		void SwapChainPanel::UpdateColorSpace() {
+			if (this->initData.environment != InitData::Environment::Desktop) {
+				return;
+			}
+
+			HRESULT hr = S_OK;
+			auto dxDev = this->dxDeviceSafeObj.Lock();
+			auto d3dDevice = dxDev->GetD3DDevice();
+			auto dxgiFactory = dxDev->GetDxgiFactory();
+
+			if (!dxgiFactory->IsCurrent()) {
+				// Output information is cached on the DXGI Factory. If it is stale we need to create a new factory.
+				dxDev->CreateDxgiFactory();
+			}
+
+			DXGI_COLOR_SPACE_TYPE colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
+
+			bool isDisplayHDR10 = false;
+
+#if defined(NTDDI_WIN10_RS2)
+			if (this->dxgiSwapChain) {
+				// To detect HDR support, we will need to check the color space in the primary
+				// DXGI output associated with the app at this point in time
+				// (using window/display intersection).
+
+				// Get the retangle bounds of the app window.
+				RECT windowBounds;
+				if (!GetWindowRect(this->initData.hWnd, &windowBounds)) {
+					throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "GetWindowRect");
+				}
+
+				const long ax1 = windowBounds.left;
+				const long ay1 = windowBounds.top;
+				const long ax2 = windowBounds.right;
+				const long ay2 = windowBounds.bottom;
+
+				Microsoft::WRL::ComPtr<IDXGIOutput> bestOutput;
+				long bestIntersectArea = -1;
+
+				Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
+				for (UINT adapterIndex = 0;
+					SUCCEEDED(dxgiFactory->EnumAdapters(adapterIndex, adapter.ReleaseAndGetAddressOf()));
+					++adapterIndex)
+				{
+					Microsoft::WRL::ComPtr<IDXGIOutput> output;
+					for (UINT outputIndex = 0;
+						SUCCEEDED(adapter->EnumOutputs(outputIndex, output.ReleaseAndGetAddressOf()));
+						++outputIndex)
+					{
+						// Get the rectangle bounds of current output.
+						DXGI_OUTPUT_DESC desc;
+						hr = output->GetDesc(&desc);
+						H::System::ThrowIfFailed(hr);
+
+						// Compute the intersection
+						const auto& r = desc.DesktopCoordinates;
+						const long intersectArea = Tools::ComputeIntersectionArea(ax1, ay1, ax2, ay2, r.left, r.top, r.right, r.bottom);
+						if (intersectArea > bestIntersectArea) {
+							bestOutput.Swap(output);
+							bestIntersectArea = intersectArea;
+						}
+					}
+				}
+
+				if (bestOutput) {
+					Microsoft::WRL::ComPtr<IDXGIOutput6> output6;
+					if (SUCCEEDED(bestOutput.As(&output6))) {
+						DXGI_OUTPUT_DESC1 desc;
+						hr = output6->GetDesc1(&desc);
+						H::System::ThrowIfFailed(hr);
+
+						if (desc.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020) {
+							// Display output is HDR10.
+							isDisplayHDR10 = true;
+						}
+					}
+				}
+			}
+#endif
+
+			if (this->initData.optionFlags.Has(InitData::Options::EnableHDR) && isDisplayHDR10) {
+				switch (this->initData.backBufferFormat) {
+				case DXGI_FORMAT_R10G10B10A2_UNORM:
+					// The application creates the HDR10 signal.
+					colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
+					break;
+
+				case DXGI_FORMAT_R16G16B16A16_FLOAT:
+					// The system creates the HDR10 signal; application uses linear values.
+					colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709;
+					break;
+
+				default:
+					break;
+				}
+			}
+
+			this->colorSpace = colorSpace;
+
+			Microsoft::WRL::ComPtr<IDXGISwapChain3> swapChain3;
+			if (this->dxgiSwapChain && SUCCEEDED(this->dxgiSwapChain.As(&swapChain3)))
+			{
+				UINT colorSpaceSupport = 0;
+				if (SUCCEEDED(swapChain3->CheckColorSpaceSupport(colorSpace, &colorSpaceSupport))
+					&& (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT))
+				{
+					hr = swapChain3->SetColorSpace1(colorSpace);
+					H::System::ThrowIfFailed(hr);
+				}
+			}
 		}
 	}
 }

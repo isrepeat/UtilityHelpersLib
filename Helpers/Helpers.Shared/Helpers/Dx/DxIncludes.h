@@ -10,6 +10,8 @@
 #include <d3d11_2.h>
 #include <d3d11_3.h>
 #include <dxgi1_4.h>
+#include <dxgi1_5.h>
+#include <dxgi1_6.h>
 #include <dwrite.h>
 #include <dwrite_3.h>
 #include <wincodec.h>

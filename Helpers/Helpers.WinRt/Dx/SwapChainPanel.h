@@ -28,10 +28,11 @@ namespace Helpers {
 				void RegisterDeviceNotify(H::Dx::IDeviceNotify* deviceNotify);
 
 			private:
-				static void CreateSwapChainPanel(SwapChainPanel^ _this, IDXGISwapChain3* dxgiSwapChainPanel);
+				Microsoft::WRL::ComPtr<H::Dx::ISwapChainPanel> CreateSwapChainPanelNative();
+				static void CreateSwapChainPanelDxgi(SwapChainPanel^ _this, IDXGISwapChain3* dxgiSwapChainPanel);
 
 			private:
-				Microsoft::WRL::ComPtr<H::Dx::ISwapChainPanel> swapChainPanel;
+				Microsoft::WRL::ComPtr<H::Dx::ISwapChainPanel> swapChainPanelNative;
 				Windows::UI::Xaml::Controls::SwapChainPanel^ swapChainPanelXaml;
 			};
 		}
