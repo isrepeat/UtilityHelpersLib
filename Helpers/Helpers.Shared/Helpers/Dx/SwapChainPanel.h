@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <Helpers/Dx/DxDevice.h>
 #include <Helpers/Callback.hpp>
+#include <Helpers/Flags.h>
 #include <Unknwn.h>
 
 namespace HELPERS_NS {
@@ -57,15 +58,17 @@ namespace HELPERS_NS {
 			virtual float STDMETHODCALLTYPE GetDpi() const = 0;
 
 			// D3D Accessors.
-			virtual IDXGISwapChain3* STDMETHODCALLTYPE GetSwapChain() const = 0;
-			virtual ID3D11RenderTargetView1* STDMETHODCALLTYPE GetBackBufferRenderTargetView() const = 0;
-			virtual ID3D11DepthStencilView* STDMETHODCALLTYPE GetDepthStencilView() const = 0;
+			virtual Microsoft::WRL::ComPtr<IDXGISwapChain3> STDMETHODCALLTYPE GetSwapChain() const = 0;
+			virtual Microsoft::WRL::ComPtr<ID3D11RenderTargetView1> STDMETHODCALLTYPE GetRenderTargetView() const = 0;
+			virtual Microsoft::WRL::ComPtr<ID3D11DepthStencilView> STDMETHODCALLTYPE GetDepthStencilView() const = 0;
 			virtual D3D11_VIEWPORT STDMETHODCALLTYPE GetScreenViewport() const = 0;
 			virtual DirectX::XMFLOAT4X4	STDMETHODCALLTYPE GetOrientationTransform3D() const = 0;
 
 			// D2D Accessors.
-			virtual ID2D1Bitmap1* STDMETHODCALLTYPE GetD2DTargetBitmap() const = 0;
+			virtual Microsoft::WRL::ComPtr<ID2D1Bitmap1> STDMETHODCALLTYPE GetD2DTargetBitmap() const = 0;
 			virtual D2D1::Matrix3x2F STDMETHODCALLTYPE GetOrientationTransform2D() const = 0;
+			
+			virtual DXGI_COLOR_SPACE_TYPE STDMETHODCALLTYPE GetColorSpace() const = 0;
 		};
 		
 
@@ -75,7 +78,27 @@ namespace HELPERS_NS {
 			ISwapChainPanel>
 		{
 		public:
-			SwapChainPanel(Callback<void, IDXGISwapChain3*> swapChainCreateFn);
+			struct InitData {
+				enum class Environment {
+					Desktop,
+					UWP,
+				};
+
+				enum Options {
+					None,
+					EnableHDR,
+				};
+
+				Environment environment = Environment::Desktop;
+				HWND hWnd = nullptr;
+				Callback<void, IDXGISwapChain3*> creatSwapChainPannelDxgiFn = {};
+				DXGI_FORMAT backBufferFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
+				DXGI_FORMAT depthBufferFormat = DXGI_FORMAT_UNKNOWN; // DXGI_FORMAT_D24_UNORM_S8_UINT
+				DXGI_SWAP_EFFECT dxgiSwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+				H::Flags<Options> optionFlags = Options::None;
+			};
+
+			SwapChainPanel(InitData initData);
 			~SwapChainPanel();
 
 			H::Dx::DxDeviceSafeObj* STDMETHODCALLTYPE GetDxDevice() override;
@@ -102,36 +125,39 @@ namespace HELPERS_NS {
 			void STDMETHODCALLTYPE Present() override;
 
 			// The size of the render target, in pixels.
-			H::Size_f STDMETHODCALLTYPE GetOutputSize() const override  { return m_outputSize; }
+			H::Size_f STDMETHODCALLTYPE GetOutputSize() const override;
 
 			// The size of the render target, in dips.
-			H::Size_f STDMETHODCALLTYPE GetLogicalSize() const override  { return m_logicalSize; }
-			H::Size_f STDMETHODCALLTYPE GetRenderTargetSize() const override { return m_d3dRenderTargetSize; }
-			float STDMETHODCALLTYPE GetDpi() const override { return m_effectiveDpi; }
+			H::Size_f STDMETHODCALLTYPE GetLogicalSize() const override;
+			H::Size_f STDMETHODCALLTYPE GetRenderTargetSize() const override;
+			float STDMETHODCALLTYPE GetDpi() const override;
 
 			// D3D Accessors.
-			IDXGISwapChain3* STDMETHODCALLTYPE GetSwapChain() const override { return m_swapChain.Get(); }
-			ID3D11RenderTargetView1* STDMETHODCALLTYPE GetBackBufferRenderTargetView() const override { return m_d3dRenderTargetView.Get(); }
-			ID3D11DepthStencilView* STDMETHODCALLTYPE GetDepthStencilView() const override { return m_d3dDepthStencilView.Get(); }
-			D3D11_VIEWPORT STDMETHODCALLTYPE GetScreenViewport() const override { return m_screenViewport; }
-			DirectX::XMFLOAT4X4	STDMETHODCALLTYPE GetOrientationTransform3D() const override { return m_orientationTransform3D; }
+			Microsoft::WRL::ComPtr<IDXGISwapChain3> STDMETHODCALLTYPE GetSwapChain() const override;
+			Microsoft::WRL::ComPtr<ID3D11RenderTargetView1> STDMETHODCALLTYPE GetRenderTargetView() const override;
+			Microsoft::WRL::ComPtr<ID3D11DepthStencilView> STDMETHODCALLTYPE GetDepthStencilView() const override;
+			D3D11_VIEWPORT STDMETHODCALLTYPE GetScreenViewport() const override;
+			DirectX::XMFLOAT4X4	STDMETHODCALLTYPE GetOrientationTransform3D() const override;
 
 			// D2D Accessors.
-			ID2D1Bitmap1* STDMETHODCALLTYPE GetD2DTargetBitmap() const override { return m_d2dTargetBitmap.Get(); }
-			D2D1::Matrix3x2F STDMETHODCALLTYPE GetOrientationTransform2D() const override { return m_orientationTransform2D; }
+			Microsoft::WRL::ComPtr<ID2D1Bitmap1> STDMETHODCALLTYPE GetD2DTargetBitmap() const override;
+			D2D1::Matrix3x2F STDMETHODCALLTYPE GetOrientationTransform2D() const override;
+			
+			DXGI_COLOR_SPACE_TYPE STDMETHODCALLTYPE GetColorSpace() const override;
 
 		private:
 			void CreateWindowSizeDependentResources();
 			void UpdateRenderTargetSize();
 			DXGI_MODE_ROTATION ComputeDisplayRotation();
+			void UpdateColorSpace();
 
 
 		private:
-			Callback<void, IDXGISwapChain3*> swapChainCreateFn;
-			
+			InitData initData;
+
 			// Direct3D objects.
 			H::Dx::DxDeviceSafeObj dxDeviceSafeObj;
-			Microsoft::WRL::ComPtr<IDXGISwapChain3>	m_swapChain;
+			Microsoft::WRL::ComPtr<IDXGISwapChain3>	dxgiSwapChain;
 
 			// Direct3D rendering objects. Required for 3D.
 			Microsoft::WRL::ComPtr<ID3D11RenderTargetView1>	m_d3dRenderTargetView;
@@ -161,6 +187,9 @@ namespace HELPERS_NS {
 			// Transforms used for display orientation.
 			D2D1::Matrix3x2F m_orientationTransform2D;
 			DirectX::XMFLOAT4X4	m_orientationTransform3D;
+
+			// HDR Support
+			DXGI_COLOR_SPACE_TYPE colorSpace;
 
 			// The IDeviceNotify can be held directly as it owns the DeviceResources.
 			IDeviceNotify* m_deviceNotify;

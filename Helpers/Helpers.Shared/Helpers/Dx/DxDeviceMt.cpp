@@ -15,6 +15,9 @@ namespace HELPERS_NS {
             Microsoft::WRL::ComPtr<IWICImagingFactory2> DxDeviceMt::GetWICFactory() const {
                 return this->wicFactory;
             }
+            Microsoft::WRL::ComPtr<IDXGIFactory2> DxDeviceMt::GetDxgiFactory() const {
+                return this->dxgiFactory;
+            }
             Microsoft::WRL::ComPtr<ID3D11Device3> DxDeviceMt::GetD3DDevice() const {
                 return this->d3dDevice;
             }

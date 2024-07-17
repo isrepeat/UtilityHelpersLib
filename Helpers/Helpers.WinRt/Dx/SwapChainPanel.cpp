@@ -28,7 +28,7 @@ namespace Helpers {
 	namespace WinRt {
 		namespace Dx {
 			SwapChainPanel::SwapChainPanel()
-				: swapChainPanel{ Microsoft::WRL::Make<H::Dx::SwapChainPanel>(MakeWinRTCallback(this, &SwapChainPanel::CreateSwapChainPanel)) }
+				: swapChainPanelNative{ this->CreateSwapChainPanelNative() }
 			{
 			}
 
@@ -40,7 +40,7 @@ namespace Helpers {
 				this->swapChainPanelXaml = swapChainPanelXaml;
 				
 				auto currentDisplayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
-				this->swapChainPanel->InitSwapChainPanelInfo(
+				this->swapChainPanelNative->InitSwapChainPanelInfo(
 					H::Size_f{ static_cast<float>(swapChainPanelXaml->ActualWidth), static_cast<float>(swapChainPanelXaml->ActualHeight) },
 					ScreenRotation::ToNative(currentDisplayInformation->NativeOrientation),
 					ScreenRotation::ToNative(currentDisplayInformation->CurrentOrientation),
@@ -52,27 +52,27 @@ namespace Helpers {
 
 			// This method is called in the event handler for the SizeChanged event.
 			void SwapChainPanel::SetLogicalSize(Windows::Foundation::Size logicalSize) {
-				this->swapChainPanel->SetLogicalSize(H::Size_f{ logicalSize.Width, logicalSize.Height });
+				this->swapChainPanelNative->SetLogicalSize(H::Size_f{ logicalSize.Width, logicalSize.Height });
 			}
 
 			// This method is called in the event handler for the DpiChanged event.
 			void SwapChainPanel::SetDpi(float dpi) {
-				this->swapChainPanel->SetDpi(dpi);
+				this->swapChainPanelNative->SetDpi(dpi);
 			}
 
 			// This method is called in the event handler for the OrientationChanged event.
 			void SwapChainPanel::SetCurrentOrientation(Windows::Graphics::Display::DisplayOrientations currentOrientation) {
-				this->swapChainPanel->SetCurrentOrientation(ScreenRotation::ToNative(currentOrientation));
+				this->swapChainPanelNative->SetCurrentOrientation(ScreenRotation::ToNative(currentOrientation));
 			}
 
 			// This method is called in the event handler for the CompositionScaleChanged event.
 			void SwapChainPanel::SetCompositionScale(float compositionScaleX, float compositionScaleY) {
-				this->swapChainPanel->SetCompositionScale(compositionScaleX, compositionScaleY);
+				this->swapChainPanelNative->SetCompositionScale(compositionScaleX, compositionScaleY);
 			}
 
 			// This method is called in the event handler for the DisplayContentsInvalidated event.
 			void SwapChainPanel::ValidateDevice() {
-				this->swapChainPanel->ValidateDevice();
+				this->swapChainPanelNative->ValidateDevice();
 			}
 
 			// Recreate all device resources and set them back to the current state.
@@ -86,12 +86,12 @@ namespace Helpers {
 			// Call this method when the app suspends. It provides a hint to the driver that the app 
 			// is entering an idle state and that temporary buffers can be reclaimed for use by other apps.
 			void SwapChainPanel::Trim() {
-				this->swapChainPanel->Trim();
+				this->swapChainPanelNative->Trim();
 			}
 
 			// Present the contents of the swap chain to the screen.
 			void SwapChainPanel::Present() {
-				this->swapChainPanel->Present();
+				this->swapChainPanelNative->Present();
 			}
 
 			//Platform::Object^ SwapChainPanel::GetSwapChainNative() {
@@ -118,17 +118,24 @@ namespace Helpers {
 			//}
 
 			Platform::Object^ SwapChainPanel::GetSwapChainNative() {
-				Platform::Object^ obj = reinterpret_cast<Platform::Object^>(this->swapChainPanel.Get());
+				Platform::Object^ obj = reinterpret_cast<Platform::Object^>(this->swapChainPanelNative.Get());
 				return obj;
 			}
 
 			// Register our DeviceNotify to be informed on device lost and creation.
 			void SwapChainPanel::RegisterDeviceNotify(H::Dx::IDeviceNotify* deviceNotify) {
-				this->swapChainPanel->RegisterDeviceNotify(deviceNotify);
+				this->swapChainPanelNative->RegisterDeviceNotify(deviceNotify);
+			}
+
+			Microsoft::WRL::ComPtr<H::Dx::ISwapChainPanel> SwapChainPanel::CreateSwapChainPanelNative() {
+				H::Dx::SwapChainPanel::InitData swapChainPanelNativeInitData;
+				swapChainPanelNativeInitData.environment = H::Dx::SwapChainPanel::InitData::Environment::UWP;
+				swapChainPanelNativeInitData.creatSwapChainPannelDxgiFn = MakeWinRTCallback(this, &SwapChainPanel::CreateSwapChainPanelDxgi);
+				return Microsoft::WRL::Make<H::Dx::SwapChainPanel>(swapChainPanelNativeInitData);
 			}
 
 
-			void SwapChainPanel::CreateSwapChainPanel(SwapChainPanel^ _this, IDXGISwapChain3* swapChainPanelDxgi) {
+			void SwapChainPanel::CreateSwapChainPanelDxgi(SwapChainPanel^ _this, IDXGISwapChain3* swapChainPanelDxgi) {
 				// Associate swap chain with SwapChainPanel
 				// UI changes will need to be dispatched back to the UI thread
 				_this->swapChainPanelXaml->Dispatcher->RunAsync(

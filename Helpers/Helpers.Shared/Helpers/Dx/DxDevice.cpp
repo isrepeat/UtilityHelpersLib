@@ -45,6 +45,7 @@ namespace HELPERS_NS {
                 }
             }
 
+
             DxDeviceCtxSafeObj_t::_Locked DxDevice::LockContext() const {
                 return this->ctxSafeObj.Lock();
             }
@@ -52,6 +53,12 @@ namespace HELPERS_NS {
             D3D_FEATURE_LEVEL DxDevice::GetDeviceFeatureLevel() const {
                 return this->featureLevel;
             }
+
+            void DxDevice::CreateDxgiFactory() {
+                HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(dxgiFactory.ReleaseAndGetAddressOf()));
+                H::System::ThrowIfFailed(hr);
+            }
+
 
             void DxDevice::CreateDeviceIndependentResources() {
                 HRESULT hr = S_OK;
@@ -109,6 +116,8 @@ namespace HELPERS_NS {
                     creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
                 }
 #endif
+
+                this->CreateDxgiFactory();
 
                 // This array defines the set of DirectX hardware feature levels this app will support.
                 // Note the ordering should be preserved.

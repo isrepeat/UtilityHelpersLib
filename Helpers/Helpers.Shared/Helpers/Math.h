@@ -16,10 +16,18 @@ namespace HELPERS_NS {
 			{}
 
 			bool operator == (const Size& other) const {
-				return width == other.width && height == other.height;
+				return this->width == other.width && this->height == other.height;
 			}
 			bool operator != (const Size& other) const {
 				return !(*this == other);
+			}
+
+			template <typename T>
+			explicit operator Size<T>() {
+				return Size<T>{
+					static_cast<T>(this->width),
+					static_cast<T>(this->height),
+				};
 			}
 		};
 
