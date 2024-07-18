@@ -83,19 +83,24 @@ namespace HELPERS_NS {
 					Desktop,
 					UWP,
 				};
-
 				enum Options {
 					None,
 					EnableHDR,
 				};
 
+				std::function<std::unique_ptr<HELPERS_NS::Dx::details::DxDevice>()> dxDeviceFactory = [] {
+					return std::make_unique<HELPERS_NS::Dx::details::DxDevice>();
+				};
+
 				Environment environment = Environment::Desktop;
+				H::Flags<Options> optionFlags = Options::None;
+
 				HWND hWnd = nullptr;
 				Callback<void, IDXGISwapChain3*> creatSwapChainPannelDxgiFn = {};
+
 				DXGI_FORMAT backBufferFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
 				DXGI_FORMAT depthBufferFormat = DXGI_FORMAT_UNKNOWN; // DXGI_FORMAT_D24_UNORM_S8_UINT
 				DXGI_SWAP_EFFECT dxgiSwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-				H::Flags<Options> optionFlags = Options::None;
 			};
 
 			SwapChainPanel(InitData initData);
@@ -145,7 +150,7 @@ namespace HELPERS_NS {
 			
 			DXGI_COLOR_SPACE_TYPE STDMETHODCALLTYPE GetColorSpace() const override;
 
-		private:
+		private: 
 			void CreateWindowSizeDependentResources();
 			void UpdateRenderTargetSize();
 			DXGI_MODE_ROTATION ComputeDisplayRotation();

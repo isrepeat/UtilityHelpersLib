@@ -86,7 +86,7 @@ namespace HELPERS_NS {
 	namespace Dx {
 		SwapChainPanel::SwapChainPanel(InitData initData)
 			: initData{ initData }
-			, dxDeviceSafeObj{ std::make_unique<H::Dx::details::DxVideoDeviceMF>() }
+			, dxDeviceSafeObj{ initData.dxDeviceFactory() }
 			, m_screenViewport{}
 			, m_d3dRenderTargetSize{}
 			, m_outputSize{}
