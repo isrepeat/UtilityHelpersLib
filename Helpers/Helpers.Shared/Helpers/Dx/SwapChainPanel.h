@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <Helpers/common.h>
 #include <Helpers/Dx/DxDevice.h>
 #include <Helpers/Callback.hpp>
 #include <Helpers/Flags.h>

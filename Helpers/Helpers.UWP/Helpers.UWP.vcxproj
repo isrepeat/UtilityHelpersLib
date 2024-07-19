@@ -26,6 +26,9 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1f26dd5b-02c2-4192-ac91-06bed3d214f3}</ProjectGuid>
     <Keyword>StaticLibrary</Keyword>
@@ -211,5 +214,12 @@
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\..\packages\HelpersWinApi.1.0.0\build\native\HelpersWinApi.targets" Condition="Exists('..\..\packages\HelpersWinApi.1.0.0\build\native\HelpersWinApi.targets')" />
   </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\packages\HelpersWinApi.1.0.0\build\native\HelpersWinApi.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\HelpersWinApi.1.0.0\build\native\HelpersWinApi.targets'))" />
+  </Target>
 </Project>
