@@ -4,6 +4,10 @@
 
 #include <windows.ui.xaml.media.dxinterop.h>
 
+#if COMPILE_FOR_CX_or_WINRT
+#include <HelpersWinApiCX\HelpersWinApiCX.h>
+#endif
+
 
 namespace DisplayMetrics {
 	// High resolution displays can require a lot of GPU and battery power to render.
@@ -780,7 +784,11 @@ namespace HELPERS_NS {
 
 				// Get the retangle bounds of the app window.
 				RECT windowBounds;
+#if COMPILE_FOR_CX_or_WINRT
+				if (!H::Cx::WinApi::GetWindowRect(this->initData.hWnd, &windowBounds)) {
+#else
 				if (!GetWindowRect(this->initData.hWnd, &windowBounds)) {
+#endif
 					throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "GetWindowRect");
 				}
 

@@ -16,12 +16,14 @@
   </PropertyGroup>
   
   <ItemGroup>
+    <!-- TODO: maybe add metadata that save 'Helpers' dir and use it when copy sources for nugets -->
     <HelpersCommonHeaders Include="$(HelpersSourcesDir)\common.h" />
     <HelpersCommonHeaders Include="$(HelpersSourcesDir)\HWindows.h" />
-    <HelpersCommonHeaders Include="$(HelpersSourcesDir)\Callback.hpp" />
+    <HelpersCommonHeaders Include="$(HelpersSourcesDir)\BoostIsSupported.h" />
+    <!--<HelpersCommonHeaders Include="$(HelpersSourcesDir)\Callback.hpp" />
     <HelpersCommonHeaders Include="$(HelpersSourcesDir)\Callback_CLR.hpp" />
     <HelpersCommonHeaders Include="$(HelpersSourcesDir)\TokenContext.hpp" />
-    <HelpersCommonHeaders Include="$(HelpersSourcesDir)\FunctionTraits.hpp" />
+    <HelpersCommonHeaders Include="$(HelpersSourcesDir)\FunctionTraits.hpp" />-->
     <HelpersCommonHeaders Include="@(UtilityHelpersLibSharedHeaders)" />
   </ItemGroup>
 

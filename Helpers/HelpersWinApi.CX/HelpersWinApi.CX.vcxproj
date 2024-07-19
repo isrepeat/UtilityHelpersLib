@@ -5,6 +5,10 @@
       <Configuration>Debug</Configuration>
       <Platform>ARM</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|ARM64">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
@@ -17,6 +21,10 @@
       <Configuration>Release</Configuration>
       <Platform>ARM</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM64">
+      <Configuration>Release</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
@@ -26,15 +34,10 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\HelpersWinApi.CX\HelpersWinApi.CX.vcxproj">
-      <Project>{6bec93a0-e1a2-4037-a5df-5ceee0aaa5fd}</Project>
-    </ProjectReference>
-  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{1f26dd5b-02c2-4192-ac91-06bed3d214f3}</ProjectGuid>
-    <Keyword>StaticLibrary</Keyword>
-    <RootNamespace>Helpers_UWP</RootNamespace>
+    <ProjectGuid>{6bec93a0-e1a2-4037-a5df-5ceee0aaa5fd}</ProjectGuid>
+    <Keyword>DynamicLibrary</Keyword>
+    <RootNamespace>HelpersWinApi_CX</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <AppContainerApplication>true</AppContainerApplication>
@@ -45,34 +48,45 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <PlatformToolset>v142</PlatformToolset>
@@ -81,10 +95,7 @@
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
-    <Import Project="..\Helpers.Shared\Helpers.Shared.vcxitems" Label="Shared" />
-    <Import Project="..\..\3rdParty\Spdlog\Spdlog.Shared\Spdlog.Shared.vcxitems" Label="Shared" />
-    <Import Project="..\..\3rdParty\MagicEnum\MagicEnum.Shared\MagicEnum.Shared.vcxitems" Label="Shared" />
-    <Import Project="..\ComAPI.Shared\ComAPI.Shared.vcxitems" Label="Shared" />
+    <Import Project="..\Helpers.Includes\Helpers.Includes.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -98,6 +109,12 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -108,39 +125,63 @@
   <PropertyGroup />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <GenerateManifest>false</GenerateManifest>
+    <IgnoreImportLibrary>false</IgnoreImportLibrary>
+    <TargetName>HelpersWinApiCX</TargetName>
     <OutDir>$(SolutionDir)\!VS_TMP\Build\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <GenerateManifest>false</GenerateManifest>
+    <IgnoreImportLibrary>false</IgnoreImportLibrary>
+    <TargetName>HelpersWinApiCX</TargetName>
     <OutDir>$(SolutionDir)\!VS_TMP\Build\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <GenerateManifest>false</GenerateManifest>
+    <IgnoreImportLibrary>false</IgnoreImportLibrary>
+    <TargetName>HelpersWinApiCX</TargetName>
     <OutDir>$(SolutionDir)\!VS_TMP\Build\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <GenerateManifest>false</GenerateManifest>
+    <IgnoreImportLibrary>false</IgnoreImportLibrary>
+    <TargetName>HelpersWinApiCX</TargetName>
+    <OutDir>$(SolutionDir)\!VS_TMP\Build\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <GenerateManifest>false</GenerateManifest>
+    <IgnoreImportLibrary>false</IgnoreImportLibrary>
+    <TargetName>HelpersWinApiCX</TargetName>
+    <OutDir>$(SolutionDir)\!VS_TMP\Build\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <GenerateManifest>false</GenerateManifest>
+    <IgnoreImportLibrary>false</IgnoreImportLibrary>
+    <TargetName>HelpersWinApiCX</TargetName>
     <OutDir>$(SolutionDir)\!VS_TMP\Build\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <GenerateManifest>false</GenerateManifest>
+    <IgnoreImportLibrary>false</IgnoreImportLibrary>
+    <TargetName>HelpersWinApiCX</TargetName>
     <OutDir>$(SolutionDir)\!VS_TMP\Build\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <GenerateManifest>false</GenerateManifest>
+    <IgnoreImportLibrary>false</IgnoreImportLibrary>
+    <TargetName>HelpersWinApiCX</TargetName>
     <OutDir>$(SolutionDir)\!VS_TMP\Build\$(PlatformToolset)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\$(PlatformToolset)\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <SDLCheck>true</SDLCheck>
-      <LanguageStandard>stdcpp20</LanguageStandard>
       <CompileAsWinRT>false</CompileAsWinRT>
     </ClCompile>
     <Link>
@@ -152,8 +193,6 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <SDLCheck>true</SDLCheck>
-      <LanguageStandard>stdcpp20</LanguageStandard>
       <CompileAsWinRT>false</CompileAsWinRT>
     </ClCompile>
     <Link>
@@ -165,8 +204,6 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|arm'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <SDLCheck>true</SDLCheck>
-      <LanguageStandard>stdcpp20</LanguageStandard>
       <CompileAsWinRT>false</CompileAsWinRT>
     </ClCompile>
     <Link>
@@ -178,8 +215,28 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|arm'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <SDLCheck>true</SDLCheck>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <CompileAsWinRT>false</CompileAsWinRT>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <CompileAsWinRT>false</CompileAsWinRT>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
     </ClCompile>
     <Link>
@@ -191,8 +248,6 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <SDLCheck>true</SDLCheck>
-      <LanguageStandard>stdcpp20</LanguageStandard>
       <CompileAsWinRT>false</CompileAsWinRT>
     </ClCompile>
     <Link>
@@ -204,8 +259,6 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <SDLCheck>true</SDLCheck>
-      <LanguageStandard>stdcpp20</LanguageStandard>
       <CompileAsWinRT>false</CompileAsWinRT>
     </ClCompile>
     <Link>
@@ -214,6 +267,26 @@
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="HelpersWinApi.CX.targets" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="HelpersWinApiCX\HelpersWinApiCX.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="HelpersWinApiCX\HelpersWinApiCX.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets" />
+  <!-- Custom targets -->
+  <Import Project="$(ProjectDir)\HelpersWinApi.CX.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\..\packages\HelpersWinApi.1.0.0\build\native\HelpersWinApi.targets" Condition="Exists('..\..\packages\HelpersWinApi.1.0.0\build\native\HelpersWinApi.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\packages\HelpersWinApi.1.0.0\build\native\HelpersWinApi.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\HelpersWinApi.1.0.0\build\native\HelpersWinApi.targets'))" />
+  </Target>
 </Project>
