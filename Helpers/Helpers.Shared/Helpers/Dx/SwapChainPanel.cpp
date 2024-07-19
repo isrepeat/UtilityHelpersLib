@@ -5,11 +5,7 @@
 #include <windows.ui.xaml.media.dxinterop.h>
 
 #if COMPILE_FOR_CX_or_WINRT
-#ifndef HELPERS_WINAPI_NUGET
-#error "Add HelpersWinApi nuget"
-#endif
-#include <HelpersWinApi/Window.h>
-//using H::Desktop::GetWindowRect;
+#include <HelpersWinApiCX\HelpersWinApiCX.h>
 #endif
 
 
@@ -789,7 +785,7 @@ namespace HELPERS_NS {
 				// Get the retangle bounds of the app window.
 				RECT windowBounds;
 #if COMPILE_FOR_CX_or_WINRT
-				if (!H::Desktop::GetWindowRect(this->initData.hWnd, &windowBounds)) {
+				if (!H::Cx::WinApi::GetWindowRect(this->initData.hWnd, &windowBounds)) {
 #else
 				if (!GetWindowRect(this->initData.hWnd, &windowBounds)) {
 #endif
