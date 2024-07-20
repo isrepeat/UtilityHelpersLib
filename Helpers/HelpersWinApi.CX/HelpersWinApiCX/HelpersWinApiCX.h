@@ -1,4 +1,8 @@
 ﻿#pragma once
+/**
+	It is a wrapper under HelpersWinApi nuget API. 
+	You can include this project in "Universal window" project safety (nuget dependencies copied automatially).
+*/
 #include <Helpers\common.h>
 
 #ifdef __MAKE_DYNAMIC_LIBRARY__
@@ -10,6 +14,7 @@
 namespace HELPERS_NS {
 	namespace Cx {
 		namespace WinApi {
+			HELPERS_WINAPI_CX_API HWND GetDesktopWindow();
 			HELPERS_WINAPI_CX_API bool GetWindowRect(HWND hWnd, LPRECT lpRect);
 		}
 	}
