@@ -150,6 +150,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\SmartVARIANT.cpp">
       <Filter>_Sources</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\D2DCtxMt.cpp">
+      <Filter>Dx</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Gate.h">
@@ -451,6 +454,9 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Byteswap.h">
       <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\D2DCtxMt.h">
+      <Filter>Dx</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
