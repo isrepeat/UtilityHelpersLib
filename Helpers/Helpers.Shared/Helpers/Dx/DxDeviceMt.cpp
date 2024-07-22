@@ -24,6 +24,10 @@ namespace HELPERS_NS {
             Microsoft::WRL::ComPtr<ID3D10Multithread> DxDeviceMt::GetD3DMultithread() const {
                 return this->d3dMultithread;
             }
+
+            HELPERS_NS::Dx::D2DCtxMt* DxDeviceMt::GetD2DCtxMt() {
+                return &this->d2dCtxMt;
+            }
         }
     }
 }

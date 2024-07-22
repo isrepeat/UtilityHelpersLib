@@ -56,7 +56,7 @@ namespace HELPERS_NS {
 
             void DxDevice::CreateDxgiFactory() {
                 HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(dxgiFactory.ReleaseAndGetAddressOf()));
-                H::System::ThrowIfFailed(hr);
+                HELPERS_NS::System::ThrowIfFailed(hr);
             }
 
 
@@ -81,7 +81,7 @@ namespace HELPERS_NS {
                     &options,
                     &this->d2dFactory
                 );
-                H::System::ThrowIfFailed(hr);
+                HELPERS_NS::System::ThrowIfFailed(hr);
 
 
                 // Initialize the DirectWrite Factory.
@@ -90,7 +90,7 @@ namespace HELPERS_NS {
                     __uuidof(IDWriteFactory3),
                     &this->dwriteFactory
                 );
-                H::System::ThrowIfFailed(hr);
+                HELPERS_NS::System::ThrowIfFailed(hr);
 
                 // Initialize the Windows Imaging Component (WIC) Factory.
                 hr = CoCreateInstance(
@@ -99,7 +99,7 @@ namespace HELPERS_NS {
                     CLSCTX_INPROC_SERVER,
                     IID_PPV_ARGS(&this->wicFactory)
                 );
-                H::System::ThrowIfFailed(hr);
+                HELPERS_NS::System::ThrowIfFailed(hr);
             }
 
             void DxDevice::CreateDeviceDependentResources(const std::optional<DxDeviceParams>& params) {

@@ -1,6 +1,7 @@
 #pragma once
 #include <Helpers/MultithreadMutex.h>
 #include "DxIncludes.h"
+#include "D2DCtxMt.h"
 
 namespace HELPERS_NS {
 	namespace Dx {
@@ -18,6 +19,8 @@ namespace HELPERS_NS {
 				Microsoft::WRL::ComPtr<ID3D11Device3> GetD3DDevice() const;
 				Microsoft::WRL::ComPtr<ID3D10Multithread> GetD3DMultithread() const;
 
+				HELPERS_NS::Dx::D2DCtxMt* GetD2DCtxMt();
+
 			protected:
 				Microsoft::WRL::ComPtr<ID2D1Device> d2dDevice;
 				Microsoft::WRL::ComPtr<ID2D1Factory3> d2dFactory;
@@ -28,6 +31,8 @@ namespace HELPERS_NS {
 
 				Microsoft::WRL::ComPtr<ID3D11Device3> d3dDevice;
 				Microsoft::WRL::ComPtr<ID3D10Multithread> d3dMultithread;
+
+				HELPERS_NS::Dx::D2DCtxMt d2dCtxMt;
 			};
 		}
 	}

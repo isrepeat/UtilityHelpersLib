@@ -79,7 +79,7 @@ namespace HELPERS_NS {
 				~DxDeviceMFLock();
 
 			private:
-				H::Dx::MFDXGIDeviceManagerLock mfDxgiDeviceManagerLock;
+				HELPERS_NS::Dx::MFDXGIDeviceManagerLock mfDxgiDeviceManagerLock;
 				const std::unique_ptr<details::DxDeviceMF>& dxDeviceMf;
 			};
 		}
@@ -88,8 +88,8 @@ namespace HELPERS_NS {
 		// TODO: Write custom DxDeviceSafeObj to be compatible between winRt dll's.
 		//       Now only mutex is safe because it is called via virtual methods,
 		//       but you also need make safe other dxDevice methods.
-		using DxDeviceSafeObj = H::ThreadSafeObject<HELPERS_NS::Com::Mutex<std::recursive_mutex>, std::unique_ptr<details::DxDevice>>;
-		using DxDeviceMFSafeObj = H::ThreadSafeObject<HELPERS_NS::Com::Mutex<std::recursive_mutex>, std::unique_ptr<details::DxDeviceMF>>;
+		using DxDeviceSafeObj = HELPERS_NS::ThreadSafeObject<HELPERS_NS::Com::Mutex<std::recursive_mutex>, std::unique_ptr<details::DxDevice>>;
+		using DxDeviceMFSafeObj = HELPERS_NS::ThreadSafeObject<HELPERS_NS::Com::Mutex<std::recursive_mutex>, std::unique_ptr<details::DxDeviceMF>>;
 		
 		//class DxDeviceSafeObj;
 		//struct DxDeviceLockedObjBase
