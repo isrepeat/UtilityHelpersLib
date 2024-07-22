@@ -9,8 +9,7 @@ namespace thread {
 	template<class T>
 	class IProgress {
 	public:
-		IProgress() {}
-		virtual ~IProgress() {}
+		virtual ~IProgress() = default;
 
 		virtual void Report(const T &progress) = 0;
 	};
@@ -23,10 +22,7 @@ namespace thread {
 	public:
 		IGenericProgress(Fn fn) 
 			: fn(fn)
-		{
-		}
-
-		virtual ~IGenericProgress() {}
+		{}
 
 		void Report(const T &progress) override {
 			fn(progress);
