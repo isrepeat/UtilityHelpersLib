@@ -3,13 +3,15 @@
 #include <libhelpers\HSystem.h>
 
 AvDxgiBufferFactory::AvDxgiBufferFactory(
-    DxDevice *dxDev,
+    DxDevice* dxDeviceSafeObj,
     MFCreateDXGISurfaceBufferPtr createSurfBuffer,
     MFCreateDXGIDeviceManagerPtr createDxMan)
-    : dxDev(dxDev), createSurfBuffer(createSurfBuffer), createDxMan(createDxMan)
+    : dxDeviceSafeObj(dxDeviceSafeObj)
+    , createSurfBuffer(createSurfBuffer)
+    , createDxMan(createDxMan)
 {}
 
-Microsoft::WRL::ComPtr<IMFMediaBuffer> AvDxgiBufferFactory::CreateBuffer(ID3D11DeviceContext */*d3dCtx*/, ID3D11Texture2D *tex) {
+Microsoft::WRL::ComPtr<IMFMediaBuffer> AvDxgiBufferFactory::CreateBuffer(ID3D11DeviceContext*/*d3dCtx*/, ID3D11Texture2D* tex) {
     HRESULT hr = S_OK;
     D3D11_TEXTURE2D_DESC texDesc;
     Microsoft::WRL::ComPtr<IMFMediaBuffer> buffer;
@@ -42,19 +44,19 @@ Microsoft::WRL::ComPtr<IMFMediaBuffer> AvDxgiBufferFactory::CreateBuffer(ID3D11D
     return buffer;
 }
 
-void AvDxgiBufferFactory::SetAttributes(IMFAttributes *attr) {
+void AvDxgiBufferFactory::SetAttributes(IMFAttributes* attr) {
     HRESULT hr = S_OK;
 
-    if (!this->dxMan) {
+    if (!this->mfDxgiDeviceManager) {
         uint32_t resetToken = 0;
 
-        hr = this->createDxMan(&resetToken, &this->dxMan);
+        hr = this->createDxMan(&resetToken, &this->mfDxgiDeviceManager);
         H::System::ThrowIfFailed(hr);
 
-        hr = this->dxMan->ResetDevice(dxDev->Lock()->GetD3DDevice(), resetToken);
+        hr = this->mfDxgiDeviceManager->ResetDevice(this->dxDeviceSafeObj->Lock()->GetD3DDevice().Get(), resetToken);
         H::System::ThrowIfFailed(hr);
     }
 
-    hr = attr->SetUnknown(MF_SINK_WRITER_D3D_MANAGER, this->dxMan.Get());
+    hr = attr->SetUnknown(MF_SINK_WRITER_D3D_MANAGER, this->mfDxgiDeviceManager.Get());
     H::System::ThrowIfFailed(hr);
 }

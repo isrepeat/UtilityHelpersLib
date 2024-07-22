@@ -78,7 +78,7 @@ bool MFOutputTexResizeRgbaToNV12::TestNV12Support(
         DxDevice dxDeviceSafeObj;
 
         auto vproc = MFOutputTexResizeRgbaToNV12::CreateVideoProcessor(
-            dxDeviceSafeObj.Lock()->GetD3DDevice(),
+            dxDeviceSafeObj.Lock()->GetD3DDevice().Get(),
             dstSize, srcSize,
             DXGI_FORMAT_NV12, DXGI_FORMAT_B8G8R8A8_UNORM);
 

@@ -395,7 +395,7 @@ void SwapChainPanelOutput::CreateWindowSizeDependentResources() {
 
 		backBuffer->GetDesc(&desc);
 
-		auto availableMsaaLevel = DxHelpers::MsaaHelper::GetMaxSupportedMSAA(d3dDev, desc.Format, DxHelpers::MsaaHelper::GetMaxMSAA());
+		auto availableMsaaLevel = DxHelpers::MsaaHelper::GetMaxSupportedMSAA(d3dDev.Get(), desc.Format, DxHelpers::MsaaHelper::GetMaxMSAA());
 		if (availableMsaaLevel) {
 			desc.SampleDesc = *availableMsaaLevel;
 
@@ -464,7 +464,7 @@ void SwapChainPanelOutput::CreateSwapChain() {
 	Microsoft::WRL::ComPtr<IDXGIFactory2> dxgiFactory;
 	Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChainTmp;
 	auto dxDev = this->dxDeviceSafeObj->Lock();
-	auto d3dDev = dxDev->GetD3DDeviceCPtr();
+	auto d3dDev = dxDev->GetD3DDevice();
 
 	swapChainDesc.Width = lround(this->physicalSize.x);		// Match the size of the window.
 	swapChainDesc.Height = lround(this->physicalSize.y);

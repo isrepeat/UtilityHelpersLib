@@ -196,7 +196,7 @@ namespace HELPERS_NS {
                 );
                 HELPERS_NS::System::ThrowIfFailed(hr);
                 
-
+                this->d2dCtxMt = D2DCtxMt(d2dCtx);
                 this->ctxSafeObj = std::make_unique<DxDeviceCtx>(d2dCtx, d3dCtx);
                 this->EnableD3DDeviceMultithreading();
             }
