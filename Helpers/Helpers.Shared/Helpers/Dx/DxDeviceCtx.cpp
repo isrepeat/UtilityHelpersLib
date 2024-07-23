@@ -68,7 +68,7 @@ namespace HELPERS_NS {
             this->mfDxgiDeviceManagerLock.UnlockDevice();
         }
 
-        H::Dx::MFDXGIDeviceManagerLock DxDeviceCtxLock::GetMFDXGIManagerLock(const std::unique_ptr<DxDeviceCtx>& dxDeviceCtx) {
+        HELPERS_NS::Dx::MFDXGIDeviceManagerLock DxDeviceCtxLock::GetMFDXGIManagerLock(const std::unique_ptr<DxDeviceCtx>& dxDeviceCtx) {
             HRESULT hr = S_OK;
             Microsoft::WRL::ComPtr<ID3D11Device> d3dDevice;
             dxDeviceCtx->D3D()->GetDevice(d3dDevice.ReleaseAndGetAddressOf());
@@ -77,9 +77,9 @@ namespace HELPERS_NS {
             d3dDevice.As(&mfDxgiDeviceManager);
             LOG_FAILED(hr);
             if (SUCCEEDED(hr)) {
-                return H::Dx::MFDXGIDeviceManagerLock{ mfDxgiDeviceManager };
+                return HELPERS_NS::Dx::MFDXGIDeviceManagerLock{ mfDxgiDeviceManager };
             }
-            return H::Dx::MFDXGIDeviceManagerLock{ nullptr };
+            return HELPERS_NS::Dx::MFDXGIDeviceManagerLock{ nullptr };
         }
 
         Microsoft::WRL::ComPtr<ID3D10Multithread> DxDeviceCtxLock::GetD3DMultithread(const std::unique_ptr<DxDeviceCtx>& dxDeviceCtx) {
@@ -89,7 +89,7 @@ namespace HELPERS_NS {
 
             Microsoft::WRL::ComPtr<ID3D10Multithread> d3dMultithread;
             hr = d3dDevice.As(&d3dMultithread);
-            H::System::ThrowIfFailed(hr);
+            HELPERS_NS::System::ThrowIfFailed(hr);
 
             return d3dMultithread;
         }

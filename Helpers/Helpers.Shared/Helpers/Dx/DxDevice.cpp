@@ -56,7 +56,7 @@ namespace HELPERS_NS {
 
             void DxDevice::CreateDxgiFactory() {
                 HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(dxgiFactory.ReleaseAndGetAddressOf()));
-                H::System::ThrowIfFailed(hr);
+                HELPERS_NS::System::ThrowIfFailed(hr);
             }
 
 
@@ -75,13 +75,12 @@ namespace HELPERS_NS {
                 // Initialize the Direct2D Factory.
 
                 hr = D2D1CreateFactory(
-                    //D2D1_FACTORY_TYPE_MULTI_THREADED,
-                    D2D1_FACTORY_TYPE_SINGLE_THREADED,
+                    D2D1_FACTORY_TYPE_MULTI_THREADED,
                     __uuidof(ID2D1Factory3),
                     &options,
                     &this->d2dFactory
                 );
-                H::System::ThrowIfFailed(hr);
+                HELPERS_NS::System::ThrowIfFailed(hr);
 
 
                 // Initialize the DirectWrite Factory.
@@ -90,7 +89,7 @@ namespace HELPERS_NS {
                     __uuidof(IDWriteFactory3),
                     &this->dwriteFactory
                 );
-                H::System::ThrowIfFailed(hr);
+                HELPERS_NS::System::ThrowIfFailed(hr);
 
                 // Initialize the Windows Imaging Component (WIC) Factory.
                 hr = CoCreateInstance(
@@ -99,7 +98,7 @@ namespace HELPERS_NS {
                     CLSCTX_INPROC_SERVER,
                     IID_PPV_ARGS(&this->wicFactory)
                 );
-                H::System::ThrowIfFailed(hr);
+                HELPERS_NS::System::ThrowIfFailed(hr);
             }
 
             void DxDevice::CreateDeviceDependentResources(const std::optional<DxDeviceParams>& params) {
@@ -196,7 +195,7 @@ namespace HELPERS_NS {
                 );
                 HELPERS_NS::System::ThrowIfFailed(hr);
                 
-
+                this->d2dCtxMt = D2DCtxMt(d2dCtx);
                 this->ctxSafeObj = std::make_unique<DxDeviceCtx>(d2dCtx, d3dCtx);
                 this->EnableD3DDeviceMultithreading();
             }

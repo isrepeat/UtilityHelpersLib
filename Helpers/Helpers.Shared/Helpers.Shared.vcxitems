@@ -21,6 +21,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Conversion.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\CrashHandler.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\CrashInfo.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\D2DCtxMt.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxDevice.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxDeviceCtx.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxDeviceMt.cpp" />
@@ -60,6 +61,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\ComMutex.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\IUnknownValue.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\UnknownValue.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\D2DCtxMt.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxDevice.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxDeviceCtx.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxDeviceMt.h" />
@@ -69,6 +71,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSharedTexture.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\MFDXGIManagerCustom.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\SwapChainPanel.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\EmptyMutex.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\EventObject.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingAssert.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingErrors.h" />

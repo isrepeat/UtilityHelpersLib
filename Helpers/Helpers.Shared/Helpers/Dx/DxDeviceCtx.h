@@ -1,4 +1,5 @@
 #pragma once
+#include <Helpers/common.h>
 #include <Helpers/Dx/DxgiDeviceLock.h>
 #include <Helpers/ThreadSafeObject.hpp>
 #include "DxIncludes.h"
@@ -34,15 +35,15 @@ namespace HELPERS_NS {
 			~DxDeviceCtxLock();
 
 		private:
-			H::Dx::MFDXGIDeviceManagerLock GetMFDXGIManagerLock(const std::unique_ptr<DxDeviceCtx>& dxDeviceCtx);
+			HELPERS_NS::Dx::MFDXGIDeviceManagerLock GetMFDXGIManagerLock(const std::unique_ptr<DxDeviceCtx>& dxDeviceCtx);
 			Microsoft::WRL::ComPtr<ID3D10Multithread> GetD3DMultithread(const std::unique_ptr<DxDeviceCtx>& dxDeviceCtx);
 
 		private:
-			H::Dx::MFDXGIDeviceManagerLock mfDxgiDeviceManagerLock;
+			HELPERS_NS::Dx::MFDXGIDeviceManagerLock mfDxgiDeviceManagerLock;
 			Microsoft::WRL::ComPtr<ID3D10Multithread> d3dMultithread;
 		};
 
-		using DxDeviceCtxSafeObj_t = H::ThreadSafeObject<std::recursive_mutex, std::unique_ptr<DxDeviceCtx>, DxDeviceCtxLock>;
+		using DxDeviceCtxSafeObj_t = HELPERS_NS::ThreadSafeObject<std::recursive_mutex, std::unique_ptr<DxDeviceCtx>, DxDeviceCtxLock>;
 
 
 
@@ -97,7 +98,7 @@ namespace HELPERS_NS {
 			}
 
 		private:
-			H::ThreadSafeObject<std::mutex, DxDeviceCtxWrapper> dxDeviceCtxWrapperSafeObj;
+			HELPERS_NS::ThreadSafeObject<std::mutex, DxDeviceCtxWrapper> dxDeviceCtxWrapperSafeObj;
 		};
 	}
 }

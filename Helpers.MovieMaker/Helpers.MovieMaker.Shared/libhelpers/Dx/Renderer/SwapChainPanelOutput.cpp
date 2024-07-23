@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "SwapChainPanelOutput.h"
 #include "../../HSystem.h"
+#include "../../WinRT/RunOnUIThread.h"
 
 #include <dxgi1_2.h>
 #include <dxgi1_3.h>
@@ -57,18 +58,25 @@ SwapChainPanelOutput::SwapChainPanelOutput(raw_ptr<DxDevice> dxDeviceSafeObj, Wi
 		auto tmp = DirectX::Colors::LightGreen;
 		this->rtColor = { tmp.f[0], tmp.f[1], tmp.f[2], tmp.f[3] };
 	}
-	auto displayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
 
-	this->nativeOrientation = displayInformation->NativeOrientation;
-	this->currentOrientation = displayInformation->CurrentOrientation;
+	H::RunOnUIThread(this->swapChainPanel->Dispatcher,
+		[&]
+		{
+			auto displayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
 
-	this->logicalDpi = displayInformation->LogicalDpi;
-	this->logicalSize = DirectX::XMFLOAT2(
-		(float)this->swapChainPanel->ActualWidth,
-		(float)this->swapChainPanel->ActualHeight);
-	this->compositionScale = DirectX::XMFLOAT2(
-		this->swapChainPanel->CompositionScaleX,
-		this->swapChainPanel->CompositionScaleY);
+			this->nativeOrientation = displayInformation->NativeOrientation;
+			this->currentOrientation = displayInformation->CurrentOrientation;
+
+			this->logicalDpi = displayInformation->LogicalDpi;
+
+			this->logicalSize = DirectX::XMFLOAT2(
+				(float)this->swapChainPanel->ActualWidth,
+				(float)this->swapChainPanel->ActualHeight);
+
+			this->compositionScale = DirectX::XMFLOAT2(
+				this->swapChainPanel->CompositionScaleX,
+				this->swapChainPanel->CompositionScaleY);
+		});
 
 	this->CreateWindowSizeDependentResources();
 
@@ -387,7 +395,7 @@ void SwapChainPanelOutput::CreateWindowSizeDependentResources() {
 
 		backBuffer->GetDesc(&desc);
 
-		auto availableMsaaLevel = DxHelpers::MsaaHelper::GetMaxSupportedMSAA(d3dDev, desc.Format, DxHelpers::MsaaHelper::GetMaxMSAA());
+		auto availableMsaaLevel = DxHelpers::MsaaHelper::GetMaxSupportedMSAA(d3dDev.Get(), desc.Format, DxHelpers::MsaaHelper::GetMaxMSAA());
 		if (availableMsaaLevel) {
 			desc.SampleDesc = *availableMsaaLevel;
 
@@ -456,7 +464,7 @@ void SwapChainPanelOutput::CreateSwapChain() {
 	Microsoft::WRL::ComPtr<IDXGIFactory2> dxgiFactory;
 	Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChainTmp;
 	auto dxDev = this->dxDeviceSafeObj->Lock();
-	auto d3dDev = dxDev->GetD3DDeviceCPtr();
+	auto d3dDev = dxDev->GetD3DDevice();
 
 	swapChainDesc.Width = lround(this->physicalSize.x);		// Match the size of the window.
 	swapChainDesc.Height = lround(this->physicalSize.y);
@@ -494,23 +502,20 @@ void SwapChainPanelOutput::CreateSwapChain() {
 
 	// Associate swap chain with SwapChainPanel
 	// UI changes will need to be dispatched back to the UI thread
-	auto swapChainPanelTmp = this->swapChainPanel;
-	auto swapChainTmp2 = this->swapChain;
-	this->swapChainPanel->Dispatcher->RunAsync(
-		Windows::UI::Core::CoreDispatcherPriority::High,
-		ref new Windows::UI::Core::DispatchedHandler([swapChainPanelTmp, swapChainTmp2]()
-	{
-		// Get backing native interface for SwapChainPanel
-		HRESULT hr = S_OK;
-		Microsoft::WRL::ComPtr<ISwapChainPanelNative> panelNative;
-		auto swapChainPanelUnk = reinterpret_cast<IUnknown *>(swapChainPanelTmp);
+	H::RunOnUIThread(this->swapChainPanel->Dispatcher,
+		[&]
+		{
+			// Get backing native interface for SwapChainPanel
+			HRESULT hr = S_OK;
+			Microsoft::WRL::ComPtr<ISwapChainPanelNative> panelNative;
+			auto swapChainPanelUnk = reinterpret_cast<IUnknown*>(this->swapChainPanel);
 
-		hr = swapChainPanelUnk->QueryInterface(IID_PPV_ARGS(&panelNative));
-		H::System::ThrowIfFailed(hr);
+			hr = swapChainPanelUnk->QueryInterface(IID_PPV_ARGS(panelNative.GetAddressOf()));
+			H::System::ThrowIfFailed(hr);
 
-		hr = panelNative->SetSwapChain(swapChainTmp2.Get());
-		H::System::ThrowIfFailed(hr);
-	}, Platform::CallbackContext::Any));
+			hr = panelNative->SetSwapChain(this->swapChain.Get());
+			H::System::ThrowIfFailed(hr);
+		});
 }
 
 void SwapChainPanelOutput::UpdatePresentationParameters() {

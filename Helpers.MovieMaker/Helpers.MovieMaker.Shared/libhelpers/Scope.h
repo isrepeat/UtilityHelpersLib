@@ -1,10 +1,19 @@
 #pragma once
 
 #include <utility>
+#include <memory>
 
 namespace H {
+	class IScope {
+	public:
+		virtual ~IScope() = default;
+
+		virtual void EndScope() = 0;
+		virtual void DisableScope() = 0;
+	};
+
 	template<class Fn>
-	class Scope {
+	class Scope final : public IScope {
 	public:
 		Scope() = default;
 
@@ -36,7 +45,7 @@ namespace H {
 			return *this;
 		}
 
-		void EndScope() {
+		void EndScope() override {
 			if (!m_valid) {
 				return;
 			}
@@ -45,7 +54,7 @@ namespace H {
 			this->DisableScope();
 		}
 
-		void DisableScope() {
+		void DisableScope() override {
 			m_valid = false;
 		}
 
@@ -64,5 +73,10 @@ namespace H {
 	template<class Fn>
 	Scope<Fn> MakeScope(Fn fn) {
 		return Scope<Fn>(std::move(fn));
+	}
+
+	template<class Fn>
+	std::unique_ptr<Scope<Fn>> MakeScopeUPtr(Fn fn) {
+		return std::make_unique<Scope<Fn>>(std::move(fn));
 	}
 }
