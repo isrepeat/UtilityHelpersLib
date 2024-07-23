@@ -88,9 +88,9 @@ namespace Tools {
 
 namespace HELPERS_NS {
 	namespace Dx {
-		SwapChainPanel::SwapChainPanel(InitData initData)
+		SwapChainPanel::SwapChainPanel(const InitData& initData)
 			: initData{ initData }
-			, dxDeviceSafeObj{ initData.dxDeviceFactory() }
+			, dxDeviceSafeObj{ initData.dxDeviceSafeObjMutexFactory(), initData.dxDeviceFactory() }
 			, m_screenViewport{}
 			, m_d3dRenderTargetSize{}
 			, m_outputSize{}
@@ -115,7 +115,7 @@ namespace HELPERS_NS {
 
 				Microsoft::WRL::ComPtr<IDXGIFactory5> dxgiFactory5;
 				if (FAILED(dxgiFactory.As(&dxgiFactory5))) {
-					this->initData.optionFlags &= ~InitData::Options::EnableHDR;
+					const_cast<InitData&>(this->initData).optionFlags &= ~InitData::Options::EnableHDR;
 					LOG_WARNING_D("HDR swap chains not supported, disable 'InitData::Options::EnableHDR'");
 				}
 			}
@@ -156,6 +156,7 @@ namespace HELPERS_NS {
 		// These resources need to be recreated every time the window size is changed.
 		void SwapChainPanel::CreateWindowSizeDependentResources() {
 			HRESULT hr = S_OK;
+
 			auto dxDev = this->dxDeviceSafeObj.Lock();
 			auto d3dDevice = dxDev->GetD3DDevice();
 			auto dxCtx = dxDev->LockContext();
@@ -171,7 +172,7 @@ namespace HELPERS_NS {
 			m_d3dDepthStencilView.Reset();
 			d3dCtx->Flush1(D3D11_CONTEXT_TYPE_ALL, nullptr);
 
-			UpdateRenderTargetSize();
+			this->UpdateRenderTargetSize();
 
 			// The width and height of the swap chain must be based on the window's
 			// natively-oriented width and height. If the window is not in the native
@@ -198,7 +199,7 @@ namespace HELPERS_NS {
 
 				if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
 					// If the device was removed for any reason, a new device and swap chain will need to be created.
-					HandleDeviceLost();
+					this->HandleDeviceLost();
 
 					// Everything is set up now. Do not continue execution of this method. HandleDeviceLost will reenter this method 
 					// and correctly set up the new device.
@@ -227,19 +228,6 @@ namespace HELPERS_NS {
 				swapChainDesc.Flags = 0;
 				swapChainDesc.Scaling = DXGI_SCALING_STRETCH;					// CreateSwapChainForComposition support only DXGI_SCALING_STRETCH
 				swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-
-				//// This sequence obtains the DXGI factory that was used to create the Direct3D device above.
-				//Microsoft::WRL::ComPtr<IDXGIDevice3> dxgiDevice;
-				//hr = d3dDevice.As(&dxgiDevice);
-				//H::System::ThrowIfFailed(hr);
-
-				//Microsoft::WRL::ComPtr<IDXGIAdapter> dxgiAdapter;
-				//hr = dxgiDevice->GetAdapter(&dxgiAdapter);
-				//H::System::ThrowIfFailed(hr);
-
-				//Microsoft::WRL::ComPtr<IDXGIFactory4> dxgiFactory;
-				//hr = dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory));
-				//H::System::ThrowIfFailed(hr);
 
 				auto dxgiFactory = dxDev->GetDxgiFactory();
 				Microsoft::WRL::ComPtr<IDXGISwapChain1> dxgiSwapChain1;
@@ -346,7 +334,7 @@ namespace HELPERS_NS {
 			}
 
 			// Handle color space settings for HDR
-			UpdateColorSpace();
+			this->UpdateColorSpace();
 			
 			// Create a render target view of the swap chain back buffer.
 			Microsoft::WRL::ComPtr<ID3D11Texture2D> backBuffer;
@@ -471,7 +459,7 @@ namespace HELPERS_NS {
 		void SwapChainPanel::SetLogicalSize(H::Size_f logicalSize) {
 			if (m_logicalSize != logicalSize) {
 				m_logicalSize = logicalSize;
-				CreateWindowSizeDependentResources();
+				this->CreateWindowSizeDependentResources();
 			}
 		}
 
@@ -484,7 +472,7 @@ namespace HELPERS_NS {
 			if (dpi != m_dpi) {
 				m_dpi = dpi;
 				d2dCtx->SetDpi(m_dpi, m_dpi);
-				CreateWindowSizeDependentResources();
+				this->CreateWindowSizeDependentResources();
 			}
 		}
 
@@ -496,7 +484,7 @@ namespace HELPERS_NS {
 		void SwapChainPanel::SetCurrentOrientation(DisplayOrientations currentOrientation) {
 			if (m_currentOrientation != currentOrientation) {
 				m_currentOrientation = currentOrientation;
-				CreateWindowSizeDependentResources();
+				this->CreateWindowSizeDependentResources();
 			}
 		}
 
@@ -507,14 +495,14 @@ namespace HELPERS_NS {
 			{
 				m_compositionScaleX = compositionScaleX;
 				m_compositionScaleY = compositionScaleY;
-				CreateWindowSizeDependentResources();
+				this->CreateWindowSizeDependentResources();
 			}
 		}
 
 		void SwapChainPanel::SetRenderResolutionScale(float resolutionScale) {
 			if (m_resolutionScale != resolutionScale) {
 				m_resolutionScale = resolutionScale;
-				CreateWindowSizeDependentResources();
+				this->CreateWindowSizeDependentResources();
 			}
 		}
 
@@ -577,7 +565,7 @@ namespace HELPERS_NS {
 				previousDefaultAdapter = nullptr;
 
 				// Create a new device and swap chain.
-				HandleDeviceLost();
+				this->HandleDeviceLost();
 			}
 		}
 
@@ -644,7 +632,7 @@ namespace HELPERS_NS {
 			// If the device was removed either by a disconnection or a driver upgrade, we 
 			// must recreate all device resources.
 			if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
-				HandleDeviceLost();
+				this->HandleDeviceLost();
 			}
 			else {
 				H::System::ThrowIfFailed(hr);

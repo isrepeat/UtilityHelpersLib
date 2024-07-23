@@ -28,9 +28,17 @@ namespace Helpers {
 	namespace WinRt {
 		namespace Dx {
 			SwapChainPanel::SwapChainPanel()
-				: swapChainPanelNative{ this->CreateSwapChainPanelNative() }
 			{
+				SwapChainPanelInitData initData;
+				initData.deviceType = SwapChainPanelInitData_Device::DxDevice;
+				initData.deviceMutexType = SwapChainPanelInitData_DeviceMutex::None;
+				initData.optionFlags = SwapChainPanelInitData_Options::EnableHDR;
+				this->swapChainPanelNative = this->CreateSwapChainPanelNative(initData);
 			}
+
+			SwapChainPanel::SwapChainPanel(SwapChainPanelInitData initData)
+				: swapChainPanelNative{ this->CreateSwapChainPanelNative(initData) }
+			{}
 
 			SwapChainPanel::~SwapChainPanel() {
 			}
@@ -127,11 +135,44 @@ namespace Helpers {
 				this->swapChainPanelNative->RegisterDeviceNotify(deviceNotify);
 			}
 
-			Microsoft::WRL::ComPtr<H::Dx::ISwapChainPanel> SwapChainPanel::CreateSwapChainPanelNative() {
-				H::Dx::SwapChainPanel::InitData swapChainPanelNativeInitData;
-				swapChainPanelNativeInitData.environment = H::Dx::SwapChainPanel::InitData::Environment::UWP;
-				swapChainPanelNativeInitData.creatSwapChainPannelDxgiFn = MakeWinRTCallback(this, &SwapChainPanel::CreateSwapChainPanelDxgi);
-				return Microsoft::WRL::Make<H::Dx::SwapChainPanel>(swapChainPanelNativeInitData);
+			Microsoft::WRL::ComPtr<H::Dx::ISwapChainPanel> SwapChainPanel::CreateSwapChainPanelNative(SwapChainPanelInitData initData) {
+				H::Dx::SwapChainPanel::InitData initDataNative;
+				initDataNative.environment = H::Dx::SwapChainPanel::InitData::Environment::UWP;
+				initDataNative.optionFlags = static_cast<H::Dx::SwapChainPanel::InitData::Options>(initData.optionFlags);
+				initDataNative.creatSwapChainPannelDxgiFn = MakeWinRTCallback(this, &SwapChainPanel::CreateSwapChainPanelDxgi);
+
+				switch (initData.deviceType) {
+				case SwapChainPanelInitData_Device::DxDevice:
+					initDataNative.dxDeviceFactory = [] {
+						return std::make_unique<H::Dx::details::DxDevice>();
+					};
+					break;
+				case SwapChainPanelInitData_Device::DxDeviceMF:
+					initDataNative.dxDeviceFactory = [] {
+						return std::make_unique<H::Dx::details::DxDeviceMF>();
+					};
+					break;
+				case SwapChainPanelInitData_Device::DxVideoDeviceMF:
+					initDataNative.dxDeviceFactory = [] {
+						return std::make_unique<H::Dx::details::DxVideoDeviceMF>();
+					};
+					break;
+				}
+
+				switch (initData.deviceMutexType) {
+				case SwapChainPanelInitData_DeviceMutex::None:
+					initDataNative.dxDeviceSafeObjMutexFactory = [] {
+						return std::make_unique<H::EmptyMutex>();
+					};
+					break;
+				case SwapChainPanelInitData_DeviceMutex::Recursive:
+					initDataNative.dxDeviceSafeObjMutexFactory = [] {
+						return std::make_unique<H::Mutex<std::recursive_mutex>>();
+					};
+					break;
+				}	
+
+				return Microsoft::WRL::Make<H::Dx::SwapChainPanel>(initDataNative);
 			}
 
 

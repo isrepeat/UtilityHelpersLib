@@ -1,10 +1,12 @@
 #pragma once
 #include <Helpers/Dx/DxDevice.h>
-#include <Helpers/EmptyMutex.h>
+#include <Helpers/Mutex.h>
 
 using D2DCtxMt = HH::Dx::D2DCtxMt;
-using DxDevice = HH::ThreadSafeObject<HH::EmptyMutex, std::unique_ptr<HH::Dx::details::DxDeviceMF>>;
-using DxVideoDevice = HH::ThreadSafeObject<HH::EmptyMutex, std::unique_ptr<HH::Dx::details::DxVideoDeviceMF>>;
+using DxDevice = HH::Dx::DxDeviceSafeObj;
+// WORKAROUND: Use mutex type explicitly as EmptyMutex because AvReader hang (need rewrite AvReader logic).
+//			   H::Dx::SwapChainPanel also must use such mutex type when create it from MediaRendererWinRT and DxUIRendererWinRt.
+using DxDeviceMutex_t = HH::EmptyMutex;
 using DxDeviceCtxDynamic = HH::Dx::DxDeviceCtxDynamic;
 using DxDeviceCtxSafeObj_t = HH::Dx::DxDeviceCtxSafeObj_t;
 

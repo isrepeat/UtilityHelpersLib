@@ -26,10 +26,10 @@ namespace HELPERS_NS {
 		MIDL_INTERFACE("B34F96A3-8A71-42D3-BE89-C09777D1BB99")
 		ISwapChainPanel : public IUnknown{
 		public:
-			virtual H::Dx::DxDeviceSafeObj* STDMETHODCALLTYPE GetDxDevice() = 0;
+			virtual HELPERS_NS::Dx::DxDeviceSafeObj* STDMETHODCALLTYPE GetDxDevice() = 0;
 
 			virtual void STDMETHODCALLTYPE InitSwapChainPanelInfo(
-				H::Size_f logicalSize,
+				HELPERS_NS::Size_f logicalSize,
 				DisplayOrientations nativeOrientation,
 				DisplayOrientations currentOrientation,
 				float compositionScaleX,
@@ -38,7 +38,7 @@ namespace HELPERS_NS {
 			) = 0;
 
 
-			virtual void STDMETHODCALLTYPE SetLogicalSize(H::Size_f logicalSize) = 0;
+			virtual void STDMETHODCALLTYPE SetLogicalSize(HELPERS_NS::Size_f logicalSize) = 0;
 			virtual void STDMETHODCALLTYPE SetNativeOrientation(DisplayOrientations nativeOrientation) = 0;
 			virtual void STDMETHODCALLTYPE SetCurrentOrientation(DisplayOrientations currentOrientation) = 0;
 			virtual void STDMETHODCALLTYPE SetDpi(float dpi) = 0;
@@ -51,11 +51,11 @@ namespace HELPERS_NS {
 			virtual void STDMETHODCALLTYPE Present() = 0;
 
 			// The size of the render target, in pixels.
-			virtual H::Size_f STDMETHODCALLTYPE GetOutputSize() const = 0;
+			virtual HELPERS_NS::Size_f STDMETHODCALLTYPE GetOutputSize() const = 0;
 
 			// The size of the render target, in dips.
-			virtual H::Size_f STDMETHODCALLTYPE GetLogicalSize() const = 0;
-			virtual H::Size_f STDMETHODCALLTYPE GetRenderTargetSize() const = 0;
+			virtual HELPERS_NS::Size_f STDMETHODCALLTYPE GetLogicalSize() const = 0;
+			virtual HELPERS_NS::Size_f STDMETHODCALLTYPE GetRenderTargetSize() const = 0;
 			virtual float STDMETHODCALLTYPE GetDpi() const = 0;
 
 			// D3D Accessors.
@@ -73,6 +73,14 @@ namespace HELPERS_NS {
 		};
 		
 
+#define _Enum_SwapChainPanelInitData_Environment \
+	Desktop, \
+	UWP,
+
+#define _Enum_SwapChainPanelInitData_Options \
+	None = 0x01, \
+	EnableHDR = 0x02,
+
 		// Controls all the DirectX device resources.
 		class SwapChainPanel : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<
 			Microsoft::WRL::RuntimeClassType::ClassicCom>,
@@ -81,20 +89,21 @@ namespace HELPERS_NS {
 		public:
 			struct InitData {
 				enum class Environment {
-					Desktop,
-					UWP,
+					_Enum_SwapChainPanelInitData_Environment
 				};
 				enum Options {
-					None,
-					EnableHDR,
+					_Enum_SwapChainPanelInitData_Options
 				};
+
+				Environment environment = Environment::Desktop;
+				HELPERS_NS::Flags<Options> optionFlags = Options::None;
 
 				std::function<std::unique_ptr<HELPERS_NS::Dx::details::DxDevice>()> dxDeviceFactory = [] {
 					return std::make_unique<HELPERS_NS::Dx::details::DxDevice>();
 				};
-
-				Environment environment = Environment::Desktop;
-				H::Flags<Options> optionFlags = Options::None;
+				std::function<std::unique_ptr<HELPERS_NS::IMutex>()> dxDeviceSafeObjMutexFactory = [] {
+					return std::make_unique<HELPERS_NS::Mutex<std::recursive_mutex>>();
+				};
 
 				HWND hWnd = nullptr;
 				Callback<void, IDXGISwapChain3*> creatSwapChainPannelDxgiFn = {};
@@ -104,13 +113,13 @@ namespace HELPERS_NS {
 				DXGI_SWAP_EFFECT dxgiSwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 			};
 
-			SwapChainPanel(InitData initData);
+			SwapChainPanel(const InitData& initData);
 			~SwapChainPanel();
 
-			H::Dx::DxDeviceSafeObj* STDMETHODCALLTYPE GetDxDevice() override;
+			HELPERS_NS::Dx::DxDeviceSafeObj* STDMETHODCALLTYPE GetDxDevice() override;
 
 			void STDMETHODCALLTYPE InitSwapChainPanelInfo(
-				H::Size_f logicalSize,
+				HELPERS_NS::Size_f logicalSize,
 				DisplayOrientations nativeOrientation,
 				DisplayOrientations currentOrientation,
 				float compositionScaleX,
@@ -118,7 +127,7 @@ namespace HELPERS_NS {
 				float dpi
 			) override;
 
-			void STDMETHODCALLTYPE SetLogicalSize(H::Size_f logicalSize) override;
+			void STDMETHODCALLTYPE SetLogicalSize(HELPERS_NS::Size_f logicalSize) override;
 			void STDMETHODCALLTYPE SetNativeOrientation(DisplayOrientations nativeOrientation) override;
 			void STDMETHODCALLTYPE SetCurrentOrientation(DisplayOrientations currentOrientation) override;
 			void STDMETHODCALLTYPE SetDpi(float dpi) override;
@@ -131,11 +140,11 @@ namespace HELPERS_NS {
 			void STDMETHODCALLTYPE Present() override;
 
 			// The size of the render target, in pixels.
-			H::Size_f STDMETHODCALLTYPE GetOutputSize() const override;
+			HELPERS_NS::Size_f STDMETHODCALLTYPE GetOutputSize() const override;
 
 			// The size of the render target, in dips.
-			H::Size_f STDMETHODCALLTYPE GetLogicalSize() const override;
-			H::Size_f STDMETHODCALLTYPE GetRenderTargetSize() const override;
+			HELPERS_NS::Size_f STDMETHODCALLTYPE GetLogicalSize() const override;
+			HELPERS_NS::Size_f STDMETHODCALLTYPE GetRenderTargetSize() const override;
 			float STDMETHODCALLTYPE GetDpi() const override;
 
 			// D3D Accessors.
@@ -159,10 +168,10 @@ namespace HELPERS_NS {
 
 
 		private:
-			InitData initData;
+			const InitData initData;
 
 			// Direct3D objects.
-			H::Dx::DxDeviceSafeObj dxDeviceSafeObj;
+			HELPERS_NS::Dx::DxDeviceSafeObj dxDeviceSafeObj;
 			Microsoft::WRL::ComPtr<IDXGISwapChain3>	dxgiSwapChain;
 
 			// Direct3D rendering objects. Required for 3D.
@@ -175,9 +184,9 @@ namespace HELPERS_NS {
 
 
 			// Cached device properties.
-			H::Size_f m_d3dRenderTargetSize;
-			H::Size_f m_outputSize;
-			H::Size_f m_logicalSize;
+			HELPERS_NS::Size_f m_d3dRenderTargetSize;
+			HELPERS_NS::Size_f m_outputSize;
+			HELPERS_NS::Size_f m_logicalSize;
 			DisplayOrientations m_nativeOrientation;
 			DisplayOrientations m_currentOrientation;
 			float m_dpi;
