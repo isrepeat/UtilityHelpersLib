@@ -54,7 +54,7 @@ public:
 		return *this;
 	}
 
-	R operator()(Ts... args) {
+	R operator()(Ts... args) const {
 		if (!this->callback) {
 			assert(false && " --> callback is empty!");
 			return R();
