@@ -1,12 +1,13 @@
 #pragma once
 #include <Helpers/Dx/DxDevice.h>
-
-using DxDevice = HH::ThreadSafeObject<HH::Com::Mutex<std::recursive_mutex>, std::unique_ptr<HH::Dx::details::DxDeviceMF>>;
-using DxVideoDevice = HH::ThreadSafeObject<HH::Com::Mutex<std::recursive_mutex>, std::unique_ptr<HH::Dx::details::DxVideoDeviceMF>>;
+#include <Helpers/EmptyMutex.h>
 
 using D2DCtxMt = HH::Dx::D2DCtxMt;
+using DxDevice = HH::ThreadSafeObject<HH::EmptyMutex, std::unique_ptr<HH::Dx::details::DxDeviceMF>>;
+using DxVideoDevice = HH::ThreadSafeObject<HH::EmptyMutex, std::unique_ptr<HH::Dx::details::DxVideoDeviceMF>>;
 using DxDeviceCtxDynamic = HH::Dx::DxDeviceCtxDynamic;
 using DxDeviceCtxSafeObj_t = HH::Dx::DxDeviceCtxSafeObj_t;
+
 
 //#include "DxDeviceCtx.h"
 //#include "DxDeviceMt.h"

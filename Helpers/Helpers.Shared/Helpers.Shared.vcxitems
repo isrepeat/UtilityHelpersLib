@@ -71,6 +71,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSharedTexture.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\MFDXGIManagerCustom.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\SwapChainPanel.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\EmptyMutex.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\EventObject.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingAssert.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingErrors.h" />
