@@ -1,6 +1,7 @@
 #pragma once
 #include <Helpers/common.h>
 #include <Helpers/Com/ComMutex.h>
+#include <Helpers/System.h>
 #include <string_view>
 #include <mutex>
 
@@ -127,6 +128,14 @@ namespace HELPERS_NS {
         {}
 
         ~LockedObj() {
+        }
+
+        template <typename InterfaceT>
+        InterfaceT* As() {
+            if (auto objCasted = dynamic_cast<InterfaceT*>(this->obj.get())) {
+                return objCasted;
+            }
+            HELPERS_NS::System::ThrowIfFailed(E_NOINTERFACE);
         }
 
         std::unique_ptr<ObjT, Args...>& operator->() const {
