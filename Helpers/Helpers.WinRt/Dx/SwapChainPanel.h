@@ -34,17 +34,27 @@ namespace Helpers {
 				SwapChainPanel(SwapChainPanelInitData initData);
 				virtual ~SwapChainPanel();
 
-				void SetSwapChainPanel(Windows::UI::Xaml::Controls::SwapChainPanel^ panel);
+				void SetSwapChainPanelXaml(Windows::UI::Xaml::Controls::SwapChainPanel^ swapChainPanelXaml);
+				
 				void SetLogicalSize(Windows::Foundation::Size logicalSize);
+				Windows::Foundation::Size GetLogicalSize();
+
 				void SetCurrentOrientation(Windows::Graphics::Display::DisplayOrientations currentOrientation);
+				Windows::Graphics::Display::DisplayOrientations GetCurrentOrientation();
+
 				void SetDpi(float dpi);
+				float GetDpi();
+
 				void SetCompositionScale(float compositionScaleX, float compositionScaleY);
+				Helpers::WinRt::Scale GetCompositionScale();
+
 				void ValidateDevice();
 				void HandleDeviceLost();
 				void Trim();
 				void Present();
 
-				Platform::Object^ GetSwapChainNative();
+				Platform::Object^ GetSwapChainPanelNativeAsObject();
+				Windows::UI::Xaml::Controls::SwapChainPanel^ GetSwapChainPanelXaml();
 
 			internal:
 				void RegisterDeviceNotify(H::Dx::IDeviceNotify* deviceNotify);

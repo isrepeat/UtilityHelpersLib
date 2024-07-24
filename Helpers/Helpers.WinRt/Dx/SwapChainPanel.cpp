@@ -3,11 +3,12 @@
 #include <Helpers/Dx/DxHelpers.h>
 #include <Helpers/CallbackWinRT.hpp>
 #include <Helpers/System.h>
+#include <Helpers/Action.h>
 
 #include <windows.ui.xaml.media.dxinterop.h>
 
-namespace ScreenRotation {
-	H::Dx::DisplayOrientations ToNative(Windows::Graphics::Display::DisplayOrientations displayOrientation) {
+namespace Tools {
+	H::Dx::DisplayOrientations DisplayOrientationToNative(Windows::Graphics::Display::DisplayOrientations displayOrientation) {
 		switch (displayOrientation) {
 		case Windows::Graphics::Display::DisplayOrientations::Landscape:
 			return H::Dx::DisplayOrientations::Landscape;
@@ -20,6 +21,22 @@ namespace ScreenRotation {
 
 		case Windows::Graphics::Display::DisplayOrientations::PortraitFlipped:
 			return H::Dx::DisplayOrientations::PortraitFlipped;
+		}
+	}
+
+	Windows::Graphics::Display::DisplayOrientations DisplayOrientationFromNative(H::Dx::DisplayOrientations displayOrientation) {
+		switch (displayOrientation) {
+		case H::Dx::DisplayOrientations::Landscape:
+			return Windows::Graphics::Display::DisplayOrientations::Landscape;
+
+		case H::Dx::DisplayOrientations::Portrait:
+			return Windows::Graphics::Display::DisplayOrientations::Portrait;
+
+		case H::Dx::DisplayOrientations::LandscapeFlipped:
+			return Windows::Graphics::Display::DisplayOrientations::LandscapeFlipped;
+
+		case H::Dx::DisplayOrientations::PortraitFlipped:
+			return Windows::Graphics::Display::DisplayOrientations::PortraitFlipped;
 		}
 	}
 };
@@ -44,18 +61,21 @@ namespace Helpers {
 			}
 
 			// This method is called when the XAML control is created (or re-created).
-			void SwapChainPanel::SetSwapChainPanel(Windows::UI::Xaml::Controls::SwapChainPanel^ swapChainPanelXaml) {
+			void SwapChainPanel::SetSwapChainPanelXaml(Windows::UI::Xaml::Controls::SwapChainPanel^ swapChainPanelXaml) {
 				this->swapChainPanelXaml = swapChainPanelXaml;
 				
-				auto currentDisplayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
-				this->swapChainPanelNative->InitSwapChainPanelInfo(
-					H::Size_f{ static_cast<float>(swapChainPanelXaml->ActualWidth), static_cast<float>(swapChainPanelXaml->ActualHeight) },
-					ScreenRotation::ToNative(currentDisplayInformation->NativeOrientation),
-					ScreenRotation::ToNative(currentDisplayInformation->CurrentOrientation),
-					swapChainPanelXaml->CompositionScaleX,
-					swapChainPanelXaml->CompositionScaleY,
-					currentDisplayInformation->LogicalDpi
-				);
+				H::WinRt::RunOnUIThread(this->swapChainPanelXaml->Dispatcher,
+					[this] {
+						auto currentDisplayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
+						this->swapChainPanelNative->InitSwapChainPanelInfo(
+							H::Size_f{ static_cast<float>(this->swapChainPanelXaml->ActualWidth), static_cast<float>(this->swapChainPanelXaml->ActualHeight) },
+							Tools::DisplayOrientationToNative(currentDisplayInformation->NativeOrientation),
+							Tools::DisplayOrientationToNative(currentDisplayInformation->CurrentOrientation),
+							this->swapChainPanelXaml->CompositionScaleX,
+							this->swapChainPanelXaml->CompositionScaleY,
+							currentDisplayInformation->LogicalDpi
+						);
+					});
 			}
 
 			// This method is called in the event handler for the SizeChanged event.
@@ -63,19 +83,37 @@ namespace Helpers {
 				this->swapChainPanelNative->SetLogicalSize(H::Size_f{ logicalSize.Width, logicalSize.Height });
 			}
 
+			Windows::Foundation::Size SwapChainPanel::GetLogicalSize() {
+				auto size = this->swapChainPanelNative->GetLogicalSize();
+				return Windows::Foundation::Size{ size.width, size.height };
+			}
+
 			// This method is called in the event handler for the DpiChanged event.
 			void SwapChainPanel::SetDpi(float dpi) {
 				this->swapChainPanelNative->SetDpi(dpi);
 			}
 
+			float SwapChainPanel::GetDpi() {
+				return this->swapChainPanelNative->GetDpi();
+			}
+
 			// This method is called in the event handler for the OrientationChanged event.
 			void SwapChainPanel::SetCurrentOrientation(Windows::Graphics::Display::DisplayOrientations currentOrientation) {
-				this->swapChainPanelNative->SetCurrentOrientation(ScreenRotation::ToNative(currentOrientation));
+				this->swapChainPanelNative->SetCurrentOrientation(Tools::DisplayOrientationToNative(currentOrientation));
+			}
+
+			Windows::Graphics::Display::DisplayOrientations SwapChainPanel::GetCurrentOrientation() {
+				return Tools::DisplayOrientationFromNative(this->swapChainPanelNative->GetCurrentOrientation());
 			}
 
 			// This method is called in the event handler for the CompositionScaleChanged event.
 			void SwapChainPanel::SetCompositionScale(float compositionScaleX, float compositionScaleY) {
 				this->swapChainPanelNative->SetCompositionScale(compositionScaleX, compositionScaleY);
+			}
+
+			Helpers::WinRt::Scale SwapChainPanel::GetCompositionScale() {
+				auto scale = this->swapChainPanelNative->GetCompositionScale();
+				return Helpers::WinRt::Scale{ scale.x, scale.y };
 			}
 
 			// This method is called in the event handler for the DisplayContentsInvalidated event.
@@ -102,32 +140,13 @@ namespace Helpers {
 				this->swapChainPanelNative->Present();
 			}
 
-			//Platform::Object^ SwapChainPanel::GetSwapChainNative() {
-			//	Platform::Object^ swapChainPanelRefObj = nullptr;
-			//	{
-			//		//auto swapChainPanelCom = Microsoft::WRL::Make<H::UnknownValue<std::shared_ptr<H::Dx::SwapChainPanel>>>();
-			//		auto swapChainPanelCom = Microsoft::WRL::Make<H::UnknownValue<H::Dx::SwapChainPanel*>>();
-			//		auto swapChainPanelPtr = this->swapChainPanel.get();
-			//		swapChainPanelCom->SetValue(swapChainPanelPtr);
-			//		swapChainPanelRefObj = reinterpret_cast<Platform::Object^>(swapChainPanelCom.Get());
-			//	}
-			//	return swapChainPanelRefObj;
-			//}
-
-			//Platform::Object^ SwapChainPanel::GetSwapChainNative() {
-			//	auto unkVal = Microsoft::WRL::Make<H::UnknownValue<H::Dx::SwapChainPanel*>>();
-			//	unkVal->SetValue(this->swapChainPanel.get());
-
-			//	Microsoft::WRL::ComPtr<IInspectable> insp;
-			//	unkVal.As(&insp);
-
-			//	Platform::Object^ obj = reinterpret_cast<Platform::Object^>(insp.Get());
-			//	return obj;
-			//}
-
-			Platform::Object^ SwapChainPanel::GetSwapChainNative() {
+			Platform::Object^ SwapChainPanel::GetSwapChainPanelNativeAsObject() {
 				Platform::Object^ obj = reinterpret_cast<Platform::Object^>(this->swapChainPanelNative.Get());
 				return obj;
+			}
+
+			Windows::UI::Xaml::Controls::SwapChainPanel^ SwapChainPanel::GetSwapChainPanelXaml() {
+				return this->swapChainPanelXaml;
 			}
 
 			// Register our DeviceNotify to be informed on device lost and creation.
@@ -170,7 +189,11 @@ namespace Helpers {
 						return std::make_unique<H::Mutex<std::recursive_mutex>>();
 					};
 					break;
-				}	
+				}
+
+				//if (initDataNative.optionFlags.Has(H::Dx::SwapChainPanel::InitData::Options::EnableHDR)) {
+				//	initDataNative.backBufferFormat = DXGI_FORMAT_R10G10B10A2_UNORM;
+				//}
 
 				return Microsoft::WRL::Make<H::Dx::SwapChainPanel>(initDataNative);
 			}

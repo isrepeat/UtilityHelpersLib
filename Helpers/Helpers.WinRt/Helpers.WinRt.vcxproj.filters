@@ -18,6 +18,7 @@
     <ClInclude Include="Dx\SwapChainPanel.h">
       <Filter>Dx</Filter>
     </ClInclude>
+    <ClInclude Include="HMath.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Dx">

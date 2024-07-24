@@ -83,6 +83,18 @@ namespace HELPERS_NS {
         };
 
 
+        class MsaaHelper {
+        public:
+            static UINT GetMaxMSAA();
+            static std::optional<DXGI_SAMPLE_DESC> GetMaxSupportedMSAA(ID3D11Device* d3dDev, DXGI_FORMAT format, UINT maxDesired);
+
+        private:
+            // Must be sorted from min to max
+            // MSAA level 1 is not used as it's same as no MSAA
+            // Theoretically D3D11_MAX_MULTISAMPLE_SAMPLE_COUNT can be used but 2, 4, 8 msaa is the most common sample count in games
+            static constexpr std::array<UINT, 3> MsaaLevels = { 2, 4, 8 };
+        };
+
         void LogDeviceInfo();
         HELPERS_NS::Rational<double> GetRefreshRateForDXGIOutput(Microsoft::WRL::ComPtr<IDXGIOutput> dxgiOutput);
 
