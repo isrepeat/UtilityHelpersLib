@@ -1,10 +1,11 @@
 #pragma once
 #include <Helpers/common.h>
 #include <Helpers/Rational.h>
-#include <vector>
-#include <string>
+#include <optional>
 #include <d3d11.h>
 #include <dxgi.h>
+#include <vector>
+#include <string>
 #include <cmath>
 #include <wrl.h>
 
