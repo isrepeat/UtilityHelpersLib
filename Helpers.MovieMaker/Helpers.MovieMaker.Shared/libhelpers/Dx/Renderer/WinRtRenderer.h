@@ -21,17 +21,16 @@ template<class T>
 class WinRtRenderer {
 public:
     template<class... Args>
-    WinRtRenderer(
-        Windows::UI::Xaml::Controls::SwapChainPanel ^panel, DxDevice *dxDev, Args&&... args)
-        : dxDev(dxDev)
-        , output(dxDev, panel)
+    WinRtRenderer(Helpers::WinRt::Dx::SwapChainPanel^ swapChainPanelWinRt, Args&&... args)
+        : swapChainPanelWinRt{ swapChainPanelWinRt }
+        , swapChainPanelXaml{ swapChainPanelWinRt->GetSwapChainPanelXaml() }
+        , swapChainPanelOutput{ this->swapChainPanelWinRt }
+        , renderer(this->swapChainPanelOutput.GetSwapChainPanelNative()->GetDxDevice(), &this->swapChainPanelOutput, std::forward<Args>(args)...)
         , pointerMoves(false)
-        , renderer(dxDev, &this->output, std::forward<Args>(args)...)
         , renderThreadState(RenderThreadState::Stop)
-        , panel(panel)
     {
-        H::RunOnUIThread(this->panel->Dispatcher,
-            [&]
+        H::RunOnUIThread(this->swapChainPanelXaml->Dispatcher,
+            [this]
             {
                 auto window = Windows::UI::Xaml::Window::Current->CoreWindow;
                 auto displayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
@@ -61,12 +60,12 @@ public:
                 this->orientChangedToken = displayInformation->OrientationChanged += H::System::MakeTypedEventHandler(
                     [=](Windows::Graphics::Display::DisplayInformation^ sender, Platform::Object^ args)
                     {
+                        LOG_FUNCTION_ENTER("displayInformation->OrientationChanged()");
                         concurrency::critical_section::scoped_lock lk(this->cs);
-                        auto panel = this->output.GetSwapChainPanel();
                         auto orientation = sender->CurrentOrientation;
                         auto dpi = sender->LogicalDpi;
-                        auto scale = DirectX::XMFLOAT2(panel->CompositionScaleX, panel->CompositionScaleY);
-                        auto size = DirectX::XMFLOAT2((float)panel->ActualWidth, (float)panel->ActualHeight);
+                        auto scale = DirectX::XMFLOAT2(this->swapChainPanelXaml->CompositionScaleX, this->swapChainPanelXaml->CompositionScaleY);
+                        auto size = DirectX::XMFLOAT2((float)this->swapChainPanelXaml->ActualWidth, (float)this->swapChainPanelXaml->ActualHeight);
 
                         this->TryResize(size, scale, dpi, orientation);
                     });
@@ -74,25 +73,26 @@ public:
                 this->dispContentInvalidatedToken = displayInformation->DisplayContentsInvalidated += H::System::MakeTypedEventHandler(
                     [=](Windows::Graphics::Display::DisplayInformation^ sender, Platform::Object^ args)
                     {
-                        int stop = 324;
+                        LOG_FUNCTION_ENTER("displayInformation->DisplayContentsInvalidated()");
                     });
 
                 this->dpiChangedToken = displayInformation->DpiChanged += H::System::MakeTypedEventHandler(
                     [=](Windows::Graphics::Display::DisplayInformation^ sender, Platform::Object^ args)
                     {
+                        LOG_FUNCTION_ENTER("displayInformation->DpiChanged()");
                         concurrency::critical_section::scoped_lock lk(this->cs);
-                        auto panel = this->output.GetSwapChainPanel();
                         auto orientation = sender->CurrentOrientation;
                         auto dpi = sender->LogicalDpi;
-                        auto scale = DirectX::XMFLOAT2(panel->CompositionScaleX, panel->CompositionScaleY);
-                        auto size = DirectX::XMFLOAT2((float)panel->ActualWidth, (float)panel->ActualHeight);
+                        auto scale = DirectX::XMFLOAT2(this->swapChainPanelXaml->CompositionScaleX, this->swapChainPanelXaml->CompositionScaleY);
+                        auto size = DirectX::XMFLOAT2((float)this->swapChainPanelXaml->ActualWidth, (float)this->swapChainPanelXaml->ActualHeight);
 
                         this->TryResize(size, scale, dpi, orientation);
                     });
 
-                this->compScaleChangedToken = panel->CompositionScaleChanged += H::System::MakeTypedEventHandler(
+                this->compScaleChangedToken = this->swapChainPanelXaml->CompositionScaleChanged += H::System::MakeTypedEventHandler(
                     [=](Windows::UI::Xaml::Controls::SwapChainPanel^ sender, Platform::Object^ args)
                     {
+                        LOG_FUNCTION_ENTER("displayInformation->CompositionScaleChanged()");
                         auto displayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
 
                         concurrency::critical_section::scoped_lock lk(this->cs);
@@ -104,17 +104,17 @@ public:
                         this->TryResize(size, scale, dpi, orientation);
                     });
 
-                this->sizeChangedToken = panel->SizeChanged += ref new Windows::UI::Xaml::SizeChangedEventHandler(
+                this->sizeChangedToken = this->swapChainPanelXaml->SizeChanged += ref new Windows::UI::Xaml::SizeChangedEventHandler(
                     [=](Platform::Object^ sender, Windows::UI::Xaml::SizeChangedEventArgs^ args)
                     {
+                        LOG_FUNCTION_ENTER("displayInformation->SizeChanged()");
                         auto displayInformation = Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
                         auto size = DirectX::XMFLOAT2(args->NewSize.Width, args->NewSize.Height);
 
                         concurrency::critical_section::scoped_lock lk(this->cs);
-                        auto panel = this->output.GetSwapChainPanel();
                         auto orientation = displayInformation->CurrentOrientation;
                         auto dpi = displayInformation->LogicalDpi;
-                        auto scale = DirectX::XMFLOAT2(panel->CompositionScaleX, panel->CompositionScaleY);
+                        auto scale = DirectX::XMFLOAT2(this->swapChainPanelXaml->CompositionScaleX, this->swapChainPanelXaml->CompositionScaleY);
 
                         this->TryResize(size, scale, dpi, orientation);
                     });
@@ -123,7 +123,9 @@ public:
         this->renderer.OutputParametersChanged();
 
         this->StartRenderThread();
-        this->inputThread = std::thread([=]() { this->Input(panel); });
+        this->inputThread = std::thread([=] { 
+            this->Input(this->swapChainPanelXaml);
+            });
     }
 
     ~WinRtRenderer() {
@@ -141,7 +143,7 @@ public:
         }
 
         try {
-            H::RunOnUIThread(this->panel->Dispatcher,
+            H::RunOnUIThread(this->swapChainPanelXaml->Dispatcher,
                 [&]
                 {
                     auto window = Windows::UI::Xaml::Window::Current->CoreWindow;
@@ -151,26 +153,26 @@ public:
                     displayInformation->OrientationChanged -= this->orientChangedToken;
                     displayInformation->DisplayContentsInvalidated -= this->dispContentInvalidatedToken;
                     displayInformation->DpiChanged -= this->dpiChangedToken;
-                    this->panel->CompositionScaleChanged -= this->compScaleChangedToken;
-                    this->panel->SizeChanged -= this->sizeChangedToken;
+                    this->swapChainPanelXaml->CompositionScaleChanged -= this->compScaleChangedToken;
+                    this->swapChainPanelXaml->SizeChanged -= this->sizeChangedToken;
                 });
         }
-        catch(...) {}
+        catch (...) {}
     }
 
-    T *operator->() {
+    T* operator->() {
         return &this->renderer;
     }
 
-    T *get() {
+    T* get() {
         return &this->renderer;
     }
 
     DirectX::XMFLOAT4 GetRTColor();
     void SetRTColor(DirectX::XMFLOAT4 color);
-    
+
     Helpers::WinRt::Dx::DxSettings^ GetDxSettings() {
-        return this->output.GetDxSettings();
+        return this->swapChainPanelOutput.GetDxSettings();
     }
 
 public:
@@ -180,81 +182,56 @@ public:
     std::function<void(Windows::UI::Input::PointerPoint^)> pointerWheelChanged;
 
 private:
-    DxDevice *dxDev;
-    SwapChainPanelOutput output;
-    T renderer;
-    Windows::UI::Xaml::Window ^wnd;
-
-    concurrency::critical_section cs;
-
-    Windows::UI::Core::CoreIndependentInputSource ^coreInput;
-
-    std::thread renderThread;
-    std::thread inputThread;
-
-    concurrency::critical_section renderThreadStateCs;
-    std::atomic<RenderThreadState> renderThreadState;
-
-    bool pointerMoves;
-
-    Windows::UI::Xaml::Controls::SwapChainPanel ^panel;
-    Windows::Foundation::EventRegistrationToken visChangedToken;
-    Windows::Foundation::EventRegistrationToken orientChangedToken;
-    Windows::Foundation::EventRegistrationToken dispContentInvalidatedToken;
-    Windows::Foundation::EventRegistrationToken dpiChangedToken;
-    Windows::Foundation::EventRegistrationToken compScaleChangedToken;
-    Windows::Foundation::EventRegistrationToken sizeChangedToken;
-
-    void Input(Windows::UI::Xaml::Controls::SwapChainPanel ^panel) {
-        this->coreInput = panel->CreateCoreIndependentInputSource(
+    void Input(Windows::UI::Xaml::Controls::SwapChainPanel^ panel) {
+        this->coreInput = swapChainPanelXaml->CreateCoreIndependentInputSource(
             Windows::UI::Core::CoreInputDeviceTypes::Mouse |
             Windows::UI::Core::CoreInputDeviceTypes::Touch |
             Windows::UI::Core::CoreInputDeviceTypes::Pen);
 
         this->coreInput->PointerPressed += H::System::MakeTypedEventHandler(
-            [=](Platform::Object ^sender, Windows::UI::Core::PointerEventArgs ^args)
-        {
-            auto pt = args->CurrentPoint;
-            this->pointerMoves = true;
+            [=](Platform::Object^ sender, Windows::UI::Core::PointerEventArgs^ args)
+            {
+                auto pt = args->CurrentPoint;
+                this->pointerMoves = true;
 
 #ifdef WINRT_Input
-            this->pointerPressed(pt);
+                this->pointerPressed(pt);
 #endif // WINRT_Input
 
-        });
+            });
         this->coreInput->PointerMoved += H::System::MakeTypedEventHandler(
-            [=](Platform::Object ^sender, Windows::UI::Core::PointerEventArgs ^args)
-        {
-            if (this->pointerMoves) {
+            [=](Platform::Object^ sender, Windows::UI::Core::PointerEventArgs^ args)
+            {
+                if (this->pointerMoves) {
+                    auto pt = args->CurrentPoint;
+
+#ifdef WINRT_Input
+                    this->pointerMoved(pt);
+#endif // DEBUG
+
+                }
+            });
+        this->coreInput->PointerReleased += H::System::MakeTypedEventHandler(
+            [=](Platform::Object^ sender, Windows::UI::Core::PointerEventArgs^ args)
+            {
+                auto pt = args->CurrentPoint;
+                this->pointerMoves = false;
+
+#ifdef WINRT_Input
+                this->pointerReleased(pt);
+#endif // WINRT_Input
+
+            });
+        this->coreInput->PointerWheelChanged += H::System::MakeTypedEventHandler(
+            [=](Platform::Object^ sender, Windows::UI::Core::PointerEventArgs^ args)
+            {
                 auto pt = args->CurrentPoint;
 
 #ifdef WINRT_Input
-                this->pointerMoved(pt);
-#endif // DEBUG
-
-            }
-        });
-        this->coreInput->PointerReleased += H::System::MakeTypedEventHandler(
-            [=](Platform::Object ^sender, Windows::UI::Core::PointerEventArgs ^args)
-        {
-            auto pt = args->CurrentPoint;
-            this->pointerMoves = false;
-
-#ifdef WINRT_Input
-            this->pointerReleased(pt);
+                this->pointerWheelChanged(pt);
 #endif // WINRT_Input
 
-        });
-        this->coreInput->PointerWheelChanged += H::System::MakeTypedEventHandler(
-            [=](Platform::Object ^sender, Windows::UI::Core::PointerEventArgs ^args)
-        {
-            auto pt = args->CurrentPoint;
-
-#ifdef WINRT_Input
-            this->pointerWheelChanged(pt);
-#endif // WINRT_Input
-
-        });
+            });
 
         this->coreInput->Dispatcher->ProcessEvents(Windows::UI::Core::CoreProcessEventsOption::ProcessUntilQuit);
     }
@@ -262,7 +239,7 @@ private:
     void Render() {
         while (this->renderThreadState != RenderThreadState::Stop) {
             concurrency::critical_section::scoped_lock lk(this->cs);
-            this->output.Render([this] {
+            this->swapChainPanelOutput.Render([this] {
                 this->renderer.Render();
                 });
         }
@@ -282,52 +259,81 @@ private:
     // Need to inspect all parameters in order to use correct size parameters under windows 8.1
     // Because under 8.1 it isn't reports events about all changes, for example it refers to DPI
     void TryResize(
-        const DirectX::XMFLOAT2 &newSize,
-        const DirectX::XMFLOAT2 &newScale,
+        const DirectX::XMFLOAT2& newSize,
+        const DirectX::XMFLOAT2& newScale,
         float dpi,
         Windows::Graphics::Display::DisplayOrientations orientation)
     {
+        LOG_FUNCTION_ENTER("TryResize(newSize = [{}; {}], newScale = [{}; {}], dpi = {}, ...)"
+            , newSize.x, newSize.y
+            , newScale.x, newScale.y
+            , dpi
+        );
+
         bool needResize = false;
-        auto oldOrientation = this->output.GetCurrentOrientation();
-        auto oldDpi = this->output.GetLogicalDpi();
-        auto oldScale = this->output.GetCompositionScale();
-        auto oldSize = this->output.GetLogicalSize();
+        auto oldOrientation = this->swapChainPanelOutput.GetCurrentOrientation();
+        auto oldDpi = this->swapChainPanelOutput.GetLogicalDpi();
+        auto oldScale = this->swapChainPanelOutput.GetCompositionScale();
+        auto oldSize = this->swapChainPanelOutput.GetLogicalSize();
 
         if (orientation != oldOrientation) {
             needResize = true;
-            this->output.SetCurrentOrientation(orientation);
+            this->swapChainPanelOutput.SetCurrentOrientation(orientation);
         }
 
         if (dpi != oldDpi) {
             needResize = true;
-            this->output.SetLogicalDpi(dpi);
+            this->swapChainPanelOutput.SetLogicalDpi(dpi);
         }
 
         if (newScale != oldScale) {
             needResize = true;
-            this->output.SetCompositionScale(newScale);
+            this->swapChainPanelOutput.SetCompositionScale(newScale);
         }
 
         if (newSize != oldSize) {
             needResize = true;
-            this->output.SetLogicalSize(newSize);
+            this->swapChainPanelOutput.SetLogicalSize(newSize);
         }
 
         if (needResize) {
-            this->output.Resize();
             this->renderer.OutputParametersChanged();
         }
     }
+
+    private:
+        Helpers::WinRt::Dx::SwapChainPanel^ swapChainPanelWinRt;
+        Windows::UI::Xaml::Controls::SwapChainPanel^ swapChainPanelXaml;
+        SwapChainPanelOutput swapChainPanelOutput;
+        T renderer;
+
+        concurrency::critical_section cs;
+        concurrency::critical_section renderThreadStateCs;
+        
+        bool pointerMoves;
+        std::atomic<RenderThreadState> renderThreadState;
+
+        Windows::UI::Xaml::Window^ wnd;
+        Windows::UI::Core::CoreIndependentInputSource^ coreInput;
+        Windows::Foundation::EventRegistrationToken visChangedToken;
+        Windows::Foundation::EventRegistrationToken orientChangedToken;
+        Windows::Foundation::EventRegistrationToken dispContentInvalidatedToken;
+        Windows::Foundation::EventRegistrationToken dpiChangedToken;
+        Windows::Foundation::EventRegistrationToken compScaleChangedToken;
+        Windows::Foundation::EventRegistrationToken sizeChangedToken;
+
+        std::thread renderThread;
+        std::thread inputThread;
 };
 
 template<class T>
 inline DirectX::XMFLOAT4 WinRtRenderer<T>::GetRTColor() {
-    return this->output.GetRTColor();
+    return this->swapChainPanelOutput.GetRTColor();
 }
 
 template<class T>
 inline void WinRtRenderer<T>::SetRTColor(DirectX::XMFLOAT4 color) {
-    this->output.SetRTColor(color);
+    this->swapChainPanelOutput.SetRTColor(color);
 }
 
 #endif // WINRT_Any

@@ -458,7 +458,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\D2DCtxMt.h">
       <Filter>Dx</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\EmptyMutex.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Mutex.h">
       <Filter>Thread</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,5 +1,7 @@
 ﻿#include "SwapChainPanel.h"
+#include <MagicEnum/MagicEnum.h>
 #include <Helpers/Dx/DxHelpers.h>
+#include <Helpers/Logger.h>
 #include <Helpers/System.h>
 
 #include <windows.ui.xaml.media.dxinterop.h>
@@ -88,9 +90,9 @@ namespace Tools {
 
 namespace HELPERS_NS {
 	namespace Dx {
-		SwapChainPanel::SwapChainPanel(InitData initData)
+		SwapChainPanel::SwapChainPanel(const InitData& initData)
 			: initData{ initData }
-			, dxDeviceSafeObj{ initData.dxDeviceFactory() }
+			, dxDeviceSafeObj{ initData.dxDeviceSafeObjMutexFactory(), initData.dxDeviceFactory() }
 			, m_screenViewport{}
 			, m_d3dRenderTargetSize{}
 			, m_outputSize{}
@@ -115,7 +117,7 @@ namespace HELPERS_NS {
 
 				Microsoft::WRL::ComPtr<IDXGIFactory5> dxgiFactory5;
 				if (FAILED(dxgiFactory.As(&dxgiFactory5))) {
-					this->initData.optionFlags &= ~InitData::Options::EnableHDR;
+					const_cast<InitData&>(this->initData).optionFlags &= ~InitData::Options::EnableHDR;
 					LOG_WARNING_D("HDR swap chains not supported, disable 'InitData::Options::EnableHDR'");
 				}
 			}
@@ -156,6 +158,7 @@ namespace HELPERS_NS {
 		// These resources need to be recreated every time the window size is changed.
 		void SwapChainPanel::CreateWindowSizeDependentResources() {
 			HRESULT hr = S_OK;
+
 			auto dxDev = this->dxDeviceSafeObj.Lock();
 			auto d3dDevice = dxDev->GetD3DDevice();
 			auto dxCtx = dxDev->LockContext();
@@ -165,13 +168,16 @@ namespace HELPERS_NS {
 			// Clear the previous window size specific context.
 			ID3D11RenderTargetView* nullViews[] = { nullptr };
 			d3dCtx->OMSetRenderTargets(ARRAYSIZE(nullViews), nullViews, nullptr);
-			m_d3dRenderTargetView.Reset();
 			d2dCtx->SetTarget(nullptr);
-			m_d2dTargetBitmap.Reset();
-			m_d3dDepthStencilView.Reset();
+			this->dxgiSwapChainBackBuffer.Reset();
+			this->m_d3dRenderTargetView.Reset();
+			this->m_d3dDepthStencilView.Reset();
+			this->msaaTexture.Reset();
+			this->msaaRenderTargetView.Reset();
+			this->m_d2dTargetBitmap.Reset();
 			d3dCtx->Flush1(D3D11_CONTEXT_TYPE_ALL, nullptr);
 
-			UpdateRenderTargetSize();
+			this->UpdateRenderTargetSize();
 
 			// The width and height of the swap chain must be based on the window's
 			// natively-oriented width and height. If the window is not in the native
@@ -193,12 +199,12 @@ namespace HELPERS_NS {
 					lround(m_d3dRenderTargetSize.width),
 					lround(m_d3dRenderTargetSize.height),
 					backBufferFormat,
-					0
+					0 // or use DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT but create swapChain also with it
 				);
 
 				if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
 					// If the device was removed for any reason, a new device and swap chain will need to be created.
-					HandleDeviceLost();
+					this->HandleDeviceLost();
 
 					// Everything is set up now. Do not continue execution of this method. HandleDeviceLost will reenter this method 
 					// and correctly set up the new device.
@@ -221,25 +227,14 @@ namespace HELPERS_NS {
 				swapChainDesc.SampleDesc.Quality = 0;
 				swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 				swapChainDesc.BufferCount = 2;									// Use double-buffering to minimize latency.
-				swapChainDesc.SwapEffect = (this->initData.optionFlags & (InitData::Options::EnableHDR))  // All Microsoft Store apps must use _FLIP_ SwapEffects.
+				swapChainDesc.SwapEffect = (this->initData.optionFlags.Has(InitData::Options::EnableHDR))  // All Microsoft Store apps must use _FLIP_ SwapEffects.
 					? Tools::WithFlip(this->initData.dxgiSwapEffect)
 					: this->initData.dxgiSwapEffect;
 				swapChainDesc.Flags = 0;
 				swapChainDesc.Scaling = DXGI_SCALING_STRETCH;					// CreateSwapChainForComposition support only DXGI_SCALING_STRETCH
-				swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-
-				//// This sequence obtains the DXGI factory that was used to create the Direct3D device above.
-				//Microsoft::WRL::ComPtr<IDXGIDevice3> dxgiDevice;
-				//hr = d3dDevice.As(&dxgiDevice);
-				//H::System::ThrowIfFailed(hr);
-
-				//Microsoft::WRL::ComPtr<IDXGIAdapter> dxgiAdapter;
-				//hr = dxgiDevice->GetAdapter(&dxgiAdapter);
-				//H::System::ThrowIfFailed(hr);
-
-				//Microsoft::WRL::ComPtr<IDXGIFactory4> dxgiFactory;
-				//hr = dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory));
-				//H::System::ThrowIfFailed(hr);
+				swapChainDesc.AlphaMode = this->initData.environment == InitData::Environment::UWP
+					? DXGI_ALPHA_MODE_PREMULTIPLIED
+					: DXGI_ALPHA_MODE_IGNORE;
 
 				auto dxgiFactory = dxDev->GetDxgiFactory();
 				Microsoft::WRL::ComPtr<IDXGISwapChain1> dxgiSwapChain1;
@@ -346,11 +341,10 @@ namespace HELPERS_NS {
 			}
 
 			// Handle color space settings for HDR
-			UpdateColorSpace();
+			this->UpdateColorSpace();
 			
 			// Create a render target view of the swap chain back buffer.
-			Microsoft::WRL::ComPtr<ID3D11Texture2D> backBuffer;
-			hr = this->dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
+			hr = this->dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&this->dxgiSwapChainBackBuffer));
 			H::System::ThrowIfFailed(hr);
 
 			CD3D11_RENDER_TARGET_VIEW_DESC1 renderTargetViewDesc(
@@ -358,7 +352,7 @@ namespace HELPERS_NS {
 				backBufferFormat
 			);
 			hr = d3dDevice->CreateRenderTargetView1(
-				backBuffer.Get(),
+				this->dxgiSwapChainBackBuffer.Get(),
 				&renderTargetViewDesc, 
 				&m_d3dRenderTargetView
 			);
@@ -393,9 +387,29 @@ namespace HELPERS_NS {
 				H::System::ThrowIfFailed(hr);
 			}
 
-			if (backBufferFormat == DXGI_FORMAT_B8G8R8A8_UNORM) {
-				// Create a Direct2D target bitmap associated with the
-				// swap chain back buffer and set it as the current target.
+
+			if (false) { //if (dxSettings->MSAA) {
+				D3D11_TEXTURE2D_DESC desc = {};
+				this->dxgiSwapChainBackBuffer->GetDesc(&desc);
+
+				auto availableMsaaLevel = H::Dx::MsaaHelper::GetMaxSupportedMSAA(d3dDevice.Get(), desc.Format, H::Dx::MsaaHelper::GetMaxMSAA());
+				if (availableMsaaLevel) {
+					desc.SampleDesc = *availableMsaaLevel;
+
+					hr = d3dDevice->CreateTexture2D(&desc, nullptr, &this->msaaTexture);
+					H::System::ThrowIfFailed(hr);
+
+					hr = d3dDevice->CreateRenderTargetView1(this->msaaTexture.Get(), nullptr, &this->msaaRenderTargetView);
+					H::System::ThrowIfFailed(hr);
+				}
+			}
+
+
+			// Create a Direct2D target bitmap associated with the
+			// swap chain back buffer and set it as the current target.
+			switch (backBufferFormat) {
+			case DXGI_FORMAT_B8G8R8A8_UNORM:
+			case DXGI_FORMAT_R16G16B16A16_FLOAT: {
 				D2D1_BITMAP_PROPERTIES1 bitmapProperties =
 					D2D1::BitmapProperties1(
 						D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
@@ -404,19 +418,32 @@ namespace HELPERS_NS {
 						m_dpi
 					);
 
-				Microsoft::WRL::ComPtr<IDXGISurface2> dxgiBackBuffer;
-				hr = this->dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&dxgiBackBuffer));
+				Microsoft::WRL::ComPtr<IDXGISurface2> dxgiSurface;
+				if (this->msaaTexture) {
+					hr = this->msaaTexture.As(&dxgiSurface);
+				}
+				else {
+					hr = this->dxgiSwapChainBackBuffer.As(&dxgiSurface);
+				}
 				H::System::ThrowIfFailed(hr);
 
 				hr = d2dCtx->CreateBitmapFromDxgiSurface(
-					dxgiBackBuffer.Get(),
-					&bitmapProperties,
+					dxgiSurface.Get(),
+					&bitmapProperties, // if nullptr - use properties from dxgiSurface
 					&m_d2dTargetBitmap
 				);
 				H::System::ThrowIfFailed(hr);
 
 				d2dCtx->SetTarget(m_d2dTargetBitmap.Get());
+				break;
 			}
+
+			default:
+				LOG_WARNING_D("Unsupported backBufferFormat ({}) to create d2dTargetBitmap"
+					, MagicEnum::ToString(backBufferFormat)
+				);
+			}
+
 
 			// Set the 3D rendering viewport to target the entire window.
 			m_screenViewport = CD3D11_VIEWPORT(
@@ -471,7 +498,7 @@ namespace HELPERS_NS {
 		void SwapChainPanel::SetLogicalSize(H::Size_f logicalSize) {
 			if (m_logicalSize != logicalSize) {
 				m_logicalSize = logicalSize;
-				CreateWindowSizeDependentResources();
+				this->CreateWindowSizeDependentResources();
 			}
 		}
 
@@ -484,7 +511,7 @@ namespace HELPERS_NS {
 			if (dpi != m_dpi) {
 				m_dpi = dpi;
 				d2dCtx->SetDpi(m_dpi, m_dpi);
-				CreateWindowSizeDependentResources();
+				this->CreateWindowSizeDependentResources();
 			}
 		}
 
@@ -496,7 +523,7 @@ namespace HELPERS_NS {
 		void SwapChainPanel::SetCurrentOrientation(DisplayOrientations currentOrientation) {
 			if (m_currentOrientation != currentOrientation) {
 				m_currentOrientation = currentOrientation;
-				CreateWindowSizeDependentResources();
+				this->CreateWindowSizeDependentResources();
 			}
 		}
 
@@ -507,14 +534,14 @@ namespace HELPERS_NS {
 			{
 				m_compositionScaleX = compositionScaleX;
 				m_compositionScaleY = compositionScaleY;
-				CreateWindowSizeDependentResources();
+				this->CreateWindowSizeDependentResources();
 			}
 		}
 
 		void SwapChainPanel::SetRenderResolutionScale(float resolutionScale) {
 			if (m_resolutionScale != resolutionScale) {
 				m_resolutionScale = resolutionScale;
-				CreateWindowSizeDependentResources();
+				this->CreateWindowSizeDependentResources();
 			}
 		}
 
@@ -577,7 +604,7 @@ namespace HELPERS_NS {
 				previousDefaultAdapter = nullptr;
 
 				// Create a new device and swap chain.
-				HandleDeviceLost();
+				this->HandleDeviceLost();
 			}
 		}
 
@@ -625,6 +652,10 @@ namespace HELPERS_NS {
 			auto dxCtx = dxDev->LockContext();
 			auto d3dCtx = dxCtx->D3D();
 
+			if (this->msaaTexture) {
+				d3dCtx->ResolveSubresource(this->dxgiSwapChainBackBuffer.Get(), 0, this->msaaTexture.Get(), 0, this->initData.backBufferFormat);
+			}
+
 			// The first argument instructs DXGI to block until VSync, putting the application
 			// to sleep until the next VSync. This ensures we don't waste any cycles rendering
 			// frames that will never be displayed to the screen.
@@ -634,17 +665,21 @@ namespace HELPERS_NS {
 			// Discard the contents of the render target.
 			// This is a valid operation only when the existing contents will be entirely
 			// overwritten. If dirty or scroll rects are used, this call should be modified.
-			d3dCtx->DiscardView1(m_d3dRenderTargetView.Get(), nullptr, 0);
+			d3dCtx->DiscardView1(this->m_d3dRenderTargetView.Get(), nullptr, 0);
 
-			if (m_d3dDepthStencilView) {
+			if (this->m_d3dDepthStencilView) {
 				// Discard the contents of the depth stencil.
-				d3dCtx->DiscardView1(m_d3dDepthStencilView.Get(), nullptr, 0);
+				d3dCtx->DiscardView1(this->m_d3dDepthStencilView.Get(), nullptr, 0);
+			}
+
+			if (this->msaaRenderTargetView) {
+				d3dCtx->DiscardView1(this->msaaRenderTargetView.Get(), nullptr, 0);
 			}
 
 			// If the device was removed either by a disconnection or a driver upgrade, we 
 			// must recreate all device resources.
 			if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
-				HandleDeviceLost();
+				this->HandleDeviceLost();
 			}
 			else {
 				H::System::ThrowIfFailed(hr);
@@ -664,8 +699,20 @@ namespace HELPERS_NS {
 			return m_d3dRenderTargetSize;
 		}
 
+		DisplayOrientations SwapChainPanel::GetNativeOrientation() const {
+			return m_nativeOrientation;
+		}
+
+		DisplayOrientations SwapChainPanel::GetCurrentOrientation() const {
+			return m_currentOrientation;
+		}
+
 		float SwapChainPanel::GetDpi() const {
 			return m_effectiveDpi;
+		}
+
+		DirectX::XMFLOAT2 SwapChainPanel::GetCompositionScale() const {
+			return { m_compositionScaleX, m_compositionScaleY };
 		}
 
 		Microsoft::WRL::ComPtr<IDXGISwapChain3> SwapChainPanel::GetSwapChain() const {
@@ -673,7 +720,7 @@ namespace HELPERS_NS {
 		}
 
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView1> SwapChainPanel::GetRenderTargetView() const {
-			return m_d3dRenderTargetView;
+			return this->msaaRenderTargetView ? this->msaaRenderTargetView : this->m_d3dRenderTargetView;
 		}
 
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> SwapChainPanel::GetDepthStencilView() const {

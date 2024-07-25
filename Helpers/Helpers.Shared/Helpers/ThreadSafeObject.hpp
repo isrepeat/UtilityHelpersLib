@@ -1,5 +1,7 @@
 #pragma once
-#include "common.h"
+#include <Helpers/common.h>
+#include <Helpers/Com/ComMutex.h>
+#include <Helpers/System.h>
 #include <string_view>
 #include <mutex>
 
@@ -128,6 +130,14 @@ namespace HELPERS_NS {
         ~LockedObj() {
         }
 
+        template <typename InterfaceT>
+        InterfaceT* As() {
+            if (auto objCasted = dynamic_cast<InterfaceT*>(this->obj.get())) {
+                return objCasted;
+            }
+            HELPERS_NS::System::ThrowIfFailed(E_NOINTERFACE);
+        }
+
         std::unique_ptr<ObjT, Args...>& operator->() const {
             return this->obj;
         }
@@ -239,6 +249,60 @@ namespace HELPERS_NS {
         mutable int ownerThreadId = -1;
         std::unique_ptr<ObjT> obj;
     };
+
+
+
+    template <typename ObjT, typename CustomLockableT>
+    class ThreadSafeObject<HELPERS_NS::Com::Mutex, std::unique_ptr<ObjT>, CustomLockableT> {
+    public:
+        static constexpr std::string_view templateNotes = "Specialized for <H::Com::Mutex, std::unique_ptr<ObjT>, CustomLockableObj>";
+        using _Locked = LockedObj<ThreadSafeObject<HELPERS_NS::Com::Mutex, std::unique_ptr<ObjT>, CustomLockableT>>;
+
+        ThreadSafeObject(std::unique_ptr<HELPERS_NS::IMutex> iMutex)
+            : mx{ std::move(iMutex) }
+            , obj{ std::make_unique<ObjT>() }
+        {}
+
+        ~ThreadSafeObject() {
+        }
+
+        template <typename... Args>
+        ThreadSafeObject(std::unique_ptr<HELPERS_NS::IMutex> iMutex, Args&&... args)
+            : mx{ std::move(iMutex) }
+            , obj{ std::make_unique<ObjT>(std::forward<Args>(args)...) }
+        {}
+
+        ThreadSafeObject(ThreadSafeObject& other) = delete;
+        ThreadSafeObject& operator=(ThreadSafeObject& other) = delete;
+
+        template <typename OtherT, std::enable_if_t<std::is_convertible_v<std::unique_ptr<OtherT>, std::unique_ptr<ObjT>>, int> = 0>
+        ThreadSafeObject(std::unique_ptr<HELPERS_NS::IMutex> iMutex, std::unique_ptr<OtherT>&& otherObj)
+            : mx{ std::move(iMutex) }
+            , obj{ std::move(otherObj) }
+        {}
+
+        template <typename OtherT, std::enable_if_t<std::is_convertible_v<std::unique_ptr<OtherT>, std::unique_ptr<ObjT>>, int> = 0>
+        ThreadSafeObject& operator=(std::unique_ptr<OtherT>&& otherObj) {
+            if (this->obj.get() != otherObj.get()) {
+                this->obj = std::move(otherObj);
+            }
+            return *this;
+        }
+
+        _Locked Lock() const {
+            return _Locked{ this->mx, this->obj, this, this->ownerThreadId };
+        }
+
+        std::unique_ptr<_Locked> LockUniq() const {
+            return std::make_unique<_Locked>(this->mx, this->obj, this, this->ownerThreadId);
+        }
+
+    private:
+        mutable HELPERS_NS::Com::Mutex mx;
+        mutable int ownerThreadId = -1;
+        std::unique_ptr<ObjT> obj;
+    };
+
 
 
     // TODO: overload for ENSURE_METHOD_IS_GUARDED(lockClass) and ENSURE_METHOD_IS_GUARDED(lockClass, mutexClass)

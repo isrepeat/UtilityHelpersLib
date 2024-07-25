@@ -34,7 +34,7 @@ namespace HELPERS_NS {
 			class DxDevice : public DxDeviceMt {
 			public:
 				DxDevice(const std::optional<DxDeviceParams>& params = std::nullopt);
-				~DxDevice();
+				virtual ~DxDevice();
 
 				DxDeviceCtxSafeObj_t::_Locked LockContext() const;
 				D3D_FEATURE_LEVEL GetDeviceFeatureLevel() const;
@@ -87,9 +87,10 @@ namespace HELPERS_NS {
 
 		// TODO: Write custom DxDeviceSafeObj to be compatible between winRt dll's.
 		//       Now only mutex is safe because it is called via virtual methods,
-		//       but you also need make safe other dxDevice methods.
-		using DxDeviceSafeObj = HELPERS_NS::ThreadSafeObject<HELPERS_NS::Com::Mutex<std::recursive_mutex>, std::unique_ptr<details::DxDevice>>;
-		using DxDeviceMFSafeObj = HELPERS_NS::ThreadSafeObject<HELPERS_NS::Com::Mutex<std::recursive_mutex>, std::unique_ptr<details::DxDeviceMF>>;
+		//       but you also need make safe other dxDevice methods.		
+		using DxDeviceSafeObj = HELPERS_NS::ThreadSafeObject<HELPERS_NS::Com::Mutex, std::unique_ptr<details::DxDevice>>;
+		using DxDeviceMFSafeObj = HELPERS_NS::ThreadSafeObject<HELPERS_NS::Com::Mutex, std::unique_ptr<details::DxDeviceMF>>;
+
 		
 		//class DxDeviceSafeObj;
 		//struct DxDeviceLockedObjBase

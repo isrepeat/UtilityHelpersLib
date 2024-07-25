@@ -6,16 +6,17 @@
 
 #include "libhelpers/Aligned.h"
 
+#include <Helpers/Dx/SwapChainPanel.h>
+
 #if HAVE_WINRT == 1
 
 class SwapChainPanelOutput : public IOutput {
-	static const uint32_t BufferCount = 2;
-	static const DXGI_FORMAT BufferFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
 public:
-	SwapChainPanelOutput(
-		raw_ptr<DxDevice> dxDeviceSafeObj,
-		Windows::UI::Xaml::Controls::SwapChainPanel^ swapChainPanel);
+	SwapChainPanelOutput(Helpers::WinRt::Dx::SwapChainPanel^ swapChainPanelWinRt);
 	virtual ~SwapChainPanelOutput();
+
+	Microsoft::WRL::ComPtr<HELPERS_NS::Dx::ISwapChainPanel> GetSwapChainPanelNative();
+	Windows::UI::Xaml::Controls::SwapChainPanel^ GetSwapChainPanelXaml() const;
 
 	float GetLogicalDpi() const override;
 	DirectX::XMFLOAT2 GetLogicalSize() const override;
@@ -27,67 +28,34 @@ public:
 	OrientationTypes GetOrientation() const override;
 	OrientationTypes GetNativeOrientation() const override;
 	
-	DirectX::XMFLOAT4 GetRTColor() const;
 	void SetRTColor(DirectX::XMFLOAT4 color);
+	DirectX::XMFLOAT4 GetRTColor() const;
 
 	Helpers::WinRt::Dx::DxSettings^ GetDxSettings() const;
-	Windows::UI::Xaml::Controls::SwapChainPanel^ GetSwapChainPanel() const;
 
 	void SetLogicalDpi(float v);
 	void SetLogicalSize(const DirectX::XMFLOAT2 &v);
-	DirectX::XMFLOAT2 GetCompositionScale() const;
+	
 	void SetCompositionScale(const DirectX::XMFLOAT2 &v);
-	Windows::Graphics::Display::DisplayOrientations GetCurrentOrientation() const;
+	DirectX::XMFLOAT2 GetCompositionScale() const;
+	
 	void SetCurrentOrientation(Windows::Graphics::Display::DisplayOrientations v);
-	void Resize();
-
+	Windows::Graphics::Display::DisplayOrientations GetCurrentOrientation() const;
+	
 	void Render(std::function<void()> renderHandler);
 
 protected:
 	void BeginRender();
 	void EndRender();
-	void Present();
-
-private:
-	void CreateWindowSizeDependentResources();
-	void CreateSwapChain();
-
-	void UpdatePresentationParameters();
-
-	DXGI_MODE_ROTATION ComputeDisplayRotation();
-	void SetRotationMatrices(DXGI_MODE_ROTATION rotation);
-
-	// Converts a length in device-independent pixels (DIPs) to a length in physical pixels.
-	static float ConvertDipsToPixels(float dips, float dpi);
 
 private:
 	std::mutex mx;
-	raw_ptr<DxDevice> dxDeviceSafeObj;
+	Helpers::WinRt::Dx::SwapChainPanel^ swapChainPanelWinRt;
+	Microsoft::WRL::ComPtr<HELPERS_NS::Dx::ISwapChainPanel> swapChainPanelNative;
+
 	Helpers::WinRt::Dx::DxSettings^ dxSettings;
 	Windows::Foundation::EventRegistrationToken dxSettingsMsaaChangedToken;
 	Windows::Foundation::EventRegistrationToken dxSettingsCurrentAdapterChangedToken;
-
-	Windows::UI::Xaml::Controls::SwapChainPanel^ swapChainPanel;
-	Microsoft::WRL::ComPtr<IDXGISwapChain> swapChain;
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> backBuffer;
-	HANDLE frameLatencyWaitableObject = nullptr;
-
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
-	Microsoft::WRL::ComPtr<ID2D1Bitmap1> d2dTargetBitmap;
-
-	// MSAA resources
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> m_msaaRenderTarget;
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_msaaRenderTargetView;
-
-	Windows::Graphics::Display::DisplayOrientations nativeOrientation;
-	Windows::Graphics::Display::DisplayOrientations currentOrientation;
-	D2D1_MATRIX_3X2_F d2dOrientationTransform;
-	DirectX::XMFLOAT4X4 d3dOrientationTransform;
-
-	float logicalDpi;
-	DirectX::XMFLOAT2 logicalSize;
-	DirectX::XMFLOAT2 physicalSize;
-	DirectX::XMFLOAT2 compositionScale;
 
 	DirectX::XMFLOAT4 rtColor;
 };

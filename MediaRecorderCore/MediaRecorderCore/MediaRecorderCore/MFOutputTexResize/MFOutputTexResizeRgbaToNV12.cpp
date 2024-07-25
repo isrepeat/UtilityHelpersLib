@@ -75,10 +75,13 @@ bool MFOutputTexResizeRgbaToNV12::TestNV12Support(
     const D2D1_SIZE_U &srcSize)
 {
     try {
-        DxDevice dxDeviceSafeObj;
+        auto dxDeviceSafeObjTmp = DxDevice{
+            std::make_unique<HH::Mutex<DxDeviceMutex_t>>(),
+            std::make_unique<HH::Dx::details::DxDeviceMF>()
+        };
 
         auto vproc = MFOutputTexResizeRgbaToNV12::CreateVideoProcessor(
-            dxDeviceSafeObj.Lock()->GetD3DDevice().Get(),
+            dxDeviceSafeObjTmp.Lock()->GetD3DDevice().Get(),
             dstSize, srcSize,
             DXGI_FORMAT_NV12, DXGI_FORMAT_B8G8R8A8_UNORM);
 

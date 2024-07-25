@@ -304,6 +304,7 @@
     <ClInclude Include="Delegates.h" />
     <ClInclude Include="Dx\DxSettings.h" />
     <ClInclude Include="Dx\SwapChainPanel.h" />
+    <ClInclude Include="HMath.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
