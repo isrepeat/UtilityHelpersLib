@@ -34,6 +34,9 @@
     <Filter Include="Com">
       <UniqueIdentifier>{25bf8ad9-f450-42a3-96be-5db7ca952699}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Dx\Shaders">
+      <UniqueIdentifier>{c19e122f-3d89-42be-9b74-8c6d10c4dccf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Gate.cpp">
@@ -151,6 +154,12 @@
       <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\D2DCtxMt.cpp">
+      <Filter>Dx</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\FullScreenQuad.cpp">
+      <Filter>Dx</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjProxy.cpp">
       <Filter>Dx</Filter>
     </ClCompile>
   </ItemGroup>
@@ -461,8 +470,31 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Mutex.h">
       <Filter>Thread</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\FullScreenQuad.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObj.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjProxy.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\ISwapChainPanel.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\ShadersCommon.h">
+      <Filter>Dx\Shaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultPS.hlsl">
+      <Filter>Dx\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultVS.hlsl">
+      <Filter>Dx\Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

@@ -26,8 +26,10 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxDeviceCtx.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxDeviceMt.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxHelpers.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjProxy.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSettings.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSharedTexture.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\FullScreenQuad.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\MFDXGIManagerCustom.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\SwapChainPanel.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\EventObject.cpp" />
@@ -68,8 +70,13 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxgiDeviceLock.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxIncludes.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxLibs.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObj.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjProxy.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSharedTexture.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\FullScreenQuad.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\ISwapChainPanel.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\MFDXGIManagerCustom.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\ShadersCommon.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\SwapChainPanel.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Mutex.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\EventObject.h" />
@@ -160,6 +167,36 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
+    </FxCompile>
   </ItemGroup>
   <!-- Custom targets -->
   <Import Project="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />

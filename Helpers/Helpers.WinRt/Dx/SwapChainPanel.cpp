@@ -49,7 +49,7 @@ namespace Helpers {
 				SwapChainPanelInitData initData;
 				initData.deviceType = SwapChainPanelInitData_Device::DxDevice;
 				initData.deviceMutexType = SwapChainPanelInitData_DeviceMutex::None;
-				initData.optionFlags = SwapChainPanelInitData_Options::EnableHDR;
+				initData.optionFlags = SwapChainPanelInitData_Options::None;
 				this->swapChainPanelNative = this->CreateSwapChainPanelNative(initData);
 			}
 
@@ -191,9 +191,9 @@ namespace Helpers {
 					break;
 				}
 
-				//if (initDataNative.optionFlags.Has(H::Dx::SwapChainPanel::InitData::Options::EnableHDR)) {
-				//	initDataNative.backBufferFormat = DXGI_FORMAT_R10G10B10A2_UNORM;
-				//}
+				if (initDataNative.optionFlags.Has(H::Dx::SwapChainPanel::InitData::Options::EnableHDR)) {
+					initDataNative.backBufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT; // For UWP, desktop also support DXGI_FORMAT_R10G10B10A2_UNORM
+				}
 
 				return Microsoft::WRL::Make<H::Dx::SwapChainPanel>(initDataNative);
 			}

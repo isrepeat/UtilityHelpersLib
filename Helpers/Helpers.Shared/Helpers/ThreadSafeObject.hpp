@@ -179,6 +179,8 @@ namespace HELPERS_NS {
             : obj{ std::move(otherObj) }
         {}
 
+        // TODO: Add logic to guard this->obj when use this operator. 
+        //       At normal you can use operator= only before Lock was called.
         template<typename OtherT, std::enable_if_t<std::is_convertible_v<OtherT, ObjT>, int> = 0>
         ThreadSafeObject& operator=(OtherT&& otherObj) {
             if (&this->obj != &otherObj) {
@@ -228,6 +230,8 @@ namespace HELPERS_NS {
             : obj{ std::move(otherObj) }
         {}
 
+        // TODO: Add logic to guard this->obj when use this operator. 
+        //       At normal you can use operator= only before Lock was called.
         template <typename OtherT, std::enable_if_t<std::is_convertible_v<std::unique_ptr<OtherT>, std::unique_ptr<ObjT>>, int> = 0>
         ThreadSafeObject& operator=(std::unique_ptr<OtherT>&& otherObj) {
             if (this->obj.get() != otherObj.get()) {
@@ -281,6 +285,8 @@ namespace HELPERS_NS {
             , obj{ std::move(otherObj) }
         {}
 
+        // TODO: Add logic to guard this->obj when use this operator. 
+        //       At normal you can use operator= only before Lock was called.
         template <typename OtherT, std::enable_if_t<std::is_convertible_v<std::unique_ptr<OtherT>, std::unique_ptr<ObjT>>, int> = 0>
         ThreadSafeObject& operator=(std::unique_ptr<OtherT>&& otherObj) {
             if (this->obj.get() != otherObj.get()) {
