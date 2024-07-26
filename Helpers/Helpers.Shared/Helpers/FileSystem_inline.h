@@ -1,5 +1,6 @@
 #pragma once
 #include "common.h"
+#if COMPILE_FOR_DESKTOP || COMPILE_FOR_CX
 #include <filesystem>
 #include <functional>
 #include <fstream>
@@ -66,3 +67,4 @@ namespace HELPERS_NS {
         }
     }
 }
+#endif

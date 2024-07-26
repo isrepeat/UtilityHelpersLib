@@ -1,5 +1,5 @@
 #include "FileSystem.h"
-#if COMPILE_FOR_DESKTOP
+#if COMPILE_FOR_DESKTOP || COMPILE_FOR_CX
 #include "Helpers.h"
 #include "Logger.h"
 #include "Scope.h"
@@ -9,9 +9,6 @@
 
 namespace HELPERS_NS {
     namespace FS {
-        /* ------------------- */
-        /*     Read / Write    */
-        /* ------------------- */
         bool RemoveFile(const std::wstring& filename) {
             return std::filesystem::remove(filename);
         }
@@ -20,6 +17,9 @@ namespace HELPERS_NS {
             return std::filesystem::rename(oldFilename, newFilename);
         }
 
+        /* ------------------- */
+        /*     Read / Write    */
+        /* ------------------- */
         std::vector<uint8_t> ReadFile(const std::filesystem::path& filename) {
             std::vector<uint8_t> buffer;
             buffer.resize(std::filesystem::file_size(filename));
@@ -40,6 +40,7 @@ namespace HELPERS_NS {
         }
 
 
+#if COMPILE_FOR_DESKTOP
         FileHeader ReadFileHeader(const std::filesystem::path& filename) {
             HANDLE hFile = ::CreateFileW(filename.c_str(),
                 GENERIC_READ,
@@ -125,6 +126,7 @@ namespace HELPERS_NS {
                 return;
             }
         }
+#endif
 
         /* ------------------- */
         /*     Path helpers    */
@@ -166,6 +168,7 @@ namespace HELPERS_NS {
         /* ------------------- */
         /*   Filesystem info   */
         /* ------------------- */
+#if COMPILE_FOR_DESKTOP
         std::vector<std::filesystem::path> GetAllLogicalDrives() {
             auto endSize = GetLogicalDriveStringsW(0, nullptr);
             std::wstring disksStr;
@@ -184,6 +187,7 @@ namespace HELPERS_NS {
             }
             return result;
         }
+#endif
     }
 }
 #endif

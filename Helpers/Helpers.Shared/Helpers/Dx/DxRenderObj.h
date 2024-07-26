@@ -14,16 +14,14 @@ namespace HELPERS_NS {
 			DirectX::XMFLOAT4 color;
 		};
 
-		// To ensure that structures aligned by 16 use dx macros, but may be this not neccessary ...
-		
-		/*XM_ALIGNED_STRUCT(16)*/ struct VS_CONSTANT_BUFFER {
+		struct VS_CONSTANT_BUFFER {
 			DirectX::XMFLOAT4X4 mWorldViewProj;
 		};
 
-		/*XM_ALIGNED_STRUCT(16)*/ struct PS_CONSTANT_BUFFER {
+		struct PS_CONSTANT_BUFFER {
 			DirectX::XMFLOAT4 someData;
 		};
-
+		
 
 		struct DxRenderObjBase {
 			Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;

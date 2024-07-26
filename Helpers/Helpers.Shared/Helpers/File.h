@@ -4,7 +4,8 @@
 #include "Logger.h"
 
 #include <vector>
-#if !COMPILE_FOR_WINRT
+#if COMPILE_FOR_DESKTOP || COMPILE_FOR_CX
+#include <fstream>
 #include <atomic>
 #include <span>
 #endif
@@ -15,10 +16,10 @@
 
 
 namespace HELPERS_NS {
-#if !COMPILE_FOR_WINRT
+#if COMPILE_FOR_DESKTOP || COMPILE_FOR_CX
 #define READ_FILE_BUFFER_SIZE_DEFAULT 1024
 #define READ_FILE_BUFFER_SIZE_MAX (10*1024*1024) // 10 mb
-
+    
     inline BOOL CloseHandleSafe(HANDLE h) {
         return h && h != INVALID_HANDLE_VALUE ? CloseHandle(h) : TRUE;
     }
@@ -36,7 +37,7 @@ namespace HELPERS_NS {
         Completed,
     };
 
-
+    // TODO: wrap to 'details' ns
     inline StatusReadFile GetOverlappedResultRoutine(HANDLE hFile, LPOVERLAPPED lpOverlapped, LPDWORD numberOfBytesTransfered, const std::atomic<bool>& stop) {
         StatusReadFile status;
 
@@ -46,11 +47,11 @@ namespace HELPERS_NS {
                 return StatusReadFile::Stopped;
             }
 
-            if (GetOverlappedResult(hFile, lpOverlapped, numberOfBytesTransfered, FALSE)) {
+            if (::GetOverlappedResult(hFile, lpOverlapped, numberOfBytesTransfered, FALSE)) {
                 return StatusReadFile::Completed;
             }
             else { // pending ...
-                auto lastErrorGetOverlappedResult = GetLastError();
+                auto lastErrorGetOverlappedResult = ::GetLastError();
                 switch (lastErrorGetOverlappedResult) {
                 case ERROR_IO_INCOMPLETE:
                     break; // continue call GetOverlappedResult() until it finish or error
@@ -75,13 +76,13 @@ namespace HELPERS_NS {
         DWORD dwBytesRead = 0;
         OVERLAPPED stOverlapped = { 0 };
         std::size_t outBufferOldSize = 0;
-        
+
         do {
             outBufferOldSize = outBuffer.size();
             outBuffer.resize(outBufferOldSize + numberOfBytesToRead);
 
             // Read new data after outBuffer.data() + outBufferOldSize to save old data
-            if (ReadFile(hFile, outBuffer.data() + outBufferOldSize, numberOfBytesToRead * sizeof(T), &dwBytesRead, &stOverlapped)) {
+            if (::ReadFile(hFile, outBuffer.data() + outBufferOldSize, numberOfBytesToRead * sizeof(T), &dwBytesRead, &stOverlapped)) {
                 // ReadFile completed synchronously ...
                 // NOTE: if dwBytesRead == 0 it is mean that other side call WriteFile with zero data
                 status = StatusReadFile::Completed;
@@ -98,7 +99,7 @@ namespace HELPERS_NS {
                     break;
 
                 default:
-                    LogLastError; 
+                    LogLastError;
                     status = StatusReadFile::Error;
                 }
 
@@ -141,12 +142,12 @@ namespace HELPERS_NS {
         DWORD cbWritten = 0;
         OVERLAPPED stOverlapped = { 0 };
 
-        if (WriteFile(hFile, writeData.data(), writeData.size() * sizeof(T), &cbWritten, &stOverlapped)) {
+        if (::WriteFile(hFile, writeData.data(), writeData.size() * sizeof(T), &cbWritten, &stOverlapped)) {
             // WriteFile completed synchronously ...
             status = StatusWriteFile::Completed;
         }
         else {
-            auto lastErrorReadFile = GetLastError();
+            auto lastErrorReadFile = ::GetLastError();
             switch (lastErrorReadFile) {
             case ERROR_IO_PENDING:
                 while (true) {
@@ -156,14 +157,14 @@ namespace HELPERS_NS {
                         break;
                     }
 
-                    if (GetOverlappedResult(hFile, &stOverlapped, &cbWritten, FALSE)) {
+                    if (::GetOverlappedResult(hFile, &stOverlapped, &cbWritten, FALSE)) {
                         // ReadFile operation completed
                         status = StatusWriteFile::Completed;
                         break;
                     }
                     else {
                         // pending ...
-                        auto lastErrorGetOverlappedResult = GetLastError();
+                        auto lastErrorGetOverlappedResult = ::GetLastError();
                         if (lastErrorGetOverlappedResult != ERROR_IO_INCOMPLETE) {
                             // remote side was closed or smth else
                             status = StatusWriteFile::Error;
@@ -200,38 +201,40 @@ namespace HELPERS_NS {
 #endif
 
 #if COMPILE_FOR_WINRT
-    // Function that reads from a binary file asynchronously.
-    inline Concurrency::task<std::vector<BYTE>> ReadDataAsync(const std::filesystem::path& filepath) {
-        auto installedFolder = Windows::ApplicationModel::Package::Current->InstalledLocation;
-        std::filesystem::path installedLocation = installedFolder->Path->Data();
+    namespace WinRt {
+        // Function that reads from a binary file asynchronously.
+        inline Concurrency::task<std::vector<uint8_t>> ReadDataAsync(const std::filesystem::path& filepath) {
+            auto installedFolder = Windows::ApplicationModel::Package::Current->InstalledLocation;
+            std::filesystem::path installedLocation = installedFolder->Path->Data();
 
-        LOG_ASSERT(std::filesystem::exists(installedLocation / filepath), "File not exist");
-        
-        auto filepathParentDirs = filepath;
-        filepathParentDirs._Remove_filename_and_separator();
-        
-        auto taskGetFolder = Concurrency::task_from_result(installedFolder);
+            LOG_ASSERT(std::filesystem::exists(installedLocation / filepath), "File not exist");
 
-        for (auto& pathItem : filepathParentDirs) {
-            taskGetFolder = taskGetFolder.then([pathItem](Windows::Storage::StorageFolder^ folder) {
-                std::filesystem::path folderPath = folder->Path->Data();
-                return Concurrency::create_task(folder->GetFolderAsync(Platform::StringReference(pathItem.wstring().c_str())));
-                });
-        }
+            auto filepathParentDirs = filepath;
+            filepathParentDirs._Remove_filename_and_separator();
 
-        return taskGetFolder.then([filepath](Windows::Storage::StorageFolder^ folder) {
-            std::filesystem::path folderPath = folder->Path->Data();
-            return Concurrency::create_task(folder->GetFileAsync(Platform::StringReference(filepath.filename().wstring().c_str())));
-            })
-            .then([](Windows::Storage::StorageFile^ file) {
-                return Windows::Storage::FileIO::ReadBufferAsync(file);
-                })
-                .then([](Windows::Storage::Streams::IBuffer^ fileBuffer) -> std::vector<BYTE> {
-                    std::vector<BYTE> returnBuffer;
-                    returnBuffer.resize(fileBuffer->Length);
-                    Windows::Storage::Streams::DataReader::FromBuffer(fileBuffer)->ReadBytes(Platform::ArrayReference<BYTE>(returnBuffer.data(), fileBuffer->Length));
-                    return returnBuffer;
+            auto taskGetFolder = Concurrency::task_from_result(installedFolder);
+
+            for (auto& pathItem : filepathParentDirs) {
+                taskGetFolder = taskGetFolder.then([pathItem](Windows::Storage::StorageFolder^ folder) {
+                    std::filesystem::path folderPath = folder->Path->Data();
+                    return Concurrency::create_task(folder->GetFolderAsync(Platform::StringReference(pathItem.wstring().c_str())));
                     });
+            }
+
+            return taskGetFolder.then([filepath](Windows::Storage::StorageFolder^ folder) {
+                std::filesystem::path folderPath = folder->Path->Data();
+                return Concurrency::create_task(folder->GetFileAsync(Platform::StringReference(filepath.filename().wstring().c_str())));
+                })
+                .then([](Windows::Storage::StorageFile^ file) {
+                    return Windows::Storage::FileIO::ReadBufferAsync(file);
+                    })
+                    .then([](Windows::Storage::Streams::IBuffer^ fileBuffer) -> std::vector<uint8_t> {
+                        std::vector<uint8_t> returnBuffer;
+                        returnBuffer.resize(fileBuffer->Length);
+                        Windows::Storage::Streams::DataReader::FromBuffer(fileBuffer)->ReadBytes(Platform::ArrayReference<BYTE>(returnBuffer.data(), fileBuffer->Length));
+                        return returnBuffer;
+                        });
+        }
     }
 #endif
 }
