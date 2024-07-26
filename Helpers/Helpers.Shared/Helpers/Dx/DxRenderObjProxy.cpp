@@ -1,4 +1,5 @@
 #include "DxRenderObjProxy.h"
+#include <Helpers/Dx/Shaders/ShadersCommon.h>
 #include <Helpers/FileSystem.h>
 
 namespace HELPERS_NS {
@@ -33,7 +34,7 @@ namespace HELPERS_NS {
 				auto dxRenderObj = std::make_unique<DxRenderObj>();
 
 				// Load and create shaders.
-				auto vertexShaderBlob = H::FS::ReadFile(H::ExePath() / L"defaultVS.cso");
+				auto vertexShaderBlob = H::FS::ReadFile(g_shaderLoadDir / L"defaultVS.cso");
 				hr = d3dDev->CreateVertexShader(
 					vertexShaderBlob.data(),
 					vertexShaderBlob.size(),
@@ -42,7 +43,7 @@ namespace HELPERS_NS {
 				);
 				H::System::ThrowIfFailed(hr);
 
-				auto pixelShaderBlob = H::FS::ReadFile(H::ExePath() / L"defaultPS.cso");
+				auto pixelShaderBlob = H::FS::ReadFile(g_shaderLoadDir / L"defaultPS.cso");
 				hr = d3dDev->CreatePixelShader(
 					pixelShaderBlob.data(),
 					pixelShaderBlob.size(),

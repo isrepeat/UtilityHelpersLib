@@ -1,4 +1,5 @@
 #include "FullScreenQuad.h"
+#include <Helpers/Dx/Shaders/ShadersCommon.h>
 #include <Helpers/FileSystem.h>
 
 namespace HELPERS_NS {
@@ -18,7 +19,7 @@ namespace HELPERS_NS {
 				auto& dxRenderObj = this->defaultRenderObj;
 
 				// Load and create shaders.
-				auto vertexShaderBlob = H::FS::ReadFile(H::ExePath() / L"imageVS.cso");
+				auto vertexShaderBlob = H::FS::ReadFile(g_shaderLoadDir / L"defaultVS.cso");
 
 				hr = d3dDev->CreateVertexShader(
 					vertexShaderBlob.data(),
@@ -29,7 +30,7 @@ namespace HELPERS_NS {
 				H::System::ThrowIfFailed(hr);
 
 
-				auto pixelShaderBlob = H::FS::ReadFile(H::ExePath() / L"imagePS.cso");
+				auto pixelShaderBlob = H::FS::ReadFile(g_shaderLoadDir / L"defaultPS.cso");
 
 				hr = d3dDev->CreatePixelShader(
 					pixelShaderBlob.data(),
