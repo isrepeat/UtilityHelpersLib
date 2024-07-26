@@ -159,7 +159,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\FullScreenQuad.cpp">
       <Filter>Dx</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjProxy.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjProxy.cpp">
+      <Filter>Dx</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Gate.h">
@@ -474,8 +476,12 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObj.h">
       <Filter>Dx</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjProxy.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\ISwapChainPanel.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjProxy.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\ISwapChainPanel.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />

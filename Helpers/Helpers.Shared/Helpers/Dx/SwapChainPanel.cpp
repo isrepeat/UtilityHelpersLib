@@ -436,10 +436,10 @@ namespace HELPERS_NS {
 				break;
 
 			default:
-				btimapFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
+				btimapFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 
 				if (!this->dxRenderObjProxy) {
-					this->dxRenderObjProxy = std::make_unique<details::DxRenderObjProxy>(this);
+					this->dxRenderObjProxy = std::make_unique<details::DxRenderObjProxy>(this, btimapFormat);
 				}
 				if (!this->fullScreenQuad) {
 					this->fullScreenQuad = std::make_unique<details::FullScreenQuad>(&this->dxDeviceSafeObj);
@@ -950,7 +950,7 @@ namespace HELPERS_NS {
 			auto dxCtx = dxDev->LockContext();
 			auto d3dCtx = dxCtx->D3D();
 
-			// Render ObjProxy texture (8:8:8:8) to swapChain RTV (for example 10:10:10:2).
+			// Render ObjProxy texture (16:16:16:16) to swapChain RTV (for example 10:10:10:2).
 			auto renderTargetView = this->m_d3dRenderTargetView;
 			d3dCtx->ClearRenderTargetView(renderTargetView.Get(), DirectX::Colors::Brown);
 

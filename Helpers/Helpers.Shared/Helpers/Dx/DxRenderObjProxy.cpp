@@ -4,8 +4,11 @@
 namespace HELPERS_NS {
     namespace Dx {
 		namespace details {
-			DxRenderObjProxy::DxRenderObjProxy(Microsoft::WRL::ComPtr<H::Dx::ISwapChainPanel> swapChainPanel)
+			DxRenderObjProxy::DxRenderObjProxy(
+				Microsoft::WRL::ComPtr<H::Dx::ISwapChainPanel> swapChainPanel,
+				DXGI_FORMAT textureFormat)
 				: swapChainPanel{ swapChainPanel }
+				, textureFormat{ textureFormat }
 			{
 				this->dxRenderObj = this->CreateObject(this->swapChainPanel->GetDxDevice());
 				this->CreateWindowSizeDependentResources();
@@ -199,7 +202,7 @@ namespace HELPERS_NS {
 				//CD3D11_TEXTURE2D_DESC descTex(DXGI_FORMAT_R8G8B8A8_UNORM, width, height, 1, 1, D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
 				D3D11_TEXTURE2D_DESC descTex = {};
 				dxgiSwapChainBackBuffer->GetDesc(&descTex);
-				descTex.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+				descTex.Format = this->textureFormat;
 				descTex.Width = width;
 				descTex.Height = height;
 				descTex.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
