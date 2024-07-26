@@ -21,14 +21,15 @@ namespace HELPERS_NS {
         }
 
         std::vector<uint8_t> ReadFile(const std::filesystem::path& filename) {
-            // TODO: add auto find filesize
-            std::vector<uint8_t> buff(512, '\0');
+            std::vector<uint8_t> buffer;
+            buffer.resize(std::filesystem::file_size(filename));
+
             std::ifstream inFile;
             inFile.open(filename, std::ios::binary);
-            inFile.read((char*)buff.data(), 512);
+            inFile.read((char*)buffer.data(), buffer.size());
             inFile.close();
 
-            return std::move(buff);
+            return buffer;
         }
 
         void WriteFile(const std::filesystem::path& filename, const std::vector<uint8_t>& fileData) {
