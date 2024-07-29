@@ -62,6 +62,7 @@ namespace Helpers {
 			private:
 				Microsoft::WRL::ComPtr<H::Dx::ISwapChainPanel> CreateSwapChainPanelNative(SwapChainPanelInitData initData);
 				static void CreateSwapChainPanelDxgi(SwapChainPanel^ _this, IDXGISwapChain3* dxgiSwapChainPanel);
+				static H::Rect GetWindowBounds(SwapChainPanel^ _this);
 
 			private:
 				Microsoft::WRL::ComPtr<H::Dx::ISwapChainPanel> swapChainPanelNative;

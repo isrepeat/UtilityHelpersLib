@@ -158,7 +158,8 @@ namespace Helpers {
 				H::Dx::SwapChainPanel::InitData initDataNative;
 				initDataNative.environment = H::Dx::SwapChainPanel::InitData::Environment::UWP;
 				initDataNative.optionFlags = static_cast<H::Dx::SwapChainPanel::InitData::Options>(initData.optionFlags);
-				initDataNative.creatSwapChainPannelDxgiFn = MakeWinRTCallback(this, &SwapChainPanel::CreateSwapChainPanelDxgi);
+				initDataNative.fnCreateSwapChainPannelDxgi = MakeWinRTCallback(this, &SwapChainPanel::CreateSwapChainPanelDxgi);
+				initDataNative.fnGetWindowBounds = MakeWinRTCallback(this, &SwapChainPanel::GetWindowBounds);
 
 				switch (initData.deviceType) {
 				case SwapChainPanelInitData_Device::DxDevice:
@@ -192,7 +193,7 @@ namespace Helpers {
 				}
 
 				if (initDataNative.optionFlags.Has(H::Dx::SwapChainPanel::InitData::Options::EnableHDR)) {
-					initDataNative.backBufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT; // For UWP, desktop also support DXGI_FORMAT_R10G10B10A2_UNORM
+					initDataNative.backBufferFormat = DXGI_FORMAT_R10G10B10A2_UNORM;
 				}
 
 				return Microsoft::WRL::Make<H::Dx::SwapChainPanel>(initDataNative);
@@ -215,6 +216,11 @@ namespace Helpers {
 						H::System::ThrowIfFailed(hr);
 						},
 						Platform::CallbackContext::Any));
+			}
+
+			H::Rect  SwapChainPanel::GetWindowBounds(SwapChainPanel^ _this) {
+				auto rect = Windows::UI::ViewManagement::ApplicationView::GetForCurrentView()->VisibleBounds;
+				return static_cast<H::Rect>(H::Rect_f{ rect.Left, rect.Top, rect.Right, rect.Bottom });
 			}
 		}
 	}

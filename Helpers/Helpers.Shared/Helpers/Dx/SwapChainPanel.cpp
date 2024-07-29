@@ -272,10 +272,10 @@ namespace HELPERS_NS {
 					hr = dxgiSwapChain1.As(&this->dxgiSwapChain);
 					H::System::ThrowIfFailed(hr);
 
-					if (!this->initData.creatSwapChainPannelDxgiFn) {
-						throw std::exception{ "Cannot create swap chain for UWP environment bacause this->creatSwapChainPannelDxgiFn is empty." };
+					if (LOG_ASSERT(this->initData.fnCreateSwapChainPannelDxgi, "this->fnCreateSwapChainPannelDxgi is empty")) {
+						H::System::ThrowIfFailed(E_INVALIDARG);
 					}
-					this->initData.creatSwapChainPannelDxgiFn(this->dxgiSwapChain.Get());
+					this->initData.fnCreateSwapChainPannelDxgi(this->dxgiSwapChain.Get());
 					break;
 				}
 				}
@@ -324,6 +324,7 @@ namespace HELPERS_NS {
 				break;
 
 			default:
+				LOG_ERROR_D("'displayRotation' unspecified");
 				throw std::exception{ "'displayRotation' unspecified" };
 			}
 
@@ -669,7 +670,7 @@ namespace HELPERS_NS {
 			//}
 
 			if (this->dxRenderObjProxy) {
-				this->DrawProxyTexture();
+				this->DrawProxyTextureToSwapChainRTV();
 			}
 
 			// The first argument instructs DXGI to block until VSync, putting the application
@@ -826,13 +827,9 @@ namespace HELPERS_NS {
 			return rotation;
 		}
 
-		// TODO: implement for UWP. Check ATK Dx samples.
+		// TODO: call this method when core window moved.
 		// Sets the color space for the swap chain in order to handle HDR output.
 		void SwapChainPanel::UpdateColorSpace() {
-			if (this->initData.environment != InitData::Environment::Desktop) {
-				return;
-			}
-
 			HRESULT hr = S_OK;
 			auto dxDev = this->dxDeviceSafeObj.Lock();
 			auto d3dDevice = dxDev->GetD3DDevice();
@@ -854,13 +851,30 @@ namespace HELPERS_NS {
 
 				// Get the retangle bounds of the app window.
 				RECT windowBounds;
-#if COMPILE_FOR_CX_or_WINRT
-				if (!H::Cx::WinApi::GetWindowRect(this->initData.hWnd, &windowBounds)) {
-#else
-				if (!GetWindowRect(this->initData.hWnd, &windowBounds)) {
-#endif
+
+#if COMPILE_FOR_DESKTOP
+				HWND dxgiSwapChainHwnd;
+				hr = this->dxgiSwapChain->GetHwnd(&dxgiSwapChainHwnd);
+				H::System::ThrowIfFailed(hr);
+
+				if (!GetWindowRect(dxgiSwapChainHwnd, &windowBounds)) {
+					LogLastError;
 					throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "GetWindowRect");
 				}
+
+#elif COMPILE_FOR_CX_or_WINRT
+				if (LOG_ASSERT(this->initData.fnGetWindowBounds, "this->fnGetWindowBounds is empty")) {
+					H::System::ThrowIfFailed(E_INVALIDARG);
+				}
+
+				auto coreWindowBounds = this->initData.fnGetWindowBounds();
+				windowBounds = RECT{
+					static_cast<long>(coreWindowBounds.left),
+					static_cast<long>(coreWindowBounds.top),
+					static_cast<long>(coreWindowBounds.right),
+					static_cast<long>(coreWindowBounds.bottom),
+				};
+#endif
 
 				const long ax1 = windowBounds.left;
 				const long ay1 = windowBounds.top;
@@ -943,14 +957,14 @@ namespace HELPERS_NS {
 			}
 		}
 
-		void SwapChainPanel::DrawProxyTexture() {
+		void SwapChainPanel::DrawProxyTextureToSwapChainRTV() {
 			HRESULT hr = S_OK;
 
 			auto dxDev = this->dxDeviceSafeObj.Lock();
 			auto dxCtx = dxDev->LockContext();
 			auto d3dCtx = dxCtx->D3D();
 
-			// Render ObjProxy texture (16:16:16:16) to swapChain RTV (for example 10:10:10:2).
+			// Render ObjProxy texture (for example 8:8:8:8) to swapChain RTV (for example 10:10:10:2).
 			auto renderTargetView = this->m_d3dRenderTargetView;
 			d3dCtx->ClearRenderTargetView(renderTargetView.Get(), DirectX::Colors::Brown);
 
