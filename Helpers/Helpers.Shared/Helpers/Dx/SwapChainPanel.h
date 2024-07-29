@@ -43,7 +43,8 @@ namespace HELPERS_NS {
 				};
 
 				HWND hWnd = nullptr;
-				Callback<void, IDXGISwapChain3*> creatSwapChainPannelDxgiFn = {};
+				Callback<void, IDXGISwapChain3*> fnCreateSwapChainPannelDxgi = {};
+				Callback<HELPERS_NS::Rect> fnGetWindowBounds = {};
 
 				DXGI_FORMAT backBufferFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
 				DXGI_FORMAT depthBufferFormat = DXGI_FORMAT_UNKNOWN; // DXGI_FORMAT_D24_UNORM_S8_UINT
@@ -106,7 +107,7 @@ namespace HELPERS_NS {
 			void UpdateRenderTargetSize();
 			DXGI_MODE_ROTATION ComputeDisplayRotation();
 			void UpdateColorSpace();
-			void DrawProxyTexture();
+			void DrawProxyTextureToSwapChainRTV();
 
 
 		private:
