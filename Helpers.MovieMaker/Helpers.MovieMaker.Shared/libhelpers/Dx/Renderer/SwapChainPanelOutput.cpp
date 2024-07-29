@@ -33,7 +33,6 @@ namespace Tools {
 SwapChainPanelOutput::SwapChainPanelOutput(Helpers::WinRt::Dx::SwapChainPanel^ swapChainPanelWinRt)
 	: swapChainPanelWinRt{ swapChainPanelWinRt }
 	, swapChainPanelNative{ HELPERS_NS::Dx::WinRt::Tools::QuerySwapChainPanelNative(this->swapChainPanelWinRt->GetSwapChainPanelNativeAsObject()) }
-	, dxSettings{ ref new Helpers::WinRt::Dx::DxSettings() }
 {
 	{
 		auto tmp = DirectX::Colors::LightGreen;
@@ -111,7 +110,7 @@ DirectX::XMFLOAT4 SwapChainPanelOutput::GetRTColor() const {
 }
 
 Helpers::WinRt::Dx::DxSettings^ SwapChainPanelOutput::GetDxSettings() const {
-	return this->dxSettings;
+	return this->swapChainPanelWinRt->GetDxSettings();
 }
 
 void SwapChainPanelOutput::SetLogicalDpi(float v) {

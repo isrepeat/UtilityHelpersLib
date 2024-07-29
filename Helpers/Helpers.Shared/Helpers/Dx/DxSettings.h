@@ -1,5 +1,6 @@
 #pragma once
 #include <Helpers/common.h>
+#include <Helpers/Signal.h>
 #include "DxHelpers.h"
 #include <functional>
 #include <vector>
@@ -10,10 +11,10 @@
 namespace HELPERS_NS {
     namespace Dx {
         struct DxSettingsHandlers {
-            std::function<void()> msaaChanged;
-            std::function<void()> vsyncChanged;
-            std::function<void()> adapersUpdated;
-            std::function<void()> currentAdapterChanged;
+            HELPERS_NS::Signal<void()> msaaChanged;
+            HELPERS_NS::Signal<void()> vsyncChanged;
+            HELPERS_NS::Signal<void()> adapersUpdated;
+            HELPERS_NS::Signal<void()> currentAdapterChanged;
         };
 
         class DxSettings {

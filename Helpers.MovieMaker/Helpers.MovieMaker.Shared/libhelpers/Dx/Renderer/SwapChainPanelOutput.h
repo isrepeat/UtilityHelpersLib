@@ -52,11 +52,9 @@ private:
 	std::mutex mx;
 	Helpers::WinRt::Dx::SwapChainPanel^ swapChainPanelWinRt;
 	Microsoft::WRL::ComPtr<HELPERS_NS::Dx::ISwapChainPanel> swapChainPanelNative;
-
-	Helpers::WinRt::Dx::DxSettings^ dxSettings;
-	Windows::Foundation::EventRegistrationToken dxSettingsMsaaChangedToken;
-	Windows::Foundation::EventRegistrationToken dxSettingsCurrentAdapterChangedToken;
-
 	DirectX::XMFLOAT4 rtColor;
+
+	//Windows::Foundation::EventRegistrationToken dxSettingsMsaaChangedToken;
+	//Windows::Foundation::EventRegistrationToken dxSettingsCurrentAdapterChangedToken;
 };
 #endif

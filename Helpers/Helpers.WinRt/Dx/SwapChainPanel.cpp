@@ -1,5 +1,6 @@
 ﻿#include "pch.h"
 #include "SwapChainPanel.h"
+#include "InitDataFactory.h"
 #include <Helpers/Dx/DxHelpers.h>
 #include <Helpers/CallbackWinRT.hpp>
 #include <Helpers/System.h>
@@ -45,16 +46,18 @@ namespace Helpers {
 	namespace WinRt {
 		namespace Dx {
 			SwapChainPanel::SwapChainPanel()
-			{
-				SwapChainPanelInitData initData;
-				initData.deviceType = SwapChainPanelInitData_Device::DxDevice;
-				initData.deviceMutexType = SwapChainPanelInitData_DeviceMutex::None;
-				initData.optionFlags = SwapChainPanelInitData_Options::None;
-				this->swapChainPanelNative = this->CreateSwapChainPanelNative(initData);
-			}
+				: dxSettings{ nullptr }
+				, swapChainPanelNative{ this->CreateSwapChainPanelNative(InitDataFactory::CreateDefaultSwapChainPanelInitData()) }
+			{}
 
 			SwapChainPanel::SwapChainPanel(SwapChainPanelInitData initData)
-				: swapChainPanelNative{ this->CreateSwapChainPanelNative(initData) }
+				: dxSettings{ nullptr }
+				, swapChainPanelNative{ this->CreateSwapChainPanelNative(initData) }
+			{}
+
+			SwapChainPanel::SwapChainPanel(SwapChainPanelInitData initData, Helpers::WinRt::Dx::DxSettings^ dxSettings) 
+				: dxSettings{ dxSettings }
+				, swapChainPanelNative{ this->CreateSwapChainPanelNative(initData) }
 			{}
 
 			SwapChainPanel::~SwapChainPanel() {
@@ -140,6 +143,11 @@ namespace Helpers {
 				this->swapChainPanelNative->Present();
 			}
 
+
+			Helpers::WinRt::Dx::DxSettings^ SwapChainPanel::GetDxSettings() {
+				return this->dxSettings;
+			}
+
 			Platform::Object^ SwapChainPanel::GetSwapChainPanelNativeAsObject() {
 				Platform::Object^ obj = reinterpret_cast<Platform::Object^>(this->swapChainPanelNative.Get());
 				return obj;
@@ -157,9 +165,13 @@ namespace Helpers {
 			Microsoft::WRL::ComPtr<H::Dx::ISwapChainPanel> SwapChainPanel::CreateSwapChainPanelNative(SwapChainPanelInitData initData) {
 				H::Dx::SwapChainPanel::InitData initDataNative;
 				initDataNative.environment = H::Dx::SwapChainPanel::InitData::Environment::UWP;
-				initDataNative.optionFlags = static_cast<H::Dx::SwapChainPanel::InitData::Options>(initData.optionFlags);
 				initDataNative.fnCreateSwapChainPannelDxgi = MakeWinRTCallback(this, &SwapChainPanel::CreateSwapChainPanelDxgi);
 				initDataNative.fnGetWindowBounds = MakeWinRTCallback(this, &SwapChainPanel::GetWindowBounds);
+				initDataNative.optionFlags = static_cast<H::Dx::SwapChainPanel::InitData::Options>(initData.optionFlags);
+
+				if (initDataNative.optionFlags.Has(H::Dx::SwapChainPanel::InitData::Options::EnableHDR)) {
+					initDataNative.backBufferFormat = DXGI_FORMAT_R10G10B10A2_UNORM;
+				}
 
 				switch (initData.deviceType) {
 				case SwapChainPanelInitData_Device::DxDevice:
@@ -192,8 +204,8 @@ namespace Helpers {
 					break;
 				}
 
-				if (initDataNative.optionFlags.Has(H::Dx::SwapChainPanel::InitData::Options::EnableHDR)) {
-					initDataNative.backBufferFormat = DXGI_FORMAT_R10G10B10A2_UNORM;
+				if (this->dxSettings) {
+					initDataNative.dxSettingsWeak = this->dxSettings->GetDxSettingsNative();
 				}
 
 				return Microsoft::WRL::Make<H::Dx::SwapChainPanel>(initDataNative);

@@ -57,10 +57,10 @@ namespace Helpers {
                 }
 
             internal:
-                H::Dx::DxSettingsHandlers& GetDxSettingsHandlers();
+                std::shared_ptr<H::Dx::DxSettings> GetDxSettingsNative();
 
             private:
-                H::Dx::DxSettings dxSettings;
+                std::shared_ptr<H::Dx::DxSettings> dxSettings;
             };
         }
     }

@@ -24,7 +24,7 @@ namespace HELPERS_NS {
 		MIDL_INTERFACE("B34F96A3-8A71-42D3-BE89-C09777D1BB99")
 			ISwapChainPanel : public IUnknown{
 			public:
-				virtual HELPERS_NS::Dx::DxDeviceSafeObj * STDMETHODCALLTYPE GetDxDevice() = 0;
+				virtual HELPERS_NS::Dx::DxDeviceSafeObj* STDMETHODCALLTYPE GetDxDevice() = 0;
 
 				virtual void STDMETHODCALLTYPE InitSwapChainPanelInfo(
 					HELPERS_NS::Size_f logicalSize,
