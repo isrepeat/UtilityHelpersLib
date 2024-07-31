@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <Helpers/Dx/SwapChainPanel.h>
 #include <Helpers/Com/UnknownValue.h>
+#include "DxSettings.h"
 
 namespace Helpers {
 	namespace WinRt {
@@ -32,6 +33,7 @@ namespace Helpers {
 			public:
 				SwapChainPanel();
 				SwapChainPanel(SwapChainPanelInitData initData);
+				SwapChainPanel(SwapChainPanelInitData initData, Helpers::WinRt::Dx::DxSettings^ dxSettings);
 				virtual ~SwapChainPanel();
 
 				void SetSwapChainPanelXaml(Windows::UI::Xaml::Controls::SwapChainPanel^ swapChainPanelXaml);
@@ -53,6 +55,7 @@ namespace Helpers {
 				void Trim();
 				void Present();
 
+				Helpers::WinRt::Dx::DxSettings^ GetDxSettings();
 				Platform::Object^ GetSwapChainPanelNativeAsObject();
 				Windows::UI::Xaml::Controls::SwapChainPanel^ GetSwapChainPanelXaml();
 
@@ -65,6 +68,7 @@ namespace Helpers {
 				static H::Rect GetWindowBounds(SwapChainPanel^ _this);
 
 			private:
+				Helpers::WinRt::Dx::DxSettings^ dxSettings;
 				Microsoft::WRL::ComPtr<H::Dx::ISwapChainPanel> swapChainPanelNative;
 				Windows::UI::Xaml::Controls::SwapChainPanel^ swapChainPanelXaml;
 			};

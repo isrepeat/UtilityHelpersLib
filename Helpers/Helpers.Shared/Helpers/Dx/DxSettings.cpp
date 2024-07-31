@@ -12,68 +12,68 @@ namespace HELPERS_NS {
             , dxSettingsHandlers{ std::make_unique<DxSettingsHandlers>() }
         {
             UpdateAdapters();
-            currentAdapter = adapters.at(0);
+            this->currentAdapter = adapters.at(0);
         }
 
 
         void DxSettings::EnableMSAA(bool enabled) {
-            msaa = enabled;
-            if (dxSettingsHandlers->msaaChanged) {
-                dxSettingsHandlers->msaaChanged();
+            this->msaa = enabled;
+            if (this->dxSettingsHandlers->msaaChanged) {
+                this->dxSettingsHandlers->msaaChanged();
             }
         }
 
         bool DxSettings::IsMSAAEnabled() {
-            return msaa;
+            return this->msaa;
         }
 
 
         void DxSettings::EnableVSync(bool enabled) {
-            vsync = enabled;
-            if (dxSettingsHandlers->vsyncChanged) {
-                dxSettingsHandlers->vsyncChanged();
+            this->vsync = enabled;
+            if (this->dxSettingsHandlers->vsyncChanged) {
+                this->dxSettingsHandlers->vsyncChanged();
             }
         }
 
         bool DxSettings::IsVSyncEnabled() {
-            return vsync;
+            return this->vsync;
         }
 
 
         void DxSettings::SetCurrentAdapterByIdx(uint32_t idx) {
-            if (idx >= adapters.size()) {
+            if (idx >= this->adapters.size()) {
                 return;
             }
-            currentAdapter = adapters[idx];
-            if (dxSettingsHandlers->currentAdapterChanged) {
-                dxSettingsHandlers->currentAdapterChanged();
+            this->currentAdapter = this->adapters[idx];
+            if (this->dxSettingsHandlers->currentAdapterChanged) {
+                this->dxSettingsHandlers->currentAdapterChanged();
             }
         }
 
         Adapter DxSettings::GetCurrentAdapter() {
-            return currentAdapter;
+            return this->currentAdapter;
         }
 
  
         void DxSettings::UpdateAdapters() {
             // TODO: add mutex
-            adapters.clear();
+            this->adapters.clear();
             EnumAdaptersState enumAdapters;
 
             while (auto adapter = enumAdapters.Next()) {
-                adapters.push_back(adapter);
+                this->adapters.push_back(adapter);
             }
-            if (dxSettingsHandlers->adapersUpdated) {
-                dxSettingsHandlers->adapersUpdated();
+            if (this->dxSettingsHandlers->adapersUpdated) {
+                this->dxSettingsHandlers->adapersUpdated();
             }
         }
 
         std::vector<Adapter> DxSettings::GetAdapters() {
-            return adapters;
+            return this->adapters;
         }
        
         std::unique_ptr<DxSettingsHandlers>& DxSettings::GetDxSettingsHandlers() {
-            return dxSettingsHandlers;
+            return this->dxSettingsHandlers;
         }
     }
 }

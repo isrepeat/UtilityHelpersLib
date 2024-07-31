@@ -110,7 +110,7 @@ namespace HELPERS_NS {
 		{
 			HRESULT hr = S_OK;
 
-			// Disable HDR if we are on an OS that can't support FLIP swap effects
+			// Disable HDR if we are on an OS that can't support FLIP swap effects.
 			if (this->initData.optionFlags.Has(InitData::Options::EnableHDR)) {
 				auto dxDev = this->dxDeviceSafeObj.Lock();
 				auto d3dDevice = dxDev->GetD3DDevice();
@@ -121,6 +121,16 @@ namespace HELPERS_NS {
 					const_cast<InitData&>(this->initData).optionFlags &= ~InitData::Options::EnableHDR;
 					LOG_WARNING_D("HDR swap chains not supported, disable 'InitData::Options::EnableHDR'");
 				}
+			}
+
+			// Set dxSettings handlers.
+			if (auto dxSettings = this->initData.dxSettingsWeak.lock()) {
+				dxSettings->GetDxSettingsHandlers()->msaaChanged.Add([this] {
+					this->CreateWindowSizeDependentResources();
+				});
+
+				dxSettings->GetDxSettingsHandlers()->vsyncChanged.Add([] {
+				});
 			}
 		}
 
@@ -156,8 +166,6 @@ namespace HELPERS_NS {
 		}
 
 		// These resources need to be recreated every time the window size is changed.
-		// TODO: Mb change swapChain format from 10:10:10:2 to 8:8:8:8 when display 
-		//       is not HDR10 to avoid render with proxy texture?
 		void STDMETHODCALLTYPE SwapChainPanel::CreateWindowSizeDependentResources() {
 			HRESULT hr = S_OK;
 
@@ -406,21 +414,23 @@ namespace HELPERS_NS {
 			d2dCtx->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
 			
 
-			//if (false) { //if (dxSettings->MSAA) {
-			//	D3D11_TEXTURE2D_DESC desc = {};
-			//	this->dxgiSwapChainBackBuffer->GetDesc(&desc);
+			if (auto dxSettings = this->initData.dxSettingsWeak.lock()) {
+				if (dxSettings->IsMSAAEnabled()) {
+					//	D3D11_TEXTURE2D_DESC desc = {};
+					//	this->dxgiSwapChainBackBuffer->GetDesc(&desc);
 
-			//	auto availableMsaaLevel = H::Dx::MsaaHelper::GetMaxSupportedMSAA(d3dDevice.Get(), desc.Format, H::Dx::MsaaHelper::GetMaxMSAA());
-			//	if (availableMsaaLevel) {
-			//		desc.SampleDesc = *availableMsaaLevel;
+					//	auto availableMsaaLevel = H::Dx::MsaaHelper::GetMaxSupportedMSAA(d3dDevice.Get(), desc.Format, H::Dx::MsaaHelper::GetMaxMSAA());
+					//	if (availableMsaaLevel) {
+					//		desc.SampleDesc = *availableMsaaLevel;
 
-			//		hr = d3dDevice->CreateTexture2D(&desc, nullptr, &this->msaaTexture);
-			//		H::System::ThrowIfFailed(hr);
+					//		hr = d3dDevice->CreateTexture2D(&desc, nullptr, &this->msaaTexture);
+					//		H::System::ThrowIfFailed(hr);
 
-			//		hr = d3dDevice->CreateRenderTargetView1(this->msaaTexture.Get(), nullptr, &this->msaaRenderTargetView);
-			//		H::System::ThrowIfFailed(hr);
-			//	}
-			//}
+					//		hr = d3dDevice->CreateRenderTargetView1(this->msaaTexture.Get(), nullptr, &this->msaaRenderTargetView);
+					//		H::System::ThrowIfFailed(hr);
+					//	}
+				}
+			}
 
 
 			// Create a Direct2D target bitmap associated with the
@@ -665,9 +675,18 @@ namespace HELPERS_NS {
 			auto dxCtx = dxDev->LockContext();
 			auto d3dCtx = dxCtx->D3D();
 
-			//if (this->msaaTexture) {
-			//	d3dCtx->ResolveSubresource(this->dxgiSwapChainBackBuffer.Get(), 0, this->msaaTexture.Get(), 0, this->initData.backBufferFormat);
-			//}
+			bool isMSAA = false;
+			bool isVSync = true;
+			if (auto dxSettings = this->initData.dxSettingsWeak.lock()) {
+				isMSAA = dxSettings->IsMSAAEnabled();
+				isVSync = dxSettings->IsVSyncEnabled();
+			}
+
+			if (isMSAA) {
+				//if (this->msaaTexture) {
+				//	d3dCtx->ResolveSubresource(this->dxgiSwapChainBackBuffer.Get(), 0, this->msaaTexture.Get(), 0, this->initData.backBufferFormat);
+				//}
+			}
 
 			if (this->dxRenderObjProxy) {
 				this->DrawProxyTextureToSwapChainRTV();
@@ -677,7 +696,7 @@ namespace HELPERS_NS {
 			// to sleep until the next VSync. This ensures we don't waste any cycles rendering
 			// frames that will never be displayed to the screen.
 			DXGI_PRESENT_PARAMETERS parameters = { 0 };
-			hr = this->dxgiSwapChain->Present1(1, 0, &parameters);
+			hr = this->dxgiSwapChain->Present1(isVSync, 0, &parameters);
 
 			// Discard the contents of the render target.
 			// This is a valid operation only when the existing contents will be entirely
@@ -689,9 +708,11 @@ namespace HELPERS_NS {
 				d3dCtx->DiscardView1(this->m_d3dDepthStencilView.Get(), nullptr, 0);
 			}
 
-			//if (this->msaaRenderTargetView) {
-			//	d3dCtx->DiscardView1(this->msaaRenderTargetView.Get(), nullptr, 0);
-			//}
+			if (isMSAA) {
+				//if (this->msaaRenderTargetView) {
+				//	d3dCtx->DiscardView1(this->msaaRenderTargetView.Get(), nullptr, 0);
+				//}
+			}
 
 			// If the device was removed either by a disconnection or a driver upgrade, we 
 			// must recreate all device resources.

@@ -1,7 +1,9 @@
 ﻿#pragma once
 #include <Helpers/common.h>
+#include <Helpers/Dx/DxSettings.h>
 #include <Helpers/Dx/DxDevice.h>
 #include <Helpers/Callback.hpp>
+#include <Helpers/Signal.h>
 #include <Helpers/Flags.h>
 
 #include "DxRenderObjProxy.h"
@@ -42,13 +44,15 @@ namespace HELPERS_NS {
 					return std::make_unique<HELPERS_NS::Mutex<std::recursive_mutex>>();
 				};
 
+				DXGI_FORMAT backBufferFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
+				DXGI_FORMAT depthBufferFormat = DXGI_FORMAT_UNKNOWN;
+				DXGI_SWAP_EFFECT dxgiSwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+
 				HWND hWnd = nullptr;
 				Callback<void, IDXGISwapChain3*> fnCreateSwapChainPannelDxgi = {};
 				Callback<HELPERS_NS::Rect> fnGetWindowBounds = {};
 
-				DXGI_FORMAT backBufferFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
-				DXGI_FORMAT depthBufferFormat = DXGI_FORMAT_UNKNOWN; // DXGI_FORMAT_D24_UNORM_S8_UINT
-				DXGI_SWAP_EFFECT dxgiSwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+				std::weak_ptr<HELPERS_NS::Dx::DxSettings> dxSettingsWeak;
 			};
 
 			SwapChainPanel(const InitData& initData);
@@ -115,9 +119,9 @@ namespace HELPERS_NS {
 
 			// Direct3D objects.
 			HELPERS_NS::Dx::DxDeviceSafeObj dxDeviceSafeObj;
-			Microsoft::WRL::ComPtr<IDXGISwapChain3>	dxgiSwapChain;
 
 			// Direct3D rendering objects. Required for 3D.
+			Microsoft::WRL::ComPtr<IDXGISwapChain3>	dxgiSwapChain;
 			Microsoft::WRL::ComPtr<ID3D11Texture2D> dxgiSwapChainBackBuffer;
 			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_d3dRenderTargetView;
 			Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_d3dDepthStencilView;
@@ -125,18 +129,16 @@ namespace HELPERS_NS {
 			//Microsoft::WRL::ComPtr<ID3D11Texture2D> msaaTexture;
 			//Microsoft::WRL::ComPtr<ID3D11RenderTargetView1> msaaRenderTargetView;
 
-			std::unique_ptr<details::DxRenderObjProxy> dxRenderObjProxy;
-
-			D3D11_VIEWPORT m_screenViewport;
-
 			// Direct2D drawing components.
 			Microsoft::WRL::ComPtr<ID2D1Bitmap1> m_d2dTargetBitmap;
 
 			// Direct3D render piplines objects.
+			std::unique_ptr<details::DxRenderObjProxy> dxRenderObjProxy;
 			std::unique_ptr<details::FullScreenQuad> fullScreenQuad;
 
 
 			// Cached device properties.
+			D3D11_VIEWPORT m_screenViewport;
 			HELPERS_NS::Size_f m_d3dRenderTargetSize;
 			HELPERS_NS::Size_f m_outputSize;
 			HELPERS_NS::Size_f m_logicalSize;

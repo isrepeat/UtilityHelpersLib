@@ -9,87 +9,93 @@ namespace Helpers {
             {}
 
             uint32_t Adapter::Idx::get() {
-                return adapter.GetIndex();
+                return this->adapter.GetIndex();
             }
             Platform::String^ Adapter::Description::get() {
-                return ref new Platform::String(adapter.GetDescription().c_str());
+                return ref new Platform::String(this->adapter.GetDescription().c_str());
             }
             LUID Adapter::AdapterLUID::get() {
                 LUID luid;
                 static_assert(sizeof(luid.LowPart) == sizeof(adapter.GetAdapterLUID().LowPart));
                 static_assert(sizeof(luid.HighPart) == sizeof(adapter.GetAdapterLUID().HighPart));
 
-                luid.LowPart = adapter.GetAdapterLUID().LowPart;
-                luid.HighPart = adapter.GetAdapterLUID().HighPart;
+                luid.LowPart = this->adapter.GetAdapterLUID().LowPart;
+                luid.HighPart = this->adapter.GetAdapterLUID().HighPart;
                 return luid;
             }
 
 
-            DxSettings::DxSettings() {
+            DxSettings::DxSettings()
+                : dxSettings{ std::make_shared<H::Dx::DxSettings>() }
+            {
                 Platform::WeakReference weakRef = Platform::WeakReference(this);
 
-                dxSettings.GetDxSettingsHandlers()->msaaChanged = [weakRef] {
+                this->dxSettings->GetDxSettingsHandlers()->msaaChanged.Add([weakRef] {
                     auto _this = weakRef.Resolve<DxSettings>();
                     if (!_this) return;
                     concurrency::create_async([=]() {
                         _this->MsaaChanged();
                         });
-                };
+                    });
 
-                dxSettings.GetDxSettingsHandlers()->vsyncChanged = [weakRef] {
+                this->dxSettings->GetDxSettingsHandlers()->vsyncChanged.Add([weakRef] {
                     auto _this = weakRef.Resolve<DxSettings>();
                     if (!_this) return;
                     concurrency::create_async([=]() {
                         _this->VSyncChanged();
                         });
-                };
+                    });
 
-                dxSettings.GetDxSettingsHandlers()->currentAdapterChanged = [weakRef] {
+                this->dxSettings->GetDxSettingsHandlers()->currentAdapterChanged.Add([weakRef] {
                     auto _this = weakRef.Resolve<DxSettings>();
                     if (!_this) return;
                     concurrency::create_async([=]() {
                         _this->CurrentAdapterChanged();
                         });
-                };
+                    });
 
-                dxSettings.GetDxSettingsHandlers()->adapersUpdated = [weakRef] {
+                this->dxSettings->GetDxSettingsHandlers()->adapersUpdated.Add([weakRef] {
                     auto _this = weakRef.Resolve<DxSettings>();
                     if (!_this) return;
                     concurrency::create_async([=]() {
                         _this->AdaptersUpdated();
                         });
-                };
+                    });
             }
 
             bool DxSettings::MSAA::get() {
-                return dxSettings.IsMSAAEnabled();
+                return this->dxSettings->IsMSAAEnabled();
             }
             void DxSettings::MSAA::set(bool v) {
-                dxSettings.EnableMSAA(v);
+                this->dxSettings->EnableMSAA(v);
             }
 
             bool DxSettings::VSync::get() {
-                return dxSettings.IsVSyncEnabled();
+                return this->dxSettings->IsVSyncEnabled();
             }
             void DxSettings::VSync::set(bool v) {
-                dxSettings.EnableVSync(v);
+                this->dxSettings->EnableVSync(v);
             }
 
             Adapter^ DxSettings::CurrentAdapter::get() {
-                return ref new Adapter{ dxSettings.GetCurrentAdapter() };
+                return ref new Adapter{ this->dxSettings->GetCurrentAdapter() };
             }
             void DxSettings::CurrentAdapter::set(Adapter^ adapter) {
-                dxSettings.SetCurrentAdapterByIdx(adapter->Idx);
+                this->dxSettings->SetCurrentAdapterByIdx(adapter->Idx);
             }
 
             WFCollections::IObservableVector<Adapter^>^ DxSettings::Adapters::get() {
                 auto result = ref new PCollections::Vector<Adapter^>;
 
-                dxSettings.UpdateAdapters();
-                for (auto& adapter : dxSettings.GetAdapters()) {
+                this->dxSettings->UpdateAdapters();
+                for (auto& adapter : this->dxSettings->GetAdapters()) {
                     result->Append(ref new Adapter{ adapter });
                 }
                 return result;
+            }
+
+            std::shared_ptr<H::Dx::DxSettings> DxSettings::GetDxSettingsNative() {
+                return this->dxSettings;
             }
         }
     }
