@@ -23,7 +23,9 @@ namespace SlnInjectorWPF
 
             foreach(var projItem in Props.ProjectItems)
             {
-                projects.Add(new Project(projItem));
+                var project = new Project(projItem);
+                projects.Add(project);
+                AddParentSolutionFolders(project);
             }
         }
 
@@ -43,15 +45,7 @@ namespace SlnInjectorWPF
             };
 
             projects.Add(new Project(newItem));
-
-            var newFolders = project.GetParentSolutionFolders();
-            foreach (var folder in newFolders)
-            {
-                if (!solutionFolders.Contains(folder))
-                {
-                    solutionFolders.Add(folder);
-                }
-            }
+            AddParentSolutionFolders(project);
         }
 
         public async Task Save(string outPath)
@@ -76,5 +70,17 @@ namespace SlnInjectorWPF
         public ISlnResult Props { get { return sln.Result; } }
 
         public IEnumerable<Project> Projects { get => projects; }
+
+        private void AddParentSolutionFolders(Project project)
+        {
+            var newFolders = project.GetParentSolutionFolders();
+            foreach (var folder in newFolders)
+            {
+                if (!solutionFolders.Contains(folder))
+                {
+                    solutionFolders.Add(folder);
+                }
+            }
+        }
     }
 }
