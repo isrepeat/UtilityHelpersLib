@@ -8,11 +8,21 @@
         mc:Ignorable="d"
         Title="SLN Injector" Height="500" Width="1000">
     <st:AutoGrid Columns="*" Rows="2*,1*" Margin="5, 5, 5, 5">
-        <st:StackPanel Orientation="Vertical" MarginBetweenChildren="10">
+        <st:StackPanel Orientation="Vertical" MarginBetweenChildren="15">
             <st:StackPanel Orientation="Horizontal" MarginBetweenChildren="1">
                 <Button x:Name="BtOpenInputSln" Width="60" Height="20" Click="OpenInputSln_Click">Open</Button>
                 <TextBox x:Name="TbInputSlnPath" st:StackPanel.Fill="Fill" IsReadOnly="True">Choose solution file to import projects from</TextBox>
             </st:StackPanel>
+            
+            <st:StackPanel Orientation="Vertical" MarginBetweenChildren="5">
+                <TextBlock>Filter projects:</TextBlock>
+                <TextBox x:Name="TbSearch" TextChanged="TbSearch_TextChanged"></TextBox>
+                <st:StackPanel Orientation="Horizontal" MarginBetweenChildren="20">
+                    <CheckBox x:Name="CbSearchUseRegex" Click="CbSearchUseRegex_Click">Use regex</CheckBox>
+                    <CheckBox x:Name="CbSearchIgnoreCase" Click="CbSearchIgnoreCase_Click">Ignore case</CheckBox>
+                </st:StackPanel>
+            </st:StackPanel>
+            
             <DataGrid
                 x:Name="DgInputSlnProjects"
                 AutoGenerateColumns="False"
@@ -34,7 +44,17 @@
                 <Button x:Name="BtOpenOutputSln" Width="60" Height="20" Click="BtOpenOutputSln_Click">Open</Button>
                 <TextBox x:Name="TbOutputSlnPath" st:StackPanel.Fill="Fill" IsReadOnly="True">Choose solution file to inject projects into</TextBox>
             </st:StackPanel>
+            
+            <st:StackPanel Orientation="Horizontal" MarginBetweenChildren="5">
+                <CheckBox x:Name="CbRegenerateDestinationSlnGuids" IsChecked="True">Regenerate destination project GUIDs</CheckBox>
+            </st:StackPanel>
+            
             <Button x:Name="BtInjectProjects" Click="BtInjectProjects_Click">Inject</Button>
+
+            <st:StackPanel Orientation="Horizontal" MarginBetweenChildren="5" HorizontalAlignment="Center">
+                <Button x:Name="BtOpenSourceSolutionFolder" Click="BtOpenSourceSolutionFolder_Click">Open Source Sln Folder</Button>
+                <Button x:Name="BtOpenDestinationSolutionFolder" Click="BtOpenDestinationSolutionFolder_Click">Open Destination Sln Folder</Button>
+            </st:StackPanel>
         </st:StackPanel>
     </st:AutoGrid>
 </Window>

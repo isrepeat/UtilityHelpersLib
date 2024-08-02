@@ -1,8 +1,10 @@
 ﻿using net.r_eg.MvsSln;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -31,7 +33,22 @@ namespace SlnInjectorWPF
         public MainWindow()
         {
             InitializeComponent();
-            SetCanInject(false);
+            UpdateUI();
+        }
+
+        private void UpdateUI()
+        {
+            bool inputSet = inputSln != null;
+            bool outputSet = outputSln != null;
+
+            BtOpenSourceSolutionFolder.IsEnabled = inputSet;
+            BtOpenDestinationSolutionFolder.IsEnabled = outputSet;
+
+            SetCanInject(inputSet && outputSet && selectedProjects.Count > 0);
+
+            TbSearch.IsEnabled = inputSet;
+            CbSearchIgnoreCase.IsEnabled = inputSet;
+            CbSearchUseRegex.IsEnabled = inputSet;
         }
 
         private void SetCanInject(bool canInject)
@@ -87,6 +104,8 @@ namespace SlnInjectorWPF
                 default:
                     break;
             }
+
+            UpdateUI();
         }
 
         private void OnOpenSlnClicked(SlnType type)
@@ -136,7 +155,7 @@ namespace SlnInjectorWPF
             }
 
             BtInjectProjects.Content = $"Inject {selectedProjects.Count} projects";
-            SetCanInject(selectedProjects.Count > 0 && outputSln != null);
+            UpdateUI();
         }
 
         private async void BtInjectProjects_Click(object sender, RoutedEventArgs e)
@@ -173,9 +192,123 @@ namespace SlnInjectorWPF
             if (savePath != null)
             {
                 SetCanInject(false);
-                await outputSln.Save(savePath);
+                var options = MakeSlnSaveOptions();
+                await outputSln.Save(savePath, options);
                 SetCanInject(true);
             }
+        }
+
+        private Solution.SaveOptions MakeSlnSaveOptions()
+        {
+            var options = Solution.SaveOptions.None;
+
+            if (CbRegenerateDestinationSlnGuids.IsChecked.GetValueOrDefault(false))
+            {
+                options |= Solution.SaveOptions.RegenerateDestinationGuids;
+            }
+
+            return options;
+        }
+
+        private void OpenFolder(string path)
+        {
+            Process.Start("explorer.exe", path);
+        }
+
+        private void BtOpenSourceSolutionFolder_Click(object sender, RoutedEventArgs e)
+        {
+            if (inputSln != null)
+            {
+                OpenFolder(inputSln.Props.SolutionDir);
+            }
+        }
+
+        private void BtOpenDestinationSolutionFolder_Click(object sender, RoutedEventArgs e)
+        {
+            if (outputSln != null)
+            {
+                OpenFolder(outputSln.Props.SolutionDir);
+            }
+        }
+
+        private void TbSearch_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            FilterInputSlnProjects();
+        }
+
+        private void CbSearchUseRegex_Click(object sender, RoutedEventArgs e)
+        {
+            FilterInputSlnProjects();
+        }
+
+        private void CbSearchIgnoreCase_Click(object sender, RoutedEventArgs e)
+        {
+            FilterInputSlnProjects();
+        }
+
+        void FilterInputSlnProjects()
+        {
+            FilterInputSlnProjects(
+                TbSearch.Text,
+                CbSearchUseRegex.IsChecked.GetValueOrDefault(false),
+                CbSearchIgnoreCase.IsChecked.GetValueOrDefault(false)
+            );
+        }
+
+        void FilterInputSlnProjects(string needle, bool useRegex, bool ignoreCase)
+        {
+            if (inputSln == null)
+            {
+                return;
+            }
+
+            if (TbSearch.Text.Count() == 0)
+            {
+                if (DgInputSlnProjects.ItemsSource != inputSln.Projects)
+                {
+                    DgInputSlnProjects.ItemsSource = inputSln.Projects;
+                }
+
+                return;
+            }
+
+            IEnumerable<Project> searchResults;
+
+            if (useRegex)
+            {
+                var options = RegexOptions.None;
+                if (ignoreCase)
+                {
+                    options |= RegexOptions.IgnoreCase;
+                }
+
+                try
+                {
+                    var regex = new Regex(TbSearch.Text, options);
+                    searchResults = inputSln.Projects.Where(project => regex.IsMatch(project.Name));
+                }
+                catch (Exception ex)
+                {
+                    return;
+                }
+            }
+            else
+            {
+                searchResults = inputSln.Projects.Where(project =>
+                {
+                    var name = project.Name;
+
+                    if (ignoreCase)
+                    {
+                        name = name.ToLower();
+                        needle = needle.ToLower();
+                    }
+
+                    return name.Contains(needle);
+                });
+            }
+
+            DgInputSlnProjects.ItemsSource = searchResults;
         }
     }
 }
