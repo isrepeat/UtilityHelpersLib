@@ -173,9 +173,21 @@ namespace SlnInjectorWPF
             if (savePath != null)
             {
                 SetCanInject(false);
-                await outputSln.Save(savePath);
+                var options = MakeSlnSaveOptions();
+                await outputSln.Save(savePath, options);
                 SetCanInject(true);
             }
         }
+
+        private Solution.SaveOptions MakeSlnSaveOptions()
+        {
+            var options = Solution.SaveOptions.None;
+
+            if (CbRegenerateDestinationSlnGuids.IsChecked.GetValueOrDefault(false))
+            {
+                options |= Solution.SaveOptions.RegenerateDestinationGuids;
+        }
+
+            return options;
     }
 }
