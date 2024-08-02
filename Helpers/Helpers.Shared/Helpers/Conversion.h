@@ -69,4 +69,11 @@ namespace HELPERS_NS {
 #endif
 
     std::string VectorBytesToHexString(const std::vector<uint8_t>& data);
+
+    template <typename From, typename To>
+    struct EnumConvertor {
+        static To Convert(From enumVal) {
+            static_assert(false, "not found implementation");
+        }
+    };
 }
