@@ -198,7 +198,7 @@ namespace HELPERS_NS {
             template <typename... Args>
             PromiseDefault(InstanceName instanceName, Args&...)
                 : _MyBase(instanceName)
-                , resumeSignal{ std::make_shared<HELPERS_NS::Signal>() }
+                , resumeSignal{ std::make_shared<HELPERS_NS::Signal<void()>>() }
             {
                 this->SetFullClassNameSilent(instanceName.name);
                 LOG_FUNCTION_ENTER_VERBOSE_C(L"PromiseDefault()");
