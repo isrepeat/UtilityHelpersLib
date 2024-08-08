@@ -464,7 +464,7 @@ namespace HELPERS_NS {
         };
 
         // TODO: use another specific signal type that associated with coroutines (because H::Signal may be anything)
-        inline void ResumeCoroutineViaSignal(std::weak_ptr<H::Signal<void()>> resumeSignalWeak) {
+        inline void ResumeCoroutineViaSignal(std::weak_ptr<HELPERS_NS::Signal<void()>> resumeSignalWeak) {
             LOG_FUNCTION_ENTER("ResumeCoroutineViaSignal()");
             auto resumeSignal = resumeSignalWeak.lock();
             if (!resumeSignal) {
