@@ -278,7 +278,7 @@ namespace HELPERS_NS {
             template <typename... Args>
             PromiseWithResult(InstanceName instanceName, Args&...)
                 : _MyBase(instanceName)
-                , resumeSignal{ std::make_shared<HELPERS_NS::Signal>(ReturnT) }
+                , resumeSignal{ std::make_shared<HELPERS_NS::Signal<void(ReturnT)>>() }
             {
                 this->SetFullClassNameSilent(instanceName.name);
                 LOG_FUNCTION_ENTER_VERBOSE_C(L"PromiseWithResult()");
