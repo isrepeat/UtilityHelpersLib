@@ -5,6 +5,8 @@
 #include <Helpers/Signal.h>
 #include <coroutine>
 #include <queue>
+#include <type_traits>
+#include <optional>
 
 // Don't forget return original definitions for these macros at the end of file
 #define LOG_FUNCTION_ENTER_VERBOSE(fmt, ...)
@@ -66,11 +68,41 @@ namespace HELPERS_NS {
 
         struct LambdaBindCoroKey {};
 
-        template <typename PromiseImplT>
-        class Promise {
+        template<typename ReturnT>
+        class PromiseResult {
+        public:
+            void return_value(ReturnT result) {
+                LOG_FUNCTION_ENTER_VERBOSE_C("return_value()");
+                this->result.emplace(std::move(result));
+            }
+
+            ReturnT detach_result() {
+                LOG_FUNCTION_ENTER_VERBOSE_C("detach_result()");
+                return std::move(*this->result);
+            }
+
+        protected:
+            std::optional<ReturnT> result;
+        };
+
+        template<>
+        class PromiseResult<void> {
+        public:
+            void return_void() {
+                LOG_FUNCTION_ENTER_VERBOSE_C("return_void()");
+            }
+
+            void detach_result() {
+                LOG_FUNCTION_ENTER_VERBOSE_C("detach_void_result()");
+            }
+        };
+
+        template <typename PromiseImplT, typename ReturnT>
+        class Promise : public PromiseResult<ReturnT> {
             CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(Promise);
         public:
             using ObjectRet_t = std::shared_ptr<CoTask<PromiseImplT>>;
+            using _ReturnT = ReturnT;
 
             class FinalAwaiter {
                 CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(FinalAwaiter);
@@ -139,9 +171,6 @@ namespace HELPERS_NS {
                 //       This behavior is by design because next tasks may depend on current.
                 std::rethrow_exception(std::current_exception()); // "root resumer" must handle exceptions.
             }
-            void return_void() {
-                LOG_FUNCTION_ENTER_VERBOSE_C("return_void()");
-            }
             auto final_suspend() const noexcept {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("final_suspend()");
                 // NOTE: "suspend always" at finish mean that we need to destroy coroutine_handle manually.
@@ -186,9 +215,9 @@ namespace HELPERS_NS {
         /*------------------------------*/
         /*   PROMISES IMPLEMENTATIONS   */
         /*------------------------------*/
-        class PromiseDefault : public Promise<PromiseDefault> {
+        class PromiseDefault : public Promise<PromiseDefault, void> {
         public:
-            using _MyBase = Promise<PromiseDefault>;
+            using _MyBase = Promise<PromiseDefault, void>;
 
             template <typename... Args>
             PromiseDefault(Args&... args)
@@ -236,13 +265,65 @@ namespace HELPERS_NS {
             std::shared_ptr<HELPERS_NS::Signal<void()>> resumeSignal;
         };
 
-
-        class PromiseRoot : public Promise<PromiseRoot> {
+        template<typename ReturnT>
+        class PromiseWithResult : public Promise<PromiseWithResult<ReturnT>, ReturnT> {
         public:
-            using _MyBase = Promise<PromiseRoot>;
+            using _MyBase = Promise<PromiseWithResult<ReturnT>, ReturnT>;
+
+            template <typename... Args>
+            PromiseWithResult(Args&... args)
+                : PromiseWithResult(InstanceName{ L"co-task" }, args...) // NOTE: use InstanceName explicitly to help compiler deduction
+            {}
+
+            template <typename... Args>
+            PromiseWithResult(InstanceName instanceName, Args&...)
+                : _MyBase(instanceName)
+                , resumeSignal{ std::make_shared<HELPERS_NS::Signal>(ReturnT) }
+            {
+                this->SetFullClassNameSilent(instanceName.name);
+                LOG_FUNCTION_ENTER_VERBOSE_C(L"PromiseWithResult()");
+            }
+
+            template <typename Caller, typename... Args>
+            PromiseWithResult(Caller& caller, Args&... args)
+                : PromiseWithResult(caller, InstanceName{ L"co-task" }, args...)
+            {}
+
+            template <typename Caller, typename... Args>
+            PromiseWithResult(Caller& caller, InstanceName instanceName, Args&...)
+                : _MyBase(caller, instanceName)
+                , resumeSignal{ std::make_shared<HELPERS_NS::Signal<void(ReturnT)>>() }
+            {
+                this->SetFullClassNameSilent(instanceName.name);
+                LOG_FUNCTION_ENTER_VERBOSE_C(L"PromiseWithResult(Caller)");
+            }
+
+            // must be used only by LambdaBindCoro helper
+            template <typename LambdaT, typename... Args>
+            PromiseWithResult(LambdaBindCoroKey key, LambdaT& lambda, Args&...)
+                : _MyBase(L"LambdaBindCoroKey")
+                , resumeSignal{ std::make_shared<HELPERS_NS::Signal<void(ReturnT)>>() }
+            {
+                this->SetFullClassNameSilent(L"LambdaBindCoroKey");
+                LOG_FUNCTION_ENTER_VERBOSE_C(L"PromiseWithResult(LambdaCtorKey, LambdaT)");
+            }
+
+            std::weak_ptr<HELPERS_NS::Signal<void(ReturnT)>> get_resume_signal() {
+                return resumeSignal;
+            }
+
+        private:
+            std::shared_ptr<HELPERS_NS::Signal<void(ReturnT)>> resumeSignal;
+        };
+
+
+        class PromiseRoot : public Promise<PromiseRoot, void> {
+        public:
+            using _MyBase = Promise<PromiseRoot, void>;
             INTELLISENSE_DEFAULT_CTOR(PromiseRoot);
 
-            PromiseRoot(InstanceName instanceName, std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback)
+            template <typename... Args>
+            PromiseRoot(InstanceName instanceName, std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback, Args&... args)
                 : _MyBase(instanceName)
             {
                 this->SetFullClassNameSilent(instanceName.name);
@@ -250,8 +331,8 @@ namespace HELPERS_NS {
                 this->_MyBase::resumeCallback = resumeCallback;
             }
 
-            template <typename Caller>
-            PromiseRoot(Caller& caller, InstanceName instanceName, std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback)
+            template <typename Caller, typename... Args>
+            PromiseRoot(Caller& caller, InstanceName instanceName, std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback, Args&... args)
                 : _MyBase(caller, instanceName)
             {
                 this->SetFullClassNameSilent(instanceName.name);
@@ -283,12 +364,18 @@ namespace HELPERS_NS {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("await_suspend(coroutine_handle<PromiseDefault>)");
                 return await_suspend_internal<PromiseDefault>(callerCoroutine);
             }
+            template<typename ReturnT>
+            std::coroutine_handle<> await_suspend(std::coroutine_handle<PromiseWithResult<ReturnT>> callerCoroutine) noexcept {
+                LOG_FUNCTION_SCOPE_VERBOSE_C("await_suspend(coroutine_handle<PromiseWithResult>)");
+                return await_suspend_internal<PromiseWithResult<ReturnT>>(callerCoroutine);
+            }
             std::coroutine_handle<> await_suspend(std::coroutine_handle<PromiseRoot> callerCoroutine) noexcept {
                 LOG_FUNCTION_SCOPE_VERBOSE_C("await_suspend(coroutine_handle<PromiseRoot>)");
                 return await_suspend_internal<PromiseRoot>(callerCoroutine);
             }
-            void await_resume() {
+            auto await_resume() {
                 LOG_FUNCTION_ENTER_VERBOSE_C("await_resume()");
+                return selfCoroutine.promise().detach_result();
             }
 
         private:
@@ -472,6 +559,17 @@ namespace HELPERS_NS {
                 return;
             }
             (*resumeSignal)();
+        }
+
+        template<typename ResultT>
+        inline void ResumeCoroutineViaSignal(std::weak_ptr<HELPERS_NS::Signal<void(ResultT)>> resumeSignalWeak, ResultT result) {
+            LOG_FUNCTION_ENTER("ResumeCoroutineViaSignal()");
+            auto resumeSignal = resumeSignalWeak.lock();
+            if (!resumeSignal) {
+                LOG_ERROR_D("resumeSignal expired");
+                return;
+            }
+            (*resumeSignal)(std::move(result));
         }
     } // namespace Async
 } // namespace HELPERS_NS
