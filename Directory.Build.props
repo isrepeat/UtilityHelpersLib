@@ -1,0 +1,13 @@
+<Project>
+  <!--
+  <Import Project="$(MSBuildProjectDirectory)\$(MSBuildProjectName).props"
+          Condition="Exists('$(MSBuildProjectDirectory)\$(MSBuildProjectName).props')"
+          />
+  
+  <ItemGroup>
+    <None Include="$(MSBuildProjectDirectory)\$(MSBuildProjectName).props"
+          Condition="Exists('$(MSBuildProjectDirectory)\$(MSBuildProjectName).props')"
+          />
+  </ItemGroup>
+  -->
+</Project>

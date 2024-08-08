@@ -198,7 +198,7 @@ namespace HELPERS_NS {
             template <typename... Args>
             PromiseDefault(InstanceName instanceName, Args&...)
                 : _MyBase(instanceName)
-                , resumeSignal{ std::make_shared<HELPERS_NS::Signal>() }
+                , resumeSignal{ std::make_shared<HELPERS_NS::Signal<void()>>() }
             {
                 this->SetFullClassNameSilent(instanceName.name);
                 LOG_FUNCTION_ENTER_VERBOSE_C(L"PromiseDefault()");
@@ -464,7 +464,7 @@ namespace HELPERS_NS {
         };
 
         // TODO: use another specific signal type that associated with coroutines (because H::Signal may be anything)
-        inline void ResumeCoroutineViaSignal(std::weak_ptr<H::Signal<void()>> resumeSignalWeak) {
+        inline void ResumeCoroutineViaSignal(std::weak_ptr<HELPERS_NS::Signal<void()>> resumeSignalWeak) {
             LOG_FUNCTION_ENTER("ResumeCoroutineViaSignal()");
             auto resumeSignal = resumeSignalWeak.lock();
             if (!resumeSignal) {
