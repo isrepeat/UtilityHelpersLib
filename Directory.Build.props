@@ -1,4 +1,16 @@
 <Project>
+  <PropertyGroup>
+    <!-- See more details in Microsoft.CppCommon.targets -->
+    <GenerateProjectSpecificOutputFolder>false</GenerateProjectSpecificOutputFolder>
+    
+    <!--
+        $(OutDir) must have a trailing slash.
+        $(PlatformToolset) here is empty (not defined yet).
+      -->
+    <OutDir>$(SolutionDir)\!VS_TMP\Build\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)\!VS_TMP\Intermediate\$(Configuration)\$(Platform)\$(MSBuildProjectName)\</IntDir>
+  </PropertyGroup>
+  
   <!--
   <Import Project="$(MSBuildProjectDirectory)\$(MSBuildProjectName).props"
           Condition="Exists('$(MSBuildProjectDirectory)\$(MSBuildProjectName).props')"

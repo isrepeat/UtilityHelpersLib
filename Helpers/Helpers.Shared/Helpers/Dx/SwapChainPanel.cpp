@@ -6,10 +6,6 @@
 
 #include <windows.ui.xaml.media.dxinterop.h>
 
-#if COMPILE_FOR_CX_or_WINRT
-#include <HelpersWinApiCX\HelpersWinApiCX.h>
-#endif
-
 
 namespace DisplayMetrics {
 	// High resolution displays can require a lot of GPU and battery power to render.
