@@ -532,6 +532,10 @@ namespace HELPERS_NS {
             CoHandle_t selfCoroutine;
         };
 
+        template<typename PromiseImplT>
+        auto operator co_await(const std::shared_ptr<CoTask<PromiseImplT>>& task) {
+            return (*task).operator co_await();
+        }
 
         /*------------*/
         /*   HELPERS  */
