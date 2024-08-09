@@ -1,15 +1,16 @@
 #pragma once
 #include "common.h"
+#include "IEvent.h"
 #include <functional>
 #include <vector>
 #include <mutex>
 
 template<typename ...Args>
-class Event {
+class Event : public IEvent<Args...> {
 public:
-	typedef std::function<void(Args...)> callback;
+    using IEvent<Args...>::callback;
 
-	std::shared_ptr<callback> Add(callback func) {
+	std::shared_ptr<callback> Add(callback func) override {
 		auto sharedPtr = std::make_shared<callback>(std::move(func));
 		auto lock = std::lock_guard(callbacksMtx);
 		callbacks.push_back(sharedPtr);
