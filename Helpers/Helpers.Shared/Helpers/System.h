@@ -14,6 +14,18 @@ namespace HELPERS_NS {
                 throw ComException(hr, _com_error(hr).ErrorMessage());
             }
         }
+
+        inline ComException MakeWin32Exception() {
+            auto err = GetLastError();
+            HRESULT hr = E_FAIL;
+
+            if (err != ERROR_SUCCESS) {
+                hr = HRESULT_FROM_WIN32(err);
+                LOG_FAILED(hr);
+            }
+
+            return ComException(hr, _com_error(hr).ErrorMessage());
+        }
 #endif
 #if COMPILE_FOR_CX_or_WINRT
         inline void ThrowIfFailed(HRESULT hr) {

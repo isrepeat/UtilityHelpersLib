@@ -2,14 +2,20 @@
 
 namespace HELPERS_NS {
     void UniqueHandleDeleter::operator()(HANDLE handle) noexcept {
-        CloseHandle(handle);
+        if (handle && handle != INVALID_HANDLE_VALUE) {
+            CloseHandle(handle);
+        }
     }
 
     void UniqueFindDeleter::operator()(HANDLE handle) noexcept {
-        FindClose(handle);
+        if (handle && handle != INVALID_HANDLE_VALUE) {
+            FindClose(handle);
+        }
     }
 
     void UniqueLibDeleter::operator()(HMODULE handle) noexcept {
-        FreeLibrary(handle);
+        if (handle && handle != INVALID_HANDLE_VALUE) {
+            FreeLibrary(handle);
+        }
     }
 }
