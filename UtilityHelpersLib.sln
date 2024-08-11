@@ -75,7 +75,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "!Solution", "!Solution", "{
 	ProjectSection(SolutionItems) = preProject
 		Directory.Build.props = Directory.Build.props
 		Directory.Build.targets = Directory.Build.targets
-		UtilityHelpersLibCommon.targets = UtilityHelpersLibCommon.targets
 	EndProjectSection
 EndProject
 Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "UtilityHelpersLibTestPackage", "Tests\UtilityHelpersLibTestPackage\UtilityHelpersLibTestPackage.wapproj", "{0F84A470-8C7F-4D48-A328-819822EB3373}"

@@ -252,7 +252,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="HelpersWinApi.CX.targets" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -262,9 +261,6 @@
     <ClInclude Include="HelpersWinApiCX\HelpersWinApiCX.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <!-- ==================== Custom targets ==================== -->
-  <Import Project="$(ProjectDir)\HelpersWinApi.CX.targets" />
-  <!-- ======================================================== -->
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\..\packages\HelpersWinApi.1.0.1\build\native\HelpersWinApi.targets" Condition="Exists('..\..\packages\HelpersWinApi.1.0.1\build\native\HelpersWinApi.targets')" />
   </ImportGroup>

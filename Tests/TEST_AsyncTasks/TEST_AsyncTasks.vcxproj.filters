@@ -12,6 +12,5 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="TEST_AsyncTasks.targets" />
   </ItemGroup>
 </Project>
