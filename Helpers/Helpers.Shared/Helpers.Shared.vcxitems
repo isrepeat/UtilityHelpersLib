@@ -13,6 +13,14 @@
   <ItemGroup>
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
+  <!-- ================================ Custom targets ================================ -->
+  <Import Project="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).targets" 
+          Condition="Exists('$(MSBuildThisFileDirectory)$(MSBuildThisFileName).targets')" />
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).targets" 
+          Condition="Exists('$(MSBuildThisFileDirectory)$(MSBuildThisFileName).targets')" />
+  </ItemGroup>
+  <!-- ================================================================================ -->
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Action.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\BIOS.cpp" />
@@ -167,9 +175,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\UniqueHandle.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />
-  </ItemGroup>
-  <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
@@ -199,6 +204,4 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
     </FxCompile>
   </ItemGroup>
-  <!-- Custom targets -->
-  <Import Project="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />
 </Project>

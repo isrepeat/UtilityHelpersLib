@@ -3,16 +3,15 @@
   <!-- Make sure this file are imported in .vcxitems -->
   <PropertyGroup>
     <ComAPISourcesDir>$(MSBuildThisFileDirectory)ComAPI</ComAPISourcesDir>
-    <ComAPIIncludeDirs>$(ComAPISourcesDir);$(MSBuildThisFileDirectory)</ComAPIIncludeDirs>
     <!-- Expose own dir for other projects -->
-    <PublicIncludeDirectories>$(ComAPIIncludeDirs);$(PublicIncludeDirectories)</PublicIncludeDirectories>
+    <PublicIncludeDirectories>$(PublicIncludeDirectories);$(MSBuildThisFileDirectory);$(ComAPISourcesDir)</PublicIncludeDirectories>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>
-        $(ComAPIIncludeDirs);
-        %(AdditionalIncludeDirectories)
+        %(AdditionalIncludeDirectories);
+        $(ComAPISourcesDir)
       </AdditionalIncludeDirectories>
       <PreprocessorDefinitions>
         %(PreprocessorDefinitions)

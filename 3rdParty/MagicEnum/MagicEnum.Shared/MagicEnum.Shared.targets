@@ -3,16 +3,15 @@
   <!-- Make sure this file are imported in .vcxitems -->
   <PropertyGroup>
     <MagicEnumSourcesDir>$(MSBuildThisFileDirectory)MagicEnum</MagicEnumSourcesDir>
-    <MagicEnumIncludeDirs>$(MagicEnumSourcesDir);$(MSBuildThisFileDirectory)</MagicEnumIncludeDirs>
     <!-- Expose own dir for other projects -->
-    <PublicIncludeDirectories>$(MagicEnumIncludeDirs);$(PublicIncludeDirectories)</PublicIncludeDirectories>
+    <PublicIncludeDirectories>$(PublicIncludeDirectories);$(MSBuildThisFileDirectory);$(MagicEnumSourcesDir)</PublicIncludeDirectories>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>
-        $(MagicEnumIncludeDirs);
-        %(AdditionalIncludeDirectories)
+        %(AdditionalIncludeDirectories);
+        $(MagicEnumSourcesDir)
       </AdditionalIncludeDirectories>
       <PreprocessorDefinitions>
         %(PreprocessorDefinitions)

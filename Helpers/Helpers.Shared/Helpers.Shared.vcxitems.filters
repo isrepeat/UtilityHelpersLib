@@ -490,14 +490,14 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)Helpers.Shared.targets" />
-  </ItemGroup>
-  <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultVS.hlsl">
       <Filter>Dx\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultPS.hlsl">
       <Filter>Dx\Shaders</Filter>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).targets" />
   </ItemGroup>
 </Project>

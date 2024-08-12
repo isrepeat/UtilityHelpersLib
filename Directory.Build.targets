@@ -1,13 +1,29 @@
-<Project>  
-  <!--
+<Project>
+  <!-- Import PROJECT.targets -->
   <Import Project="$(MSBuildProjectDirectory)\$(MSBuildProjectName).targets"
-          Condition="Exists('$(MSBuildProjectDirectory)\$(MSBuildProjectName).targets')"
-          />
+          Condition="Exists('$(MSBuildProjectDirectory)\$(MSBuildProjectName).targets')" />
   
   <ItemGroup>
     <None Include="$(MSBuildProjectDirectory)\$(MSBuildProjectName).targets"
-          Condition="Exists('$(MSBuildProjectDirectory)\$(MSBuildProjectName).targets')"
-          />
+          Condition="Exists('$(MSBuildProjectDirectory)\$(MSBuildProjectName).targets')" />
   </ItemGroup>
-  -->
+
+
+  <Target Name="__PrintDirectoryBuildPropsInfoTask"
+    BeforeTargets="PrepareForBuild"
+    Condition="'$(__PrintDirectoryBuildPropsInfo)' == 'true'">
+    <PropertyGroup>
+      <NewLine>%0D%0A</NewLine>
+    </PropertyGroup>
+    <Message Importance="high" Text="$(NewLine)" />
+    <Message Importance="high" Text="[$(SolutionName)]  Directory.Build.props info:" />
+    <Message Importance="high" Text="SolutionName = $(SolutionName)" />
+    <Message Importance="high" Text="SolutionDir = $(SolutionDir)" />
+    <Message Importance="high" Text="OutDir = $(OutDir)" />
+    <Message Importance="high" Text="IntDir = $(IntDir)" />
+    <Message Importance="high" Text="__OverrideOutputPath = $(__OverrideOutputPath)" />
+    <Message Importance="high" Text="__OverrideOutputPathOnlyIfBuildFromAnotherSolution = $(__OverrideOutputPathOnlyIfBuildFromAnotherSolution)" />
+    <Message Importance="high" Text="__CapturedDirectoryBuildProps = %(__CapturedDirectoryBuildProps.Identity)" />
+    <Message Importance="high" Text="$(NewLine)" />
+  </Target>
 </Project>

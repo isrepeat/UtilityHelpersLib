@@ -165,7 +165,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="TEST_AsyncTasks.targets" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
@@ -174,13 +173,10 @@
   <PropertyGroup>
     <ThirdPartyDir>$(SolutionDir)\3rdParty</ThirdPartyDir>
   </PropertyGroup>
-  <!-- ==================== Custom targets ==================== -->
-  <Import Project="$(ProjectDir)\TEST_AsyncTasks.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\..\packages\gmock.1.11.0\build\native\gmock.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\gmock.1.11.0\build\native\gmock.targets'))" />
   </Target>
-  <!-- ======================================================== -->
 </Project>

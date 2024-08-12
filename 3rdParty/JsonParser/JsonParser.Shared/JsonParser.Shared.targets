@@ -3,16 +3,15 @@
   <!-- Make sure this file are imported in .vcxitems -->
   <PropertyGroup>
     <JsonParserSourcesDir>$(MSBuildThisFileDirectory)JsonParser</JsonParserSourcesDir>
-    <JsonParserIncludeDirs>$(JsonParserSourcesDir);$(MSBuildThisFileDirectory)</JsonParserIncludeDirs>
     <!-- Expose own dir for other projects -->
-    <PublicIncludeDirectories>$(JsonParserIncludeDirs);$(PublicIncludeDirectories)</PublicIncludeDirectories>
+    <PublicIncludeDirectories>$(PublicIncludeDirectories);$(MSBuildThisFileDirectory);$(JsonParserSourcesDir)</PublicIncludeDirectories>
   </PropertyGroup>
   
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>
-        $(JsonParserIncludeDirs);
-        %(AdditionalIncludeDirectories)
+        %(AdditionalIncludeDirectories);
+        $(JsonParserSourcesDir)
       </AdditionalIncludeDirectories>
       <PreprocessorDefinitions>
         NOMINMAX;
