@@ -162,7 +162,7 @@ namespace HELPERS_NS {
 		}
 
 		// These resources need to be recreated every time the window size is changed.
-		void STDMETHODCALLTYPE SwapChainPanel::CreateWindowSizeDependentResources() {
+		void SwapChainPanel::CreateWindowSizeDependentResources() {
 			HRESULT hr = S_OK;
 
 			auto dxDev = this->dxDeviceSafeObj.Lock();
@@ -478,7 +478,7 @@ namespace HELPERS_NS {
 		}
 
 		// Determine the dimensions of the render target and whether it will be scaled down.
-		void STDMETHODCALLTYPE SwapChainPanel::UpdateRenderTargetSize() {
+		void SwapChainPanel::UpdateRenderTargetSize() {
 			this->m_effectiveDpi = this->m_dpi;
 			this->m_effectiveCompositionScaleX = this->m_compositionScaleX;
 			this->m_effectiveCompositionScaleY = this->m_compositionScaleY;
