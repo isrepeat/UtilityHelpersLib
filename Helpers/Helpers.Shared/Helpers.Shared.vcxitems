@@ -32,6 +32,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxDeviceCtx.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxDeviceMt.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxHelpers.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjHDR.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjProxy.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSettings.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSharedTexture.cpp" />
@@ -76,7 +77,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxgiDeviceLock.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxIncludes.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxLibs.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObj.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjBase.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjHDR.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjProxy.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSharedTexture.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\FullScreenQuad.h" />

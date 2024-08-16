@@ -162,6 +162,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\FullScreenQuad.cpp">
       <Filter>Dx</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjHDR.cpp">
+      <Filter>Dx</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Gate.h">
@@ -485,7 +488,10 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjProxy.h">
       <Filter>Dx</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObj.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjBase.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjHDR.h">
       <Filter>Dx</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\JSONConfigLoader.hpp">
