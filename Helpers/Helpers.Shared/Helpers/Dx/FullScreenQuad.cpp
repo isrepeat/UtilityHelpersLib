@@ -15,7 +15,7 @@ namespace HELPERS_NS {
 				auto dxCtx = dxDev->LockContext();
 				auto d2dCtx = dxCtx->D2D();
 
-				// Create default redner object.
+				// Create default render object.
 				auto& dxRenderObj = this->defaultRenderObj;
 
 				// Load and create shaders.
@@ -185,7 +185,7 @@ namespace HELPERS_NS {
 				auto dxCtx = dxDev->LockContext();
 				auto d3dCtx = dxCtx->D3D();
 
-				DxRenderObj* dxRenderObj = &this->defaultRenderObj;
+				DxRenderObjDefaultData* dxRenderObj = &this->defaultRenderObj;
 
 				// Update constant buffer data
 				d3dCtx->UpdateSubresource(dxRenderObj->vsConstantBuffer.Get(), 0, nullptr, &dxRenderObj->vsConstantBufferData, 0, 0);
@@ -223,7 +223,7 @@ namespace HELPERS_NS {
 			// Draw passed render obj geometry as quad with custom state (shaders, constants buffers, ...)
 			void FullScreenQuad::Draw(
 				Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureSRV,
-				DxRenderObjBase* outterRenderObj,
+				DxRenderObjBaseData* outterRenderObj,
 				std::function<void __cdecl()> setCustomState)
 			{
 				auto dxDev = this->dxDeviceSafeObj->Lock();
@@ -231,7 +231,7 @@ namespace HELPERS_NS {
 				auto dxCtx = dxDev->LockContext();
 				auto d3dCtx = dxCtx->D3D();
 
-				DxRenderObjBase* dxRenderObjBase = outterRenderObj;
+				DxRenderObjBaseData* dxRenderObjBase = outterRenderObj;
 
 				// Update constant buffer data
 				d3dCtx->UpdateSubresource(dxRenderObjBase->vsConstantBuffer.Get(), 0, nullptr, &dxRenderObjBase->vsConstantBufferData, 0, 0);

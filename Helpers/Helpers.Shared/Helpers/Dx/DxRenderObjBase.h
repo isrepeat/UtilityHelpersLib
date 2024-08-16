@@ -23,7 +23,7 @@ namespace HELPERS_NS {
 		};
 		
 
-		struct DxRenderObjBase {
+		struct DxRenderObjBaseData {
 			Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 			Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 			Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
@@ -53,44 +53,32 @@ namespace HELPERS_NS {
 			}
 		};
 
-
-		struct DxRenderObj : DxRenderObjBase {
+		struct DxRenderObjDefaultData : DxRenderObjBaseData {
 			Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
 
 			void Reset() override {
-				this->DxRenderObjBase::Reset();
+				this->DxRenderObjBaseData::Reset();
 				this->pixelShader.Reset();
 			}
 		};
 
-		struct DxRenderObjHDR : DxRenderObjBase {
-			Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShaderHDR;
-			Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShaderToneMap;
 
-			void Reset() override {
-				this->DxRenderObjBase::Reset();
-				this->pixelShaderHDR.Reset();
-				this->pixelShaderToneMap.Reset();
-			}
-		};
-
-
-		template <typename DxRenderObjT, typename... Args>
+		template <typename DxRenderObjDataT, typename... Args>
 		class DxRenderObjWrapper {
 		public:
 			virtual void CreateWindowSizeDependentResources() = 0;
 			virtual void ReleaseDeviceDependentResources() = 0;
 
-			std::unique_ptr<DxRenderObjT, Args...>& operator->() {
-				return this->dxRenderObj;
+			std::unique_ptr<DxRenderObjDataT, Args...>& operator->() {
+				return this->dxRenderObjData;
 			}
 
-			std::unique_ptr<DxRenderObjT, Args...>& GetObj() {
-				return this->dxRenderObj;
+			std::unique_ptr<DxRenderObjDataT, Args...>& GetObj() {
+				return this->dxRenderObjData;
 			}
 
 		protected:
-			std::unique_ptr<DxRenderObjT, Args...> dxRenderObj;
+			std::unique_ptr<DxRenderObjDataT, Args...> dxRenderObjData;
 		};
 	}
 }

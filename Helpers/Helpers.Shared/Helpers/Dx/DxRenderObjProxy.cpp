@@ -11,7 +11,7 @@ namespace HELPERS_NS {
 				: swapChainPanel{ swapChainPanel }
 				, textureFormat{ textureFormat }
 			{
-				this->dxRenderObj = this->CreateObject(this->swapChainPanel->GetDxDevice());
+				this->dxRenderObjData = this->CreateObjectData(this->swapChainPanel->GetDxDevice());
 				this->CreateWindowSizeDependentResources();
 			}
 
@@ -20,10 +20,10 @@ namespace HELPERS_NS {
 			}
 
 			void DxRenderObjProxy::ReleaseDeviceDependentResources() {
-				this->dxRenderObj->Reset();
+				this->dxRenderObjData->Reset();
 			}
 
-			std::unique_ptr<DxRenderObj> DxRenderObjProxy::CreateObject(DxDeviceSafeObj* dxDeviceSafeObj) {
+			std::unique_ptr<DxRenderObjDefaultData> DxRenderObjProxy::CreateObjectData(DxDeviceSafeObj* dxDeviceSafeObj) {
 				HRESULT hr = S_OK;
 
 				auto dxDev = dxDeviceSafeObj->Lock();
@@ -31,7 +31,7 @@ namespace HELPERS_NS {
 				auto dxCtx = dxDev->LockContext();
 				auto d2dCtx = dxCtx->D2D();
 
-				auto dxRenderObj = std::make_unique<DxRenderObj>();
+				auto dxRenderObjData = std::make_unique<DxRenderObjDefaultData>();
 
 				// Load and create shaders.
 				auto vertexShaderBlob = H::FS::ReadFile(g_shaderLoadDir / L"defaultVS.cso");
@@ -39,7 +39,7 @@ namespace HELPERS_NS {
 					vertexShaderBlob.data(),
 					vertexShaderBlob.size(),
 					nullptr,
-					dxRenderObj->vertexShader.ReleaseAndGetAddressOf()
+					dxRenderObjData->vertexShader.ReleaseAndGetAddressOf()
 				);
 				H::System::ThrowIfFailed(hr);
 
@@ -48,7 +48,7 @@ namespace HELPERS_NS {
 					pixelShaderBlob.data(),
 					pixelShaderBlob.size(),
 					nullptr,
-					dxRenderObj->pixelShader.ReleaseAndGetAddressOf()
+					dxRenderObjData->pixelShader.ReleaseAndGetAddressOf()
 				);
 				H::System::ThrowIfFailed(hr);
 
@@ -63,7 +63,7 @@ namespace HELPERS_NS {
 					_countof(inputElementDesc),
 					vertexShaderBlob.data(),
 					vertexShaderBlob.size(),
-					dxRenderObj->inputLayout.ReleaseAndGetAddressOf()
+					dxRenderObjData->inputLayout.ReleaseAndGetAddressOf()
 				);
 				H::System::ThrowIfFailed(hr);
 
@@ -91,7 +91,7 @@ namespace HELPERS_NS {
 					hr = d3dDev->CreateBuffer(
 						&vertexBufferDesc,
 						&initData,
-						dxRenderObj->vertexBuffer.ReleaseAndGetAddressOf()
+						dxRenderObjData->vertexBuffer.ReleaseAndGetAddressOf()
 					);
 					H::System::ThrowIfFailed(hr);
 				}
@@ -115,7 +115,7 @@ namespace HELPERS_NS {
 					hr = d3dDev->CreateBuffer(
 						&indexBufferDesc,
 						&initData,
-						dxRenderObj->indexBuffer.ReleaseAndGetAddressOf()
+						dxRenderObjData->indexBuffer.ReleaseAndGetAddressOf()
 					);
 					H::System::ThrowIfFailed(hr);
 				}
@@ -133,14 +133,14 @@ namespace HELPERS_NS {
 					samplerDesc.MinLOD = 0;
 					samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-					hr = d3dDev->CreateSamplerState(&samplerDesc, dxRenderObj->sampler.ReleaseAndGetAddressOf());
+					hr = d3dDev->CreateSamplerState(&samplerDesc, dxRenderObjData->sampler.ReleaseAndGetAddressOf());
 					H::System::ThrowIfFailed(hr);
 				}
 
 				// VS constant buffer.
 				{
 					DirectX::XMStoreFloat4x4(
-						&dxRenderObj->vsConstantBufferData.mWorldViewProj,
+						&dxRenderObjData->vsConstantBufferData.mWorldViewProj,
 						DirectX::XMMatrixTranspose(
 							DirectX::XMMatrixIdentity()
 						)
@@ -157,7 +157,7 @@ namespace HELPERS_NS {
 					hr = d3dDev->CreateBuffer(
 						&constantbufferDesc,
 						nullptr,
-						dxRenderObj->vsConstantBuffer.ReleaseAndGetAddressOf()
+						dxRenderObjData->vsConstantBuffer.ReleaseAndGetAddressOf()
 					);
 					H::System::ThrowIfFailed(hr);
 				}
@@ -165,7 +165,7 @@ namespace HELPERS_NS {
 				// PS constant buffer.
 				{
 					// Store default values
-					dxRenderObj->psConstantBufferData.someData = { 0.0f, 0.0f, 0.0f, 0.0f };
+					dxRenderObjData->psConstantBufferData.someData = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 					D3D11_BUFFER_DESC constantbufferDesc;
 					constantbufferDesc.ByteWidth = sizeof(PS_CONSTANT_BUFFER);
@@ -178,12 +178,12 @@ namespace HELPERS_NS {
 					hr = d3dDev->CreateBuffer(
 						&constantbufferDesc,
 						nullptr,
-						dxRenderObj->psConstantBuffer.ReleaseAndGetAddressOf()
+						dxRenderObjData->psConstantBuffer.ReleaseAndGetAddressOf()
 					);
 					H::System::ThrowIfFailed(hr);
 				}
 
-				return dxRenderObj;
+				return dxRenderObjData;
 			}
 
 			void DxRenderObjProxy::CreateTexture() {
@@ -208,15 +208,15 @@ namespace HELPERS_NS {
 				descTex.Height = height;
 				descTex.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
-				hr = d3dDev->CreateTexture2D(&descTex, nullptr, this->dxRenderObj->texture.ReleaseAndGetAddressOf());
+				hr = d3dDev->CreateTexture2D(&descTex, nullptr, this->dxRenderObjData->texture.ReleaseAndGetAddressOf());
 				H::System::ThrowIfFailed(hr);
 
 				CD3D11_RENDER_TARGET_VIEW_DESC descRTV(D3D11_RTV_DIMENSION_TEXTURE2D, descTex.Format);
-				hr = d3dDev->CreateRenderTargetView(this->dxRenderObj->texture.Get(), &descRTV, this->dxRenderObj->textureRTV.ReleaseAndGetAddressOf());
+				hr = d3dDev->CreateRenderTargetView(this->dxRenderObjData->texture.Get(), &descRTV, this->dxRenderObjData->textureRTV.ReleaseAndGetAddressOf());
 				H::System::ThrowIfFailed(hr);
 
 				CD3D11_SHADER_RESOURCE_VIEW_DESC descSRV(D3D11_SRV_DIMENSION_TEXTURE2D, descTex.Format, 0, 1);
-				hr = d3dDev->CreateShaderResourceView(this->dxRenderObj->texture.Get(), &descSRV, this->dxRenderObj->textureSRV.ReleaseAndGetAddressOf());
+				hr = d3dDev->CreateShaderResourceView(this->dxRenderObjData->texture.Get(), &descSRV, this->dxRenderObjData->textureSRV.ReleaseAndGetAddressOf());
 				H::System::ThrowIfFailed(hr);
 			}
 		}
