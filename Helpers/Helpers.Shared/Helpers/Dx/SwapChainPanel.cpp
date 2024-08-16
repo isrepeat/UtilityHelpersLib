@@ -1,6 +1,7 @@
 ﻿#include "SwapChainPanel.h"
 #include <MagicEnum/MagicEnum.h>
 #include <Helpers/Dx/DxHelpers.h>
+#include <Helpers/Passkey.hpp>
 #include <Helpers/Logger.h>
 #include <Helpers/System.h>
 
@@ -105,6 +106,10 @@ namespace HELPERS_NS {
 			, m_deviceNotify{ nullptr }
 		{
 			HRESULT hr = S_OK;
+			{
+				auto dxDev = this->dxDeviceSafeObj.Lock();
+				dxDev->SetAssociatedSwapChainPanel(Passkey<SwapChainPanel*>{}, this);
+			}
 
 			// Disable HDR if we are on an OS that can't support FLIP swap effects.
 			if (this->initData.optionFlags.Has(InitData::Options::EnableHDR)) {

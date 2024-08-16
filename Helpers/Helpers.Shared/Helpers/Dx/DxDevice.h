@@ -9,6 +9,7 @@
 
 #include <Helpers/ThreadSafeObject.hpp>
 #include <Helpers/Com/ComMutex.h>
+#include <Helpers/Passkey.hpp>
 #include <Helpers/Thread.h>
 #include <Helpers/System.h>
 #include <Helpers/Math.h>
@@ -21,6 +22,9 @@
 
 namespace HELPERS_NS {
 	namespace Dx {
+		class SwapChainPanel;
+		class ISwapChainPanel;
+
 		namespace details {
 			struct DxDeviceParams {
 				static const uint32_t DefaultD3D11CreateFlags;
@@ -38,8 +42,14 @@ namespace HELPERS_NS {
 
 				DxDeviceCtxSafeObj_t::_Locked LockContext() const;
 				D3D_FEATURE_LEVEL GetDeviceFeatureLevel() const;
-
+				
 				void CreateDxgiFactory();
+
+				void SetAssociatedSwapChainPanel(
+					Passkey<HELPERS_NS::Dx::SwapChainPanel*>,
+					Microsoft::WRL::ComPtr<HELPERS_NS::Dx::ISwapChainPanel> associatedSwapChainPanel);
+				
+				Microsoft::WRL::ComPtr<HELPERS_NS::Dx::ISwapChainPanel> GetAssociatedSwapChainPanel() const;
 
 			private:
 				void CreateDeviceIndependentResources();
@@ -51,6 +61,7 @@ namespace HELPERS_NS {
 			private:
 				DxDeviceCtxSafeObj_t ctxSafeObj;
 				D3D_FEATURE_LEVEL featureLevel;
+				Microsoft::WRL::ComPtr<HELPERS_NS::Dx::ISwapChainPanel> associatedSwapChainPanel;
 			};
 
 
