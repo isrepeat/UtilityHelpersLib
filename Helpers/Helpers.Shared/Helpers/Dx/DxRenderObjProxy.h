@@ -14,6 +14,7 @@ namespace HELPERS_NS {
 
 				void CreateWindowSizeDependentResources() override;
 				void ReleaseDeviceDependentResources() override;
+				void UpdateBuffers() override;
 
 			private:
 				std::unique_ptr<DxRenderObjDefaultData> CreateObjectData(DxDeviceSafeObj* dxDeviceSafeObj);

@@ -23,6 +23,16 @@ namespace HELPERS_NS {
 				this->dxRenderObjData->Reset();
 			}
 
+			void DxRenderObjProxy::UpdateBuffers() {
+				auto dxDev = this->swapChainPanel->GetDxDevice()->Lock();
+				auto d3dDev = dxDev->GetD3DDevice();
+				auto dxCtx = dxDev->LockContext();
+				auto d3dCtx = dxCtx->D3D();
+
+				d3dCtx->UpdateSubresource(this->dxRenderObjData->vsConstantBuffer.Get(), 0, nullptr, &this->dxRenderObjData->vsConstantBufferData, 0, 0);
+				d3dCtx->UpdateSubresource(this->dxRenderObjData->psConstantBuffer.Get(), 0, nullptr, &this->dxRenderObjData->psConstantBufferData, 0, 0);
+			}
+
 			std::unique_ptr<DxRenderObjDefaultData> DxRenderObjProxy::CreateObjectData(DxDeviceSafeObj* dxDeviceSafeObj) {
 				HRESULT hr = S_OK;
 
@@ -32,41 +42,6 @@ namespace HELPERS_NS {
 				auto d2dCtx = dxCtx->D2D();
 
 				auto dxRenderObjData = std::make_unique<DxRenderObjDefaultData>();
-
-				// Load and create shaders.
-				auto vertexShaderBlob = H::FS::ReadFile(g_shaderLoadDir / L"defaultVS.cso");
-				hr = d3dDev->CreateVertexShader(
-					vertexShaderBlob.data(),
-					vertexShaderBlob.size(),
-					nullptr,
-					dxRenderObjData->vertexShader.ReleaseAndGetAddressOf()
-				);
-				H::System::ThrowIfFailed(hr);
-
-				auto pixelShaderBlob = H::FS::ReadFile(g_shaderLoadDir / L"defaultPS.cso");
-				hr = d3dDev->CreatePixelShader(
-					pixelShaderBlob.data(),
-					pixelShaderBlob.size(),
-					nullptr,
-					dxRenderObjData->pixelShader.ReleaseAndGetAddressOf()
-				);
-				H::System::ThrowIfFailed(hr);
-
-				// Create input layout.
-				static const D3D11_INPUT_ELEMENT_DESC inputElementDesc[2] = {
-					{ "SV_Position", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA,  0 },
-					{ "TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA , 0 },
-				};
-
-				hr = d3dDev->CreateInputLayout(
-					inputElementDesc,
-					_countof(inputElementDesc),
-					vertexShaderBlob.data(),
-					vertexShaderBlob.size(),
-					dxRenderObjData->inputLayout.ReleaseAndGetAddressOf()
-				);
-				H::System::ThrowIfFailed(hr);
-
 
 				// Create vertex buffer.
 				{
@@ -122,18 +97,44 @@ namespace HELPERS_NS {
 
 				// Create sampler.
 				{
-					D3D11_SAMPLER_DESC samplerDesc = {};
-					samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-					samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-					samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-					samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-					samplerDesc.MaxAnisotropy = 1;
-					samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+					dxRenderObjData->sampler = H::Dx::CreateLinearSampler(d3dDev);
+				}
 
-					samplerDesc.MinLOD = 0;
-					samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+				// Load vertex shader and create input layout.
+				{
+					auto vertexShaderBlob = H::FS::ReadFile(g_shaderLoadDir / L"defaultVS.cso");
+					hr = d3dDev->CreateVertexShader(
+						vertexShaderBlob.data(),
+						vertexShaderBlob.size(),
+						nullptr,
+						dxRenderObjData->vertexShader.ReleaseAndGetAddressOf()
+					);
+					H::System::ThrowIfFailed(hr);
 
-					hr = d3dDev->CreateSamplerState(&samplerDesc, dxRenderObjData->sampler.ReleaseAndGetAddressOf());
+					static const D3D11_INPUT_ELEMENT_DESC inputElementDesc[2] = {
+						{ "SV_Position", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA,  0 },
+						{ "TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA , 0 },
+					};
+
+					hr = d3dDev->CreateInputLayout(
+						inputElementDesc,
+						_countof(inputElementDesc),
+						vertexShaderBlob.data(),
+						vertexShaderBlob.size(),
+						dxRenderObjData->inputLayout.ReleaseAndGetAddressOf()
+					);
+					H::System::ThrowIfFailed(hr);
+				}
+
+				// Load pixel shaders.
+				{
+					auto pixelShaderBlob = H::FS::ReadFile(g_shaderLoadDir / L"defaultPS.cso");
+					hr = d3dDev->CreatePixelShader(
+						pixelShaderBlob.data(),
+						pixelShaderBlob.size(),
+						nullptr,
+						dxRenderObjData->pixelShader.ReleaseAndGetAddressOf()
+					);
 					H::System::ThrowIfFailed(hr);
 				}
 
@@ -147,7 +148,7 @@ namespace HELPERS_NS {
 					);
 
 					D3D11_BUFFER_DESC constantbufferDesc;
-					constantbufferDesc.ByteWidth = sizeof(VS_CONSTANT_BUFFER);
+					constantbufferDesc.ByteWidth = sizeof(DxRenderObjDefaultData::VS_CONSTANT_BUFFER);
 					constantbufferDesc.Usage = D3D11_USAGE_DEFAULT;
 					constantbufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 					constantbufferDesc.CPUAccessFlags = 0;
@@ -168,7 +169,7 @@ namespace HELPERS_NS {
 					dxRenderObjData->psConstantBufferData.someData = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 					D3D11_BUFFER_DESC constantbufferDesc;
-					constantbufferDesc.ByteWidth = sizeof(PS_CONSTANT_BUFFER);
+					constantbufferDesc.ByteWidth = sizeof(DxRenderObjDefaultData::PS_CONSTANT_BUFFER);
 					constantbufferDesc.Usage = D3D11_USAGE_DEFAULT;
 					constantbufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 					constantbufferDesc.CPUAccessFlags = 0;
@@ -182,6 +183,7 @@ namespace HELPERS_NS {
 					);
 					H::System::ThrowIfFailed(hr);
 				}
+
 
 				return dxRenderObjData;
 			}

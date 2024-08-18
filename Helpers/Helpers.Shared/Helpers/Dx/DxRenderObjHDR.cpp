@@ -1,7 +1,6 @@
-#include "DxRenderObjProxy.h"
+#include "DxRenderObjHDR.h"
 #include <Helpers/Dx/Shaders/ShadersCommon.h>
 #include <Helpers/FileSystem.h>
-#include "DxRenderObjHDR.h"
 
 namespace HELPERS_NS {
     namespace Dx {
@@ -51,77 +50,10 @@ namespace HELPERS_NS {
 
 				auto dxRenderObjData = std::make_unique<DxRenderObjHDRData>();
 				
-				// Load and create shaders.
-				if (params.vertexShader.empty()) {
-					params.vertexShader = g_shaderLoadDir / L"defaultVS.cso";
-				}
-				else {
-					params.vertexShader = H::ExePath() / params.vertexShader;
-				}
-
-				if (params.pixelShaderHDR.empty()) {
-					params.pixelShaderHDR = g_shaderLoadDir / L"defaultPS.cso";
-				}
-				else {
-					params.pixelShaderHDR = H::ExePath() / params.pixelShaderHDR;
-				}
-
-				if (params.pixelShaderToneMap.empty()) {
-					params.pixelShaderToneMap = g_shaderLoadDir / L"defaultPS.cso";
-				}
-				else {
-					params.pixelShaderToneMap = H::ExePath() / params.pixelShaderToneMap;
-				}
-
-				auto vertexShaderBlob = H::FS::ReadFile(params.vertexShader);
-				hr = d3dDev->CreateVertexShader(
-					vertexShaderBlob.data(),
-					vertexShaderBlob.size(),
-					nullptr,
-					dxRenderObjData->vertexShader.ReleaseAndGetAddressOf()
-				);
-				H::System::ThrowIfFailed(hr);
-
-				auto pixelShaderHDRBlob = H::FS::ReadFile(params.pixelShaderHDR);
-				hr = d3dDev->CreatePixelShader(
-					pixelShaderHDRBlob.data(),
-					pixelShaderHDRBlob.size(),
-					nullptr,
-					dxRenderObjData->pixelShaderHDR.ReleaseAndGetAddressOf()
-				);
-				H::System::ThrowIfFailed(hr);
-
-				auto pixelShaderToneMapBlob = H::FS::ReadFile(params.pixelShaderToneMap);
-				hr = d3dDev->CreatePixelShader(
-					pixelShaderToneMapBlob.data(),
-					pixelShaderToneMapBlob.size(),
-					nullptr,
-					dxRenderObjData->pixelShaderToneMap.ReleaseAndGetAddressOf()
-				);
-				H::System::ThrowIfFailed(hr);
-
-				// Create input layout.
-				static const D3D11_INPUT_ELEMENT_DESC inputElementDesc[2] = {
-					{ "SV_Position", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA,  0 },
-					{ "TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA , 0 },
-				};
-
-				hr = d3dDev->CreateInputLayout(
-					inputElementDesc,
-					_countof(inputElementDesc),
-					vertexShaderBlob.data(),
-					vertexShaderBlob.size(),
-					dxRenderObjData->inputLayout.ReleaseAndGetAddressOf()
-				);
-				H::System::ThrowIfFailed(hr);
-
-
 				// Create vertex buffer.
 				{
-					float w = 0.5f;
-					float h = 0.5f;
-					//float w = 1.0f;
-					//float h = 1.0f;
+					float w = 1.0f;
+					float h = 1.0f;
 					static const VertexPositionTexcoord vertexData[4] = {
 						{ { -w, -h, 0.1f, 1.0f }, { 0.0f, 1.0f } }, // LB
 						{ { -w,  h, 0.1f, 1.0f }, { 0.0f, 0.0f } }, // LT
@@ -172,29 +104,74 @@ namespace HELPERS_NS {
 
 				// Create sampler.
 				{
-					D3D11_SAMPLER_DESC samplerDesc = {};
-					//samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-					//samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-					//samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-					//samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-					//samplerDesc.MaxAnisotropy = 1;
-					//samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+					dxRenderObjData->sampler = H::Dx::CreateLinearSampler(d3dDev);
+				}
 
-					//samplerDesc.MinLOD = 0;
-					//samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+				// Load vertex shader and create input layout.
+				{
+					if (params.vertexShader.empty()) {
+						params.vertexShader = g_shaderLoadDir / L"defaultVS.cso";
+					}
+					else {
+						params.vertexShader = H::ExePath() / params.vertexShader;
+					}
 
-					samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-					samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-					samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-					samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-					samplerDesc.MipLODBias = 0.0f;
-					samplerDesc.MaxAnisotropy = 1;
-					samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-					std::memset(samplerDesc.BorderColor, 0, sizeof samplerDesc.BorderColor);
-					samplerDesc.MinLOD = -FLT_MAX;
-					samplerDesc.MaxLOD = FLT_MAX;
+					auto vertexShaderBlob = H::FS::ReadFile(params.vertexShader);
+					hr = d3dDev->CreateVertexShader(
+						vertexShaderBlob.data(),
+						vertexShaderBlob.size(),
+						nullptr,
+						dxRenderObjData->vertexShader.ReleaseAndGetAddressOf()
+					);
+					H::System::ThrowIfFailed(hr);
 
-					hr = d3dDev->CreateSamplerState(&samplerDesc, dxRenderObjData->sampler.ReleaseAndGetAddressOf());
+					static const D3D11_INPUT_ELEMENT_DESC inputElementDesc[2] = {
+						{ "SV_Position", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA,  0 },
+						{ "TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA , 0 },
+					};
+
+					hr = d3dDev->CreateInputLayout(
+						inputElementDesc,
+						_countof(inputElementDesc),
+						vertexShaderBlob.data(),
+						vertexShaderBlob.size(),
+						dxRenderObjData->inputLayout.ReleaseAndGetAddressOf()
+					);
+					H::System::ThrowIfFailed(hr);
+				}
+
+				// Load pixel shaders.
+				{
+					if (params.pixelShaderHDR.empty()) {
+						params.pixelShaderHDR = g_shaderLoadDir / L"defaultPS.cso";
+					}
+					else {
+						params.pixelShaderHDR = H::ExePath() / params.pixelShaderHDR;
+					}
+
+					if (params.pixelShaderToneMap.empty()) {
+						params.pixelShaderToneMap = g_shaderLoadDir / L"defaultPS.cso";
+					}
+					else {
+						params.pixelShaderToneMap = H::ExePath() / params.pixelShaderToneMap;
+					}
+
+					auto pixelShaderHDRBlob = H::FS::ReadFile(params.pixelShaderHDR);
+					hr = d3dDev->CreatePixelShader(
+						pixelShaderHDRBlob.data(),
+						pixelShaderHDRBlob.size(),
+						nullptr,
+						dxRenderObjData->pixelShaderHDR.ReleaseAndGetAddressOf()
+					);
+					H::System::ThrowIfFailed(hr);
+
+					auto pixelShaderToneMapBlob = H::FS::ReadFile(params.pixelShaderToneMap);
+					hr = d3dDev->CreatePixelShader(
+						pixelShaderToneMapBlob.data(),
+						pixelShaderToneMapBlob.size(),
+						nullptr,
+						dxRenderObjData->pixelShaderToneMap.ReleaseAndGetAddressOf()
+					);
 					H::System::ThrowIfFailed(hr);
 				}
 
@@ -208,7 +185,7 @@ namespace HELPERS_NS {
 					);
 
 					D3D11_BUFFER_DESC constantbufferDesc;
-					constantbufferDesc.ByteWidth = sizeof(VS_CONSTANT_BUFFER);
+					constantbufferDesc.ByteWidth = sizeof(DxRenderObjHDRData::VS_CONSTANT_BUFFER);
 					constantbufferDesc.Usage = D3D11_USAGE_DEFAULT;
 					constantbufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 					constantbufferDesc.CPUAccessFlags = 0;
@@ -226,10 +203,10 @@ namespace HELPERS_NS {
 				// PS constant buffer.
 				{
 					// Store default values
-					dxRenderObjData->psConstantBufferData.someData = { 0.0f, 0.0f, 0.0f, 0.0f };
+					dxRenderObjData->psConstantBufferData.luminance = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 					D3D11_BUFFER_DESC constantbufferDesc;
-					constantbufferDesc.ByteWidth = sizeof(PS_CONSTANT_BUFFER);
+					constantbufferDesc.ByteWidth = sizeof(DxRenderObjHDRData::PS_CONSTANT_BUFFER);
 					constantbufferDesc.Usage = D3D11_USAGE_DEFAULT;
 					constantbufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 					constantbufferDesc.CPUAccessFlags = 0;

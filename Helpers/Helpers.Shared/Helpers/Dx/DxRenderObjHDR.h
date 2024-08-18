@@ -8,11 +8,29 @@ namespace HELPERS_NS {
 	namespace Dx {
 		namespace details {
 			struct DxRenderObjHDRData : DxRenderObjBaseData {
+				struct VS_CONSTANT_BUFFER {
+					DirectX::XMFLOAT4X4 mWorldViewProj;
+				};
+				struct PS_CONSTANT_BUFFER {
+					DirectX::XMFLOAT4 luminance;
+				};
+
+				VS_CONSTANT_BUFFER vsConstantBufferData;
+				PS_CONSTANT_BUFFER psConstantBufferData;
+				Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
+				Microsoft::WRL::ComPtr<ID3D11Buffer> psConstantBuffer;
+
+				Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
+				Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 				Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShaderHDR;
 				Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShaderToneMap;
 
 				void Reset() override {
 					this->DxRenderObjBaseData::Reset();
+					this->vsConstantBuffer.Reset();
+					this->psConstantBuffer.Reset();
+					this->vertexShader.Reset();
+					this->inputLayout.Reset();
 					this->pixelShaderHDR.Reset();
 					this->pixelShaderToneMap.Reset();
 				}
