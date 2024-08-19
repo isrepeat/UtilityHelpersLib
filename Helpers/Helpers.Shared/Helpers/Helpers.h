@@ -21,7 +21,7 @@
 namespace HELPERS_NS {
     std::vector<std::string> split(std::string str, const std::string& delim);
     std::vector<std::wstring> split(std::wstring str, const std::wstring& delim);
-    
+
     std::wstring CreateStringParams(const std::vector<std::pair<std::wstring, std::wstring>>& params);
     std::vector<std::wstring> ParseArgsFromString(const std::wstring& str);
     std::map<std::wstring, std::wstring> ParseArgsFromStringToMap(const std::wstring& str);
@@ -53,17 +53,19 @@ namespace HELPERS_NS {
     DWORD GetProcessID(const std::wstring& processName);
     MODULEENTRY32 CheckDllInProcess(DWORD dwPID, std::wstring szDllname);
 
-    bool ExecuteCommandLine(std::wstring parameters, bool admin = false, DWORD showFlag = SW_HIDE);
+    BOOL ExecuteCommandLineW(std::wstring command, bool admin = false, DWORD showFlag = SW_HIDE, DWORD* exitCode);
+    BOOL ExecuteCommandLineA(std::string command, bool admin = false, DWORD showFlag = SW_HIDE, DWORD* exitCode);
+
     void OpenLink(std::wstring link);
 #endif
 
     template<typename Duration>
     uint64_t GetCurrentTimestamp() {
-    	auto currentTimestamp = std::chrono::high_resolution_clock::now();
-    	auto duration = currentTimestamp.time_since_epoch();
-    
-    	auto durationMilisecs = std::chrono::template duration_cast<Duration>(duration);
-    	return durationMilisecs.count();
+        auto currentTimestamp = std::chrono::high_resolution_clock::now();
+        auto duration = currentTimestamp.time_since_epoch();
+
+        auto durationMilisecs = std::chrono::template duration_cast<Duration>(duration);
+        return durationMilisecs.count();
     }
 
     inline bool IsEven(int number) {
