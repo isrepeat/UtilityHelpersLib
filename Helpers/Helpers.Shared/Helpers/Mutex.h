@@ -3,6 +3,8 @@
 
 namespace HELPERS_NS {
 	struct IMutex {
+		virtual ~IMutex() = default;
+
 		virtual void lock() = 0;
 		virtual void unlock() = 0;
 	};

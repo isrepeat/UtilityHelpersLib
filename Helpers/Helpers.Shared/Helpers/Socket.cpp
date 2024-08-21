@@ -35,7 +35,7 @@ namespace HELPERS_NS {
                     LOG_ERROR_D("soket connect error = {}", errCode.message());
 
                     if (--attempts > 0) {
-                        LOG_DEBUG_D("try connect again, ({} attempts left)");
+                        LOG_DEBUG_D("try connect again, ({} attempts left)", attempts);
                         std::this_thread::sleep_for(std::chrono::milliseconds(1'000));
                     }
                     else {
