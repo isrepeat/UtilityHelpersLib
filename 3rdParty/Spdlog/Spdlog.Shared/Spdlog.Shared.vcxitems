@@ -84,6 +84,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Spdlog\spdlog\fwd.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Spdlog\spdlog\logger-inl.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Spdlog\spdlog\logger.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Spdlog\spdlog\mdc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Spdlog\spdlog\pattern_formatter-inl.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Spdlog\spdlog\pattern_formatter.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Spdlog\spdlog\sinks\android_sink.h" />

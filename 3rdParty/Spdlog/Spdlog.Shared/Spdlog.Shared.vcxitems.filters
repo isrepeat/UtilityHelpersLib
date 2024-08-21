@@ -330,6 +330,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Spdlog\DynamicFileSink.h">
       <Filter>Sources</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Spdlog\spdlog\mdc.h">
+      <Filter>Sources\spdlog</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)Spdlog\LogHelpers.cpp">

@@ -16,7 +16,7 @@
       <PreprocessorDefinitions>
         SPDLOG_SOURCES;
         SPDLOG_WCHAR_FILENAMES;
-        SPDLOG_WCHAR_TO_ANSI_SUPPORT;
+        SPDLOG_WCHAR_TO_UTF8_SUPPORT;
         %(PreprocessorDefinitions)
       </PreprocessorDefinitions>
     <LanguageStandard>stdcpp20</LanguageStandard>
