@@ -16,13 +16,16 @@
   </ItemGroup>
 
 
+  <!-- Explicitly add $(MSBuildThisFileDirectory) because it automatically 
+       added only with direct import but not through another .targets.
+  -->
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>
         %(AdditionalIncludeDirectories);
+        $(MSBuildThisFileDirectory)
       </AdditionalIncludeDirectories>
       <PreprocessorDefinitions>
-        INSIDE_HELPERS_PROJECT;
         %(PreprocessorDefinitions)
       </PreprocessorDefinitions>
     </ClCompile>
