@@ -55,96 +55,61 @@ namespace HELPERS_NS {
 
 	bool RegistryManager::HasRegValue(HKey hKey, const std::filesystem::path& path, const std::string& keyName) {
 		LOG_FUNCTION_ENTER("HasRegValue(hKey = {}, path = {}, keyName = {})", MagicEnum::ToString(hKey), path, keyName);
-		HRESULT hr = S_OK;
-
-		std::vector<char> buff(255);
-		DWORD sz = buff.size();
-
-		auto status = RegGetValueA(Tools::ConvertHKeyToWin32HKEY(hKey), path.string().c_str(), keyName.c_str(), RRF_RT_ANY | RRF_SUBKEY_WOW6464KEY, NULL, buff.data(), &sz);
-		hr = HRESULT_FROM_WIN32(status);
-		if (FAILED(hr)) {
-			LOG_FAILED(hr);
-			LOG_DEBUG_D("Not found reg value");
-			return false;
-		}
-
-		return true;
+		return RegistryManager::HasRegValue({ RegAction::Get, hKey, path, keyName });
 	}
 
 	std::string RegistryManager::GetRegValue(HKey hKey, const std::filesystem::path& path, const std::string& keyName) {
 		LOG_FUNCTION_ENTER("GetRegValue(hKey = {}, path = {}, keyName = {})", MagicEnum::ToString(hKey), path, keyName);
-		HRESULT hr = S_OK;
-
-		std::vector<char> buff(255);
-		DWORD sz = buff.size();
-
-		auto status = RegGetValueA(Tools::ConvertHKeyToWin32HKEY(hKey), path.string().c_str(), keyName.c_str(), RRF_RT_ANY | RRF_SUBKEY_WOW6464KEY, NULL, buff.data(), &sz);
-		hr = HRESULT_FROM_WIN32(status);
-		if (FAILED(hr)) {
-			LOG_FAILED(hr);
-			LOG_WARNING_D("Can't get reg value. Status = {}", status);
-			return "";
-		}
-
-		return H::VecToStr(buff);
+		return RegistryManager::GetRegValue({ RegAction::Get, hKey, path, keyName });
 	}
 
 	// TODO: rewrite with wstring (be careful with double length of character)
 	void RegistryManager::SetRegValue(HKey hKey, const std::filesystem::path& path, const std::string& keyName, const std::string& value) {
 		LOG_FUNCTION_ENTER("SetRegValue(hKey = {}, path = {}, keyName = {}, value = {})", MagicEnum::ToString(hKey), path, keyName, value);
-		HRESULT hr = S_OK;
-
-		auto status = RegSetKeyValueA(Tools::ConvertHKeyToWin32HKEY(hKey), path.string().c_str(), keyName.c_str(), REG_SZ, value.c_str(), value.size());
-		hr = HRESULT_FROM_WIN32(status);
-		if (FAILED(hr)) {
-			LOG_FAILED(hr);
-			LOG_WARNING_D("Can't set reg value. Status = {}.", status);
-
-			if (hr == E_ACCESSDENIED) {
-				LOG_DEBUG_D("Try set reg value via admin shell ...");
-
-				auto regShellCommand = RegistryManager::MakeRegShellCommand({ RegAction::Add, hKey, path, keyName, value });
-				RegistryManager::ExecuteRegCommandWithShellAdmin(regShellCommand);
-			}
-		}
+		RegistryManager::SetRegValue({ RegAction::Add, hKey, path, keyName, value });
 	}
 
 
-
-	bool RegistryManager::HasRegValue(RegCommand regCommand) {
-		auto& [regAction, hKey, path, keyName, value] = regCommand;
-		LOG_FUNCTION_ENTER("HasRegValue([hKey = {}, path = {}, keyName = {}, value = {}]", MagicEnum::ToString(regAction), MagicEnum::ToString(hKey), path, keyName, value);
-		HRESULT hr = S_OK;
-
-		std::vector<char> buff(255);
-		DWORD sz = buff.size();
-
-		auto status = RegGetValueA(Tools::ConvertHKeyToWin32HKEY(hKey), path.string().c_str(), keyName.c_str(), RRF_RT_ANY | RRF_SUBKEY_WOW6464KEY, NULL, buff.data(), &sz);
-		hr = HRESULT_FROM_WIN32(status);
-		if (FAILED(hr)) {
-			LOG_FAILED(hr);
-			LOG_DEBUG_D("Not found reg value");
-			return false;
-		}
-		return true;
-	}
 
 	std::string RegistryManager::GetRegValue(RegCommand regCommand)	{
 		auto& [regAction, hKey, path, keyName, value] = regCommand;
 		LOG_FUNCTION_ENTER("GetRegValue([hKey = {}, path = {}, keyName = {}, value = {}]", MagicEnum::ToString(regAction), MagicEnum::ToString(hKey), path, keyName, value);
 		HRESULT hr = S_OK;
 
-		std::vector<char> buff(255);
-		DWORD sz = buff.size();
+		std::vector<char> buffer(255);
+		DWORD dataSize = buffer.size();
 
-		auto status = RegGetValueA(Tools::ConvertHKeyToWin32HKEY(hKey), path.string().c_str(), keyName.c_str(), RRF_RT_ANY | RRF_SUBKEY_WOW6464KEY, NULL, buff.data(), &sz);
-		hr = HRESULT_FROM_WIN32(status);
+		do {
+			auto status = RegGetValueA(
+				Tools::ConvertHKeyToWin32HKEY(hKey),
+				path.string().c_str(),
+				keyName.c_str(),
+				RRF_RT_ANY | RRF_ZEROONFAILURE | RRF_SUBKEY_WOW6464KEY,
+				NULL,
+				buffer.data(),
+				&dataSize
+			);
+			hr = HRESULT_FROM_WIN32(status);
+
+			if (hr == ERROR_MORE_DATA) {
+				buffer.resize(dataSize);
+			}
+		} while (hr == ERROR_MORE_DATA);
+
 		if (FAILED(hr)) {
 			LOG_FAILED(hr);
 			LOG_DEBUG_D("Not found reg value");
 			return "";
 		}
-		return H::VecToStr(buff);
+		return H::VecToStr(buffer);
+	}
+
+	bool RegistryManager::HasRegValue(RegCommand regCommand) {
+		LOG_FUNCTION_ENTER("HasRegValue(regCommand)");
+		if (RegistryManager::GetRegValue(regCommand).empty()) {
+			return false;
+		}
+		return true;
 	}
 
 	void RegistryManager::SetRegValue(RegCommand regCommand) {

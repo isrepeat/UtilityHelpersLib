@@ -32,8 +32,8 @@ namespace HELPERS_NS {
         static std::string GetRegValue(HKey hKey, const std::filesystem::path& path, const std::string& keyName);
         static void SetRegValue(HKey hKey, const std::filesystem::path& path, const std::string& keyName, const std::string& value);
         
-        static bool HasRegValue(RegCommand regCommand);
         static std::string GetRegValue(RegCommand regCommand);
+        static bool HasRegValue(RegCommand regCommand);
         static void SetRegValue(RegCommand regCommand);
         static void SetRegValuesAdmin(std::vector<RegCommand> regCommands);
 
