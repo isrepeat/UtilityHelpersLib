@@ -53,8 +53,8 @@ namespace HELPERS_NS {
     DWORD GetProcessID(const std::wstring& processName);
     MODULEENTRY32 CheckDllInProcess(DWORD dwPID, std::wstring szDllname);
 
-    BOOL ExecuteCommandLineW(std::wstring command, bool admin = false, DWORD showFlag = SW_HIDE, DWORD* exitCode);
-    BOOL ExecuteCommandLineA(std::string command, bool admin = false, DWORD showFlag = SW_HIDE, DWORD* exitCode);
+    BOOL ExecuteCommandLineW(std::wstring command, bool admin = false, DWORD showFlag = SW_HIDE, DWORD* exitCode = nullptr);
+    BOOL ExecuteCommandLineA(std::string command, bool admin = false, DWORD showFlag = SW_HIDE, DWORD* exitCode = nullptr);
 
     void OpenLink(std::wstring link);
 #endif

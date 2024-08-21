@@ -326,6 +326,10 @@ namespace HELPERS_NS {
     }
 
     BOOL ExecuteCommandLineW(std::wstring command, bool admin, DWORD showFlag, DWORD* exitCode) {
+        if (exitCode) {
+            *exitCode = 0;
+        }
+
         SHELLEXECUTEINFOW ShExecInfo = { 0 };
         ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFOW);
         ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
@@ -337,18 +341,23 @@ namespace HELPERS_NS {
         ShExecInfo.nShow = showFlag;
         ShExecInfo.hInstApp = NULL;
         BOOL res = ShellExecuteExW(&ShExecInfo);
-
-        *exitCode = 0;
+        
         if (ShExecInfo.hProcess != NULL) {
             WaitForSingleObject(ShExecInfo.hProcess, INFINITE);
-            GetExitCodeProcess(ShExecInfo.hProcess, exitCode);
+            if (exitCode) {
+                GetExitCodeProcess(ShExecInfo.hProcess, exitCode);
+            }
         }
         return res;
     }
 
-    BOOL ExecuteCommandLineW(std::string command, bool admin, DWORD showFlag, DWORD* exitCode) {
+    BOOL ExecuteCommandLineA(std::string command, bool admin, DWORD showFlag, DWORD* exitCode) {
+        if (exitCode) {
+            *exitCode = 0;
+        }
+
         SHELLEXECUTEINFOA ShExecInfo = { 0 };
-        ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFOW);
+        ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFOA);
         ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
         ShExecInfo.hwnd = NULL;
         ShExecInfo.lpVerb = admin ? "runas" : "open";
@@ -359,10 +368,11 @@ namespace HELPERS_NS {
         ShExecInfo.hInstApp = NULL;
         BOOL res = ShellExecuteExA(&ShExecInfo);
 
-        *exitCode = 0;
         if (ShExecInfo.hProcess != NULL) {
             WaitForSingleObject(ShExecInfo.hProcess, INFINITE);
-            GetExitCodeProcess(ShExecInfo.hProcess, exitCode);
+            if (exitCode) {
+                GetExitCodeProcess(ShExecInfo.hProcess, exitCode);
+            }
         }
         return res;
     }

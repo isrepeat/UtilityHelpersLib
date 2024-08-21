@@ -20,7 +20,7 @@ namespace HELPERS_NS {
 
     struct RegCommand {
         RegAction regAction = RegAction::Add;
-        HKey hKey;
+        HKey hKey = HKey::CurrentUser;
         std::filesystem::path path;
         std::string keyName;
         std::string value;
