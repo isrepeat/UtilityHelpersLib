@@ -1,6 +1,7 @@
 #pragma once
 #include <Helpers/common.h>
 #include <Helpers/Mutex.h>
+#include <memory>
 
 namespace HELPERS_NS {
     namespace Com {

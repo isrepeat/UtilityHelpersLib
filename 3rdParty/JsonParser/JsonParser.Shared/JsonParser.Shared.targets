@@ -6,11 +6,15 @@
     <!-- Expose own dir for other projects -->
     <PublicIncludeDirectories>$(PublicIncludeDirectories);$(MSBuildThisFileDirectory);$(JsonParserSourcesDir)</PublicIncludeDirectories>
   </PropertyGroup>
-  
+
+  <!-- Explicitly add $(MSBuildThisFileDirectory) because it automatically 
+       added only with direct import but not through another .targets.
+  -->
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>
         %(AdditionalIncludeDirectories);
+        $(MSBuildThisFileDirectory);
         $(JsonParserSourcesDir)
       </AdditionalIncludeDirectories>
       <PreprocessorDefinitions>

@@ -7,10 +7,14 @@
     <PublicIncludeDirectories>$(PublicIncludeDirectories);$(MSBuildThisFileDirectory);$(ComAPISourcesDir)</PublicIncludeDirectories>
   </PropertyGroup>
 
+  <!-- Explicitly add $(MSBuildThisFileDirectory) because it automatically 
+       added only with direct import but not through another .targets.
+  -->
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>
         %(AdditionalIncludeDirectories);
+        $(MSBuildThisFileDirectory);
         $(ComAPISourcesDir)
       </AdditionalIncludeDirectories>
       <PreprocessorDefinitions>
