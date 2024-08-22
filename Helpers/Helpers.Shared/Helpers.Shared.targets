@@ -15,6 +15,21 @@
     <HelpersCommonHeaders Include="@(UtilityHelpersLibSharedHeaders)" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <__HelpersAdditionalDependencies>
+      Ws2_32.lib;
+      Shell32.lib;
+      d2d1.lib;
+      d3d11.lib;
+      dxgi.lib;
+      dwrite.lib;
+      dxguid.lib;
+      mf.lib;
+      Mfplat.lib;
+      Mfuuid.lib;
+      Mfreadwrite.lib;
+    </__HelpersAdditionalDependencies>
+  </PropertyGroup>
 
   <!-- Explicitly add $(MSBuildThisFileDirectory) because it automatically 
        added only with direct import but not through another .targets.
@@ -26,20 +41,19 @@
         $(MSBuildThisFileDirectory)
       </AdditionalIncludeDirectories>
       <PreprocessorDefinitions>
+        HELPERS_INCLUDES_DIR=Helpers;
         %(PreprocessorDefinitions)
       </PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
-        Ws2_32.lib;
-        Shell32.lib;
+        $(__HelpersAdditionalDependencies);
         %(AdditionalDependencies)
       </AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>
-        Ws2_32.lib;
-        Shell32.lib;
+        $(__HelpersAdditionalDependencies);
         %(AdditionalDependencies)
       </AdditionalDependencies>
     </Lib>

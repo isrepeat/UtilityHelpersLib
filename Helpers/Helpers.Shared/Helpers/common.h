@@ -4,13 +4,18 @@
 // and expose this path in YOUR_NUGET.targets.
 #include "Preprocessor.h"
 
+#ifndef HELPERS_NS
+#define HELPERS_NS __H_ns
+#else
+#pragma message(PREPROCESSOR_MSG("HELPERS_NS already defined = '" PP_STRINGIFY(HELPERS_NS) "'"))
+#endif
+
 #ifndef HELPERS_NS_ALIAS
 #define HELPERS_NS_ALIAS H
 #else
 #pragma message(PREPROCESSOR_MSG("HELPERS_NS_ALIAS already defined = '" PP_STRINGIFY(HELPERS_NS_ALIAS) "'"))
 #endif
 
-#define HELPERS_NS __H_ns
 namespace HELPERS_NS {} // create uniq "helpers namespace" for this project
 namespace HELPERS_NS_ALIAS = HELPERS_NS; // set your alias for original "helpers namespace" (defined via macro)
 
@@ -75,9 +80,9 @@ namespace WStorage = Windows::Storage;
 #define SPDLOG_SUPPORT 1
 #endif
 
-#include <Helpers/BoostIsSupported.h>
+#include "Helpers/BoostIsSupported.h"
 
 //
 // Force include some hedaers at the top to avoid compile error
 //
-#include <Helpers/HWindows.h>
+#include "Helpers/HWindows.h"
