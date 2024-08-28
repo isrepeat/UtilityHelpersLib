@@ -490,6 +490,7 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CLR\UniquePtr.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CLR\SharedPtr.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CallbackFn.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultVS.hlsl">

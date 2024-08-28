@@ -14,11 +14,9 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <!-- ================================ Custom targets ================================ -->
-  <Import Project="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).targets" 
-          Condition="Exists('$(MSBuildThisFileDirectory)$(MSBuildThisFileName).targets')" />
+  <Import Project="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).targets" Condition="Exists('$(MSBuildThisFileDirectory)$(MSBuildThisFileName).targets')" />
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).targets" 
-          Condition="Exists('$(MSBuildThisFileDirectory)$(MSBuildThisFileName).targets')" />
+    <None Include="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).targets" Condition="Exists('$(MSBuildThisFileDirectory)$(MSBuildThisFileName).targets')" />
   </ItemGroup>
   <!-- ================================================================================ -->
   <ItemGroup>
@@ -68,6 +66,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\BoostAsioSafe.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\BoostIsSupported.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Byteswap.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CallbackFn.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CLR\UniquePtr.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CLR\SharedPtr.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\ComMutex.h" />
