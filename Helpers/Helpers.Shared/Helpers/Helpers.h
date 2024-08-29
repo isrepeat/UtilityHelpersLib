@@ -40,8 +40,8 @@ namespace HELPERS_NS {
     std::filesystem::path ExePath();
     std::filesystem::path ExeFullname();
 #if COMPILE_FOR_DESKTOP
-    std::wstring GetAppDataPath();
-    std::wstring GetKnownFolder(GUID knownFolderGUID);
+    std::filesystem::path GetKnownFolder(GUID knownFolderGUID);
+    std::filesystem::path GetAppDataPath();
 #endif
 
     std::wstring GetFormatedErrorMessage(DWORD errorMessageId);
