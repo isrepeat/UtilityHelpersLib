@@ -488,6 +488,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObj.h">
       <Filter>Dx</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\JSONConfigLoader.hpp">
+      <Filter>_Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultVS.hlsl">
