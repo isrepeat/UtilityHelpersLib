@@ -21,15 +21,11 @@ namespace HELPERS_NS {
 
 			std::ifstream jsonConfigFile(filepath, std::ios::binary);
 			if (jsonConfigFile.is_open()) {
-				jsonConfigFile.seekg(0, std::ios::end);
-				int fileSize = jsonConfigFile.tellg();
-				jsonConfigFile.seekg(0, std::ios::beg);
+				std::vector<char> byteArray = std::vector<char>(
+					std::istreambuf_iterator<char>(jsonConfigFile),
+					std::istreambuf_iterator<char>());
 
-				std::vector<char> byteArray(fileSize);
-
-				jsonConfigFile.read(byteArray.data(), byteArray.size());
 				jsonConfigFile.close();
-
 
 				LOG_DEBUG_D("\"{}\" data: \n{}", configName, H::VecToStr(byteArray));
 
