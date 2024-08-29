@@ -1,5 +1,5 @@
 #pragma once
-#include <JsonParser/json_struct/json_struct.h>
+#include <JsonParser/json_struct/json_struct.h> // https://github.com/jorgen/json_struct
 #include <vector>
 
 namespace JS {
@@ -95,4 +95,48 @@ namespace JS {
     bool ParseTo(const std::vector<char>& jsonRawData, T& structure) {
         return ParseTo<T>(jsonRawData.data(), jsonRawData.size(), structure);
     }
+}
+
+// NOTE: When use enum in structs that need parse don't forget set default value
+//       to avoid pareser error = "InvalidData".
+
+#define JS_ENUM__(namespaceName, enumName, ...) \
+namespace namespaceName { \
+	enum class enumName \
+	{ \
+		__VA_ARGS__ \
+	}; \
+	\
+	struct js_##enumName##_string_struct \
+	{ \
+	  template <size_t N> \
+	  explicit js_##enumName##_string_struct(const char(&data)[N]) \
+	  { \
+		JS::Internal::populateEnumNames(_strings, data); \
+	  } \
+	  std::vector<JS::DataRef> _strings; \
+	  \
+	  static const std::vector<JS::DataRef>& strings() \
+	  { \
+		static js_##enumName##_string_struct ret(#__VA_ARGS__); \
+		return ret._strings; \
+	  } \
+	}; \
+}
+
+#define JS_ENUM_DECLARE_STRING_PARSER__(namespaceName, enumName) \
+namespace JS \
+{ \
+	template <> \
+	struct TypeHandler<namespaceName::enumName> \
+	{ \
+		static inline Error to(namespaceName::enumName& to_type, ParseContext& context) \
+		{ \
+			return Internal::EnumHandler<namespaceName::enumName, namespaceName::js_##enumName##_string_struct>::to(to_type, context); \
+		} \
+		static inline void from(const namespaceName::enumName& from_type, Token& token, Serializer& serializer) \
+		{ \
+			return Internal::EnumHandler<namespaceName::enumName, namespaceName::js_##enumName##_string_struct>::from(from_type, token, serializer); \
+		} \
+	}; \
 }
