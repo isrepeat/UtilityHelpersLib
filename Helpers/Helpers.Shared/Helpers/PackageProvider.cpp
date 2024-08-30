@@ -128,15 +128,15 @@ namespace HELPERS_NS {
             return {};
         }
 
-        // NOTE: Use ViewPointer for 'packageFullNames' because it internal pointers refers to 'buffer' memory.
+        // NOTE: Use std::vector<wchar_t*> for 'packageFullNames' because it internal pointers refers to 'buffer' memory.
         std::wstring buffer(bufferLength, L'\0');
-        H::ViewPointer<wchar_t*> packageFullNames(count);
+        std::vector<wchar_t*> packageFullNames(count);
 
         result = FindPackagesByPackageFamily(
             packageFamilyName.c_str(),
             packageFilters,
             &count,
-            packageFullNames.get(),
+            packageFullNames.data(),
             &bufferLength,
             buffer.data(),
             nullptr
@@ -148,14 +148,14 @@ namespace HELPERS_NS {
 
         // First determine buffer length.
         bufferLength = 0;
-        result = GetPackagePathByFullName(packageFullNames.get()[0], &bufferLength, nullptr);
+        result = GetPackagePathByFullName(packageFullNames[0], &bufferLength, nullptr);
         if (result != ERROR_INSUFFICIENT_BUFFER && result != ERROR_SUCCESS) {
             LOG_FAILED(HRESULT_FROM_WIN32(result));
             return {};
         }
 
         std::wstring packagePath(bufferLength, L'\0');
-        result = GetPackagePathByFullName(packageFullNames.get()[0], &bufferLength, packagePath.data());
+        result = GetPackagePathByFullName(packageFullNames[0], &bufferLength, packagePath.data());
         if (result != ERROR_SUCCESS) {
             LOG_FAILED(HRESULT_FROM_WIN32(result));
             return {};

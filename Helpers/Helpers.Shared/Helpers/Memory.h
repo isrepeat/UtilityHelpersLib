@@ -1,5 +1,7 @@
 #pragma once
 #include "common.h"
+#include <string_view>
+#include <algorithm>
 #include <memory>
 
 namespace HELPERS_NS {
@@ -81,63 +83,63 @@ namespace HELPERS_NS {
 	};
 
 
-	//
-	// UniquePointer specialization
-	// 
-	template<class T>
-	struct UniquePointer {
-		static constexpr std::string_view templateNotes = "Primary template";
-	};
+	////
+	//// UniquePointer specialization
+	//// 
+	//template<class T>
+	//struct UniquePointer {
+	//	static constexpr std::string_view templateNotes = "Primary template";
+	//};
 
-	template<class T>
-	struct DoubleArrayDeleter {
-		DoubleArrayDeleter(int allocatedSize)
-			: allocatedSize{ allocatedSize }
-		{}
+	//template<class T>
+	//struct DoubleArrayDeleter {
+	//	DoubleArrayDeleter(int allocatedSize)
+	//		: allocatedSize{ allocatedSize }
+	//	{}
 
-		void operator()(T** pptr) {
-			std::for_each(pptr, pptr + this->allocatedSize, std::default_delete<T[]>());
-			delete[] pptr;
-		}
+	//	void operator()(T** pptr) {
+	//		std::for_each(pptr, pptr + this->allocatedSize, std::default_delete<T[]>());
+	//		delete[] pptr;
+	//	}
 
-	private:
-		int allocatedSize = 0;
-	};
+	//private:
+	//	int allocatedSize = 0;
+	//};
 
-	template<class T>
-	struct UniquePointer<T*> : public std::unique_ptr<T*, DoubleArrayDeleter<T>> {
-		static constexpr std::string_view templateNotes = "Specialized for <T*>";
-		using _MyBase = std::unique_ptr<T*, DoubleArrayDeleter<T>>;
+	//template<class T>
+	//struct UniquePointer<T*> : public std::unique_ptr<T*, DoubleArrayDeleter<T>> {
+	//	static constexpr std::string_view templateNotes = "Specialized for <T*>";
+	//	using _MyBase = std::unique_ptr<T*, DoubleArrayDeleter<T>>;
 
-		UniquePointer(int size)
-			: _MyBase(new T* [size] {}, size)
-		{}
-	};
+	//	UniquePointer(int size)
+	//		: _MyBase(new T* [size] {}, size)
+	//	{}
+	//};
 
 
-	//
-	// ViewPointer specialization
-	// 
-	template<class T>
-	struct ViewPointer {
-		static constexpr std::string_view templateNotes = "Primary template";
-	};
+	////
+	//// ViewPointer specialization
+	//// 
+	//template<class T>
+	//struct ViewPointer {
+	//	static constexpr std::string_view templateNotes = "Primary template";
+	//};
 
-	template<class T>
-	struct DoubleArrayViewDeleter {
-		void operator()(T** pptr) {
-			// We don't delete internal pointers because their lifetime is managed by another class.
-			delete[] pptr;
-		}
-	};
+	//template<class T>
+	//struct DoubleArrayViewDeleter {
+	//	void operator()(T** pptr) {
+	//		// We don't delete internal pointers because their lifetime is managed by another class.
+	//		delete[] pptr;
+	//	}
+	//};
 
-	template<class T>
-	struct ViewPointer<T*> : public std::unique_ptr<T*, DoubleArrayViewDeleter<T>> {
-		static constexpr std::string_view templateNotes = "Specialized for <T*>";
-		using _MyBase = std::unique_ptr<T*, DoubleArrayViewDeleter<T>>;
+	//template<class T>
+	//struct ViewPointer<T*> : public std::unique_ptr<T*, DoubleArrayViewDeleter<T>> {
+	//	static constexpr std::string_view templateNotes = "Specialized for <T*>";
+	//	using _MyBase = std::unique_ptr<T*, DoubleArrayViewDeleter<T>>;
 
-		ViewPointer(int size)
-			: _MyBase(new T* [size] {})
-		{}
-	};
+	//	ViewPointer(int size)
+	//		: _MyBase(new T* [size] {})
+	//	{}
+	//};
 }
