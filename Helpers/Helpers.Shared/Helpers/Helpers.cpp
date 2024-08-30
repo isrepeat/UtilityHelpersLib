@@ -1,6 +1,7 @@
 #include "Helpers.h"
 #include "System.h"
 #include "Logger.h"
+#include "Memory.h"
 
 #include <filesystem>
 #include <shellapi.h>
@@ -158,21 +159,19 @@ namespace HELPERS_NS {
     }
 
 #if COMPILE_FOR_DESKTOP
-    std::wstring GetAppDataPath() {
-        wchar_t* path = nullptr;
-        auto hr = SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, NULL, &path);
-        HELPERS_NS::System::ThrowIfFailed(hr);
-        auto result = std::wstring(path);
-        CoTaskMemFree(path);
-
-        return result;
+    std::filesystem::path GetModulePath(std::filesystem::path moduleName) {
+        if (HMODULE hModule = GetModuleHandleW(moduleName.filename().wstring().c_str())) {
+            wchar_t buffer[MAX_PATH] = { 0 };
+            GetModuleFileNameW(hModule, buffer, MAX_PATH);
+            return std::filesystem::path{ buffer };
+        }
+        return {};
     }
 
-    std::wstring GetKnownFolder(GUID knownFolderGUID) {
-        std::wstring result = L"";
-        wchar_t* path = nullptr;
+    std::filesystem::path GetKnownFolder(GUID knownFolderGUID) {
         HRESULT hr = S_OK;
 
+        H::CoUniquePtr<wchar_t> pathStr;
         if (knownFolderGUID == FOLDERID_LocalMusic ||
             knownFolderGUID == FOLDERID_LocalVideos ||
             knownFolderGUID == FOLDERID_LocalPictures ||
@@ -190,17 +189,20 @@ namespace HELPERS_NS {
             knownFolderGUID == FOLDERID_PublicVideos ||
             knownFolderGUID == FOLDERID_PublicPictures)
         {
-            hr = SHGetKnownFolderPath(knownFolderGUID, 0, NULL, &path);
+            hr = SHGetKnownFolderPath(knownFolderGUID, 0, NULL, pathStr.GetAddressOf());
         }
 
-
-        if (path != nullptr) {
-            HELPERS_NS::System::ThrowIfFailed(hr);
-            result = std::wstring(path);
-            CoTaskMemFree(path);
+        if (SUCCEEDED(hr)) {
+            return pathStr.get();
         }
+        else {
+            LOG_FAILED(hr);
+            return {};
+        }
+    }
 
-        return result;
+    std::filesystem::path GetAppDataPath() {
+        return GetKnownFolder(FOLDERID_LocalAppData);
     }
 #endif
 

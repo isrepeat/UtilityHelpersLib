@@ -1,6 +1,14 @@
 #pragma once
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
+#ifndef WINDOWS_LEAN_AND_MEAN
+#define WINDOWS_LEAN_AND_MEAN
+#endif
+#include <Windows.h>
 #include <JsonParser/json_struct/json_struct.h> // https://github.com/jorgen/json_struct
-#include <vector>
+#include "Preprocessor.h"
 
 namespace JS {
     template <typename T>
@@ -55,6 +63,44 @@ namespace JS {
     };
 
 
+    namespace details {
+        inline std::string WStrToStr(const std::wstring& wstr, int codePage = CP_ACP) {
+            if (wstr.size() == 0)
+                return std::string{};
+
+            int sz = WideCharToMultiByte(codePage, 0, wstr.c_str(), -1, 0, 0, 0, 0);
+            std::string res(sz, 0);
+            WideCharToMultiByte(codePage, 0, wstr.c_str(), -1, &res[0], sz, 0, 0);
+            return res.c_str(); // To delete '\0' use .c_str()
+        }
+
+        inline std::wstring StrToWStr(const std::string& str, int codePage = CP_ACP) {
+            if (str.size() == 0)
+                return std::wstring{};
+
+            int sz = MultiByteToWideChar(codePage, 0, str.c_str(), -1, 0, 0);
+            std::wstring res(sz, 0);
+            MultiByteToWideChar(codePage, 0, str.c_str(), -1, &res[0], sz);
+            return res.c_str(); // To delete '\0' use .c_str()
+        }
+    }
+
+    template <>
+    struct TypeHandler<std::wstring>
+    {
+        static inline Error to(std::wstring& to_type, ParseContext& context) {
+            std::string str;
+            auto error = TypeHandler<std::string>::to(str, context);
+            to_type = details::StrToWStr(str);
+            return error;
+        }
+
+        static inline void from(const std::wstring& wstr, Token& token, Serializer& serializer) {
+            TypeHandler<std::string>::from(details::WStrToStr(wstr), token, serializer);
+        }
+    };
+
+
 
     class LoggerCallback {
     private:
@@ -100,13 +146,8 @@ namespace JS {
 // NOTE: When use enum in structs that need parse don't forget set default value
 //       to avoid pareser error = "InvalidData".
 
-#define JS_ENUM__(namespaceName, enumName, ...) \
+#define __JSONPARSER_ENUM_DECLARE_STRING_PARSER(namespaceName, enumName, ...) \
 namespace namespaceName { \
-	enum class enumName \
-	{ \
-		__VA_ARGS__ \
-	}; \
-	\
 	struct js_##enumName##_string_struct \
 	{ \
 	  template <size_t N> \
@@ -122,9 +163,7 @@ namespace namespaceName { \
 		return ret._strings; \
 	  } \
 	}; \
-}
-
-#define JS_ENUM_DECLARE_STRING_PARSER__(namespaceName, enumName) \
+} \
 namespace JS \
 { \
 	template <> \
@@ -140,3 +179,5 @@ namespace JS \
 		} \
 	}; \
 }
+
+#define JSONPARSER_ENUM_DECLARE_STRING_PARSER(...) PP_EXPAND(__JSONPARSER_ENUM_DECLARE_STRING_PARSER(__VA_ARGS__))
