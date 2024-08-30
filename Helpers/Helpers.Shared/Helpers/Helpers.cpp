@@ -159,6 +159,15 @@ namespace HELPERS_NS {
     }
 
 #if COMPILE_FOR_DESKTOP
+    std::filesystem::path GetModulePath(std::filesystem::path moduleName) {
+        if (HMODULE hModule = GetModuleHandleW(moduleName.filename().wstring().c_str())) {
+            wchar_t buffer[MAX_PATH] = { 0 };
+            GetModuleFileNameW(hModule, buffer, MAX_PATH);
+            return std::filesystem::path{ buffer };
+        }
+        return {};
+    }
+
     std::filesystem::path GetKnownFolder(GUID knownFolderGUID) {
         HRESULT hr = S_OK;
 

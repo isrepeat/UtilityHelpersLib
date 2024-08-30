@@ -40,6 +40,7 @@ namespace HELPERS_NS {
     std::filesystem::path ExePath();
     std::filesystem::path ExeFullname();
 #if COMPILE_FOR_DESKTOP
+    std::filesystem::path GetModulePath(std::filesystem::path moduleName);
     std::filesystem::path GetKnownFolder(GUID knownFolderGUID);
     std::filesystem::path GetAppDataPath();
 #endif
