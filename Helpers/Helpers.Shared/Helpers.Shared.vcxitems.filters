@@ -496,6 +496,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IObservableCollection.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ObservableCollection.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ObservableCollectionTransform.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IWeakEvent.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\WeakEvent.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultVS.hlsl">

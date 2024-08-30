@@ -1,6 +1,6 @@
 #pragma once
 #include "common.h"
-#include "IEvent.h"
+#include "IWeakEvent.h"
 
 #include <vector>
 
@@ -27,7 +27,7 @@ namespace HELPERS_NS {
     public:
         virtual ~IObservableCollection() = default;
 
-        virtual IEvent<const ObservableCollectionChangedArgs<T>&>& GetOnChangedEvent() const = 0;
+        virtual IWeakEvent<const ObservableCollectionChangedArgs<T>&>& GetOnChangedEvent() const = 0;
         virtual size_t GetCount() = 0;
         virtual T GetAt(size_t idx) = 0;
 

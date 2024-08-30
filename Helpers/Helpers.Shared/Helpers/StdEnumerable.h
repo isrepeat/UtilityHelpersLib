@@ -131,7 +131,7 @@ namespace HELPERS_NS {
     }
 
     template<typename CollectionT>
-    auto MakeIEnumerableStdCopyNoOwn(CollectionT stdCollection) {
+    auto MakeIEnumerableStdCopy(CollectionT stdCollection) {
         struct Holder {
             Holder(CollectionT&& stdCollection)
                 : stdCollection(std::move(stdCollection))

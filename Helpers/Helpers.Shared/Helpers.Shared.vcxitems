@@ -90,6 +90,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IEnumerable.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IEvent.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IObservableCollection.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IWeakEvent.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Mutex.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\EventObject.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingAssert.h" />
@@ -179,6 +180,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TokenSingleton.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TypeTraits.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\UniqueHandle.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\WeakEvent.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultPS.hlsl">

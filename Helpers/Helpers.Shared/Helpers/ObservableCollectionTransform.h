@@ -1,7 +1,7 @@
 #pragma once
 #include "common.h"
 #include "IObservableCollection.h"
-#include "Event.hpp"
+#include "WeakEvent.h"
 
 #include <memory>
 #include <algorithm>
@@ -15,13 +15,11 @@ namespace HELPERS_NS {
             TransformFn transformFn,
             IObservableCollection<SrcT>& src,
             std::shared_ptr<void> srcHolder)
-            : srcHolder(std::move(srcHolder))
+            : srcHolder(MakeTokenOrKeepSrcHolder(std::move(srcHolder)))
             , src(src)
             , transformFn(std::move(transformFn))
         {
-            auto& srcEvt = this->src.GetOnChangedEvent();
-
-            this->onChangedSrcToken = srcEvt.Add(
+            this->src.GetOnChangedEvent().Subscribe(
                 [this](const ObservableCollectionChangedArgs<SrcT>& srcArgs)
                 {
                     ObservableCollectionChangedArgs<DstT> dstArgs;
@@ -47,10 +45,11 @@ namespace HELPERS_NS {
                     dstArgs.oldStartingIndex = srcArgs.oldStartingIndex;
 
                     this->onChangedEvent(dstArgs);
-                });
+                },
+                this->srcHolder);
         }
 
-        IEvent<const ObservableCollectionChangedArgs<DstT>&>& GetOnChangedEvent() const override {
+        IWeakEvent<const ObservableCollectionChangedArgs<DstT>&>& GetOnChangedEvent() const override {
             return this->onChangedEvent;
         }
 
@@ -71,12 +70,18 @@ namespace HELPERS_NS {
         }
 
     private:
-        mutable Event<const ObservableCollectionChangedArgs<DstT>&> onChangedEvent;
+        static std::shared_ptr<void> MakeTokenOrKeepSrcHolder(std::shared_ptr<void> srcHolder) {
+            if (srcHolder) {
+                return srcHolder;
+            }
+
+            return std::make_shared<int>(0);
+        }
+
+        mutable WeakEvent<const ObservableCollectionChangedArgs<DstT>&> onChangedEvent;
         std::shared_ptr<void> srcHolder;
         IObservableCollection<SrcT>& src;
         TransformFn transformFn;
-
-        std::shared_ptr<void> onChangedSrcToken;
     };
 
     template<typename SrcDstTransformFn, typename DstSrcTransformFn>

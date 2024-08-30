@@ -1,7 +1,7 @@
 #pragma once
 #include "common.h"
 #include "IObservableCollection.h"
-#include "Event.hpp"
+#include "WeakEvent.h"
 
 #include <vector>
 
@@ -9,7 +9,7 @@ namespace HELPERS_NS {
     template<typename T>
     class ObservableCollection final : public IObservableCollection<T> {
     public:
-        IEvent<const ObservableCollectionChangedArgs<T>&>& GetOnChangedEvent() const override {
+        IWeakEvent<const ObservableCollectionChangedArgs<T>&>& GetOnChangedEvent() const override {
             return this->onChangedEvent;
         }
 
@@ -50,8 +50,12 @@ namespace HELPERS_NS {
             this->items.erase(it);
         }
 
+        const auto& GetItems() const {
+            return this->items;
+        }
+
     private:
-        mutable Event<const ObservableCollectionChangedArgs<T>&> onChangedEvent;
+        mutable WeakEvent<const ObservableCollectionChangedArgs<T>&> onChangedEvent;
         std::vector<T> items;
     };
 }
