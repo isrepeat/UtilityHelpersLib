@@ -1,9 +1,12 @@
 #include "PackageProvider.h"
 #include "Helpers.h"
 #include "String.h"
-#include <vector>
+#include "Logger.h"
+#include "Memory.h"
+
 #include <Windows.h>
 #include <appmodel.h> // must be included after Windows.h
+#include <vector>
 
 namespace HELPERS_NS {
     bool PackageProvider::IsRunningUnderPackage() {
@@ -95,5 +98,69 @@ namespace HELPERS_NS {
         }
 
         return HELPERS_NS::VecToWStr(appModelUserId);
+    }
+
+    std::filesystem::path PackageProvider::GetPackageInstalledPath(std::wstring packageFamilyName) {
+        HRESULT hr = S_OK;
+        LONG result = ERROR_SUCCESS;
+
+        UINT32 packageFilters = PACKAGE_FILTER_HEAD | PACKAGE_FILTER_DIRECT;
+        UINT32 count = 0;
+        UINT32 bufferLength = 0;
+
+        // First determine buffer length.
+        result = FindPackagesByPackageFamily(
+            packageFamilyName.c_str(),
+            packageFilters,
+            &count,
+            nullptr,
+            &bufferLength,
+            nullptr,
+            nullptr
+        );
+        if (result != ERROR_INSUFFICIENT_BUFFER && result != ERROR_SUCCESS) {
+            LOG_FAILED(HRESULT_FROM_WIN32(result));
+            return {};
+        }
+
+        if (count == 0) {
+            LOG_ERROR_D(L"Can't found packages for packageFamilyName = {}", packageFamilyName);
+            return {};
+        }
+
+        // NOTE: Use ViewPointer for 'packageFullNames' because it internal pointers refers to 'buffer' memory.
+        std::wstring buffer(bufferLength, L'\0');
+        H::ViewPointer<wchar_t*> packageFullNames(count);
+
+        result = FindPackagesByPackageFamily(
+            packageFamilyName.c_str(),
+            packageFilters,
+            &count,
+            packageFullNames.get(),
+            &bufferLength,
+            buffer.data(),
+            nullptr
+        );
+        if (result != ERROR_SUCCESS) {
+            LOG_FAILED(HRESULT_FROM_WIN32(result));
+            return {};
+        }
+
+        // First determine buffer length.
+        bufferLength = 0;
+        result = GetPackagePathByFullName(packageFullNames.get()[0], &bufferLength, nullptr);
+        if (result != ERROR_INSUFFICIENT_BUFFER && result != ERROR_SUCCESS) {
+            LOG_FAILED(HRESULT_FROM_WIN32(result));
+            return {};
+        }
+
+        std::wstring packagePath(bufferLength, L'\0');
+        result = GetPackagePathByFullName(packageFullNames.get()[0], &bufferLength, packagePath.data());
+        if (result != ERROR_SUCCESS) {
+            LOG_FAILED(HRESULT_FROM_WIN32(result));
+            return {};
+        }
+
+        return packagePath;
     }
 }
