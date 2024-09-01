@@ -436,18 +436,23 @@ namespace HELPERS_NS {
 
 			// Create a Direct2D target bitmap associated with the
 			// swap chain back buffer and set it as the current target.
-			DXGI_FORMAT btimapFormat = backBufferFormat;
+			DXGI_FORMAT btimapFormat;
 			Microsoft::WRL::ComPtr<IDXGISurface2> dxgiSurface;
 
-			switch (btimapFormat) {
+			// TODO: dxRenderProxy texture make sense if you need to use 'd2dTargetBitmap'.
+			//       Add flag "SupportD2D" and make this logic optional. For complex render,
+			//	     disabling d2d support will help impove performance.
+			switch (backBufferFormat) {
 			case DXGI_FORMAT_B8G8R8A8_UNORM:
-			case DXGI_FORMAT_R16G16B16A16_FLOAT:
-				// These formats swap chian are compatible with CreateBitmapFromDxgiSurface().
+			case DXGI_FORMAT_R16G16B16A16_FLOAT: {
+				// These swapChain formats are compatible with CreateBitmapFromDxgiSurface().
+				btimapFormat = backBufferFormat;
 				hr = this->dxgiSwapChainBackBuffer.As(&dxgiSurface);
 				H::System::ThrowIfFailed(hr);
 				break;
+			}
 
-			default:
+			default: {
 				btimapFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 
 				if (!this->dxRenderObjProxy) {
@@ -462,6 +467,7 @@ namespace HELPERS_NS {
 				hr = this->dxRenderObjProxy->GetObj()->texture.As(&dxgiSurface);
 				H::System::ThrowIfFailed(hr);
 				break;
+			}
 			}
 
 			D2D1_BITMAP_PROPERTIES1 bitmapProperties =
@@ -701,6 +707,9 @@ namespace HELPERS_NS {
 			// Discard the contents of the render target.
 			// This is a valid operation only when the existing contents will be entirely
 			// overwritten. If dirty or scroll rects are used, this call should be modified.
+			if (this->dxRenderObjProxy) {
+				d3dCtx->DiscardView1(this->dxRenderObjProxy->GetObj()->textureRTV.Get(), nullptr, 0);
+			}
 			d3dCtx->DiscardView1(this->m_d3dRenderTargetView.Get(), nullptr, 0);
 
 			if (this->m_d3dDepthStencilView) {
@@ -1022,6 +1031,9 @@ namespace HELPERS_NS {
 			);
 
 			this->renderPipeline->Draw();
+
+			ID3D11ShaderResourceView* nullrtv[] = { nullptr };
+			d3dCtx->PSSetShaderResources(0, _countof(nullrtv), nullrtv);
 		}
 	}
 }
