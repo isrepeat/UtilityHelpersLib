@@ -89,7 +89,7 @@ namespace HELPERS_NS {
         // collectionHolder can be collection itself or object that contains collection
         // collectionHolder is needed to make sure that collection is alive as long as StdEnumerable
         // Be careful with collectionHolder to not make circular dependencies
-        StdEnumerable(It begin, It end, std::shared_ptr<void> collectionHolder)
+        StdEnumerable(It begin, It end, std::shared_ptr<const void> collectionHolder)
             : collectionHolder(std::move(collectionHolder))
             , begin(std::move(begin))
             , end(std::move(end))
@@ -104,13 +104,13 @@ namespace HELPERS_NS {
         }
 
     private:
-        std::shared_ptr<void> collectionHolder;
+        std::shared_ptr<const void> collectionHolder;
         It begin;
         It end;
     };
 
     template<typename It>
-    std::shared_ptr<IEnumerable<typename It::value_type>> MakeIEnumerableStdHelper(It begin, It end, std::shared_ptr<void> collectionHolder) {
+    std::shared_ptr<IEnumerable<typename It::value_type>> MakeIEnumerableStdHelper(It begin, It end, std::shared_ptr<const void> collectionHolder) {
         return std::make_shared<StdEnumerable<It>>(std::move(begin), std::move(end), std::move(collectionHolder));
     }
 
