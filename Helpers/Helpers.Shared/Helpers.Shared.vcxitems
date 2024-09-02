@@ -73,6 +73,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\IUnknownValue.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\UnknownValue.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\D2DCtxMt.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxConstantBuffer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxDevice.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxDeviceCtx.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxDeviceMt.h" />
@@ -83,8 +84,10 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjBase.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjHDR.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjProxy.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxShaderModule.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSharedTexture.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\FullScreenQuad.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\HlslModule.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\ISwapChainPanel.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\MFDXGIManagerCustom.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\RenderPipeline.h" />
