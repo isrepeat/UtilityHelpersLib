@@ -1,6 +1,6 @@
 #pragma once
 #include <Helpers/common.h>
-#include "DxRenderObj.h"
+#include "DxRenderObjBase.h"
 #include "DxDevice.h"
 
 namespace HELPERS_NS {
@@ -17,12 +17,12 @@ namespace HELPERS_NS {
 
 				void Draw(
 					Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureSRV,
-					DxRenderObjBase* outterRenderObj,
+					DxRenderObjBaseData* outterRenderObj,
 					std::function<void __cdecl()> setCustomState);
 
 			private:
 				DxDeviceSafeObj* dxDeviceSafeObj;
-				DxRenderObj defaultRenderObj;
+				DxRenderObjDefaultData defaultRenderObj;
 			};
 		}
 	}

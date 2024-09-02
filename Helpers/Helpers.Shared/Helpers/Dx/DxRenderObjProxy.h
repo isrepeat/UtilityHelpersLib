@@ -1,12 +1,12 @@
 #pragma once
 #include <Helpers/common.h>
 #include "ISwapChainPanel.h"
-#include "DxRenderObj.h"
+#include "DxRenderObjBase.h"
 
 namespace HELPERS_NS {
 	namespace Dx {
 		namespace details {
-			class DxRenderObjProxy : public DxRenderObjWrapper<DxRenderObj> {
+			class DxRenderObjProxy : public DxRenderObjWrapper<DxRenderObjDefaultData> {
 			public:
 				DxRenderObjProxy(
 					Microsoft::WRL::ComPtr<HELPERS_NS::Dx::ISwapChainPanel> swapChainPanel,
@@ -14,9 +14,10 @@ namespace HELPERS_NS {
 
 				void CreateWindowSizeDependentResources() override;
 				void ReleaseDeviceDependentResources() override;
+				void UpdateBuffers() override;
 
 			private:
-				std::unique_ptr<DxRenderObj> CreateObject(DxDeviceSafeObj* dxDeviceSafeObj);
+				std::unique_ptr<DxRenderObjDefaultData> CreateObjectData(DxDeviceSafeObj* dxDeviceSafeObj);
 				void CreateTexture();
 
 			private:

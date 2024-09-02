@@ -1,5 +1,6 @@
 #include "DxDevice.h"
 #include <Helpers/Dx/DxHelpers.h>
+#include "ISwapChainPanel.h"
 
 namespace HELPERS_NS {
     namespace Dx {
@@ -21,7 +22,7 @@ namespace HELPERS_NS {
             // DxDevice
             //
             DxDevice::DxDevice(const std::optional<DxDeviceParams>& params)
-                : featureLevel(D3D_FEATURE_LEVEL_9_1)
+                : featureLevel{ D3D_FEATURE_LEVEL_9_1 }
             {
                 this->CreateDeviceIndependentResources();
                 this->CreateDeviceDependentResources(params);
@@ -54,10 +55,28 @@ namespace HELPERS_NS {
                 return this->featureLevel;
             }
 
+
             void DxDevice::CreateDxgiFactory() {
                 HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(dxgiFactory.ReleaseAndGetAddressOf()));
-                HELPERS_NS::System::ThrowIfFailed(hr);
+                H::System::ThrowIfFailed(hr);
             }
+
+            Microsoft::WRL::ComPtr<H::Dx::ISwapChainPanel> DxDevice::GetAssociatedSwapChainPanel() const {
+                //LOG_ASSERT(this->associatedSwapChainPanel, L"this->associatedSwapChainPanel is empty");
+                if (!this->associatedSwapChainPanel) {
+                    LOG_WARNING_D(L"this->associatedSwapChainPanel is empty");
+                }
+                return this->associatedSwapChainPanel;
+            }
+
+            void DxDevice::SetAssociatedSwapChainPanel(
+                Passkey<H::Dx::SwapChainPanel*>,
+                Microsoft::WRL::ComPtr<H::Dx::ISwapChainPanel> associatedSwapChainPanel)
+            {
+                LOG_ASSERT(!this->associatedSwapChainPanel, L"this->associatedSwapChainPanel is already set");
+                this->associatedSwapChainPanel = associatedSwapChainPanel;
+            }
+
 
 
             void DxDevice::CreateDeviceIndependentResources() {
@@ -80,7 +99,7 @@ namespace HELPERS_NS {
                     &options,
                     &this->d2dFactory
                 );
-                HELPERS_NS::System::ThrowIfFailed(hr);
+                H::System::ThrowIfFailed(hr);
 
 
                 // Initialize the DirectWrite Factory.
@@ -89,7 +108,7 @@ namespace HELPERS_NS {
                     __uuidof(IDWriteFactory3),
                     &this->dwriteFactory
                 );
-                HELPERS_NS::System::ThrowIfFailed(hr);
+                H::System::ThrowIfFailed(hr);
 
                 // Initialize the Windows Imaging Component (WIC) Factory.
                 hr = CoCreateInstance(
@@ -98,7 +117,7 @@ namespace HELPERS_NS {
                     CLSCTX_INPROC_SERVER,
                     IID_PPV_ARGS(&this->wicFactory)
                 );
-                HELPERS_NS::System::ThrowIfFailed(hr);
+                H::System::ThrowIfFailed(hr);
             }
 
             void DxDevice::CreateDeviceDependentResources(const std::optional<DxDeviceParams>& params) {
@@ -111,7 +130,7 @@ namespace HELPERS_NS {
                 }
 
 #ifdef _DEBUG
-                if (HELPERS_NS::Dx::SdkLayersAvailable()) {
+                if (H::Dx::SdkLayersAvailable()) {
                     creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
                 }
 #endif
@@ -168,32 +187,32 @@ namespace HELPERS_NS {
                         &this->featureLevel,
                         &d3dCtxTmp
                     );
-                    HELPERS_NS::System::ThrowIfFailed(hr);
+                    H::System::ThrowIfFailed(hr);
                 }
 
                 // Store pointers to the Direct3D 11.3 API device and immediate context.
                 hr = d3dDeviceTmp.As(&this->d3dDevice);
-                HELPERS_NS::System::ThrowIfFailed(hr);
+                H::System::ThrowIfFailed(hr);
 
                 Microsoft::WRL::ComPtr<ID3D11DeviceContext3> d3dCtx;
                 hr = d3dCtxTmp.As(&d3dCtx);
-                HELPERS_NS::System::ThrowIfFailed(hr);
+                H::System::ThrowIfFailed(hr);
 
 
                 // Create the Direct2D device object and a corresponding context.
                 Microsoft::WRL::ComPtr<IDXGIDevice> dxgiDev;
                 hr = this->d3dDevice.As(&dxgiDev);
-                HELPERS_NS::System::ThrowIfFailed(hr);
+                H::System::ThrowIfFailed(hr);
 
                 hr = this->d2dFactory->CreateDevice(dxgiDev.Get(), this->d2dDevice.GetAddressOf());
-                HELPERS_NS::System::ThrowIfFailed(hr);
+                H::System::ThrowIfFailed(hr);
 
                 Microsoft::WRL::ComPtr<ID2D1DeviceContext> d2dCtx;
                 hr = this->d2dDevice->CreateDeviceContext(
                     D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS,
                     d2dCtx.GetAddressOf()
                 );
-                HELPERS_NS::System::ThrowIfFailed(hr);
+                H::System::ThrowIfFailed(hr);
                 
                 this->d2dCtxMt = D2DCtxMt(d2dCtx);
                 this->ctxSafeObj = std::make_unique<DxDeviceCtx>(d2dCtx, d3dCtx);
@@ -204,7 +223,7 @@ namespace HELPERS_NS {
                 HRESULT hr = S_OK;
 
                 hr = this->d3dDevice.As(&this->d3dMultithread);
-                HELPERS_NS::System::ThrowIfFailed(hr);
+                H::System::ThrowIfFailed(hr);
 
                 this->d3dMultithread->SetMultithreadProtected(TRUE);
             }
@@ -230,13 +249,13 @@ namespace HELPERS_NS {
                 uint32_t resetToken = 0;
                 Microsoft::WRL::ComPtr<IMFDXGIDeviceManager> mfDxgiDeviceManager;
                 hr = MFCreateDXGIDeviceManager(&resetToken, mfDxgiDeviceManager.ReleaseAndGetAddressOf());
-                HELPERS_NS::System::ThrowIfFailed(hr);
+                H::System::ThrowIfFailed(hr);
 
                 hr = mfDxgiDeviceManager->ResetDevice(this->GetD3DDevice().Get(), resetToken);
-                HELPERS_NS::System::ThrowIfFailed(hr);
+                H::System::ThrowIfFailed(hr);
 
                 hr = this->d3dDevice->SetPrivateDataInterface(IID_IMFDXGIDeviceManager__, mfDxgiDeviceManager.Get());
-                HELPERS_NS::System::ThrowIfFailed(hr);
+                H::System::ThrowIfFailed(hr);
 
                 this->mfDxgiDeviceManagerCustom = Microsoft::WRL::Make<MFDXGIDeviceManagerCustom>(mfDxgiDeviceManager);
             }

@@ -1,11 +1,10 @@
 //------------------------------------------------------------------------------------
-// PixelShader.hlsl
+// defaultPS.hlsl
+//
+// Project = Helpers.Shared;
 //
 // Simple shader to render a textured quad
-//
-// Advanced Technology Group (ATG)
-// Copyright (C) Microsoft Corporation. All rights reserved.
-//--------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------
 
 struct Interpolants
 {
@@ -13,17 +12,11 @@ struct Interpolants
     float2 texcoord : TEXCOORD0;
 };
 
-struct Pixel
-{
-    float4 color : SV_Target;
-};
+Texture2D inTexture : register(t0);
+SamplerState inSampler : register(s0);
 
-Texture2D txDiffuse : register(t0);
-SamplerState pointSampler : register(s0);
-
-float4 main(Interpolants In) : SV_Target0 
+float4 main(Interpolants In) : SV_Target
 {
-    float4 rgba = txDiffuse.Sample(pointSampler, In.texcoord);
-    //return float4(rgba.r, 0, rgba.b, rgba.a);
-    return rgba;
+    float4 color = inTexture.Sample(inSampler, In.texcoord);
+    return color;
 }

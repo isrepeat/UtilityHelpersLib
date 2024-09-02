@@ -1,4 +1,17 @@
 <Project>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>
+        %(AdditionalIncludeDirectories);
+      </AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>
+        <!-- Expose project properties through macros: -->
+        MSBuildProject__RootNamespace=$(RootNamespace);
+        %(PreprocessorDefinitions)
+      </PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  
   <!-- Import PROJECT.targets -->
   <Import Project="$(MSBuildProjectDirectory)\$(MSBuildProjectName).targets"
           Condition="Exists('$(MSBuildProjectDirectory)\$(MSBuildProjectName).targets')" />

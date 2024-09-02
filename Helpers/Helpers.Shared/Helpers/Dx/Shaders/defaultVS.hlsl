@@ -1,11 +1,10 @@
-//--------------------------------------------------------------------------------------
-// VertexShader.hlsl
+//------------------------------------------------------------------------------------
+// defaultVS.hlsl
 //
-// Simple vertex shader for rendering a textured quad
+// Project = Helpers.Shared;
 //
-// Advanced Technology Group (ATG)
-// Copyright (C) Microsoft Corporation. All rights reserved.
-//--------------------------------------------------------------------------------------
+// Simple shader to render a textured quad
+//------------------------------------------------------------------------------------
 
 cbuffer VS_CONSTANT_BUFFER : register(b0)
 {

@@ -1,6 +1,7 @@
 ﻿#include "SwapChainPanel.h"
 #include <MagicEnum/MagicEnum.h>
 #include <Helpers/Dx/DxHelpers.h>
+#include <Helpers/Passkey.hpp>
 #include <Helpers/Logger.h>
 #include <Helpers/System.h>
 
@@ -102,9 +103,13 @@ namespace HELPERS_NS {
 			, m_resolutionScale{ 1.0f }
 			, colorSpace{ DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709 }
 			, isDisplayHDR10{ false }
-			, m_deviceNotify{ nullptr }
+			, deviceNotify{ nullptr }
 		{
 			HRESULT hr = S_OK;
+			{
+				auto dxDev = this->dxDeviceSafeObj.Lock();
+				dxDev->SetAssociatedSwapChainPanel(Passkey<SwapChainPanel*>{}, this);
+			}
 
 			// Disable HDR if we are on an OS that can't support FLIP swap effects.
 			if (this->initData.optionFlags.Has(InitData::Options::EnableHDR)) {
@@ -431,25 +436,30 @@ namespace HELPERS_NS {
 
 			// Create a Direct2D target bitmap associated with the
 			// swap chain back buffer and set it as the current target.
-			DXGI_FORMAT btimapFormat = backBufferFormat;
+			DXGI_FORMAT btimapFormat;
 			Microsoft::WRL::ComPtr<IDXGISurface2> dxgiSurface;
 
-			switch (btimapFormat) {
+			// TODO: dxRenderProxy texture make sense if you need to use 'd2dTargetBitmap'.
+			//       Add flag "SupportD2D" and make this logic optional. For complex render,
+			//	     disabling d2d support will help impove performance.
+			switch (backBufferFormat) {
 			case DXGI_FORMAT_B8G8R8A8_UNORM:
-			case DXGI_FORMAT_R16G16B16A16_FLOAT:
-				// These formats swap chian are compatible with CreateBitmapFromDxgiSurface().
+			case DXGI_FORMAT_R16G16B16A16_FLOAT: {
+				// These swapChain formats are compatible with CreateBitmapFromDxgiSurface().
+				btimapFormat = backBufferFormat;
 				hr = this->dxgiSwapChainBackBuffer.As(&dxgiSurface);
 				H::System::ThrowIfFailed(hr);
 				break;
+			}
 
-			default:
+			default: {
 				btimapFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 
 				if (!this->dxRenderObjProxy) {
 					this->dxRenderObjProxy = std::make_unique<details::DxRenderObjProxy>(this, btimapFormat);
 				}
-				if (!this->fullScreenQuad) {
-					this->fullScreenQuad = std::make_unique<details::FullScreenQuad>(&this->dxDeviceSafeObj);
+				if (!this->renderPipeline) {
+					this->renderPipeline = std::make_unique<RenderPipeline>(&this->dxDeviceSafeObj);
 				}
 
 				this->dxRenderObjProxy->CreateWindowSizeDependentResources();
@@ -457,6 +467,7 @@ namespace HELPERS_NS {
 				hr = this->dxRenderObjProxy->GetObj()->texture.As(&dxgiSurface);
 				H::System::ThrowIfFailed(hr);
 				break;
+			}
 			}
 
 			D2D1_BITMAP_PROPERTIES1 bitmapProperties =
@@ -646,11 +657,6 @@ namespace HELPERS_NS {
 			//}
 		}
 
-		// Register our DeviceNotify to be informed on device lost and creation.
-		void STDMETHODCALLTYPE SwapChainPanel::RegisterDeviceNotify(IDeviceNotify* deviceNotify) {
-			this->m_deviceNotify = deviceNotify;
-		}
-
 		// Call this method when the app suspends. It provides a hint to the driver that the app 
 		// is entering an idle state and that temporary buffers can be reclaimed for use by other apps.
 		void STDMETHODCALLTYPE SwapChainPanel::Trim() {
@@ -694,9 +700,16 @@ namespace HELPERS_NS {
 			DXGI_PRESENT_PARAMETERS parameters = { 0 };
 			hr = this->dxgiSwapChain->Present1(isVSync, 0, &parameters);
 
+			if (this->swapChainPanelNotifications.onPresent) {
+				this->swapChainPanelNotifications.onPresent();
+			}
+
 			// Discard the contents of the render target.
 			// This is a valid operation only when the existing contents will be entirely
 			// overwritten. If dirty or scroll rects are used, this call should be modified.
+			if (this->dxRenderObjProxy) {
+				d3dCtx->DiscardView1(this->dxRenderObjProxy->GetObj()->textureRTV.Get(), nullptr, 0);
+			}
 			d3dCtx->DiscardView1(this->m_d3dRenderTargetView.Get(), nullptr, 0);
 
 			if (this->m_d3dDepthStencilView) {
@@ -718,6 +731,19 @@ namespace HELPERS_NS {
 			else {
 				H::System::ThrowIfFailed(hr);
 			}
+		}
+
+		// Register our DeviceNotify to be informed on device lost and creation.
+		void STDMETHODCALLTYPE SwapChainPanel::RegisterDeviceNotify(IDeviceNotify* deviceNotify) {
+			this->deviceNotify = deviceNotify;
+		}
+
+		//void STDMETHODCALLTYPE SwapChainPanel::RegisterRenderNotification(IRenderNotification* renderNotification) {
+		//	this->renderNotification = renderNotification;
+		//}
+
+		SwapChainPanelNotifications* STDMETHODCALLTYPE SwapChainPanel::GetNotifications() {
+			return &this->swapChainPanelNotifications;
 		}
 
 
@@ -983,7 +1009,7 @@ namespace HELPERS_NS {
 
 			// Render ObjProxy texture (for example 8:8:8:8) to swapChain RTV (for example 10:10:10:2).
 			auto renderTargetView = this->m_d3dRenderTargetView;
-			d3dCtx->ClearRenderTargetView(renderTargetView.Get(), DirectX::Colors::Brown);
+			d3dCtx->ClearRenderTargetView(renderTargetView.Get(), DirectX::Colors::Aqua);
 
 			ID3D11RenderTargetView* pRTVs[] = { renderTargetView.Get() };
 			d3dCtx->OMSetRenderTargets(1, pRTVs, nullptr);
@@ -991,13 +1017,23 @@ namespace HELPERS_NS {
 			auto viewport = this->GetScreenViewport();
 			d3dCtx->RSSetViewports(1, &viewport);
 
-			auto& dxRenderObj = this->dxRenderObjProxy->GetObj();
-			this->fullScreenQuad->Draw(dxRenderObj->textureSRV, dxRenderObj.get(), [&] {
-				d3dCtx->VSSetShader(dxRenderObj->vertexShader.Get(), nullptr, 0);
-				d3dCtx->PSSetShader(dxRenderObj->pixelShader.Get(), nullptr, 0);
-				d3dCtx->VSSetConstantBuffers(0, 1, dxRenderObj->vsConstantBuffer.GetAddressOf());
-				d3dCtx->PSSetConstantBuffers(0, 1, dxRenderObj->psConstantBuffer.GetAddressOf());
-				});
+			auto& dxRenderObj = this->dxRenderObjProxy;
+			dxRenderObj->UpdateBuffers();
+
+			this->renderPipeline->SetTexture(dxRenderObj->GetObj()->textureSRV);
+			this->renderPipeline->SetVertexShader(
+				dxRenderObj->GetObj()->vertexShader,
+				dxRenderObj->GetObj()->vsConstantBuffer
+			);
+			this->renderPipeline->SetPixelShader(
+				dxRenderObj->GetObj()->pixelShader,
+				dxRenderObj->GetObj()->psConstantBuffer
+			);
+
+			this->renderPipeline->Draw();
+
+			ID3D11ShaderResourceView* nullrtv[] = { nullptr };
+			d3dCtx->PSSetShaderResources(0, _countof(nullrtv), nullrtv);
 		}
 	}
 }
