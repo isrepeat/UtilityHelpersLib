@@ -34,10 +34,10 @@ namespace HELPERS_NS {
 				HRESULT hr = S_OK;
 
 				hr = D3DCreateLinker(this->linker.GetAddressOf());
-				H::System::ThrowIfFailed(hr);
+				HELPERS_NS::System::ThrowIfFailed(hr);
 
 				hr = D3DCreateFunctionLinkingGraph(0, this->shaderGraph.GetAddressOf());
-				H::System::ThrowIfFailed(hr);
+				HELPERS_NS::System::ThrowIfFailed(hr);
 			}
 		};
 
@@ -118,8 +118,7 @@ namespace HELPERS_NS {
 
 		class DxLinkingGraph {
 		public:
-
-			DxLinkingGraph(H::Dx::DxDeviceSafeObj* dxDeviceSafeObj);
+			DxLinkingGraph(HELPERS_NS::Dx::DxDeviceSafeObj* dxDeviceSafeObj);
 
 			void CreateVertexShaderFromGraphDesc(const DxVertexShaderGraphDesc& dxVertexShaderGraphDesc);
 			void CreatePixelShaderFromGraphDesc(const DxPixelShaderGraphDesc& dxPixelShaderGraphDesc);
@@ -139,7 +138,7 @@ namespace HELPERS_NS {
 			);
 
 		private:
-			H::Dx::DxDeviceSafeObj* dxDeviceSafeObj;
+			HELPERS_NS::Dx::DxDeviceSafeObj* dxDeviceSafeObj;
 			DxVertexShaderGraph dxVertexShaderGraph;
 			DxPixelShaderGraph dxPixelShaderGraph;
 		};
