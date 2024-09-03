@@ -1,8 +1,10 @@
 #pragma once
-#include <Helpers/common.h>
+#include "Helpers/common.h"
 #include "DxRenderObjBase.h"
 #include "ISwapChainPanel.h"
+#include "DxLinkingGraph.h"
 #include "DxDevice.h"
+#include <memory>
 
 namespace HELPERS_NS {
 	namespace Dx {
@@ -31,6 +33,8 @@ namespace HELPERS_NS {
 			void SetVertexShader(Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader, Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer = nullptr);
 			void SetPixelShader(Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader, Microsoft::WRL::ComPtr<ID3D11Buffer> psConstantBuffer = nullptr);
 
+			void SetLinkingGraph(std::shared_ptr<HELPERS_NS::Dx::DxLinkingGraph> dxLinkingGraph);
+
 			void Draw();
 
 		private:
@@ -50,6 +54,8 @@ namespace HELPERS_NS {
 			Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
 			Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
 			Microsoft::WRL::ComPtr<ID3D11Buffer> psConstantBuffer;
+
+			std::shared_ptr<HELPERS_NS::Dx::DxLinkingGraph> dxLinkingGraph;
 		};
 	}
 }

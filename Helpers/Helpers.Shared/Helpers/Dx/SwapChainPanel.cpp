@@ -464,7 +464,7 @@ namespace HELPERS_NS {
 
 				this->dxRenderObjProxy->CreateWindowSizeDependentResources();
 
-				hr = this->dxRenderObjProxy->GetObj()->texture.As(&dxgiSurface);
+				hr = this->dxRenderObjProxy->GetObjData()->texture.As(&dxgiSurface);
 				H::System::ThrowIfFailed(hr);
 				break;
 			}
@@ -708,7 +708,7 @@ namespace HELPERS_NS {
 			// This is a valid operation only when the existing contents will be entirely
 			// overwritten. If dirty or scroll rects are used, this call should be modified.
 			if (this->dxRenderObjProxy) {
-				d3dCtx->DiscardView1(this->dxRenderObjProxy->GetObj()->textureRTV.Get(), nullptr, 0);
+				d3dCtx->DiscardView1(this->dxRenderObjProxy->GetObjData()->textureRTV.Get(), nullptr, 0);
 			}
 			d3dCtx->DiscardView1(this->m_d3dRenderTargetView.Get(), nullptr, 0);
 
@@ -782,7 +782,7 @@ namespace HELPERS_NS {
 		// TODO: add logic to return msaaTexture render view.
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> STDMETHODCALLTYPE SwapChainPanel::GetRenderTargetView() const {
 			if (this->dxRenderObjProxy) {
-				return this->dxRenderObjProxy->GetObj()->textureRTV;
+				return this->dxRenderObjProxy->GetObjData()->textureRTV;
 			}
 			return this->m_d3dRenderTargetView;
 		}
@@ -1020,14 +1020,14 @@ namespace HELPERS_NS {
 			auto& dxRenderObj = this->dxRenderObjProxy;
 			dxRenderObj->UpdateBuffers();
 
-			this->renderPipeline->SetTexture(dxRenderObj->GetObj()->textureSRV);
+			this->renderPipeline->SetTexture(dxRenderObj->GetObjData()->textureSRV);
 			this->renderPipeline->SetVertexShader(
-				dxRenderObj->GetObj()->vertexShader,
-				dxRenderObj->GetObj()->vsConstantBuffer
+				dxRenderObj->GetObjData()->vertexShader,
+				dxRenderObj->GetObjData()->vsConstantBuffer
 			);
 			this->renderPipeline->SetPixelShader(
-				dxRenderObj->GetObj()->pixelShader,
-				dxRenderObj->GetObj()->psConstantBuffer
+				dxRenderObj->GetObjData()->pixelShader,
+				dxRenderObj->GetObjData()->psConstantBuffer
 			);
 
 			this->renderPipeline->Draw();

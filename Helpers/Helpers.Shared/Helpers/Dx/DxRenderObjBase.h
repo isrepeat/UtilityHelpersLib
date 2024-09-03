@@ -91,7 +91,7 @@ namespace HELPERS_NS {
 				return this->dxRenderObjData;
 			}
 
-			std::unique_ptr<DxRenderObjDataT, Args...>& GetObj() {
+			std::unique_ptr<DxRenderObjDataT, Args...>& GetObjData() {
 				return this->dxRenderObjData;
 			}
 

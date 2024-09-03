@@ -268,6 +268,46 @@ namespace HELPERS_NS {
 		}
 
 
+		void DxLinkingGraph::UpdateConstantBuffers() {
+			auto dxDev = this->dxDeviceSafeObj->Lock();
+			auto d3dDev = dxDev->GetD3DDevice();
+			auto dxCtx = dxDev->LockContext();
+			auto d3dCtx = dxCtx->D3D();
+
+			for (auto& dxShaderModule : this->dxVertexShaderGraph.dxShaderModules) {
+				for (auto& shaderBindedConstantBuffer : dxShaderModule.shaderBindedConstantBuffers) {
+					shaderBindedConstantBuffer.dxConstantBuffer->UpdateSubresource(d3dCtx);
+				}
+			}
+			for (auto& dxShaderModule : this->dxPixelShaderGraph.dxShaderModules) {
+				for (auto& shaderBindedConstantBuffer : dxShaderModule.shaderBindedConstantBuffers) {
+					shaderBindedConstantBuffer.dxConstantBuffer->UpdateSubresource(d3dCtx);
+				}
+			}
+		}
+
+		void DxLinkingGraph::SetShadersToContext() {
+			auto dxDev = this->dxDeviceSafeObj->Lock();
+			auto d3dDev = dxDev->GetD3DDevice();
+			auto dxCtx = dxDev->LockContext();
+			auto d3dCtx = dxCtx->D3D();
+
+			d3dCtx->VSSetShader(this->dxVertexShaderGraph.vertexShader.Get(), nullptr, 0);
+			for (auto& dxShaderModule : this->dxVertexShaderGraph.dxShaderModules) {
+				for (auto& shaderBindedConstantBuffer : dxShaderModule.shaderBindedConstantBuffers) {
+					ID3D11Buffer* pBuffers[] = { shaderBindedConstantBuffer.dxConstantBuffer->GetBuffer().Get() };
+					d3dCtx->VSSetConstantBuffers(shaderBindedConstantBuffer.dstSlot, 1, pBuffers);
+				}
+			}
+			d3dCtx->PSSetShader(this->dxPixelShaderGraph.pixelShader.Get(), nullptr, 0);
+			for (auto& dxShaderModule : this->dxPixelShaderGraph.dxShaderModules) {
+				for (auto& shaderBindedConstantBuffer : dxShaderModule.shaderBindedConstantBuffers) {
+					ID3D11Buffer* pBuffers[] = { shaderBindedConstantBuffer.dxConstantBuffer->GetBuffer().Get() };
+					d3dCtx->PSSetConstantBuffers(shaderBindedConstantBuffer.dstSlot, 1, pBuffers);
+				}
+			}
+		}
+
 		Microsoft::WRL::ComPtr<ID3D11InputLayout> DxLinkingGraph::GetInputLayout() {
 			return this->dxVertexShaderGraph.inputLayout;
 		}
@@ -282,10 +322,10 @@ namespace HELPERS_NS {
 
 
 
-		DxShaderMudule DxLinkingGraph::LoadShaderModule(HlslModule hlslModule) {
+		details::DxShaderMudule DxLinkingGraph::LoadShaderModule(HlslModule hlslModule) {
 			HRESULT hr = S_OK;
-			DxShaderMudule dxShaderModule;
 
+			details::DxShaderMudule dxShaderModule;
 			auto hlslBlob = H::FS::ReadFile(hlslModule.hlslFile);
 
 			Microsoft::WRL::ComPtr<ID3DBlob> errorBlob;
@@ -323,43 +363,49 @@ namespace HELPERS_NS {
 			);
 			H::System::ThrowIfFailed(hr);
 
-			if (hlslModule.bindResource) {
+			if (hlslModule.bindedResource) {
 				dxShaderModule.shaderLibraryInstance->BindResource(
-					hlslModule.bindResource->srcSlot,
-					hlslModule.bindResource->dstSlot,
-					hlslModule.bindResource->count
+					hlslModule.bindedResource->srcSlot,
+					hlslModule.bindedResource->dstSlot,
+					hlslModule.bindedResource->count
 				);
 			}
-			if (hlslModule.bindSampler) {
+			if (hlslModule.bindedSampler) {
 				dxShaderModule.shaderLibraryInstance->BindSampler(
-					hlslModule.bindSampler->srcSlot,
-					hlslModule.bindSampler->dstSlot,
-					hlslModule.bindSampler->count
+					hlslModule.bindedSampler->srcSlot,
+					hlslModule.bindedSampler->dstSlot,
+					hlslModule.bindedSampler->count
 				);
 			}
-			for (auto& bindConstantBuffer : hlslModule.bindConstantBuffers) {
+			for (auto& [typeIdx, bindedConstantBuffer] : hlslModule.bindedConstantBuffers) {
+				if (!bindedConstantBuffer.dxConstantBuffer) {
+					LOG_ERROR_D("passed dxConstantBuffer is empty");
+					H::System::ThrowIfFailed(E_INVALIDARG);
+				}
+				dxShaderModule.shaderBindedConstantBuffers.emplace_back(bindedConstantBuffer);
 				dxShaderModule.shaderLibraryInstance->BindConstantBuffer(
-					bindConstantBuffer.srcSlot,
-					bindConstantBuffer.dstSlot,
-					bindConstantBuffer.cbDstOffset
+					bindedConstantBuffer.srcSlot,
+					bindedConstantBuffer.dstSlot,
+					bindedConstantBuffer.cbDstOffset
 				);
+	
 			}
 
 			return dxShaderModule;
 		}
 
 		void DxLinkingGraph::PassValues(
-			DxShaderGraph* dxShaderGraph,
+			details::DxShaderGraph* dxShaderGraph,
 			Microsoft::WRL::ComPtr<ID3D11LinkingNode> prevNode,
 			Microsoft::WRL::ComPtr<ID3D11LinkingNode> currentNode,
 			std::vector<HlslFunction::ParamMatch> paramsMatch)
 		{
 			HRESULT hr = S_OK;
-			LOG_ASSERT(dxShaderGraph);
+			assert(dxShaderGraph);
 
 			for (auto& paramMatch : paramsMatch) {
-				LOG_ASSERT(paramMatch.to != Param::_Return);
-				hr = dxShaderGraph->shaderGraph->PassValue(prevNode.Get(), paramMatch.from, currentNode.Get(), paramMatch.to);
+				LOG_ASSERT(paramMatch.to != Slot::_Return);
+				hr = dxShaderGraph->shaderGraph->PassValue(prevNode.Get(), (int)paramMatch.from, currentNode.Get(), (int)paramMatch.to);
 				H::System::ThrowIfFailed(hr);
 			}
 		}

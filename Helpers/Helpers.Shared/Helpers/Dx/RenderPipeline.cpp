@@ -148,6 +148,10 @@ namespace HELPERS_NS {
 			this->psConstantBuffer = psConstantBuffer;
 		}
 
+		void RenderPipeline::SetLinkingGraph(std::shared_ptr<H::Dx::DxLinkingGraph> dxLinkingGraph) {
+			this->dxLinkingGraph = dxLinkingGraph;
+		}
+
 		// Draw passed render obj geometry as quad with custom state (shaders, constants buffers, ...)
 		void RenderPipeline::Draw() {
 			auto dxDev = this->swapChainPanel->GetDxDevice()->Lock();
@@ -155,39 +159,66 @@ namespace HELPERS_NS {
 			auto dxCtx = dxDev->LockContext();
 			auto d3dCtx = dxCtx->D3D();
 
-			//// Update constant buffer data
-			//d3dCtx->UpdateSubresource(dxRenderObjBase->vsConstantBuffer.Get(), 0, nullptr, &dxRenderObjBase->vsConstantBufferData, 0, 0);
+			if (this->dxLinkingGraph) {
+				this->dxLinkingGraph->UpdateConstantBuffers();
 
-			// Set texture and sampler.
-			auto pTextureSRV = this->textureSRV.Get();
-			d3dCtx->PSSetShaderResources(0, 1, &pTextureSRV);
+				// Set texture and sampler.
+				auto pTextureSRV = this->textureSRV.Get();
+				d3dCtx->PSSetShaderResources(0, 1, &pTextureSRV);
 
-			auto pSampler = this->sampler.Get();
-			d3dCtx->PSSetSamplers(0, 1, &pSampler);
+				auto pSampler = this->sampler.Get();
+				d3dCtx->PSSetSamplers(0, 1, &pSampler);
 
-			// Set vetex / pixel shaders.
-			d3dCtx->VSSetShader(this->vertexShader.Get(), nullptr, 0);
-			if (this->vsConstantBuffer) {
-				d3dCtx->VSSetConstantBuffers(0, 1, this->vsConstantBuffer.GetAddressOf());
+				// Set vetex / pixel shaders.
+				this->dxLinkingGraph->SetShadersToContext();
+
+				// Set vertex / index buffers and input layout.
+				UINT strides = sizeof(VertexPositionTexcoord);
+				UINT offsets = 0;
+				d3dCtx->IASetVertexBuffers(0, 1, this->quadGeometryData.vertexBuffer.GetAddressOf(), &strides, &offsets);
+				d3dCtx->IASetIndexBuffer(this->quadGeometryData.indexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+
+				d3dCtx->IASetInputLayout(this->dxLinkingGraph->GetInputLayout().Get());
+				d3dCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+				// Draw quad.
+				d3dCtx->DrawIndexed(6, 0, 0);
 			}
+			else {
+				//// Update constant buffer data
+				//d3dCtx->UpdateSubresource(dxRenderObjBase->vsConstantBuffer.Get(), 0, nullptr, &dxRenderObjBase->vsConstantBufferData, 0, 0);
 
-			d3dCtx->PSSetShader(this->pixelShader.Get(), nullptr, 0);
-			if (this->psConstantBuffer) {
-				d3dCtx->PSSetConstantBuffers(0, 1, this->psConstantBuffer.GetAddressOf());
+				// Set texture and sampler.
+				auto pTextureSRV = this->textureSRV.Get();
+				d3dCtx->PSSetShaderResources(0, 1, &pTextureSRV);
+
+				auto pSampler = this->sampler.Get();
+				d3dCtx->PSSetSamplers(0, 1, &pSampler);
+
+				// Set vetex / pixel shaders.
+				d3dCtx->VSSetShader(this->vertexShader.Get(), nullptr, 0);
+				if (this->vsConstantBuffer) {
+					d3dCtx->VSSetConstantBuffers(0, 1, this->vsConstantBuffer.GetAddressOf());
+				}
+
+				d3dCtx->PSSetShader(this->pixelShader.Get(), nullptr, 0);
+				if (this->psConstantBuffer) {
+					d3dCtx->PSSetConstantBuffers(0, 1, this->psConstantBuffer.GetAddressOf());
+				}
+
+				// Set vertex / index buffers and input layout.
+				UINT strides = sizeof(VertexPositionTexcoord);
+				UINT offsets = 0;
+				d3dCtx->IASetVertexBuffers(0, 1, this->quadGeometryData.vertexBuffer.GetAddressOf(), &strides, &offsets);
+				d3dCtx->IASetIndexBuffer(this->quadGeometryData.indexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+
+				//d3dCtx->IASetInputLayout(this->quadGeometryData.inputLayout.Get());
+				d3dCtx->IASetInputLayout(this->inputLayout.Get());
+				d3dCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+				// Draw quad.
+				d3dCtx->DrawIndexed(6, 0, 0);
 			}
-
-			// Set vertex / index buffers and input layout.
-			UINT strides = sizeof(VertexPositionTexcoord);
-			UINT offsets = 0;
-			d3dCtx->IASetVertexBuffers(0, 1, this->quadGeometryData.vertexBuffer.GetAddressOf(), &strides, &offsets);
-			d3dCtx->IASetIndexBuffer(this->quadGeometryData.indexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
-
-			//d3dCtx->IASetInputLayout(this->quadGeometryData.inputLayout.Get());
-			d3dCtx->IASetInputLayout(this->inputLayout.Get());
-			d3dCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-			// Draw quad.
-			d3dCtx->DrawIndexed(6, 0, 0);
 		}
 
 
