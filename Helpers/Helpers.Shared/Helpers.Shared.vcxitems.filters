@@ -162,6 +162,8 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\FullScreenQuad.cpp">
       <Filter>Dx</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\SmartPROPVARIANT.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\PropertyStoreReader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Gate.h">
@@ -498,6 +500,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ObservableCollectionTransform.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IWeakEvent.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\WeakEvent.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SmartPROPVARIANT.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PropertyStoreReader.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PropertyStoreKeyRef.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultVS.hlsl">

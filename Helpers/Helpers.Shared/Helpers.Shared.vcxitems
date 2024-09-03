@@ -48,8 +48,10 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MFUser.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\MultithreadMutex.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\PackageProvider.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\PropertyStoreReader.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\RegistryManager.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Semaphore.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\SmartPROPVARIANT.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\SmartVARIANT.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Socket.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\StdRedirection.cpp" />
@@ -101,6 +103,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingVerbose.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ObservableCollection.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ObservableCollectionTransform.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PropertyStoreKeyRef.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PropertyStoreReader.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Semaphore.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Action.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AlignedAllocator.h" />
@@ -153,6 +157,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MultithreadMutex.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PackageProvider.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Passkey.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SmartPROPVARIANT.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SmartVARIANT.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Span.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StdEnumerable.h" />
