@@ -24,6 +24,7 @@
       dxgi.lib;
       dwrite.lib;
       dxguid.lib;
+      d3dcompiler.lib;
       mf.lib;
       Mfplat.lib;
       Mfuuid.lib;
