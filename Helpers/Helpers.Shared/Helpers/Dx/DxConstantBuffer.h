@@ -32,7 +32,7 @@ namespace HELPERS_NS {
 			virtual ~DxConstantBufferBase() = default;
 			virtual void UpdateSubresource(Microsoft::WRL::ComPtr<ID3D11DeviceContext> d3dCtx = nullptr) = 0;
 
-			Microsoft::WRL::ComPtr<ID3D11Buffer> GetBuffer() {
+			Microsoft::WRL::ComPtr<ID3D11Buffer> GetBuffer() const {
 				return this->constantBuffer;
 			}
 

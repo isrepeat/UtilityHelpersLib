@@ -363,31 +363,32 @@ namespace HELPERS_NS {
 			);
 			H::System::ThrowIfFailed(hr);
 
-			if (hlslModule.bindResource) {
+			if (hlslModule.bindedResource) {
 				dxShaderModule.shaderLibraryInstance->BindResource(
-					hlslModule.bindResource->srcSlot,
-					hlslModule.bindResource->dstSlot,
-					hlslModule.bindResource->count
+					hlslModule.bindedResource->srcSlot,
+					hlslModule.bindedResource->dstSlot,
+					hlslModule.bindedResource->count
 				);
 			}
-			if (hlslModule.bindSampler) {
+			if (hlslModule.bindedSampler) {
 				dxShaderModule.shaderLibraryInstance->BindSampler(
-					hlslModule.bindSampler->srcSlot,
-					hlslModule.bindSampler->dstSlot,
-					hlslModule.bindSampler->count
+					hlslModule.bindedSampler->srcSlot,
+					hlslModule.bindedSampler->dstSlot,
+					hlslModule.bindedSampler->count
 				);
 			}
-			for (auto& bindConstantBuffer : hlslModule.bindConstantBuffers) {
-				if (!bindConstantBuffer.dxConstantBuffer) {
+			for (auto& [typeIdx, bindedConstantBuffer] : hlslModule.bindedConstantBuffers) {
+				if (!bindedConstantBuffer.dxConstantBuffer) {
 					LOG_ERROR_D("passed dxConstantBuffer is empty");
 					H::System::ThrowIfFailed(E_INVALIDARG);
 				}
-				dxShaderModule.shaderBindedConstantBuffers.emplace_back(bindConstantBuffer);
+				dxShaderModule.shaderBindedConstantBuffers.emplace_back(bindedConstantBuffer);
 				dxShaderModule.shaderLibraryInstance->BindConstantBuffer(
-					bindConstantBuffer.srcSlot,
-					bindConstantBuffer.dstSlot,
-					bindConstantBuffer.cbDstOffset
+					bindedConstantBuffer.srcSlot,
+					bindedConstantBuffer.dstSlot,
+					bindedConstantBuffer.cbDstOffset
 				);
+	
 			}
 
 			return dxShaderModule;
