@@ -2,28 +2,30 @@
 #include "common.h"
 #include <memory>
 
-template <typename T>
-class TokenContext { // place as class member
-public:
-	using Data_t = T;
+namespace HELPERS_NS {
+	template <typename T>
+	class TokenContext { // place as class member
+	public:
+		using Data_t = T;
 
-	TokenContext(Data_t* data)
-		: data{ data }
-	{
-	}
+		TokenContext(Data_t* data)
+			: data{ data }
+		{
+		}
 
-	struct Weak {
-		using parent_t = TokenContext<T>;
+		struct Weak {
+			using parent_t = TokenContext<T>;
 
+			Data_t* data = nullptr;
+			std::weak_ptr<int> token;
+		};
+
+		Weak GetWeak() const {
+			return { data, token };
+		};
+
+	private:
 		Data_t* data = nullptr;
-		std::weak_ptr<int> token;
+		std::shared_ptr<int> token = std::make_shared<int>();
 	};
-
-	Weak GetWeak() const {
-		return { data, token };
-	};
-
-private:
-	Data_t* data = nullptr;
-	std::shared_ptr<int> token = std::make_shared<int>();
-};
+}

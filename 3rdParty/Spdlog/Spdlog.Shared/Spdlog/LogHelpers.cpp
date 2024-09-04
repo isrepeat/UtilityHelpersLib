@@ -169,7 +169,7 @@ namespace LOGGER_NS {
         this->debugSink->set_level(spdlog::level::trace);
 #endif
         // DefaultLoggers::UnscopedData is created inside singleton
-        TokenSingleton<DefaultLoggers>::SetToken(Passkey<DefaultLoggers>{}, this->token); 
+        H::TokenSingleton<DefaultLoggers>::SetToken(Passkey<DefaultLoggers>{}, this->token); 
     }
 
     DefaultLoggers::~DefaultLoggers() {
@@ -400,8 +400,8 @@ namespace LOGGER_NS {
     std::shared_ptr<spdlog::logger> DefaultLoggers::Logger(uint8_t id) {
         auto& _this = GetInstance(); // ensure that token set
 
-        if (TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].logger) {
-            return TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].logger) {
+            return H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
         }
         return GetInstance().standardLoggersList[id].logger;
     }
@@ -409,8 +409,8 @@ namespace LOGGER_NS {
     std::shared_ptr<spdlog::logger> DefaultLoggers::RawLogger(uint8_t id) {
         auto& _this = GetInstance();
 
-        if (TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].rawLogger) {
-            return TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].rawLogger) {
+            return H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
         }
         return GetInstance().standardLoggersList[id].rawLogger;
     }
@@ -418,8 +418,8 @@ namespace LOGGER_NS {
     std::shared_ptr<spdlog::logger> DefaultLoggers::TimeLogger(uint8_t id) {
         auto& _this = GetInstance();
 
-        if (TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].timeLogger) {
-            return TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].timeLogger) {
+            return H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
         }
         return GetInstance().standardLoggersList[id].timeLogger;
     }
@@ -427,8 +427,8 @@ namespace LOGGER_NS {
     std::shared_ptr<spdlog::logger> DefaultLoggers::FuncLogger(uint8_t id) {
         auto& _this = GetInstance();
 
-        if (TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].funcLogger) {
-            return TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].funcLogger) {
+            return H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
         }
         return GetInstance().standardLoggersList[id].funcLogger;
     }
@@ -437,8 +437,8 @@ namespace LOGGER_NS {
 #ifdef _DEBUG
         auto& _this = GetInstance();
 
-        if (TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].debugLogger) {
-            return TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].debugLogger) {
+            return H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
         }
         return GetInstance().standardLoggersList[id].debugLogger;
 #else
@@ -449,8 +449,8 @@ namespace LOGGER_NS {
     std::shared_ptr<spdlog::logger> DefaultLoggers::ExtendLogger(uint8_t id) {
         auto& _this = GetInstance();
 
-        if (TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].extendLogger) {
-            return TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].extendLogger) {
+            return H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
         }
         return GetInstance().standardLoggersList[id].extendLogger;
     }
