@@ -261,9 +261,9 @@ namespace LOGGER_NS {
     };
 
     // mb rename?
-    class LOGGER_API DefaultLoggers : public _Singleton<class DefaultLoggers> {
+    class LOGGER_API DefaultLoggers : public HELPERS_NS::_Singleton<class DefaultLoggers> {
     private:
-        using _MyBase = _Singleton<DefaultLoggers>;
+        using _MyBase = HELPERS_NS::_Singleton<DefaultLoggers>;
         friend _MyBase; // to have access to private Ctor DefaultLoggers()
 
         DefaultLoggers();
