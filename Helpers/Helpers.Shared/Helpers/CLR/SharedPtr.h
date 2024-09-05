@@ -83,6 +83,14 @@ namespace CLR {
             nativePtr = nullptr;
         }
 
+        std::shared_ptr<T> GetNative() {
+            if (!nativePtr) {
+                return nullptr;
+            }
+
+            return *nativePtr;
+        }
+
         T* operator->() {
             return nativePtr->get();
         }
