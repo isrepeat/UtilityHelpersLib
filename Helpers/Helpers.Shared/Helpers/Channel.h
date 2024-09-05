@@ -111,7 +111,7 @@ namespace HELPERS_NS {
 
 
         using Msg_t = std::shared_ptr<Message>;
-        using WriteFunc = std::function<void(std::vector<T>&&, EnumMsg)>;
+        using WriteFunc = std::function<void(EnumMsg, std::vector<T>&&)>;
 
         Channel()
             : messagesQueue{ std::make_shared<HELPERS_NS::ConcurrentQueue<Msg_t>>() }
@@ -213,8 +213,6 @@ namespace HELPERS_NS {
                 });
         }
 
-
-
         void Open(const std::wstring& pipeName, std::function<bool(Msg_t, WriteFunc)> listenHandler, int timeout = 10'000) {
             LOG_FUNCTION_ENTER(L"Open(pipeName = {}, listenHandler, timeout = {})", pipeName, timeout);
             this->pipeName = pipeName;
@@ -236,10 +234,9 @@ namespace HELPERS_NS {
 
             this->threadChannel = std::thread([this, listenHandler] {
                 LOG_THREAD(this->pipeName + L" threadChannel Open");
-                ListenRoutine(listenHandler);
+                this->ListenRoutine(listenHandler);
                 });
         }
-
 
         /* ------------------------------------ */
         /*			 IThread methods			*/
@@ -265,7 +262,6 @@ namespace HELPERS_NS {
             }
         }
 
-
         bool IsConnected() {
             return this->connected;
         }
@@ -284,7 +280,7 @@ namespace HELPERS_NS {
             this->WaitingFinishThreads();
         }
 
-        void Write(std::vector<T>&& writeData, EnumMsg type) {
+        void Write(EnumMsg type, std::vector<T>&& writeData = {}) {
             std::unique_lock lk{ mxWrite };
             Message message{ type, std::move(writeData) };
 
@@ -296,17 +292,15 @@ namespace HELPERS_NS {
             this->WriteInternal(message);
         }
 
-
         void WritePendingMessages() {
             LOG_FUNCTION_ENTER_C("WritePendingMessages()");
             std::lock_guard lk{ mxWrite };
             for (auto& message : this->pendingMessages) {
-                if (!WriteInternal(message))
+                if (!this->WriteInternal(message))
                     break;
             }
             this->pendingMessages.clear();
         }
-
 
         void ClearPendingMessages() {
             LOG_FUNCTION_ENTER_C("ClearPendingMessages()");
@@ -314,49 +308,16 @@ namespace HELPERS_NS {
             this->pendingMessages.clear();
         }
 
-        bool WriteInternal(Message& message) {
-            try {
-                MessageDescriptor msgDecriptor{ message.payload.size(), static_cast<uint8_t>(message.type) };
-                T messageSizeBuffer[sizeof(uint32_t)];
-                T messageTypeBuffer[sizeof(uint32_t)];
-                std::memcpy(&messageSizeBuffer, &msgDecriptor.size, sizeof(uint32_t));
-                std::memcpy(&messageTypeBuffer, &msgDecriptor.type, sizeof(uint32_t));
-
-                WriteToPipeAsync<T>(hNamedPipe, stopSignal, messageSizeBuffer);
-                WriteToPipeAsync<T>(hNamedPipe, stopSignal, messageTypeBuffer);
-                WriteToPipeAsync<T>(hNamedPipe, stopSignal, message.payload);
-
-                if (waitedMessage != EnumMsg::None && waitedMessage == message.type) {
-                    cvFinishSendingMessage.notify_all();
-                }
-
-                return true;
-            }
-            catch (PipeError error) {
-                LOG_ERROR_D("Catch PipeError = {}", magic_enum::enum_name(error));
-
-                switch (error) {
-                case PipeError::WriteError:
-                    LOG_ERROR_D("Write error! Stop channel.");
-                    break;
-                };
-
-                StopListening();
-                return false;
-            }
-        }
-
-
         // TODO: add logic to wait for one of several messages
         void WaitFinishSendingMessage(EnumMsg type) {
             std::unique_lock lk{ mxWrite };
 
-            if (hNamedPipe == INVALID_HANDLE_VALUE)
+            if (this->hNamedPipe == INVALID_HANDLE_VALUE)
                 return;
 
-            waitedMessage = type;
-            cvFinishSendingMessage.wait(lk); // now mutex unlocked and thread begin wait
-            waitedMessage = EnumMsg::None;
+            this->waitedMessage = type;
+            this->cvFinishSendingMessage.wait(lk); // now mutex unlocked and thread begin wait
+            this->waitedMessage = EnumMsg::None;
         }
 
     private:
@@ -372,7 +333,7 @@ namespace HELPERS_NS {
                 this->connectHandler();
                 });
 
-            this->Write({}, EnumMsg::Connect);
+            this->Write(EnumMsg::Connect);
 
             this->threadRead = std::thread([this] {
                 LOG_THREAD(this->pipeName + L" threadRead");
@@ -447,7 +408,6 @@ namespace HELPERS_NS {
             }
         }
 
-
         bool ParseMessage(std::vector<T>& readStreamBuffer, uint32_t& totalProcessedBytes, MessageInternal& messageInternal) {
             bool descriptorWasRead = messageInternal.processedBytes >= sizeof(MessageDescriptor);
             bool payloadWasRead = descriptorWasRead && messageInternal.processedBytes == sizeof(MessageDescriptor) + messageInternal.descriptor.size;
@@ -483,6 +443,37 @@ namespace HELPERS_NS {
             return true;
         }
 
+        bool WriteInternal(Message& message) {
+            try {
+                MessageDescriptor msgDecriptor{ message.payload.size(), static_cast<uint8_t>(message.type) };
+                T messageSizeBuffer[sizeof(uint32_t)];
+                T messageTypeBuffer[sizeof(uint32_t)];
+                std::memcpy(&messageSizeBuffer, &msgDecriptor.size, sizeof(uint32_t));
+                std::memcpy(&messageTypeBuffer, &msgDecriptor.type, sizeof(uint32_t));
+
+                WriteToPipeAsync<T>(hNamedPipe, stopSignal, messageSizeBuffer);
+                WriteToPipeAsync<T>(hNamedPipe, stopSignal, messageTypeBuffer);
+                WriteToPipeAsync<T>(hNamedPipe, stopSignal, message.payload);
+
+                if (this->waitedMessage != EnumMsg::None && this->waitedMessage == message.type) {
+                    this->cvFinishSendingMessage.notify_all();
+                }
+
+                return true;
+            }
+            catch (PipeError error) {
+                LOG_ERROR_D("Catch PipeError = {}", magic_enum::enum_name(error));
+
+                switch (error) {
+                case PipeError::WriteError:
+                    LOG_ERROR_D("Write error! Stop channel.");
+                    break;
+                };
+
+                this->StopListening();
+                return false;
+            }
+        }
 
         void StopListening() {
             LOG_FUNCTION_ENTER_C("StopListening()");
