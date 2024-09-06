@@ -524,6 +524,7 @@ Global
 		Helpers\Helpers.Includes\Helpers.Includes.vcxitems*{4ab35171-9952-4a89-9589-8a63e8be47e9}*SharedItemsImports = 4
 		3rdParty\JsonParser\JsonParser.Shared\JsonParser.Shared.vcxitems*{4dc532ad-a19b-4ec5-9923-990df8f4a9ab}*SharedItemsImports = 4
 		3rdParty\JsonParser\JsonParser.Shared\JsonParser.Shared.vcxitems*{55f6badb-ee2b-4345-bc1f-8f0284ed209f}*SharedItemsImports = 4
+		3rdParty\MagicEnum\MagicEnum.Shared\MagicEnum.Shared.vcxitems*{604ce514-563f-4720-b752-70db3f0bf669}*SharedItemsImports = 4
 		3rdParty\Spdlog\Spdlog.Shared\Spdlog.Shared.vcxitems*{604ce514-563f-4720-b752-70db3f0bf669}*SharedItemsImports = 4
 		Helpers\Helpers.Includes\Helpers.Includes.vcxitems*{604ce514-563f-4720-b752-70db3f0bf669}*SharedItemsImports = 4
 		3rdParty\3rdParty_Packages_Includes\3rdParty.Includes\3rdParty.Includes.vcxitems*{63bb29a8-e9c3-4070-9e45-900fa2f2da8a}*SharedItemsImports = 9
