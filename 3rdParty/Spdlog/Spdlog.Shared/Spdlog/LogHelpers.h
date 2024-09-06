@@ -24,7 +24,7 @@ namespace LOGGER_NS {} // create uniq "logger namespace" for this project
 namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger namespace" (defined via macro)
 
 // define these macros before first include spdlog headers
-#define SPDLOG_WCHAR_TO_UTF8_SUPPORT
+#define SPDLOG_WCHAR_TO_ANSI_SUPPORT
 #define SPDLOG_WCHAR_FILENAMES
 
 
