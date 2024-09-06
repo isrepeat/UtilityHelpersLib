@@ -24,7 +24,7 @@ namespace HELPERS_NS {
         virtual ~_Singleton() = default;
 
     private:
-        T m_instance; // by default not used (T = void*)
+        T instance; // by default not used (T = void*)
     };
 
 
@@ -33,7 +33,7 @@ namespace HELPERS_NS {
     class Singleton : public _Singleton<Singleton<C>, std::unique_ptr<C>> {
     private:
         using _MyBase = _Singleton<Singleton<C>, std::unique_ptr<C>>;
-
+        
     public:
         using Instance_t = C&;
 
@@ -44,15 +44,17 @@ namespace HELPERS_NS {
         static Instance_t CreateInstance(Args... args) {
             auto& _this = _MyBase::GetInstance();
             std::unique_lock lk{ _this.mx };
-            if (_this.m_instance == nullptr) {
-                _this.m_instance = std::make_unique<C>(args...); // NOTE: C must have public Ctor
+            if (_this.instance == nullptr) {
+                _this.instance = std::make_unique<C>(args...); // NOTE: C must have public Ctor
             }
-            return *_this.m_instance;
+            return *_this.instance;
         }
 
         static Instance_t GetInstance() {
-            assert(_MyBase::GetInstance().m_instance);
-            return *_MyBase::GetInstance().m_instance;
+            if (!_MyBase::GetInstance().instance) {
+                CreateInstance(); // Try create object with default Ctor.
+            }
+            return *_MyBase::GetInstance().instance;
         }
 
     private:
@@ -76,15 +78,17 @@ namespace HELPERS_NS {
         static Instance_t CreateInstance(Args... args) {
             auto& _this = _MyBase::GetInstance();
             std::unique_lock lk{ _this.mx };
-            if (_this.m_instance == nullptr) {
-                _this.m_instance = std::make_shared<C>(args...);
+            if (_this.instance == nullptr) {
+                _this.instance = std::make_shared<C>(args...);
             }
-            return _this.m_instance;
+            return _this.instance;
         }
 
         static Instance_t GetInstance() {
-            assert(_MyBase::GetInstance().m_instance);
-            return _MyBase::GetInstance().m_instance;
+            if (!_MyBase::GetInstance().instance) {
+                CreateInstance();
+            }
+            return _MyBase::GetInstance().instance;
         }
 
     private:
@@ -108,20 +112,20 @@ namespace HELPERS_NS {
         static Instance_t CreateInstance(Args... args) {
             auto& _this = _MyBase::GetInstance();
             std::unique_lock lk{ _this.mx };
-            if (_this.m_instance == nullptr) {
-                _this.m_instance = new C(args...);
+            if (_this.instance == nullptr) {
+                _this.instance = new C(args...);
             }
-            return _this.m_instance;
+            return _this.instance;
         }
 
         static Instance_t GetInstance() {
-            assert(_MyBase::GetInstance().m_instance);
-            return _MyBase::GetInstance().m_instance;
+            assert(_MyBase::GetInstance().instance);
+            return _MyBase::GetInstance().instance;
         }
 
         static void DeleteInstance() {
-            delete _MyBase::GetInstance().m_instance;
-            _MyBase::GetInstance().m_instance = nullptr;
+            delete _MyBase::GetInstance().instance;
+            _MyBase::GetInstance().instance = nullptr;
         }
 
     private:
