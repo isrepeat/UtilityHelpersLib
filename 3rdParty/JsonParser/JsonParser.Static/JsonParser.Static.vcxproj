@@ -22,7 +22,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{4DC532AD-A19B-4EC5-9923-990DF8F4A9AB}</ProjectGuid>
-    <RootNamespace>spdlog</RootNamespace>
+    <RootNamespace>JsonParser_Static</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

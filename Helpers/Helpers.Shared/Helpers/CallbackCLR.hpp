@@ -9,6 +9,8 @@ namespace HELPERS_NS {
     template<typename T, typename R, typename... Ts>
     class GenericWeakGCRootCallback : public ICallback<R, Ts...> {
     public:
+        using ICallbackBase = ICallback<R, Ts...>;
+
         GenericWeakGCRootCallback(T data, R(__clrcall* callbackFn)(T data, Ts... args))
             : data(gcnew System::WeakReference(data))
             , callbackFn(callbackFn)
@@ -71,10 +73,10 @@ namespace HELPERS_NS {
             return R();
         }
 
-        ICallback* Clone() const override {
-            GenericWeakGCRootCallback* clone = new GenericWeakGCRootCallback(*this);
-            return clone;
-        }
+    ICallbackBase* Clone() const override {
+        GenericWeakGCRootCallback* clone = new GenericWeakGCRootCallback(*this);
+        return clone;
+    }
 
     private:
         msclr::auto_gcroot<System::WeakReference^> data;
