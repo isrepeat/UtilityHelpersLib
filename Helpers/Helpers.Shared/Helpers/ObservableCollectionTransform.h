@@ -8,13 +8,15 @@
 #include <iterator>
 
 namespace HELPERS_NS {
+    // can be used to create IObservableCollection<IBase> or IObservableCollection<ISomeInterface> from
+    // IObservableCollection<ClassT> where ClassT : IBase, ISomeInterface or any other type transform by using custom transformFn
     template<typename DstT, typename SrcT, typename TransformFn>
     class ObservableCollectionTransform final : public IObservableCollection<DstT> {
     public:
         ObservableCollectionTransform(
             TransformFn transformFn,
             IObservableCollection<SrcT>& src,
-            std::shared_ptr<void> srcHolder)
+            std::shared_ptr<const void> srcHolder)
             : srcHolder(MakeTokenOrKeepSrcHolder(std::move(srcHolder)))
             , src(src)
             , transformFn(std::move(transformFn))
@@ -70,7 +72,7 @@ namespace HELPERS_NS {
         }
 
     private:
-        static std::shared_ptr<void> MakeTokenOrKeepSrcHolder(std::shared_ptr<void> srcHolder) {
+        static std::shared_ptr<const void> MakeTokenOrKeepSrcHolder(std::shared_ptr<const void> srcHolder) {
             if (srcHolder) {
                 return srcHolder;
             }
@@ -79,7 +81,8 @@ namespace HELPERS_NS {
         }
 
         mutable WeakEvent<const ObservableCollectionChangedArgs<DstT>&> onChangedEvent;
-        std::shared_ptr<void> srcHolder;
+        // can hold lifetime of parent that owns collection
+        std::shared_ptr<const void> srcHolder;
         IObservableCollection<SrcT>& src;
         TransformFn transformFn;
     };
@@ -89,7 +92,7 @@ namespace HELPERS_NS {
         SrcDstTransformFn srcDstTransformFn,
         DstSrcTransformFn dstSrcTransformFn,
         IObservableCollection<decltype(DstSrcTransformFn()({})) > & src,
-        std::shared_ptr<void> srcHolder)
+        std::shared_ptr<const void> srcHolder)
     {
         using SrcT = decltype(DstSrcTransformFn()({}));
         using DstT = decltype(SrcDstTransformFn()({}));

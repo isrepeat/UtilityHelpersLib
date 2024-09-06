@@ -104,6 +104,7 @@ namespace HELPERS_NS {
         }
 
     private:
+        // can hold lifetime of parent that owns collection
         std::shared_ptr<const void> collectionHolder;
         It begin;
         It end;
