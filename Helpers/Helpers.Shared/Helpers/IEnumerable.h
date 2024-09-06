@@ -6,11 +6,11 @@
 
 namespace HELPERS_NS {
     // all implementations must start before begining
-// This allows to do
-// while(IEnumerator.MoveNext()) {}
-// https://learn.microsoft.com/en-us/dotnet/api/system.collections.ienumerator.movenext?view=net-8.0
-// After an enumerator is created or after the Reset method is called, an enumerator is positioned before the first element of the collection,
-// and the first call to the MoveNext method moves the enumerator over the first element of the collection.
+    // This allows to do
+    // while(IEnumerator.MoveNext()) {}
+    // https://learn.microsoft.com/en-us/dotnet/api/system.collections.ienumerator.movenext?view=net-8.0
+    // After an enumerator is created or after the Reset method is called, an enumerator is positioned before the first element of the collection,
+    // and the first call to the MoveNext method moves the enumerator over the first element of the collection.
     template<typename T>
     class IEnumerator {
     public:
