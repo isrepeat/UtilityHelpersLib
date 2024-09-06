@@ -10,6 +10,7 @@
 #include "Logger.h"
 #include "Thread.h"
 #include "File.h"
+#include "Time.h"
 
 #include <condition_variable>
 #include <functional>
@@ -309,15 +310,23 @@ namespace HELPERS_NS {
         }
 
         // TODO: add logic to wait for one of several messages
-        void WaitFinishSendingMessage(EnumMsg type) {
+        template <typename DurationT = std::chrono::seconds>
+        void WaitFinishSendingMessage(EnumMsg type, DurationT waitTimeout = DurationT{30}) {
+            LOG_FUNCTION_ENTER_C("WaitFinishSendingMessage({}[{}], {})"
+                , MagicEnum::ToString(type), static_cast<int>(type) // also log 'type' casted to int because ToString may return empty str if 'type' out of range.
+                , waitTimeout
+            );
             std::unique_lock lk{ mxWrite };
 
-            if (this->hNamedPipe == INVALID_HANDLE_VALUE)
+            if (this->hNamedPipe == INVALID_HANDLE_VALUE) {
+                LOG_ERROR_D("hNamedPipe == INVALID_HANDLE_VALUE");
                 return;
+            }
 
             this->waitedMessage = type;
-            this->cvFinishSendingMessage.wait(lk); // now mutex unlocked and thread begin wait
+            this->cvFinishSendingMessage.wait_for(lk, waitTimeout); // now mutex unlocked and thread begin wait
             this->waitedMessage = EnumMsg::None;
+            LOG_DEBUG_D("waiting is finished");
         }
 
     private:
@@ -357,6 +366,7 @@ namespace HELPERS_NS {
                 this->interruptHandler();
                 });
 
+            LOG_DEBUG_D("Notify cvFinishSendingMessage");
             this->cvFinishSendingMessage.notify_all();
             this->connected = false; // if we here pipe not connected
         }
@@ -456,6 +466,7 @@ namespace HELPERS_NS {
                 WriteToPipeAsync<T>(hNamedPipe, stopSignal, message.payload);
 
                 if (this->waitedMessage != EnumMsg::None && this->waitedMessage == message.type) {
+                    LOG_DEBUG_D("Notify cvFinishSendingMessage");
                     this->cvFinishSendingMessage.notify_all();
                 }
 
