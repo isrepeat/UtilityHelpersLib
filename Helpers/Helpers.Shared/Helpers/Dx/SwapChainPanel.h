@@ -9,6 +9,7 @@
 #include "DxRenderObjProxy.h"
 #include "ISwapChainPanel.h"
 #include "FullScreenQuad.h"
+#include "RenderPipeline.h"
 
 namespace HELPERS_NS {
 	namespace Dx {
@@ -77,9 +78,11 @@ namespace HELPERS_NS {
 			void STDMETHODCALLTYPE SetRenderResolutionScale(float resolutionScale) override;
 			void STDMETHODCALLTYPE ValidateDevice() override;
 			void STDMETHODCALLTYPE HandleDeviceLost() override;
-			void STDMETHODCALLTYPE RegisterDeviceNotify(IDeviceNotify* deviceNotify) override;
 			void STDMETHODCALLTYPE Trim() override;
 			void STDMETHODCALLTYPE Present() override;
+			void STDMETHODCALLTYPE RegisterDeviceNotify(IDeviceNotify* deviceNotify) override;
+			//void STDMETHODCALLTYPE RegisterRenderNotification(IRenderNotification* renderNotification) override;
+			SwapChainPanelNotifications* STDMETHODCALLTYPE GetNotifications() override;
 
 			// The size of the render target, in pixels.
 			HELPERS_NS::Size_f STDMETHODCALLTYPE GetOutputSize() const override;
@@ -134,7 +137,7 @@ namespace HELPERS_NS {
 
 			// Direct3D render piplines objects.
 			std::unique_ptr<details::DxRenderObjProxy> dxRenderObjProxy;
-			std::unique_ptr<details::FullScreenQuad> fullScreenQuad;
+			std::unique_ptr<RenderPipeline> renderPipeline;
 
 
 			// Cached device properties.
@@ -163,7 +166,8 @@ namespace HELPERS_NS {
 			bool isDisplayHDR10;
 
 			// The IDeviceNotify can be held directly as it owns the DeviceResources.
-			IDeviceNotify* m_deviceNotify;
+			IDeviceNotify* deviceNotify;
+			SwapChainPanelNotifications swapChainPanelNotifications;
 		};
 	}
 

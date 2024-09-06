@@ -67,7 +67,7 @@ namespace LOGGER_NS {
 
             if (prefixCallback) {
                 std::wstring prefix = std::wstring(padinfo_.width_, ' ') + prefixCallback();
-                auto prefixUtf8 = HELPERS_NS::WStrToStr(prefix, CP_UTF8);
+                auto prefixUtf8 = H::WStrToStr(prefix, CP_UTF8);
                 dest.append(prefixUtf8.data(), prefixUtf8.data() + prefixUtf8.size());
             }
             if (postfixCallback) {
@@ -154,39 +154,39 @@ namespace LOGGER_NS {
         , debugSink{ std::make_shared<spdlog::sinks::msvc_sink_mt>() }
 #endif
     {
-        prefixCallback = [this] {
-            return className;
+        this->prefixCallback = [this] {
+            return this->className;
         };
-        postfixCallback = [this](const std::string& logMsg) {
-            lastMessage = logMsg;
+        this->postfixCallback = [this](const std::string& logMsg) {
+            this->lastMessage = logMsg;
         };
 
 #ifdef _DEBUG
         auto formatterDebug = std::make_unique<spdlog::pattern_formatter>();
         formatterDebug->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Debug));
-        formatterDebug->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, prefixCallback).set_pattern(GetPattern(Pattern::Debug));
-        debugSink->set_formatter(std::move(formatterDebug));
-        debugSink->set_level(spdlog::level::trace);
+        formatterDebug->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, this->prefixCallback).set_pattern(GetPattern(Pattern::Debug));
+        this->debugSink->set_formatter(std::move(formatterDebug));
+        this->debugSink->set_level(spdlog::level::trace);
 #endif
         // DefaultLoggers::UnscopedData is created inside singleton
-        TokenSingleton<DefaultLoggers>::SetToken(Passkey<DefaultLoggers>{}, this->token); 
+        H::TokenSingleton<DefaultLoggers>::SetToken(Passkey<DefaultLoggers>{}, this->token); 
     }
 
     DefaultLoggers::~DefaultLoggers() {
-        standardLoggersList = {}; // clear loggers to release sinks
+        this->standardLoggersList = {}; // clear loggers to release sinks
     }
 
 
-    void DefaultLoggers::Init(std::filesystem::path logFilePath, HELPERS_NS::Flags<InitFlags> initFlags) {
+    void DefaultLoggers::Init(std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags) {
         GetInstance().InitForId(0, logFilePath, initFlags);
     }
 
-    void DefaultLoggers::InitForId(uint8_t loggerId, std::filesystem::path logFilePath, HELPERS_NS::Flags<InitFlags> initFlags) {
+    void DefaultLoggers::InitForId(uint8_t loggerId, std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags) {
         assertm(loggerId < maxLoggers, "loggerId out of bound");
         // TODO: Use H::Bimap<"loggerPath", loggerId> and move to class member (combine with initializedLoggersById)
         static std::set<std::wstring> initializedLoggersByPath;
 
-        if (HELPERS_NS::PackageProvider::IsRunningUnderPackage()) {
+        if (H::PackageProvider::IsRunningUnderPackage()) {
             if (initFlags.Has(InitFlags::CreateInPackageFolder)) {
                 logFilePath = ComApi::GetPackageFolder() / logFilePath.relative_path();
             }
@@ -194,7 +194,7 @@ namespace LOGGER_NS {
         else {
             if (initFlags.Has(InitFlags::CreateInExeFolderForDesktop)) {
                 // dont use exe path when IsRunningUnderPackage() == true because uwp package exe folder protected for writing
-                logFilePath = HELPERS_NS::ExePath() / logFilePath.relative_path();
+                logFilePath = H::ExePath() / logFilePath.relative_path();
             }
         }
 
@@ -219,7 +219,7 @@ namespace LOGGER_NS {
             auto logSize = std::filesystem::file_size(logFilePath);
             if (!initFlags.Has(InitFlags::Truncate) && logSize > maxSizeLogFile) {
                 auto truncatedBytes = logSize - maxSizeLogFile / 2;
-                HELPERS_NS::FS::RemoveBytesFromStart(logFilePath, truncatedBytes, [](std::ofstream& file) {
+                H::FS::RemoveBytesFromStart(logFilePath, truncatedBytes, [](std::ofstream& file) {
                     file.write(logTruncationMessage.data(), logTruncationMessage.size());
                     });
             }
@@ -376,14 +376,14 @@ namespace LOGGER_NS {
         }
 
 #if USE_DYNAMIC_SINK
-        auto timer = std::make_shared<HELPERS_NS::Timer>();
+        auto timer = std::make_shared<H::Timer>();
         timer->Start(logSizeCheckInterval, [loggerId] {
             auto& _this = GetInstance();
             auto& loggers = _this.standardLoggersList[loggerId];
             CheckLogFileSize(loggers);
         }, true);
         _this.standardLoggersList[loggerId].logSizeLimitChecker = timer;
-        _this.standardLoggersList[loggerId].pauseLoggingEvent = std::make_shared<HELPERS_NS::EventObject>(pauseLoggingEventName);
+        _this.standardLoggersList[loggerId].pauseLoggingEvent = std::make_shared<H::EventObject>(pauseLoggingEventName);
 #endif
     }
 
@@ -400,8 +400,8 @@ namespace LOGGER_NS {
     std::shared_ptr<spdlog::logger> DefaultLoggers::Logger(uint8_t id) {
         auto& _this = GetInstance(); // ensure that token set
 
-        if (TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].logger) {
-            return TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].logger) {
+            return H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
         }
         return GetInstance().standardLoggersList[id].logger;
     }
@@ -409,8 +409,8 @@ namespace LOGGER_NS {
     std::shared_ptr<spdlog::logger> DefaultLoggers::RawLogger(uint8_t id) {
         auto& _this = GetInstance();
 
-        if (TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].rawLogger) {
-            return TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].rawLogger) {
+            return H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
         }
         return GetInstance().standardLoggersList[id].rawLogger;
     }
@@ -418,8 +418,8 @@ namespace LOGGER_NS {
     std::shared_ptr<spdlog::logger> DefaultLoggers::TimeLogger(uint8_t id) {
         auto& _this = GetInstance();
 
-        if (TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].timeLogger) {
-            return TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].timeLogger) {
+            return H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
         }
         return GetInstance().standardLoggersList[id].timeLogger;
     }
@@ -427,8 +427,8 @@ namespace LOGGER_NS {
     std::shared_ptr<spdlog::logger> DefaultLoggers::FuncLogger(uint8_t id) {
         auto& _this = GetInstance();
 
-        if (TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].funcLogger) {
-            return TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].funcLogger) {
+            return H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
         }
         return GetInstance().standardLoggersList[id].funcLogger;
     }
@@ -437,8 +437,8 @@ namespace LOGGER_NS {
 #ifdef _DEBUG
         auto& _this = GetInstance();
 
-        if (TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].debugLogger) {
-            return TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].debugLogger) {
+            return H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
         }
         return GetInstance().standardLoggersList[id].debugLogger;
 #else
@@ -449,8 +449,8 @@ namespace LOGGER_NS {
     std::shared_ptr<spdlog::logger> DefaultLoggers::ExtendLogger(uint8_t id) {
         auto& _this = GetInstance();
 
-        if (TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].extendLogger) {
-            return TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].extendLogger) {
+            return H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
         }
         return GetInstance().standardLoggersList[id].extendLogger;
     }
@@ -513,7 +513,7 @@ namespace LOGGER_NS {
 				oldFile.read(data.data() + logTruncationMessage.size(), data.size());
 				oldFile.close();
 
-				HELPERS_NS::FS::PrependToFile(loggers.fileSink->GetFilename(), data.data(), data.size());
+				H::FS::PrependToFile(loggers.fileSink->GetFilename(), data.data(), data.size());
 				TryDeleteFile(tmpPath);
 			}
 		}
@@ -522,6 +522,6 @@ namespace LOGGER_NS {
 
 }
 
-LOGGER_API HELPERS_NS::nothing* __LgCtx() {
+LOGGER_API H::nothing* __LgCtx() {
     return nullptr;
 }

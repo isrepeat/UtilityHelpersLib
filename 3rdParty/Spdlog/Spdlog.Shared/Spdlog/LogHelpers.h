@@ -1,5 +1,5 @@
 #pragma once
-#include <Preprocessor.h>
+#include "Preprocessor.h"
 #pragma message(PREPROCESSOR_FILE_INCLUDED("LogHelpers.h"))
 //#pragma message("include 'LogHelpers.h' [begin]")
 
@@ -188,18 +188,18 @@ namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger na
 
 
 #define USE_DYNAMIC_SINK 0
-#include <Helpers/TypeTraits.hpp>
-#include <Helpers/Singleton.hpp>
-#include <Helpers/String.hpp>
-#include <Helpers/Macros.h>
-#include <Helpers/Scope.h>
-#include <Helpers/Flags.h>
+#include "Helpers/TypeTraits.hpp"
+#include "Helpers/Singleton.hpp"
+#include "Helpers/String.hpp"
+#include "Helpers/Macros.h"
+#include "Helpers/Scope.h"
+#include "Helpers/Flags.h"
 
 #if USE_DYNAMIC_SINK
 // TODO: use forward declaration for DefaultLoggers::Log() static method before LOG_... macros definition above
 //       because Time.h include Rational.h and last one use LOG_... macros with undefined DefaultLoggers class yet
-#include <Helpers/Semaphore.h>
-#include <Helpers/Time.h>
+#include "Helpers/Semaphore.h"
+#include "Helpers/Time.h"
 #include "DynamicFileSink.h"
 #endif
 #include "CustomTypeSpecialization.h"
@@ -261,9 +261,9 @@ namespace LOGGER_NS {
     };
 
     // mb rename?
-    class LOGGER_API DefaultLoggers : public _Singleton<class DefaultLoggers> {
+    class LOGGER_API DefaultLoggers : public HELPERS_NS::_Singleton<class DefaultLoggers> {
     private:
-        using _MyBase = _Singleton<DefaultLoggers>;
+        using _MyBase = HELPERS_NS::_Singleton<DefaultLoggers>;
         friend _MyBase; // to have access to private Ctor DefaultLoggers()
 
         DefaultLoggers();

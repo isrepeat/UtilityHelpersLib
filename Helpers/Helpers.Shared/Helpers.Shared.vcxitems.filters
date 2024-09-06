@@ -164,6 +164,15 @@
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\SmartPROPVARIANT.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\PropertyStoreReader.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjHDR.cpp">
+      <Filter>Dx</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\RenderPipeline.cpp">
+      <Filter>Dx</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxLinkingGraph.cpp">
+      <Filter>Dx</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Gate.h">
@@ -487,7 +496,28 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjProxy.h">
       <Filter>Dx</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObj.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjBase.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjHDR.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\JSONConfigLoader.hpp">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\RenderPipeline.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxLinkingGraph.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxConstantBuffer.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxShaderModule.h">
+      <Filter>Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\HlslModule.h">
       <Filter>Dx</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CLR\UniquePtr.h" />

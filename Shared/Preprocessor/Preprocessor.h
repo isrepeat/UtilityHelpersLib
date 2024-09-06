@@ -1,7 +1,11 @@
 #pragma once
+#define PP_EXPAND(x) x
+
 #define PP_STRINGIFY_BASE(x) #x
 #define PP_STRINGIFY(x) PP_STRINGIFY_BASE(x)
 
+#define PP_CONCAT_BASE(a, b) a ## b
+#define PP_CONCAT(a, b) PP_CONCAT_BASE(a,b)
 
 #if !defined(DISABLE_PREPROCESSOR_MESSAGES)
 #ifdef __PROJECT_NAME__

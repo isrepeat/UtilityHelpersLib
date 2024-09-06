@@ -1,4 +1,21 @@
 <Project>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>
+        %(AdditionalIncludeDirectories);
+      </AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>
+        <!-- Expose project properties through macros: -->
+        MSBuildProject__RootNamespace=$(RootNamespace);
+        %(PreprocessorDefinitions)
+      </PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <!-- Import .targets that are received from outside (from remote server). -->
+  <Import Project="$(MSBuildThisFileDirectory)\DCT.CppCommon.targets"
+        Condition="Exists('$(MSBuildThisFileDirectory)\DCT.CppCommon.targets')" />
+
   <!-- Import PROJECT.targets -->
   <Import Project="$(MSBuildProjectDirectory)\$(MSBuildProjectName).targets"
           Condition="Exists('$(MSBuildProjectDirectory)\$(MSBuildProjectName).targets')" />
@@ -10,8 +27,8 @@
 
 
   <Target Name="__PrintDirectoryBuildPropsInfoTask"
-    BeforeTargets="PrepareForBuild"
-    Condition="'$(__PrintDirectoryBuildPropsInfo)' == 'true'">
+          BeforeTargets="PrepareForBuild"
+          Condition="'$(__PrintDirectoryBuildPropsInfo)' == 'true'">
     <PropertyGroup>
       <NewLine>%0D%0A</NewLine>
     </PropertyGroup>
@@ -25,5 +42,14 @@
     <Message Importance="high" Text="__OverrideOutputPathOnlyIfBuildFromAnotherSolution = $(__OverrideOutputPathOnlyIfBuildFromAnotherSolution)" />
     <Message Importance="high" Text="__CapturedDirectoryBuildProps = %(__CapturedDirectoryBuildProps.Identity)" />
     <Message Importance="high" Text="$(NewLine)" />
+  </Target>
+
+  <Target Name="__EnsureExternalTargetsAreImportedTask" 
+          BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>Can't import file = {0}</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(MSBuildThisFileDirectory)\DCT.CppCommon.targets')"
+           Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)\DCT.CppCommon.targets'))" />
   </Target>
 </Project>

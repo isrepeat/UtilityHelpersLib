@@ -1,39 +1,46 @@
-#include "DxRenderObjProxy.h"
+#include "DxRenderObjHDR.h"
 #include <Helpers/Dx/Shaders/ShadersCommon.h>
 #include <Helpers/FileSystem.h>
 
 namespace HELPERS_NS {
     namespace Dx {
 		namespace details {
-			DxRenderObjProxy::DxRenderObjProxy(
+			DxRenderObjHDR::DxRenderObjHDR(
 				Microsoft::WRL::ComPtr<H::Dx::ISwapChainPanel> swapChainPanel,
-				DXGI_FORMAT textureFormat)
+				Params params)
 				: swapChainPanel{ swapChainPanel }
-				, textureFormat{ textureFormat }
 			{
-				this->dxRenderObjData = this->CreateObjectData(this->swapChainPanel->GetDxDevice());
+				LOG_ASSERT(swapChainPanel);
+
+				this->dxRenderObjData = this->CreateObjectData(
+					this->swapChainPanel->GetDxDevice(),
+					params
+				);
 				this->CreateWindowSizeDependentResources();
 			}
 
-			void DxRenderObjProxy::CreateWindowSizeDependentResources() {
-				this->CreateTexture();
+			DxRenderObjHDR::DxRenderObjHDR(
+				DxDeviceSafeObj* dxDeviceSafeObj,
+				Params params)
+				: DxRenderObjHDR(dxDeviceSafeObj->Lock()->GetAssociatedSwapChainPanel(), params)
+			{
 			}
 
-			void DxRenderObjProxy::ReleaseDeviceDependentResources() {
+
+			void DxRenderObjHDR::CreateWindowSizeDependentResources() {
+				this->CreateTextureHDR(static_cast<H::Size>(this->swapChainPanel->GetOutputSize()));
+				//this->CreateTextureHDR();
+			}
+
+			void DxRenderObjHDR::ReleaseDeviceDependentResources() {
 				this->dxRenderObjData->Reset();
 			}
 
-			void DxRenderObjProxy::UpdateBuffers() {
-				auto dxDev = this->swapChainPanel->GetDxDevice()->Lock();
-				auto d3dDev = dxDev->GetD3DDevice();
-				auto dxCtx = dxDev->LockContext();
-				auto d3dCtx = dxCtx->D3D();
 
-				d3dCtx->UpdateSubresource(this->dxRenderObjData->vsConstantBuffer.Get(), 0, nullptr, &this->dxRenderObjData->vsConstantBufferData, 0, 0);
-				d3dCtx->UpdateSubresource(this->dxRenderObjData->psConstantBuffer.Get(), 0, nullptr, &this->dxRenderObjData->psConstantBufferData, 0, 0);
-			}
-
-			std::unique_ptr<DxRenderObjDefaultData> DxRenderObjProxy::CreateObjectData(DxDeviceSafeObj* dxDeviceSafeObj) {
+			std::unique_ptr<DxRenderObjHDRData> DxRenderObjHDR::CreateObjectData(
+				H::Dx::DxDeviceSafeObj* dxDeviceSafeObj,
+				Params params)
+			{
 				HRESULT hr = S_OK;
 
 				auto dxDev = dxDeviceSafeObj->Lock();
@@ -41,8 +48,8 @@ namespace HELPERS_NS {
 				auto dxCtx = dxDev->LockContext();
 				auto d2dCtx = dxCtx->D2D();
 
-				auto dxRenderObjData = std::make_unique<DxRenderObjDefaultData>();
-
+				auto dxRenderObjData = std::make_unique<DxRenderObjHDRData>();
+				
 				// Create vertex buffer.
 				{
 					float w = 1.0f;
@@ -102,7 +109,14 @@ namespace HELPERS_NS {
 
 				// Load vertex shader and create input layout.
 				{
-					auto vertexShaderBlob = H::FS::ReadFile(g_shaderLoadDir / L"defaultVS.cso");
+					if (params.vertexShader.empty()) {
+						params.vertexShader = g_shaderLoadDir / L"defaultVS.cso";
+					}
+					else {
+						params.vertexShader = H::ExePath() / params.vertexShader;
+					}
+
+					auto vertexShaderBlob = H::FS::ReadFile(params.vertexShader);
 					hr = d3dDev->CreateVertexShader(
 						vertexShaderBlob.data(),
 						vertexShaderBlob.size(),
@@ -128,12 +142,35 @@ namespace HELPERS_NS {
 
 				// Load pixel shaders.
 				{
-					auto pixelShaderBlob = H::FS::ReadFile(g_shaderLoadDir / L"defaultPS.cso");
+					if (params.pixelShaderHDR.empty()) {
+						params.pixelShaderHDR = g_shaderLoadDir / L"defaultPS.cso";
+					}
+					else {
+						params.pixelShaderHDR = H::ExePath() / params.pixelShaderHDR;
+					}
+
+					if (params.pixelShaderToneMap.empty()) {
+						params.pixelShaderToneMap = g_shaderLoadDir / L"defaultPS.cso";
+					}
+					else {
+						params.pixelShaderToneMap = H::ExePath() / params.pixelShaderToneMap;
+					}
+
+					auto pixelShaderHDRBlob = H::FS::ReadFile(params.pixelShaderHDR);
 					hr = d3dDev->CreatePixelShader(
-						pixelShaderBlob.data(),
-						pixelShaderBlob.size(),
+						pixelShaderHDRBlob.data(),
+						pixelShaderHDRBlob.size(),
 						nullptr,
-						dxRenderObjData->pixelShader.ReleaseAndGetAddressOf()
+						dxRenderObjData->pixelShaderHDR.ReleaseAndGetAddressOf()
+					);
+					H::System::ThrowIfFailed(hr);
+
+					auto pixelShaderToneMapBlob = H::FS::ReadFile(params.pixelShaderToneMap);
+					hr = d3dDev->CreatePixelShader(
+						pixelShaderToneMapBlob.data(),
+						pixelShaderToneMapBlob.size(),
+						nullptr,
+						dxRenderObjData->pixelShaderToneMap.ReleaseAndGetAddressOf()
 					);
 					H::System::ThrowIfFailed(hr);
 				}
@@ -148,7 +185,7 @@ namespace HELPERS_NS {
 					);
 
 					D3D11_BUFFER_DESC constantbufferDesc;
-					constantbufferDesc.ByteWidth = sizeof(DxRenderObjDefaultData::VS_CONSTANT_BUFFER);
+					constantbufferDesc.ByteWidth = sizeof(DxRenderObjHDRData::VS_CONSTANT_BUFFER);
 					constantbufferDesc.Usage = D3D11_USAGE_DEFAULT;
 					constantbufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 					constantbufferDesc.CPUAccessFlags = 0;
@@ -166,10 +203,10 @@ namespace HELPERS_NS {
 				// PS constant buffer.
 				{
 					// Store default values
-					dxRenderObjData->psConstantBufferData.someData = { 0.0f, 0.0f, 0.0f, 0.0f };
+					dxRenderObjData->psConstantBufferData.luminance = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 					D3D11_BUFFER_DESC constantbufferDesc;
-					constantbufferDesc.ByteWidth = sizeof(DxRenderObjDefaultData::PS_CONSTANT_BUFFER);
+					constantbufferDesc.ByteWidth = sizeof(DxRenderObjHDRData::PS_CONSTANT_BUFFER);
 					constantbufferDesc.Usage = D3D11_USAGE_DEFAULT;
 					constantbufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 					constantbufferDesc.CPUAccessFlags = 0;
@@ -184,32 +221,16 @@ namespace HELPERS_NS {
 					H::System::ThrowIfFailed(hr);
 				}
 
-
 				return dxRenderObjData;
 			}
 
-			void DxRenderObjProxy::CreateTexture() {
+			void DxRenderObjHDR::CreateTextureHDR(H::Size size) {
 				HRESULT hr = S_OK;
 
 				auto dxDev = this->swapChainPanel->GetDxDevice()->Lock();
 				auto d3dDev = dxDev->GetD3DDevice();
 
-				auto outputSize = this->swapChainPanel->GetOutputSize();
-				int width = outputSize.width;
-				int height = outputSize.height;
-
-				Microsoft::WRL::ComPtr<ID3D11Texture2D> dxgiSwapChainBackBuffer;
-				hr = this->swapChainPanel->GetSwapChain()->GetBuffer(0, IID_PPV_ARGS(&dxgiSwapChainBackBuffer));
-				H::System::ThrowIfFailed(hr);
-
-				//CD3D11_TEXTURE2D_DESC descTex(DXGI_FORMAT_R8G8B8A8_UNORM, width, height, 1, 1, D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
-				D3D11_TEXTURE2D_DESC descTex = {};
-				dxgiSwapChainBackBuffer->GetDesc(&descTex);
-				descTex.Format = this->textureFormat;
-				descTex.Width = width;
-				descTex.Height = height;
-				descTex.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-
+				CD3D11_TEXTURE2D_DESC descTex(DXGI_FORMAT_R16G16B16A16_FLOAT, size.width, size.height, 1, 1, D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
 				hr = d3dDev->CreateTexture2D(&descTex, nullptr, this->dxRenderObjData->texture.ReleaseAndGetAddressOf());
 				H::System::ThrowIfFailed(hr);
 
@@ -221,6 +242,30 @@ namespace HELPERS_NS {
 				hr = d3dDev->CreateShaderResourceView(this->dxRenderObjData->texture.Get(), &descSRV, this->dxRenderObjData->textureSRV.ReleaseAndGetAddressOf());
 				H::System::ThrowIfFailed(hr);
 			}
+
+
+			//void DxRenderObjHDR::CreateTextureHDR() {
+			//	HRESULT hr = S_OK;
+
+			//	auto dxDev = this->swapChainPanel->GetDxDevice()->Lock();
+			//	auto d3dDev = dxDev->GetD3DDevice();
+
+			//	auto outputSize = this->swapChainPanel->GetOutputSize();
+			//	int width = outputSize.width;
+			//	int height = outputSize.height;
+
+			//	CD3D11_TEXTURE2D_DESC descTex(DXGI_FORMAT_R16G16B16A16_FLOAT, width, height, 1, 1, D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
+			//	hr = d3dDev->CreateTexture2D(&descTex, nullptr, this->dxRenderObjData->texture.ReleaseAndGetAddressOf());
+			//	H::System::ThrowIfFailed(hr);
+
+			//	CD3D11_RENDER_TARGET_VIEW_DESC descRTV(D3D11_RTV_DIMENSION_TEXTURE2D, descTex.Format);
+			//	hr = d3dDev->CreateRenderTargetView(this->dxRenderObjData->texture.Get(), &descRTV, this->dxRenderObjData->textureRTV.ReleaseAndGetAddressOf());
+			//	H::System::ThrowIfFailed(hr);
+
+			//	CD3D11_SHADER_RESOURCE_VIEW_DESC descSRV(D3D11_SRV_DIMENSION_TEXTURE2D, descTex.Format, 0, 1);
+			//	hr = d3dDev->CreateShaderResourceView(this->dxRenderObjData->texture.Get(), &descSRV, this->dxRenderObjData->textureSRV.ReleaseAndGetAddressOf());
+			//	H::System::ThrowIfFailed(hr);
+			//}
 		}
     }
 }

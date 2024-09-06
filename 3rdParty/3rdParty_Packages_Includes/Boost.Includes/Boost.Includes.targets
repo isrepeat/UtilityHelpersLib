@@ -5,15 +5,15 @@
     <!-- Ensure version is correct -->
     <BoostIncludesDir>$(MSBuildThisFileDirectory)..\..\..\packages\boost.1.84.0\lib\native\include</BoostIncludesDir>
     <!-- Expose boost includes dir for other projects -->
-    <PublicIncludeDirectories>$(BoostIncludesDir);$(PublicIncludeDirectories)</PublicIncludeDirectories>
+    <PublicIncludeDirectories>$(PublicIncludeDirectories);$(BoostIncludesDir)</PublicIncludeDirectories>
   </PropertyGroup>
   
   <!-- Add boost includes dir as additional includes dirs to whoever imports this project -->
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>
-        $(BoostIncludesDir);
-        %(AdditionalIncludeDirectories)
+        %(AdditionalIncludeDirectories);
+        $(BoostIncludesDir)
       </AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>

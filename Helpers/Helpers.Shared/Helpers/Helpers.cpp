@@ -1,6 +1,7 @@
 #include "Helpers.h"
 #include "System.h"
 #include "Logger.h"
+#include "Memory.h"
 
 #include <filesystem>
 #include <shellapi.h>
@@ -158,27 +159,25 @@ namespace HELPERS_NS {
     }
 
 #if COMPILE_FOR_DESKTOP
-    std::wstring GetAppDataPath() {
-        wchar_t* path = nullptr;
-        auto hr = SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, NULL, &path);
-        HELPERS_NS::System::ThrowIfFailed(hr);
-        auto result = std::wstring(path);
-        CoTaskMemFree(path);
-
-        return result;
+    std::filesystem::path GetModulePath(std::filesystem::path moduleName) {
+        if (HMODULE hModule = GetModuleHandleW(moduleName.filename().wstring().c_str())) {
+            wchar_t buffer[MAX_PATH] = { 0 };
+            GetModuleFileNameW(hModule, buffer, MAX_PATH);
+            return std::filesystem::path{ buffer };
+        }
+        return {};
     }
 
-    std::wstring GetKnownFolder(GUID knownFolderGUID) {
-        std::wstring result = L"";
-        wchar_t* path = nullptr;
+    std::filesystem::path GetKnownFolder(GUID knownFolderGUID) {
         HRESULT hr = S_OK;
 
+        H::CoUniquePtr<wchar_t> pathStr;
         if (knownFolderGUID == FOLDERID_LocalMusic ||
             knownFolderGUID == FOLDERID_LocalVideos ||
             knownFolderGUID == FOLDERID_LocalPictures ||
             knownFolderGUID == FOLDERID_LocalDocuments ||
             knownFolderGUID == FOLDERID_LocalAppData ||
-            knownFolderGUID == FOLDERID_LocalAppDataLow || 
+            knownFolderGUID == FOLDERID_LocalAppDataLow ||
             knownFolderGUID == FOLDERID_Profile ||
             knownFolderGUID == FOLDERID_Downloads ||
             knownFolderGUID == FOLDERID_AppsFolder ||
@@ -190,17 +189,20 @@ namespace HELPERS_NS {
             knownFolderGUID == FOLDERID_PublicVideos ||
             knownFolderGUID == FOLDERID_PublicPictures)
         {
-            hr = SHGetKnownFolderPath(knownFolderGUID, 0, NULL, &path);
-        }
-        
-        
-        if (path != nullptr) {
-            HELPERS_NS::System::ThrowIfFailed(hr);
-            result = std::wstring(path);
-            CoTaskMemFree(path);
+            hr = SHGetKnownFolderPath(knownFolderGUID, 0, NULL, pathStr.GetAddressOf());
         }
 
-        return result;
+        if (SUCCEEDED(hr)) {
+            return pathStr.get();
+        }
+        else {
+            LOG_FAILED(hr);
+            return {};
+        }
+    }
+
+    std::filesystem::path GetAppDataPath() {
+        return GetKnownFolder(FOLDERID_LocalAppData);
     }
 #endif
 
@@ -314,7 +316,7 @@ namespace HELPERS_NS {
 
         bMore = Module32First(hSnapshot, &me);
         for (; bMore; bMore = Module32Next(hSnapshot, &me)) {
-            OutputDebugStringW((L"---------- module = "+std::wstring{ me.szModule } + L" ... exePath = "+ std::wstring{ me.szExePath } + L"\n").c_str());
+            OutputDebugStringW((L"---------- module = " + std::wstring{ me.szModule } + L" ... exePath = " + std::wstring{ me.szExePath } + L"\n").c_str());
             if (!_tcsicmp(me.szModule, szDllname.c_str()) || !_tcsicmp(me.szExePath, szDllname.c_str()))
             {
                 CloseHandle(hSnapshot);
@@ -325,19 +327,55 @@ namespace HELPERS_NS {
         return MODULEENTRY32{ 0 };
     }
 
-    bool ExecuteCommandLine(std::wstring parameters, bool admin, DWORD showFlag) {
-        SHELLEXECUTEINFO ShExecInfo = { 0 };
-        ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
+    BOOL ExecuteCommandLineW(std::wstring command, bool admin, DWORD showFlag, DWORD* exitCode) {
+        if (exitCode) {
+            *exitCode = 0;
+        }
+
+        SHELLEXECUTEINFOW ShExecInfo = { 0 };
+        ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFOW);
         ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
         ShExecInfo.hwnd = NULL;
         ShExecInfo.lpVerb = admin ? L"runas" : L"open";
         ShExecInfo.lpFile = L"cmd.exe";
-        ShExecInfo.lpParameters = parameters.c_str();
+        ShExecInfo.lpParameters = command.c_str();
         ShExecInfo.lpDirectory = NULL;
         ShExecInfo.nShow = showFlag;
         ShExecInfo.hInstApp = NULL;
-        bool res = ShellExecuteExW(&ShExecInfo);
-        WaitForSingleObject(ShExecInfo.hProcess, INFINITE);
+        BOOL res = ShellExecuteExW(&ShExecInfo);
+        
+        if (ShExecInfo.hProcess != NULL) {
+            WaitForSingleObject(ShExecInfo.hProcess, INFINITE);
+            if (exitCode) {
+                GetExitCodeProcess(ShExecInfo.hProcess, exitCode);
+            }
+        }
+        return res;
+    }
+
+    BOOL ExecuteCommandLineA(std::string command, bool admin, DWORD showFlag, DWORD* exitCode) {
+        if (exitCode) {
+            *exitCode = 0;
+        }
+
+        SHELLEXECUTEINFOA ShExecInfo = { 0 };
+        ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFOA);
+        ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
+        ShExecInfo.hwnd = NULL;
+        ShExecInfo.lpVerb = admin ? "runas" : "open";
+        ShExecInfo.lpFile = "cmd.exe";
+        ShExecInfo.lpParameters = command.c_str();
+        ShExecInfo.lpDirectory = NULL;
+        ShExecInfo.nShow = showFlag;
+        ShExecInfo.hInstApp = NULL;
+        BOOL res = ShellExecuteExA(&ShExecInfo);
+
+        if (ShExecInfo.hProcess != NULL) {
+            WaitForSingleObject(ShExecInfo.hProcess, INFINITE);
+            if (exitCode) {
+                GetExitCodeProcess(ShExecInfo.hProcess, exitCode);
+            }
+        }
         return res;
     }
 

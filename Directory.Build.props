@@ -1,7 +1,20 @@
+<!--
+***********************************************************************************************
+Directory.Build.props
+
+WARNING:  1. Place this file in solution directory. All custom properties that defined here
+             should starts from __ to avoid conflicts with reserved msbuild props. 
+          
+          2. Do not use Props (that is changed more then 1 times) in Items' condition 
+             because items evaluates after props.
+          
+NOTE: 
+      1. You may treat $(MSBuildThisFileDirectory) like $(SolutionDir) because this file ('Directory.Build.props') placed in same folder where .sln.
+
+This file defines the properties required to build C++/C# projects.
+***********************************************************************************************
+-->
 <Project>
-  <!-- WARNING: Place this file in solution directory. All custom properties that defined here
-                should starts from __ to avoid conflicts with reserved msbuild props. 
-  -->
   <!-- This props can helps us to determine if this file 'Directory.Build.props' is imported from another .props -->
   <PropertyGroup>
     <__IsLocalPrevious>$(__IsLocal)</__IsLocalPrevious>
@@ -22,10 +35,10 @@
     <__OverrideOutputPathOnlyIfBuildFromAnotherSolution>false</__OverrideOutputPathOnlyIfBuildFromAnotherSolution>
     <__PrintDirectoryBuildPropsInfo>false</__PrintDirectoryBuildPropsInfo>
   </PropertyGroup>
-
+  
   
   <!-- ::::::::::::::::::::::  Import  :::::::::::::::::::::: -->
-  <!-- Define here props that imported to child 'Directory.Build.props'. -->
+<!-- Define here props that will import to child 'Directory.Build.props'. -->
   <PropertyGroup>
     <__ImportedSolutionDirectory>$(MSBuildThisFileDirectory)</__ImportedSolutionDirectory>
   </PropertyGroup>
@@ -80,11 +93,13 @@
 
   <!-- Import PROJECT.props -->
   <Import Project="$(MSBuildProjectDirectory)\$(MSBuildProjectName).props"
-          Condition="Exists('$(MSBuildProjectDirectory)\$(MSBuildProjectName).props') and '$(__IsLocal)' == 'true'" />  
-  
-  <ItemGroup>
-    <None Include="$(MSBuildProjectDirectory)\$(MSBuildProjectName).props"
           Condition="Exists('$(MSBuildProjectDirectory)\$(MSBuildProjectName).props') and '$(__IsLocal)' == 'true'" />
+
+  <ItemGroup>
+    <!-- First remove duplicate item if exist because otherwise msbuild says error. -->
+    <None Remove="$(MSBuildProjectDirectory)\$(MSBuildProjectName).props" />
+    <None Include="$(MSBuildProjectDirectory)\$(MSBuildProjectName).props"
+          Condition="Exists('$(MSBuildProjectDirectory)\$(MSBuildProjectName).props')" />
   </ItemGroup>
   <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
 

@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <Helpers/common.h>
 #include <Helpers/Dx/DxDevice.h>
+#include <Helpers/Signal.h>
 #include <Unknwn.h>
 
 namespace HELPERS_NS {
@@ -9,6 +10,11 @@ namespace HELPERS_NS {
 		interface IDeviceNotify {
 			virtual void OnDeviceLost() = 0;
 			virtual void OnDeviceRestored() = 0;
+		};
+
+		struct SwapChainPanelNotifications {
+			// CHECK: if Signal class have std::mutex then may be unexpected errors, see ComMutex notes for it
+			HELPERS_NS::Signal<void()> onPresent;
 		};
 
 		enum DisplayOrientations : unsigned int {
@@ -44,9 +50,12 @@ namespace HELPERS_NS {
 				virtual void STDMETHODCALLTYPE SetRenderResolutionScale(float resolutionScale) = 0;
 				virtual void STDMETHODCALLTYPE ValidateDevice() = 0;
 				virtual void STDMETHODCALLTYPE HandleDeviceLost() = 0;
-				virtual void STDMETHODCALLTYPE RegisterDeviceNotify(IDeviceNotify* deviceNotify) = 0;
 				virtual void STDMETHODCALLTYPE Trim() = 0;
 				virtual void STDMETHODCALLTYPE Present() = 0;
+				virtual void STDMETHODCALLTYPE RegisterDeviceNotify(IDeviceNotify* deviceNotify) = 0;
+
+				// TODO: mb rewrite SwapChainPanelNotifications to return ComPtr on it?
+				virtual SwapChainPanelNotifications* STDMETHODCALLTYPE GetNotifications() = 0;
 
 				// The size of the render target, in pixels.
 				virtual HELPERS_NS::Size_f STDMETHODCALLTYPE GetOutputSize() const = 0;
