@@ -85,7 +85,7 @@ namespace HELPERS_NS {
     };
 
     template<typename SrcDstTransformFn, typename DstSrcTransformFn>
-    std::shared_ptr < IObservableCollection<decltype(SrcDstTransformFn()({})) >> MakeObservableCollectionTransform(
+    std::shared_ptr<IObservableCollection<decltype(SrcDstTransformFn()({}))>> MakeObservableCollectionTransform(
         SrcDstTransformFn srcDstTransformFn,
         DstSrcTransformFn dstSrcTransformFn,
         IObservableCollection<decltype(DstSrcTransformFn()({})) > & src,
@@ -124,10 +124,10 @@ namespace HELPERS_NS {
     }
 
     template<typename SrcDstTransformFn, typename DstSrcTransformFn>
-    std::shared_ptr < IObservableCollection<decltype(SrcDstTransformFn()({})) >> MakeObservableCollectionTransform(
+    std::shared_ptr<IObservableCollection<decltype(SrcDstTransformFn()({}))>> MakeObservableCollectionTransform(
         SrcDstTransformFn srcDstTransformFn,
         DstSrcTransformFn dstSrcTransformFn,
-        std::shared_ptr < IObservableCollection<decltype(DstSrcTransformFn()({})) >> src)
+        std::shared_ptr<IObservableCollection<decltype(DstSrcTransformFn()({}))>> src)
     {
         return MakeObservableCollectionTransform(std::move(srcDstTransformFn), std::move(dstSrcTransformFn), *src, src);
     }
