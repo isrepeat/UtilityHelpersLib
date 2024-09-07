@@ -80,6 +80,7 @@ namespace WStorage = Windows::Storage;
 #define SPDLOG_SUPPORT 1
 #endif
 
+// TODO: Find a better way to resolve conflicts with <winsock.h> / <winsock2.h> (commit = f911cac978a)
 #include "Helpers/BoostIsSupported.h"
 
 //

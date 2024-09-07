@@ -1,5 +1,7 @@
 #pragma once
+#include "Helpers/common.h"
 
+#if COMPILE_FOR_CLR
 #include <memory>
 
 namespace CLR {
@@ -77,3 +79,4 @@ namespace CLR {
         T* nativePtr = nullptr;
     };
 }
+#endif
