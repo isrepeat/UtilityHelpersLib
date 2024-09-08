@@ -63,6 +63,7 @@
 #define PP_NUM_ARG_PROXY(...) PP_EXPAND(PP_NUM_ARG_BASE(__VA_ARGS__))
 #define PP_NUM_ARG(...)  PP_NUM_ARG_PROXY(__VA_ARGS__, PP_NUM_ARG_SEQ)
 
+
 /* ---------------------------------------- */
 /*               PP_REVERSE                 */
 /* ---------------------------------------- */
@@ -107,32 +108,6 @@
 #define PP_DROP_FIRST(...) PP_DROP_FIRST_PROXY(__VA_ARGS__)
 
 #define PP_DROP_LAST(...) PP_REVERSE(PP_DROP_FIRST(PP_REVERSE(__VA_ARGS__)))
-
-
-//#define PP_SEQ 5, 4, 3, 2, 1
-//
-//#define PP_GET_REST_FILLED_ARGS_BASE(_1, _2, _3, _4, _5, ...) __VA_ARGS__
-//#define PP_GET_REST_FILLED_ARGS_PROXY(...) PP_EXPAND(PP_GET_REST_FILLED_ARGS_BASE(__VA_ARGS__))
-//#define PP_GET_REST_FILLED_ARGS(...) PP_GET_REST_FILLED_ARGS_PROXY(__VA_ARGS__, PP_SEQ)
-//
-//#define PP_GET_MOST_FILLED_ARGS_BASE(_1, _2, _3, _4, _5, ...) _1, _2, _3, _4, _5
-//#define PP_GET_MOST_FILLED_ARGS_PROXY(...) PP_EXPAND(PP_GET_MOST_FILLED_ARGS_BASE(__VA_ARGS__))
-//#define PP_GET_MOST_FILLED_ARGS(...) PP_GET_MOST_FILLED_ARGS_PROXY(__VA_ARGS__, PP_SEQ)
-
-// [version 2]
-//
-// Example:
-// PP_GET_LAST(a,b,c): 
-//   Count = 3; (<= Max)
-// 
-// PP_GET_ELEMENT_N(PP_GET_REST_FILLED_ARGS(a, b, c), PP_REVERSE(PP_GET_MOST_FILLED_ARGS(a, b, c)))
-// PP_GET_ELEMENT_N((a, b, c, _N[Count], ... , _N[1]), PP_REVERSE((a, b, c, _N[Max], ... , _N[Count+1])))
-// PP_GET_ELEMENT_N(a, b, c, _N[Count], ... , _N[1], _N[Count+1], ... , _N[Max], c, b, a)
-//                           \________________ placeholders __________________/  ^
-//                                                                               |
-//                                                                            result ('N')
-//#define PP_GET_LAST(...) PP_GET_ELEMENT_N(PP_GET_MOST_FILLED_ARGS(__VA_ARGS__), PP_REVERSE(__VA_ARGS__));
-
 
 
 /* ---------------------------------------- */
@@ -198,7 +173,6 @@
 #define PP_FOR_EACH(what, ...) FE_CALLITn01(FE_GET_MACRO(_0, ##__VA_ARGS__,FE_n22,FE_n21,FE_n20,FE_n19, \
                             FE_n18,FE_n17,FE_n16,FE_n15,FE_n14,FE_n13,FE_n12,FE_n11,FE_n10,FE_n09,\
                             FE_n08,FE_n07,FE_n06,FE_n05,FE_n04,FE_n03,FE_n02,FE_n01,FE_n00), (what, ##__VA_ARGS__))
-
 
 
 /* ---------------------------------------- */

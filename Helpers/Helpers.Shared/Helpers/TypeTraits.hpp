@@ -21,6 +21,8 @@ _STD_END
 namespace HELPERS_NS {
 	 struct nothing {};
 
+	 template<typename T> struct dependent_false : std::false_type {};
+
      template <typename T>
      struct ExtractUnderlyingType {
          using type = T;
