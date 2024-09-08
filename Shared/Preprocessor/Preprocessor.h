@@ -1,12 +1,27 @@
 #pragma once
+/* ---------------------------------------- */
+/*              BASE MACROS                 */
+/* ---------------------------------------- */
 #define PP_EXPAND(x) x
+
+// In some contexts / cases the comma is not omitted, to fix it use __VA_EXPAND(__VA_ARGS__).
+// NOTE: This problem not occured if project enable "/Zc:preprocessor" and use ", ##__VA_ARGS__" construction.
+#define __VA_EXPAND(...) , ##__VA_ARGS__
+
+// Expand __VA_ARGS__ with some first explicit arguments:
+#define PP_EXPAND_1_VA_ARGS(arg1, ...) arg1, ##__VA_ARGS__
+#define PP_EXPAND_2_VA_ARGS(arg1, arg2, ...) arg1, arg2, ##__VA_ARGS__
 
 #define PP_STRINGIFY_BASE(x) #x
 #define PP_STRINGIFY(x) PP_STRINGIFY_BASE(x)
 
 #define PP_CONCAT_BASE(a, b) a ## b
-#define PP_CONCAT(a, b) PP_CONCAT_BASE(a,b)
+#define PP_CONCAT(a, b) PP_CONCAT_BASE(a, b)
 
+
+/* ---------------------------------------- */
+/*                MESSAGING                 */
+/* ---------------------------------------- */
 #if !defined(DISABLE_PREPROCESSOR_MESSAGES)
 #ifdef __PROJECT_NAME__
 #	define PREPROCESSOR_MSG(msg) "  PREPROCESSOR<" PP_STRINGIFY(__PROJECT_NAME__) ">: \"" msg "\""
@@ -79,8 +94,8 @@
 #define __PP_REVERSE_10(a,...) PP_EXPAND(__PP_REVERSE_9(__VA_ARGS__)),a
 
 #define PP_REVERSE_BASE(N, ...) PP_EXPAND(__PP_REVERSE_ ## N(__VA_ARGS__))
-#define PP_REVERSE_PROXY(N, ...) PP_REVERSE_BASE(N, __VA_ARGS__)
-#define PP_REVERSE(...) PP_REVERSE_PROXY(PP_NUM_ARG(__VA_ARGS__), __VA_ARGS__)
+#define PP_REVERSE_PROXY(N, ...) PP_REVERSE_BASE(N, ##__VA_ARGS__)
+#define PP_REVERSE(...) PP_REVERSE_PROXY(PP_NUM_ARG(__VA_ARGS__), ##__VA_ARGS__)
 
 
 /* ---------------------------------------- */
@@ -96,83 +111,87 @@
 #define PP_GET_ELEMENT_N(...) PP_EXPAND(PP_GET_ELEMENT_N_BASE(__VA_ARGS__))
 
 
-#define PP_GET_FIRST_BASE(arg1, ...) arg1
+#define PP_GET_FIRST_BASE(a1, ...) a1
 #define PP_GET_FIRST_PROXY(...) PP_EXPAND(PP_GET_FIRST_BASE(__VA_ARGS__))
 #define PP_GET_FIRST(...) PP_GET_FIRST_PROXY(__VA_ARGS__)
+
+#define PP_GET_SECOND_BASE(a1, a2, ...) a2
+#define PP_GET_SECOND_PROXY(...) PP_EXPAND(PP_GET_SECOND_BASE(__VA_ARGS__))
+#define PP_GET_SECOND(...) PP_GET_SECOND_PROXY(__VA_ARGS__)
 
 #define PP_GET_LAST(...) PP_GET_FIRST(PP_REVERSE(__VA_ARGS__))
 
 
-#define PP_DROP_FIRST_BASE(arg1, ...) __VA_ARGS__
+#define PP_DROP_FIRST_BASE(a1, ...) __VA_ARGS__
 #define PP_DROP_FIRST_PROXY(...) PP_EXPAND(PP_DROP_FIRST_BASE(__VA_ARGS__))
 #define PP_DROP_FIRST(...) PP_DROP_FIRST_PROXY(__VA_ARGS__)
 
 #define PP_DROP_LAST(...) PP_REVERSE(PP_DROP_FIRST(PP_REVERSE(__VA_ARGS__)))
+
+/* ---------------------------------------- */
+/*          IF_VA_OPT_SUPPORTED             */
+/* ---------------------------------------- */
+// WARNING: Some macros which uses __VA_OPT()__ require enabled "/Zc:preprocessor", 
+//          you can enable it through project property or define "UseStandardPreprocessor == true"
+//          in Directory.Build.targets:
+// 
+//           <ItemDefinitionGroup>
+//             <ClCompile>
+//               <UseStandardPreprocessor>true</UseStandardPreprocessor>
+//           ...
+//
+#define IF_VA_OPT_SUPPORTED_BASE(...) PP_GET_SECOND(__VA_OPT__(,) 1, 0)
+#define IF_VA_OPT_SUPPORTED IF_VA_OPT_SUPPORTED_BASE(_)
 
 
 /* ---------------------------------------- */
 /*               PP_FOR_EACH                */
 /* ---------------------------------------- */
 // TODO: Rename some macros more readable.
+
+// Source: https://gist.github.com/thwarted/8ce47e1897a578f4e80a
 /* because gcc cpp doesn't recursively expand macros, so a single CALLIT
  * macro can't be used in all the FE_n macros below
  */
-#define FE_CALLITn01(a,b)  a b
-#define FE_CALLITn02(a,b)  a b
-#define FE_CALLITn03(a,b)  a b 
-#define FE_CALLITn04(a,b)  a b
-#define FE_CALLITn04(a,b)  a b
-#define FE_CALLITn05(a,b)  a b
-#define FE_CALLITn06(a,b)  a b
-#define FE_CALLITn07(a,b)  a b
-#define FE_CALLITn08(a,b)  a b
-#define FE_CALLITn09(a,b)  a b
-#define FE_CALLITn10(a,b)  a b
-#define FE_CALLITn11(a,b)  a b
-#define FE_CALLITn12(a,b)  a b
-#define FE_CALLITn13(a,b)  a b
-#define FE_CALLITn14(a,b)  a b
-#define FE_CALLITn15(a,b)  a b
-#define FE_CALLITn16(a,b)  a b
-#define FE_CALLITn17(a,b)  a b
-#define FE_CALLITn18(a,b)  a b
-#define FE_CALLITn19(a,b)  a b
-#define FE_CALLITn20(a,b)  a b
-#define FE_CALLITn21(a,b)  a b
+#define FE_CALLITn01(MacroFn, parenthesis) MacroFn parenthesis
+#define FE_CALLITn02(MacroFn, parenthesis) MacroFn parenthesis
+#define FE_CALLITn03(MacroFn, parenthesis) MacroFn parenthesis
+#define FE_CALLITn04(MacroFn, parenthesis) MacroFn parenthesis
+#define FE_CALLITn05(MacroFn, parenthesis) MacroFn parenthesis
+#define FE_CALLITn06(MacroFn, parenthesis) MacroFn parenthesis
+#define FE_CALLITn07(MacroFn, parenthesis) MacroFn parenthesis
+#define FE_CALLITn08(MacroFn, parenthesis) MacroFn parenthesis
+#define FE_CALLITn09(MacroFn, parenthesis) MacroFn parenthesis
+
 
  /* the MSVC preprocessor expands __VA_ARGS__ as a single argument, so it needs
   * to be expanded indirectly through the CALLIT macros.
   * http://connect.microsoft.com/VisualStudio/feedback/details/380090/variadic-macro-replacement
   * http://stackoverflow.com/questions/21869917/visual-studio-va-args-issue
   */
-#define FE_n00()
-#define FE_n01(what, a, ...)  what(a)
-#define FE_n02(what, a, ...)  what(a) FE_CALLITn02(FE_n01,(what, ##__VA_ARGS__))
-#define FE_n03(what, a, ...)  what(a) FE_CALLITn03(FE_n02,(what, ##__VA_ARGS__))
-#define FE_n04(what, a, ...)  what(a) FE_CALLITn04(FE_n03,(what, ##__VA_ARGS__))
-#define FE_n05(what, a, ...)  what(a) FE_CALLITn05(FE_n04,(what, ##__VA_ARGS__))
-#define FE_n06(what, a, ...)  what(a) FE_CALLITn06(FE_n05,(what, ##__VA_ARGS__))
-#define FE_n07(what, a, ...)  what(a) FE_CALLITn07(FE_n06,(what, ##__VA_ARGS__))
-#define FE_n08(what, a, ...)  what(a) FE_CALLITn08(FE_n07,(what, ##__VA_ARGS__))
-#define FE_n09(what, a, ...)  what(a) FE_CALLITn09(FE_n08,(what, ##__VA_ARGS__))
-#define FE_n10(what, a, ...)  what(a) FE_CALLITn10(FE_n09,(what, ##__VA_ARGS__))
-#define FE_n11(what, a, ...)  what(a) FE_CALLITn11(FE_n10,(what, ##__VA_ARGS__))
-#define FE_n12(what, a, ...)  what(a) FE_CALLITn12(FE_n11,(what, ##__VA_ARGS__))
-#define FE_n13(what, a, ...)  what(a) FE_CALLITn13(FE_n12,(what, ##__VA_ARGS__))
-#define FE_n14(what, a, ...)  what(a) FE_CALLITn14(FE_n13,(what, ##__VA_ARGS__))
-#define FE_n15(what, a, ...)  what(a) FE_CALLITn15(FE_n14,(what, ##__VA_ARGS__))
-#define FE_n16(what, a, ...)  what(a) FE_CALLITn16(FE_n15,(what, ##__VA_ARGS__))
-#define FE_n17(what, a, ...)  what(a) FE_CALLITn17(FE_n16,(what, ##__VA_ARGS__))
-#define FE_n18(what, a, ...)  what(a) FE_CALLITn18(FE_n17,(what, ##__VA_ARGS__))
-#define FE_n19(what, a, ...)  what(a) FE_CALLITn19(FE_n18,(what, ##__VA_ARGS__))
-#define FE_n20(what, a, ...)  what(a) FE_CALLITn20(FE_n19,(what, ##__VA_ARGS__))
-#define FE_n21(what, a, ...)  what(a) FE_CALLITn21(FE_n20,(what, ##__VA_ARGS__))
-#define FE_n22(...)           ERROR: FOR_EACH only supports up to 21 arguments
+#define FE_n00(...)
+#define FE_n01(MacroFn, arg1, ...)  MacroFn(arg1)
+#define FE_n02(MacroFn, arg1, ...)  MacroFn(arg1) FE_CALLITn02(FE_n01, (MacroFn, ##__VA_ARGS__))
+#define FE_n03(MacroFn, arg1, ...)  MacroFn(arg1) FE_CALLITn03(FE_n02, (MacroFn, ##__VA_ARGS__))
+#define FE_n04(MacroFn, arg1, ...)  MacroFn(arg1) FE_CALLITn04(FE_n03, (MacroFn, ##__VA_ARGS__))
+#define FE_n05(MacroFn, arg1, ...)  MacroFn(arg1) FE_CALLITn05(FE_n04, (MacroFn, ##__VA_ARGS__))
+#define FE_n06(MacroFn, arg1, ...)  MacroFn(arg1) FE_CALLITn06(FE_n05, (MacroFn, ##__VA_ARGS__))
+#define FE_n07(MacroFn, arg1, ...)  MacroFn(arg1) FE_CALLITn07(FE_n06, (MacroFn, ##__VA_ARGS__))
+#define FE_n08(MacroFn, arg1, ...)  MacroFn(arg1) FE_CALLITn08(FE_n07, (MacroFn, ##__VA_ARGS__))
+#define FE_n09(MacroFn, arg1, ...)  MacroFn(arg1) FE_CALLITn09(FE_n08, (MacroFn, ##__VA_ARGS__))
+#define FE_n10(...) ERROR: FOR_EACH only supports up to 9 arguments
 
-#define FE_GET_MACRO(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,_19,_20,_21,_22,NAME,...) NAME
-#define PP_FOR_EACH(what, ...) FE_CALLITn01(FE_GET_MACRO(_0, ##__VA_ARGS__,FE_n22,FE_n21,FE_n20,FE_n19, \
-                            FE_n18,FE_n17,FE_n16,FE_n15,FE_n14,FE_n13,FE_n12,FE_n11,FE_n10,FE_n09,\
-                            FE_n08,FE_n07,FE_n06,FE_n05,FE_n04,FE_n03,FE_n02,FE_n01,FE_n00), (what, ##__VA_ARGS__))
+#define FE_GET_MACRO_BASE(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, NAME, ...) NAME
+#define FE_GET_MACRO(...) PP_EXPAND(FE_GET_MACRO_BASE(__VA_ARGS__))
+
+#define PP_FOR_EACH(MacroFn, ...) \
+    FE_CALLITn01( \
+		FE_GET_MACRO( \
+				 PP_EXPAND_1_VA_ARGS(_0, __VA_ARGS__), \
+                 FE_n10, FE_n09, FE_n08, FE_n07, FE_n06, FE_n05, FE_n04,\
+                 FE_n03, FE_n02, FE_n01, FE_n00), (PP_EXPAND_1_VA_ARGS(MacroFn, __VA_ARGS__) \
+		) \
+	)
 
 
 /* ---------------------------------------- */
@@ -182,9 +201,9 @@
 #define __PP_OPEN_NAMESPACE(value) namespace value {
 
 #define PP_INLINE_TEMPLATE_SPECIALIZATION_INTERNAL(code, ...) \
-    PP_FOR_EACH(__PP_CLOSE_NAMESPACE, __VA_ARGS__) \
+    PP_FOR_EACH(__PP_CLOSE_NAMESPACE, ##__VA_ARGS__) \
     code \
-    PP_FOR_EACH(__PP_OPEN_NAMESPACE, __VA_ARGS__) 
+    PP_FOR_EACH(__PP_OPEN_NAMESPACE, ##__VA_ARGS__) 
 
 #define PP_INLINE_TEMPLATE_SPECIALIZATION(...) \
     PP_INLINE_TEMPLATE_SPECIALIZATION_INTERNAL(PP_GET_LAST(__VA_ARGS__), PP_DROP_LAST(__VA_ARGS__))
@@ -207,12 +226,9 @@
     PP_FOR_EACH(__PP_OPEN_NAMESPACE, __NAMESPACE__)
 
 
-//
-// Heleprs to get last namespace from __NAMESPACE__'s macro
-//
 
 #define __PP_JOIN_NAMESPACE(value) ::value
 
-// Get full namespace from __NAMESPACE__'s macro args
+// Helper to get full namespace from __NAMESPACE__'s macro args
 #define PP_LAST_NAMESPACE \
 	PP_GET_FIRST(__NAMESPACE__) PP_FOR_EACH(__PP_JOIN_NAMESPACE, PP_DROP_FIRST(__NAMESPACE__))

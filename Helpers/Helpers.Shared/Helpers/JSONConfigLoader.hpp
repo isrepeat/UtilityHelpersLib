@@ -27,7 +27,7 @@ namespace HELPERS_NS {
 
 				jsonConfigFile.close();
 
-				LOG_DEBUG_D("\"{}\" data: \n{}", configName, H::VecToStr(byteArray));
+				LOG_DEBUG_D("\"{}\" data: \n{}", configName, HELPERS_NS::VecToStr(byteArray));
 
 				JSONObjectT jsonObject;
 				if (JS::ParseTo(byteArray, jsonObject)) {

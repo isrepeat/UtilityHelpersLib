@@ -1,5 +1,6 @@
 #include "LogHelpers.h"
 #pragma message(PREPROCESSOR_MSG("Build LogHelpers.cpp with LOGGER_API = '" PP_STRINGIFY(LOGGER_API) "'"))
+#pragma message(PREPROCESSOR_MSG("Build LogHelpers.cpp with LOGGER_NS = '" PP_STRINGIFY(LOGGER_NS) "'"))
 #include "DynamicFileSink.h"
 #include <Helpers/FileSystem_inline.h>
 #include <Helpers/PackageProvider.h> // need link with Helpers.lib
