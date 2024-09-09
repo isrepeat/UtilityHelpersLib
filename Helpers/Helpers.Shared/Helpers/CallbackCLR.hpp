@@ -1,7 +1,7 @@
 #pragma once
 #include "common.h"
 
-#if COMPILE_FOR_CLR == 1
+#if COMPILE_FOR_CLR
 #include "Callback.hpp"
 #include <msclr\auto_gcroot.h>
 

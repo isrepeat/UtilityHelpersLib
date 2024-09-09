@@ -199,7 +199,7 @@ namespace {
 
 #define READ_ATTRIBUTE_TO(GetAttributeFn, pMediaType, ATTRIBUTE_NAME, refResult, ...)                         \
 	{                                                                                                         \
-		HRESULT hr = GetAttributeFn(pMediaType, ATTRIBUTE_NAME, EXPAND_1_VA_ARGS_(refResult, __VA_ARGS__));   \
+		HRESULT hr = GetAttributeFn(pMediaType, ATTRIBUTE_NAME, refResult, ##__VA_ARGS__);   \
 		if (FAILED(hr)) {                                                                                     \
 			/*LOG_DEBUG_D("- {}: ...", #ATTRIBUTE_NAME);*/                                                    \
 		}                                                                                                     \

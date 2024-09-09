@@ -53,10 +53,6 @@ if (IsDebuggerPresent()) {  \
     className(className &&) = delete; \
 	className &operator=(className &&) = delete;
 
-// Expand __VA_ARGS__ with some first explicit arguments:
-#define EXPAND_1_VA_ARGS_(arg1, ...) arg1, __VA_ARGS__
-#define EXPAND_2_VA_ARGS_(arg1, arg2, ...) arg1, arg2, __VA_ARGS__
-
 /* ---------------- */
 /*  has_member.hpp  */
 /* ---------------- */

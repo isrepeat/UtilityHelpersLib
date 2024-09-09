@@ -9,12 +9,12 @@
 
 
 #if !defined(DISABLE_THREAD_LOGGING)
-#define LOG_THREAD(name)                                                                                                     \
-	LOG_DEBUG_D(L"Thread START '{}'", std::wstring(name));                                                                   \
-	HELPERS_NS::ThreadNameHelper::SetThreadName(name);                                                                       \
-                                                                                                                             \
-	auto threadFinishLogScoped = HELPERS_NS::MakeScope([&] {                                                                 \
-		LOG_DEBUG_D(L"Thread END '{}'", std::wstring(name));                                                                 \
+#define LOG_THREAD(name) \
+	LOG_DEBUG_D(L"Thread START '{}'", std::wstring(name)); \
+	HELPERS_NS::ThreadNameHelper::SetThreadName(name); \
+	\
+	auto threadFinishLogScoped = HELPERS_NS::MakeScope([&] { \
+		LOG_DEBUG_D(L"Thread END '{}'", std::wstring(name)); \
 		});
 #else
 #define LOG_THREAD(name)

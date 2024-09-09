@@ -6,14 +6,21 @@
 
 #ifndef HELPERS_NS
 #define HELPERS_NS __H_ns
+#define HELPERS_NS_DEFINED_INTERNAL 1
 #else
-#pragma message(PREPROCESSOR_MSG("HELPERS_NS already defined = '" PP_STRINGIFY(HELPERS_NS) "'"))
+#if !HELPERS_NS_DEFINED_INTERNAL
+#pragma message(PREPROCESSOR_MSG("HELPERS_NS already defined outside = '" PP_STRINGIFY(HELPERS_NS) "'"))
 #endif
+#endif
+
 
 #ifndef HELPERS_NS_ALIAS
 #define HELPERS_NS_ALIAS H
+#define HELPERS_NS_ALIAS_DEFINED_INTERNAL 1
 #else
-#pragma message(PREPROCESSOR_MSG("HELPERS_NS_ALIAS already defined = '" PP_STRINGIFY(HELPERS_NS_ALIAS) "'"))
+#if !HELPERS_NS_ALIAS_DEFINED_INTERNAL
+#pragma message(PREPROCESSOR_MSG("HELPERS_NS_ALIAS already defined outside = '" PP_STRINGIFY(HELPERS_NS_ALIAS) "'"))
+#endif
 #endif
 
 namespace HELPERS_NS {} // create uniq "helpers namespace" for this project
@@ -22,8 +29,11 @@ namespace HELPERS_NS_ALIAS = HELPERS_NS; // set your alias for original "helpers
 
 #ifndef MEDIA_FOUNDATION_NS_ALIAS
 #define MEDIA_FOUNDATION_NS_ALIAS MF
+#define MEDIA_FOUNDATION_NS_ALIAS_DEFINED_INTERNAL 1
 #else
-#pragma message(PREPROCESSOR_MSG("MEDIA_FOUNDATION_NS_ALIAS already defined = '" PP_STRINGIFY(MEDIA_FOUNDATION_NS_ALIAS) "'"))
+#if !MEDIA_FOUNDATION_NS_ALIAS_DEFINED_INTERNAL
+#pragma message(PREPROCESSOR_MSG("MEDIA_FOUNDATION_NS_ALIAS already defined outside = '" PP_STRINGIFY(MEDIA_FOUNDATION_NS_ALIAS) "'"))
+#endif
 #endif
 
 #define MEDIA_FOUNDATION_NS __MF_ns
@@ -80,6 +90,7 @@ namespace WStorage = Windows::Storage;
 #define SPDLOG_SUPPORT 1
 #endif
 
+// TODO: Find a better way to resolve conflicts with <winsock.h> / <winsock2.h> (commit = f911cac978a)
 #include "Helpers/BoostIsSupported.h"
 
 //

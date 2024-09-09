@@ -116,7 +116,7 @@ namespace HELPERS_NS {
 
 			Microsoft::WRL::ComPtr<ID3D11SamplerState> linearSampler;
 			hr = d3dDev->CreateSamplerState(&samplerDesc, linearSampler.ReleaseAndGetAddressOf());
-			H::System::ThrowIfFailed(hr);
+			HELPERS_NS::System::ThrowIfFailed(hr);
 
 			return linearSampler;
 		}
