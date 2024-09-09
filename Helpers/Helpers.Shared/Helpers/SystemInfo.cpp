@@ -30,5 +30,29 @@ namespace HELPERS_NS {
         cumputerName.resize(bufCharCount);
         return cumputerName;
 	}
+
+    std::wstring GetUserDefaultLocaleName() {
+        std::wstring localeName(LOCALE_NAME_MAX_LENGTH, L'\0');
+        if (::GetUserDefaultLocaleName(localeName.data(), localeName.size())) {
+            return localeName;
+        }
+        return {};
+    }
+
+    std::vector<std::wstring> GetUserPreferredUILanguages() {
+        ULONG numLanguages;
+        WCHAR languagesBuffer[256];
+        ULONG bufferSize = sizeof(languagesBuffer) / sizeof(languagesBuffer[0]);
+
+        std::vector<std::wstring> prefferedLanguages;
+        if (::GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &numLanguages, languagesBuffer, &bufferSize)) {
+            WCHAR* languagesIt = languagesBuffer;
+            for (int i = 0; i < numLanguages; i++) {
+                prefferedLanguages.push_back(std::wstring(languagesIt));
+                languagesIt += prefferedLanguages.back().size() + 1;
+            }
+        }
+        return prefferedLanguages;
+    }
 }
 #endif
