@@ -9,12 +9,25 @@
 
 namespace HELPERS_NS {
     namespace Regex {
-        struct RegexMatchResult {
-            std::vector<std::wstring> capturedGroups;
-            std::wstring preffix;
-            std::wstring suffix;
+        template<typename T>
+        using string_t = std::basic_string<T, std::char_traits<T>, std::allocator<T>>;
+        
+        template<typename T>
+        using regex_t = std::basic_regex<T>;
 
-            RegexMatchResult(const std::wsmatch& match) {
+        template<typename T>
+        using regex_match_t = std::match_results<typename string_t<T>::const_iterator>;
+        
+        template<typename T>
+        using regex_token_iterator_t = std::regex_token_iterator<typename string_t<T>::const_iterator>;
+
+        template<typename T>
+        struct RegexMatchResult {
+            std::vector<string_t<T>> capturedGroups;
+            string_t<T> preffix;
+            string_t<T> suffix;
+
+            RegexMatchResult(const regex_match_t<T>& match) {
                 for (auto& res : match) {
                     this->capturedGroups.push_back(res);
                 }
@@ -23,13 +36,14 @@ namespace HELPERS_NS {
             }
         };
 
+        template<typename T>
+        inline std::vector<RegexMatchResult<T>> GetRegexMatches(const string_t<T>& text, const regex_t<T>& rx) {
+            std::vector<RegexMatchResult<T>> matches;
 
-        inline std::vector<RegexMatchResult> GetRegexMatches(const std::wstring& text, const std::wregex& rx) {
-            std::vector<RegexMatchResult> matches;
-            const std::wsregex_token_iterator end_i;
-            for (std::wsregex_token_iterator i(text.cbegin(), text.cend(), rx); i != end_i; ++i) {
-                std::wstring matchString = *i;
-                std::wsmatch matchResult;
+            const regex_token_iterator_t<T> endIt;
+            for (regex_token_iterator_t<T> it(text.cbegin(), text.cend(), rx); it != endIt; ++it) {
+                string_t<T> matchString = *it;
+                regex_match_t<T> matchResult;
                 if (std::regex_search(matchString, matchResult, rx)) {
                     matches.push_back(matchResult);
                 }
@@ -40,7 +54,7 @@ namespace HELPERS_NS {
         inline bool FindInsideTagWithRegex(const std::wstring& text, const std::wstring& tag, const std::wregex& innerRx) {
             const std::wregex rx(L"([^<]*)<" + tag + L"[^>]*>(.+?)<[/]" + tag + L">([^<]*)");
 
-            auto matches = GetRegexMatches(text, rx);
+            auto matches = GetRegexMatches<wchar_t>(text, rx);
             for (auto& match : matches) {
                 std::wsmatch matchResult;
                 if (std::regex_search(match.capturedGroups[2], matchResult, innerRx)) {
@@ -54,7 +68,7 @@ namespace HELPERS_NS {
             const std::wstring anyTag = L"[^>]*";
             const std::wregex rx(L"([^<]*)<" + anyTag + L">(.+?)<[/]" + anyTag + L">([^<]*)");
 
-            auto matches = GetRegexMatches(text, rx);
+            auto matches = GetRegexMatches<wchar_t>(text, rx);
             for (auto& match : matches) {
                 std::wsmatch matchResult;
                 if (std::regex_search(match.capturedGroups[2], matchResult, innerRx)) {
