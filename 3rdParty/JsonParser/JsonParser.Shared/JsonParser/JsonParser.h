@@ -7,6 +7,9 @@
 #define WINDOWS_LEAN_AND_MEAN
 #endif
 #include <Windows.h>
+
+#define JS_STL_MAP 1
+#define JS_STL_SET 1
 #include <JsonParser/json_struct/json_struct.h> // https://github.com/jorgen/json_struct
 #include "Preprocessor.h"
 

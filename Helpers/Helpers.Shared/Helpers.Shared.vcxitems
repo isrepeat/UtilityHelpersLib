@@ -115,6 +115,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ObservableCollectionTransform.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PropertyStoreKeyRef.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PropertyStoreReader.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Regex.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Semaphore.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Action.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AlignedAllocator.h" />
