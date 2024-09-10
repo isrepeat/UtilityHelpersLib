@@ -1,5 +1,6 @@
 #pragma once
 #include "common.h"
+#include <type_traits>
 #include <cassert>
 #include <memory>
 #include <mutex>
@@ -51,8 +52,13 @@ namespace HELPERS_NS {
         }
 
         static Instance_t GetInstance() {
-            if (!_MyBase::GetInstance().instance) {
-                CreateInstance(); // Try create object with default Ctor.
+            if constexpr (std::is_default_constructible_v<C> == true) {
+                if (!_MyBase::GetInstance().instance) {
+                    CreateInstance(); // Try create object with default Ctor.
+                }
+            }
+            else {
+                assert(_MyBase::GetInstance().instance);
             }
             return *_MyBase::GetInstance().instance;
         }
@@ -85,8 +91,13 @@ namespace HELPERS_NS {
         }
 
         static Instance_t GetInstance() {
-            if (!_MyBase::GetInstance().instance) {
-                CreateInstance();
+            if constexpr (std::is_default_constructible_v<C> == true) {
+                if (!_MyBase::GetInstance().instance) {
+                    CreateInstance(); // Try create object with default Ctor.
+                }
+            }
+            else {
+                assert(_MyBase::GetInstance().instance);
             }
             return _MyBase::GetInstance().instance;
         }
@@ -119,7 +130,14 @@ namespace HELPERS_NS {
         }
 
         static Instance_t GetInstance() {
-            assert(_MyBase::GetInstance().instance);
+            if constexpr (std::is_default_constructible_v<C> == true) {
+                if (!_MyBase::GetInstance().instance) {
+                    CreateInstance(); // Try create object with default Ctor.
+                }
+            }
+            else {
+                assert(_MyBase::GetInstance().instance);
+            }
             return _MyBase::GetInstance().instance;
         }
 

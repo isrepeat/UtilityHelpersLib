@@ -11,8 +11,8 @@
 namespace HELPERS_NS {
 	class CrashHandler {
 	public:
-		~CrashHandler() = default;
 		CrashHandler(std::wstring runProtocol, std::wstring appCenterId, std::wstring appUuid);
+		~CrashHandler() = default;
 
 		void SetProtocolCommandArgs(std::vector<std::pair<std::wstring, std::wstring>> protocolCommandArgs);
 		void SetCrashCallback(std::function<void()> crashCallback);
