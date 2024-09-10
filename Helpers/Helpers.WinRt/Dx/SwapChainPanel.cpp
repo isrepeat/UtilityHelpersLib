@@ -165,8 +165,8 @@ namespace Helpers {
 			Microsoft::WRL::ComPtr<H::Dx::ISwapChainPanel> SwapChainPanel::CreateSwapChainPanelNative(SwapChainPanelInitData initData) {
 				H::Dx::SwapChainPanel::InitData initDataNative;
 				initDataNative.environment = H::Dx::SwapChainPanel::InitData::Environment::UWP;
-				initDataNative.fnCreateSwapChainPannelDxgi = MakeWinRTCallback(this, &SwapChainPanel::CreateSwapChainPanelDxgi);
-				initDataNative.fnGetWindowBounds = MakeWinRTCallback(this, &SwapChainPanel::GetWindowBounds);
+				initDataNative.fnCreateSwapChainPannelDxgi = H::MakeWinRTCallback(this, &SwapChainPanel::CreateSwapChainPanelDxgi);
+				initDataNative.fnGetWindowBounds = H::MakeWinRTCallback(this, &SwapChainPanel::GetWindowBounds);
 				initDataNative.optionFlags = static_cast<H::Dx::SwapChainPanel::InitData::Options>(initData.optionFlags);
 
 				if (initDataNative.optionFlags.Has(H::Dx::SwapChainPanel::InitData::Options::EnableHDR)) {

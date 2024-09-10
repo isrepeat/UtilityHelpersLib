@@ -23,6 +23,7 @@ namespace HELPERS_NS {
         const PROPERTYKEY& propKeyRef;
     };
 
+ #if COMPILE_FOR_DESKTOP
     template<>
     class PropertyStoreKeyRef<DEVPROPKEY> {
     public:
@@ -41,4 +42,5 @@ namespace HELPERS_NS {
         const DEVPROPKEY& devPropKeyRef;
         PROPERTYKEY propKey = {};
     };
+#endif
 }
