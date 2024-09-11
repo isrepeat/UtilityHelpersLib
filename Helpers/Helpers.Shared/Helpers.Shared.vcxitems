@@ -37,7 +37,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjProxy.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSettings.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSharedTexture.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\FullScreenQuad.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\MFDXGIManagerCustom.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\RenderPipeline.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\SwapChainPanel.cpp" />
@@ -91,7 +90,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjProxy.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxShaderModule.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSharedTexture.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\FullScreenQuad.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\HlslModule.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\ISwapChainPanel.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\MFDXGIManagerCustom.h" />

@@ -27,15 +27,43 @@ namespace HELPERS_NS {
 			}
 
 
-			void DxRenderObjHDR::CreateWindowSizeDependentResources() {
-				this->CreateTextureHDR(static_cast<H::Size>(this->swapChainPanel->GetOutputSize()));
-				//this->CreateTextureHDR();
+			void DxRenderObjHDR::CreateWindowSizeDependentResources(std::optional<H::Size> size) {
+				H::Size newSize;
+				if (size) {
+					newSize = size.value();
+				}
+				else {
+					newSize = static_cast<H::Size>(this->swapChainPanel->GetOutputSize());
+				}
+				this->CreateTexture(newSize);
+
+				this->additionalSizeDependentHandlers(newSize);
 			}
 
 			void DxRenderObjHDR::ReleaseDeviceDependentResources() {
 				this->dxRenderObjData->Reset();
 			}
 
+			void DxRenderObjHDR::UpdateBuffers() {
+				auto dxDev = this->swapChainPanel->GetDxDevice()->Lock();
+				auto d3dDev = dxDev->GetD3DDevice();
+				auto dxCtx = dxDev->LockContext();
+				auto d3dCtx = dxCtx->D3D();
+
+				d3dCtx->UpdateSubresource(this->dxRenderObjData->vsConstantBuffer.Get(), 0, nullptr, &this->dxRenderObjData->vsConstantBufferData, 0, 0);
+				d3dCtx->UpdateSubresource(this->dxRenderObjData->psConstantBuffer.Get(), 0, nullptr, &this->dxRenderObjData->psConstantBufferData, 0, 0);
+			}
+
+
+			DxTextureResources DxRenderObjHDR::GetTextureResources() {
+				auto dxDev = this->swapChainPanel->GetDxDevice()->Lock();
+				DxTextureResources dxTextureResources;
+				dxTextureResources.texture = this->dxRenderObjData->texture;
+				dxTextureResources.textureRTV = this->dxRenderObjData->textureRTV;
+				dxTextureResources.textureSRV = this->dxRenderObjData->textureSRV;
+				dxTextureResources.bitmap = this->dxRenderObjData->bitmap;
+				return dxTextureResources;
+			}
 
 			std::unique_ptr<DxRenderObjHDRData> DxRenderObjHDR::CreateObjectData(
 				H::Dx::DxDeviceSafeObj* dxDeviceSafeObj,
@@ -224,48 +252,40 @@ namespace HELPERS_NS {
 				return dxRenderObjData;
 			}
 
-			void DxRenderObjHDR::CreateTextureHDR(H::Size size) {
+			void DxRenderObjHDR::CreateTexture(H::Size size) {
 				HRESULT hr = S_OK;
 
 				auto dxDev = this->swapChainPanel->GetDxDevice()->Lock();
+				auto dxCtx = dxDev->LockContext();
 				auto d3dDev = dxDev->GetD3DDevice();
+				auto d2dCtx = dxCtx->D2D();
 
-				CD3D11_TEXTURE2D_DESC descTex(DXGI_FORMAT_R16G16B16A16_FLOAT, size.width, size.height, 1, 1, D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
-				hr = d3dDev->CreateTexture2D(&descTex, nullptr, this->dxRenderObjData->texture.ReleaseAndGetAddressOf());
+				CD3D11_TEXTURE2D_DESC texDesc(DXGI_FORMAT_R16G16B16A16_FLOAT, size.width, size.height, 1, 1, D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
+				hr = d3dDev->CreateTexture2D(&texDesc, nullptr, this->dxRenderObjData->texture.ReleaseAndGetAddressOf());
 				H::System::ThrowIfFailed(hr);
 
-				CD3D11_RENDER_TARGET_VIEW_DESC descRTV(D3D11_RTV_DIMENSION_TEXTURE2D, descTex.Format);
+				CD3D11_RENDER_TARGET_VIEW_DESC descRTV(D3D11_RTV_DIMENSION_TEXTURE2D, texDesc.Format);
 				hr = d3dDev->CreateRenderTargetView(this->dxRenderObjData->texture.Get(), &descRTV, this->dxRenderObjData->textureRTV.ReleaseAndGetAddressOf());
 				H::System::ThrowIfFailed(hr);
 
-				CD3D11_SHADER_RESOURCE_VIEW_DESC descSRV(D3D11_SRV_DIMENSION_TEXTURE2D, descTex.Format, 0, 1);
+				CD3D11_SHADER_RESOURCE_VIEW_DESC descSRV(D3D11_SRV_DIMENSION_TEXTURE2D, texDesc.Format, 0, 1);
 				hr = d3dDev->CreateShaderResourceView(this->dxRenderObjData->texture.Get(), &descSRV, this->dxRenderObjData->textureSRV.ReleaseAndGetAddressOf());
 				H::System::ThrowIfFailed(hr);
+
+				Microsoft::WRL::ComPtr<IDXGISurface2> dxgiSurface;
+				hr = this->dxRenderObjData->texture.As(&dxgiSurface);
+				H::System::ThrowIfFailed(hr);
+
+				D2D1_BITMAP_PROPERTIES1 bitmapProperties = D2D1::BitmapProperties1(
+					D2D1_BITMAP_OPTIONS_TARGET,
+					D2D1::PixelFormat(texDesc.Format, D2D1_ALPHA_MODE_PREMULTIPLIED),
+					this->swapChainPanel->GetDpi(),
+					this->swapChainPanel->GetDpi()
+				);
+
+				hr = d2dCtx->CreateBitmapFromDxgiSurface(dxgiSurface.Get(), &bitmapProperties, this->dxRenderObjData->bitmap.ReleaseAndGetAddressOf());
+				H::System::ThrowIfFailed(hr);
 			}
-
-
-			//void DxRenderObjHDR::CreateTextureHDR() {
-			//	HRESULT hr = S_OK;
-
-			//	auto dxDev = this->swapChainPanel->GetDxDevice()->Lock();
-			//	auto d3dDev = dxDev->GetD3DDevice();
-
-			//	auto outputSize = this->swapChainPanel->GetOutputSize();
-			//	int width = outputSize.width;
-			//	int height = outputSize.height;
-
-			//	CD3D11_TEXTURE2D_DESC descTex(DXGI_FORMAT_R16G16B16A16_FLOAT, width, height, 1, 1, D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
-			//	hr = d3dDev->CreateTexture2D(&descTex, nullptr, this->dxRenderObjData->texture.ReleaseAndGetAddressOf());
-			//	H::System::ThrowIfFailed(hr);
-
-			//	CD3D11_RENDER_TARGET_VIEW_DESC descRTV(D3D11_RTV_DIMENSION_TEXTURE2D, descTex.Format);
-			//	hr = d3dDev->CreateRenderTargetView(this->dxRenderObjData->texture.Get(), &descRTV, this->dxRenderObjData->textureRTV.ReleaseAndGetAddressOf());
-			//	H::System::ThrowIfFailed(hr);
-
-			//	CD3D11_SHADER_RESOURCE_VIEW_DESC descSRV(D3D11_SRV_DIMENSION_TEXTURE2D, descTex.Format, 0, 1);
-			//	hr = d3dDev->CreateShaderResourceView(this->dxRenderObjData->texture.Get(), &descSRV, this->dxRenderObjData->textureSRV.ReleaseAndGetAddressOf());
-			//	H::System::ThrowIfFailed(hr);
-			//}
 		}
     }
 }
