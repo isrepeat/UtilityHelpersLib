@@ -3,12 +3,10 @@
 #include <Helpers/Dx/DxSettings.h>
 #include <Helpers/Dx/DxDevice.h>
 #include <Helpers/Callback.hpp>
-#include <Helpers/Signal.h>
 #include <Helpers/Flags.h>
 
 #include "DxRenderObjProxy.h"
 #include "ISwapChainPanel.h"
-#include "FullScreenQuad.h"
 #include "RenderPipeline.h"
 
 namespace HELPERS_NS {

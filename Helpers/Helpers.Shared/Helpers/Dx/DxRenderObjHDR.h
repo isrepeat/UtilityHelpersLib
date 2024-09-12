@@ -53,16 +53,20 @@ namespace HELPERS_NS {
 					DxDeviceSafeObj* dxDeviceSafeObj,
 					Params params);
 
-				void CreateWindowSizeDependentResources() override;
-				void ReleaseDeviceDependentResources() override;
+				HELPERS_NS::Signal<void(HELPERS_NS::Size)> additionalSizeDependentHandlers;
 
-				void CreateTextureHDR(HELPERS_NS::Size size);
+				void CreateWindowSizeDependentResources(std::optional<HELPERS_NS::Size> size = std::nullopt) override;
+				void ReleaseDeviceDependentResources() override;
+				void UpdateBuffers() override;
+
+				DxTextureResources GetTextureResources();
+
 			private:
 				std::unique_ptr<DxRenderObjHDRData> CreateObjectData(
 					HELPERS_NS::Dx::DxDeviceSafeObj* dxDeviceSafeObj,
 					Params params);
 
-				//void CreateTextureHDR();
+				void CreateTexture(HELPERS_NS::Size size);
 
 			private:
 				Microsoft::WRL::ComPtr<HELPERS_NS::Dx::ISwapChainPanel> swapChainPanel;

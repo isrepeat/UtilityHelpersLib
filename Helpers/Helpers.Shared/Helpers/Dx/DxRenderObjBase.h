@@ -1,7 +1,9 @@
 #pragma once
 #include <Helpers/common.h>
 #include <Helpers/System.h>
+#include <Helpers/Math.h>
 #include "DxIncludes.h"
+#include <optional>
 #include <memory>
 
 namespace HELPERS_NS {
@@ -30,16 +32,27 @@ namespace HELPERS_NS {
 			}
 		};
 
+
+		struct DxTextureResources {
+			Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
+			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> textureRTV;
+			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureSRV;
+			Microsoft::WRL::ComPtr<ID2D1Bitmap1> bitmap;
+		};
+
+		// TODO: use vector of DxTextureResources.
 		struct DxRenderObjBaseTexture : IDxRenderObj {
 			Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
 			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> textureRTV;
 			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureSRV;
+			Microsoft::WRL::ComPtr<ID2D1Bitmap1> bitmap;
 			Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
 
 			void Reset() override {
 				this->texture.Reset();
 				this->textureRTV.Reset();
 				this->textureSRV.Reset();
+				this->bitmap.Reset();
 				this->sampler.Reset();
 			}
 		};
@@ -83,7 +96,7 @@ namespace HELPERS_NS {
 		template <typename DxRenderObjDataT, typename... Args>
 		class DxRenderObjWrapper {
 		public:
-			virtual void CreateWindowSizeDependentResources() = 0;
+			virtual void CreateWindowSizeDependentResources(std::optional<HELPERS_NS::Size> size = std::nullopt) = 0;
 			virtual void ReleaseDeviceDependentResources() = 0;
 			virtual void UpdateBuffers() = 0;
 

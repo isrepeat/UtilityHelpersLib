@@ -15,8 +15,15 @@ namespace HELPERS_NS {
 				this->CreateWindowSizeDependentResources();
 			}
 
-			void DxRenderObjProxy::CreateWindowSizeDependentResources() {
-				this->CreateTexture();
+			void DxRenderObjProxy::CreateWindowSizeDependentResources(std::optional<H::Size> size) {
+				H::Size newSize;
+				if (size) {
+					newSize = size.value();
+				}
+				else {
+					newSize = static_cast<H::Size>(this->swapChainPanel->GetOutputSize());
+				}
+				this->CreateTexture(newSize);
 			}
 
 			void DxRenderObjProxy::ReleaseDeviceDependentResources() {
@@ -188,36 +195,32 @@ namespace HELPERS_NS {
 				return dxRenderObjData;
 			}
 
-			void DxRenderObjProxy::CreateTexture() {
+			void DxRenderObjProxy::CreateTexture(H::Size size) {
 				HRESULT hr = S_OK;
 
 				auto dxDev = this->swapChainPanel->GetDxDevice()->Lock();
 				auto d3dDev = dxDev->GetD3DDevice();
 
-				auto outputSize = this->swapChainPanel->GetOutputSize();
-				int width = outputSize.width;
-				int height = outputSize.height;
-
 				Microsoft::WRL::ComPtr<ID3D11Texture2D> dxgiSwapChainBackBuffer;
 				hr = this->swapChainPanel->GetSwapChain()->GetBuffer(0, IID_PPV_ARGS(&dxgiSwapChainBackBuffer));
 				H::System::ThrowIfFailed(hr);
 
-				//CD3D11_TEXTURE2D_DESC descTex(DXGI_FORMAT_R8G8B8A8_UNORM, width, height, 1, 1, D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
-				D3D11_TEXTURE2D_DESC descTex = {};
-				dxgiSwapChainBackBuffer->GetDesc(&descTex);
-				descTex.Format = this->textureFormat;
-				descTex.Width = width;
-				descTex.Height = height;
-				descTex.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+				// Retrieve texture description from swapChain but change some params.
+				D3D11_TEXTURE2D_DESC texDesc = {};
+				dxgiSwapChainBackBuffer->GetDesc(&texDesc);
+				texDesc.Format = this->textureFormat;
+				texDesc.Width = size.width;
+				texDesc.Height = size.height;
+				texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
-				hr = d3dDev->CreateTexture2D(&descTex, nullptr, this->dxRenderObjData->texture.ReleaseAndGetAddressOf());
+				hr = d3dDev->CreateTexture2D(&texDesc, nullptr, this->dxRenderObjData->texture.ReleaseAndGetAddressOf());
 				H::System::ThrowIfFailed(hr);
 
-				CD3D11_RENDER_TARGET_VIEW_DESC descRTV(D3D11_RTV_DIMENSION_TEXTURE2D, descTex.Format);
+				CD3D11_RENDER_TARGET_VIEW_DESC descRTV(D3D11_RTV_DIMENSION_TEXTURE2D, texDesc.Format);
 				hr = d3dDev->CreateRenderTargetView(this->dxRenderObjData->texture.Get(), &descRTV, this->dxRenderObjData->textureRTV.ReleaseAndGetAddressOf());
 				H::System::ThrowIfFailed(hr);
 
-				CD3D11_SHADER_RESOURCE_VIEW_DESC descSRV(D3D11_SRV_DIMENSION_TEXTURE2D, descTex.Format, 0, 1);
+				CD3D11_SHADER_RESOURCE_VIEW_DESC descSRV(D3D11_SRV_DIMENSION_TEXTURE2D, texDesc.Format, 0, 1);
 				hr = d3dDev->CreateShaderResourceView(this->dxRenderObjData->texture.Get(), &descSRV, this->dxRenderObjData->textureSRV.ReleaseAndGetAddressOf());
 				H::System::ThrowIfFailed(hr);
 			}
