@@ -6,7 +6,7 @@ public:
     static const Structs::Float2 DefaultDpi;
 
     BmpSize();
-    BmpSize(const Structs::Float2 &logicalSize);
+    BmpSize(const Structs::Float2 &logicalSize, ID2D1DeviceContext* d2dCtx);
     BmpSize(const Structs::Float2 &logicalSize, const Structs::Float2 &logicalDpi);
 
     bool operator==(const BmpSize &other) const;
@@ -16,28 +16,29 @@ public:
     void SetLogicalSize(const Structs::Float2 &v);
 
     float GetLogicalWidth() const;
-    void SetLogicalWidth(float v);
+    //void SetLogicalWidth(float v);
 
     float GetLogicalHeight() const;
-    void SetLogicalHeight(float v);
+    //void SetLogicalHeight(float v);
 
     Structs::Float2 GetLogicalDpi() const;
-    void SetLogicalDpi(const Structs::Float2 &v);
+    //void SetLogicalDpi(const Structs::Float2 &v);
 
     float GetLogicalDpiX() const;
-    void SetLogicalDpiX(float v);
+    //void SetLogicalDpiX(float v);
 
     float GetLogicalDpiY() const;
-    void SetLogicalDpiY(float v);
+    //void SetLogicalDpiY(float v);
 
     Structs::Float2 GetPhysicalSize() const;
-    void SetPhysicalSize(const Structs::Float2 &v, const Structs::Float2 &logicalDpi);
+    void SetPhysicalSize(const Structs::Float2 &v);
+    //void SetPhysicalSize(const Structs::Float2 &v, const Structs::Float2 &logicalDpi);
 
     float GetPhysicalWidth() const;
-    void SetPhysicalWidth(float v, float dpiX);
+    //void SetPhysicalWidth(float v, float dpiX);
 
     float GetPhysicalHeight() const;
-    void SetPhysicalHeight(float v, float dpiY);
+    //void SetPhysicalHeight(float v, float dpiY);
 
     Structs::Uint2 GetLogicalSizeUint() const;
 
