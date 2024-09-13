@@ -1,12 +1,10 @@
 ﻿#pragma once
-#include <Helpers/common.h>
-#include <Helpers/Dx/DxSettings.h>
-#include <Helpers/Dx/DxDevice.h>
-#include <Helpers/Callback.hpp>
-#include <Helpers/Flags.h>
+#include "Helpers/common.h"
+#include "Helpers/Callback.hpp"
+#include "Helpers/Flags.h"
 
-#include "DxRenderObjProxy.h"
 #include "ISwapChainPanel.h"
+#include "DxRenderObjProxy.h"
 #include "RenderPipeline.h"
 
 namespace HELPERS_NS {
@@ -79,7 +77,7 @@ namespace HELPERS_NS {
 			void STDMETHODCALLTYPE Trim() override;
 			void STDMETHODCALLTYPE Present() override;
 			void STDMETHODCALLTYPE RegisterDeviceNotify(IDeviceNotify* deviceNotify) override;
-			//void STDMETHODCALLTYPE RegisterRenderNotification(IRenderNotification* renderNotification) override;
+			
 			SwapChainPanelNotifications* STDMETHODCALLTYPE GetNotifications() override;
 
 			// The size of the render target, in pixels.
@@ -92,6 +90,8 @@ namespace HELPERS_NS {
 			DisplayOrientations STDMETHODCALLTYPE GetCurrentOrientation() const override;
 			float STDMETHODCALLTYPE GetDpi() const override;
 			DirectX::XMFLOAT2 STDMETHODCALLTYPE GetCompositionScale() const override;
+			
+			ex::std::weak_ptr<HELPERS_NS::Dx::DxSettings> STDMETHODCALLTYPE GetDxSettings() const override;
 
 			// D3D Accessors.
 			Microsoft::WRL::ComPtr<IDXGISwapChain3> STDMETHODCALLTYPE GetSwapChain() const override;

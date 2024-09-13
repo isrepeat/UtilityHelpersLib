@@ -1,8 +1,11 @@
 ﻿#pragma once
-#include <Helpers/common.h>
-#include <Helpers/Dx/DxDevice.h>
-#include <Helpers/Signal.h>
+#include "Helpers/common.h"
+#include "Helpers/Dx/DxDevice.h"
+#include "Helpers/Dx/DxSettings.h"
+#include "Helpers/ExtStdMemory.h"
+#include "Helpers/Signal.h"
 #include <Unknwn.h>
+#include <memory>
 
 namespace HELPERS_NS {
 	namespace Dx {
@@ -67,6 +70,8 @@ namespace HELPERS_NS {
 				virtual DisplayOrientations STDMETHODCALLTYPE GetCurrentOrientation() const = 0;
 				virtual float STDMETHODCALLTYPE GetDpi() const = 0;
 				virtual DirectX::XMFLOAT2 STDMETHODCALLTYPE GetCompositionScale() const = 0;
+
+				virtual ex::std::weak_ptr<HELPERS_NS::Dx::DxSettings> STDMETHODCALLTYPE GetDxSettings() const = 0;
 
 				// D3D Accessors.
 				virtual Microsoft::WRL::ComPtr<IDXGISwapChain3> STDMETHODCALLTYPE GetSwapChain() const = 0;

@@ -66,15 +66,22 @@ namespace Helpers {
             bool DxSettings::MSAA::get() {
                 return this->dxSettings->IsMSAAEnabled();
             }
-            void DxSettings::MSAA::set(bool v) {
-                this->dxSettings->EnableMSAA(v);
+            void DxSettings::MSAA::set(bool enabled) {
+                this->dxSettings->EnableMSAA(enabled);
             }
 
             bool DxSettings::VSync::get() {
                 return this->dxSettings->IsVSyncEnabled();
             }
-            void DxSettings::VSync::set(bool v) {
-                this->dxSettings->EnableVSync(v);
+            void DxSettings::VSync::set(bool enabled) {
+                this->dxSettings->EnableVSync(enabled);
+            }
+
+            bool DxSettings::HDRToneMappingSupport::get() {
+                return this->dxSettings->IsHDRToneMappingSupportEnabled();
+            }
+            void DxSettings::HDRToneMappingSupport::set(bool enabled) {
+                this->dxSettings->EnableHDRToneMappingSupport(enabled);
             }
 
             Adapter^ DxSettings::CurrentAdapter::get() {
