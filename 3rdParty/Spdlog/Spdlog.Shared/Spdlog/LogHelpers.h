@@ -213,8 +213,11 @@ namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger na
 // TODO: use forward declaration for DefaultLoggers::Log() static method before LOG_... macros definition above
 //       because Time.h include Rational.h and last one use LOG_... macros with undefined DefaultLoggers class yet
 #include "Helpers/Semaphore.h"
-#include "Helpers/Time.h"
 #include "DynamicFileSink.h"
+
+namespace HELPERS_NS {
+    class Timer;
+}
 #endif
 #include "CustomTypeSpecialization.h"
 //#pragma message("include 'LogHelpers.h' [helpers files included]")
@@ -231,7 +234,21 @@ namespace LOGGER_NS {
     // define a "__classFullnameLogging" "member checker" class
     define_has_member(__ClassFullnameLogging);
    
+    enum class LoggingMode : uint8_t {
+        // Log `debug`, `info`, `warn`, `err`, `critical`.
+        // Ignore only `trace` messages.
+        DebugAndErrors,
+
+        // Log everything, including `trace`.
+        Verbose
+    };
+
     struct LOGGER_API StandardLoggers {
+        static constexpr uintmax_t defaultLogSize = 10 * 1024 * 1024; // 10 MB (~ 50'000 rows)
+        uintmax_t maxSizeLogFile = defaultLogSize;
+
+        LoggingMode loggingMode = LoggingMode::Verbose;
+
         std::shared_ptr<spdlog::logger> logger;
         std::shared_ptr<spdlog::logger> rawLogger;
         std::shared_ptr<spdlog::logger> timeLogger;
@@ -286,14 +303,27 @@ namespace LOGGER_NS {
 
         struct UnscopedData;
 
-        static constexpr uintmax_t maxSizeLogFile = 5 * 1024 * 1024; // 5 MB (~ 50'000 rows)
         static constexpr std::chrono::milliseconds logSizeCheckInterval{30'000};
         static constexpr size_t maxLoggers = 2;
 
-        static void Init(std::filesystem::path logFilePath, HELPERS_NS::Flags<InitFlags> initFlags = InitFlags::DefaultFlags);
-        static void InitForId(uint8_t loggerId, std::filesystem::path logFilePath, HELPERS_NS::Flags<InitFlags> initFlags = InitFlags::DefaultFlags);
+        static void Init(
+            std::filesystem::path logFilePath,
+            HELPERS_NS::Flags<InitFlags> initFlags = InitFlags::DefaultFlags,
+            uintmax_t maxSizeLogFile = StandardLoggers::defaultLogSize);
+
+        static void InitForId(uint8_t loggerId,
+            std::filesystem::path logFilePath,
+            HELPERS_NS::Flags<InitFlags> initFlags = InitFlags::DefaultFlags,
+            uintmax_t maxSizeLogFile = StandardLoggers::defaultLogSize);
+
         static bool IsInitialized(uint8_t id = 0);
         static std::string GetLastMessage();
+
+        static LoggingMode GetLoggingMode(uint8_t id = 0);
+        static void SetLoggingMode(LoggingMode mode, uint8_t id = 0);
+
+        static uintmax_t GetMaxLogFileSize(uint8_t id = 0);
+        static void SetMaxLogFileSize(uintmax_t size, uint8_t id = 0);
 
         static std::shared_ptr<spdlog::logger> Logger(uint8_t id = 0);
         static std::shared_ptr<spdlog::logger> RawLogger(uint8_t id = 0);
@@ -337,6 +367,9 @@ namespace LOGGER_NS {
 #if USE_DYNAMIC_SINK
         static void CheckLogFileSize(StandardLoggers& loggers);
 #endif
+
+        static void ForEachLogger(uint8_t id, const std::function<void(spdlog::logger&)>& action);
+        static spdlog::level::level_enum LoggingModeToSpdlogLevel(LoggingMode mode);
 
         //const std::unordered_map<uint8_t, bool> initializedLoggersById;
         std::set<uint8_t> initializedLoggersById;
