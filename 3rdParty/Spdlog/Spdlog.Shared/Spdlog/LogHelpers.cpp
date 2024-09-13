@@ -226,12 +226,6 @@ namespace LOGGER_NS {
         std::wstring pauseLoggingEventName = logFilePath.filename().wstring() + L"-PauseLogging";
         logFilePath = DynamicFileSinkMt::PickLogFile(logFilePath);
 #endif
-        auto& _this = GetInstance();
-        if (_this.initializedLoggersById.count(loggerId) > 0) {
-            TimeLogger(loggerId)->warn("the logger on this id = {} has already been initialized, continue reinitalize ...", loggerId);
-        } else {
-            _this.initializedLoggersById.insert(loggerId);
-        }
 
         if (!std::filesystem::exists(logFilePath)) {
             initFlags &= ~InitFlags::AppendNewSessionMsg; // don't append new session message at first created log file
@@ -246,7 +240,14 @@ namespace LOGGER_NS {
                     });
             }
         }
-        
+      
+        auto& _this = GetInstance();
+        if (_this.initializedLoggersById.count(loggerId) > 0) {
+            TimeLogger(loggerId)->warn("the logger on this id = {} has already been initialized, continue reinitalize ...", loggerId);
+        } else {
+            _this.initializedLoggersById.insert(loggerId);
+        }
+
         _this.standardLoggersList[loggerId].maxSizeLogFile = maxSizeLogFile;
 
 
