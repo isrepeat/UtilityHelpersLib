@@ -315,11 +315,13 @@ namespace LOGGER_NS {
         static void Init(
             std::filesystem::path logFilePath,
             HELPERS_NS::Flags<InitFlags> initFlags = InitFlags::DefaultFlags,
+            LoggingMode loggingMode = LoggingMode::Verbose,
             uintmax_t maxSizeLogFile = StandardLoggers::defaultLogSize);
 
         static void InitForId(uint8_t loggerId,
             std::filesystem::path logFilePath,
             HELPERS_NS::Flags<InitFlags> initFlags = InitFlags::DefaultFlags,
+            LoggingMode loggingMode = LoggingMode::Verbose,
             uintmax_t maxSizeLogFile = StandardLoggers::defaultLogSize);
 
         static bool IsInitialized(uint8_t id = 0);

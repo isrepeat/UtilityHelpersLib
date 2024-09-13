@@ -185,15 +185,17 @@ namespace LOGGER_NS {
     void DefaultLoggers::Init(
         std::filesystem::path logFilePath,
         H::Flags<InitFlags> initFlags,
+        LoggingMode loggingMode,
         uintmax_t maxSizeLogFile
     ) {
-        GetInstance().InitForId(0, logFilePath, initFlags, maxSizeLogFile);
+        GetInstance().InitForId(0, logFilePath, initFlags, loggingMode, maxSizeLogFile);
     }
 
     void DefaultLoggers::InitForId(
         uint8_t loggerId,
         std::filesystem::path logFilePath,
         H::Flags<InitFlags> initFlags,
+        LoggingMode loggingMode,
         uintmax_t maxSizeLogFile
     ) {
         assertm(loggerId < maxLoggers, "loggerId out of bound");
@@ -257,7 +259,6 @@ namespace LOGGER_NS {
         formatterDefault->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Default));
         formatterDefault->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::Default));
         _this.standardLoggersList[loggerId].fileSink->set_formatter(std::move(formatterDefault));
-        _this.standardLoggersList[loggerId].fileSink->set_level(spdlog::level::trace);
 
 #if USE_DYNAMIC_SINK
         _this.standardLoggersList[loggerId].fileSinkRaw = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate), pauseLoggingEventName);
@@ -271,7 +272,6 @@ namespace LOGGER_NS {
         else {
             _this.standardLoggersList[loggerId].fileSinkRaw->set_pattern(GetPattern(Pattern::Raw));
         }
-        _this.standardLoggersList[loggerId].fileSinkRaw->set_level(spdlog::level::trace);
 
 #if USE_DYNAMIC_SINK
         _this.standardLoggersList[loggerId].fileSinkTime = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate), pauseLoggingEventName);
@@ -279,7 +279,6 @@ namespace LOGGER_NS {
         _this.standardLoggersList[loggerId].fileSinkTime = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, initFlags.Has(InitFlags::Truncate));
 #endif
         _this.standardLoggersList[loggerId].fileSinkTime->set_pattern(GetPattern(Pattern::Time));
-        _this.standardLoggersList[loggerId].fileSinkTime->set_level(spdlog::level::trace);
 
 #if USE_DYNAMIC_SINK
         _this.standardLoggersList[loggerId].fileSinkFunc = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate), pauseLoggingEventName);
@@ -290,7 +289,6 @@ namespace LOGGER_NS {
         formatterFunc->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Func));
         formatterFunc->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::Func));
         _this.standardLoggersList[loggerId].fileSinkFunc->set_formatter(std::move(formatterFunc));
-        _this.standardLoggersList[loggerId].fileSinkFunc->set_level(spdlog::level::trace);
 
 #if USE_DYNAMIC_SINK
         _this.standardLoggersList[loggerId].fileSinkExtend = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate), pauseLoggingEventName);
@@ -301,7 +299,6 @@ namespace LOGGER_NS {
         formatterExtend->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Extend));
         formatterExtend->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, _this.prefixCallback, _this.postfixCallback).set_pattern(GetPattern(Pattern::Extend));
         _this.standardLoggersList[loggerId].fileSinkExtend->set_formatter(std::move(formatterExtend));
-        _this.standardLoggersList[loggerId].fileSinkExtend->set_level(spdlog::level::trace);
 
         if (initFlags.Has(InitFlags::EnableLogToStdout)) {
             _this.stdoutDebugColorSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
@@ -353,28 +350,22 @@ namespace LOGGER_NS {
 
         _this.standardLoggersList[loggerId].logger = std::make_shared<spdlog::logger>("logger" + nameId, loggerSinks);
         _this.standardLoggersList[loggerId].logger->flush_on(spdlog::level::trace);
-        _this.standardLoggersList[loggerId].logger->set_level(spdlog::level::debug);
 
         _this.standardLoggersList[loggerId].rawLogger = std::make_shared<spdlog::logger>("raw_logger" + nameId, rawLoggerSinks);
         _this.standardLoggersList[loggerId].rawLogger->flush_on(spdlog::level::trace);
-        _this.standardLoggersList[loggerId].rawLogger->set_level(spdlog::level::debug);
 
         _this.standardLoggersList[loggerId].timeLogger = std::make_shared<spdlog::logger>("time_logger" + nameId, timeLoggerSinks);
         _this.standardLoggersList[loggerId].timeLogger->flush_on(spdlog::level::trace);
-        _this.standardLoggersList[loggerId].timeLogger->set_level(spdlog::level::debug);
 
         _this.standardLoggersList[loggerId].funcLogger = std::make_shared<spdlog::logger>("func_logger" + nameId, funcLoggerSinks);
         _this.standardLoggersList[loggerId].funcLogger->flush_on(spdlog::level::trace);
-        _this.standardLoggersList[loggerId].funcLogger->set_level(spdlog::level::debug);
 
         _this.standardLoggersList[loggerId].extendLogger = std::make_shared<spdlog::logger>("extend_logger" + nameId, extendLoggerSinks);
         _this.standardLoggersList[loggerId].extendLogger->flush_on(spdlog::level::trace);
-        _this.standardLoggersList[loggerId].extendLogger->set_level(spdlog::level::debug);
 
 #ifdef _DEBUG
         _this.standardLoggersList[loggerId].debugLogger = std::make_shared<spdlog::logger>("debug_logger" + nameId, debugLoggerSinks);
         _this.standardLoggersList[loggerId].debugLogger->flush_on(spdlog::level::trace);
-        _this.standardLoggersList[loggerId].debugLogger->set_level(spdlog::level::debug);
 #endif
 
         if (initFlags.Has(InitFlags::AppendNewSessionMsg)) {
@@ -399,6 +390,8 @@ namespace LOGGER_NS {
         _this.standardLoggersList[loggerId].logSizeLimitChecker = timer;
         _this.standardLoggersList[loggerId].pauseLoggingEvent = std::make_shared<H::EventObject>(pauseLoggingEventName);
 #endif
+
+        SetLoggingMode(loggingMode, loggerId);
     }
 
     bool DefaultLoggers::IsInitialized(uint8_t id) {
@@ -433,7 +426,13 @@ namespace LOGGER_NS {
 
         auto logLevel = LoggingModeToSpdlogLevel(loggers.loggingMode);
         
-        ForEachLogger(id, [logLevel](auto logger) {
+        loggers.fileSink->set_level(logLevel);
+        loggers.fileSinkRaw->set_level(logLevel);
+        loggers.fileSinkTime->set_level(logLevel);
+        loggers.fileSinkFunc->set_level(logLevel);
+        loggers.fileSinkExtend->set_level(logLevel);
+
+        ForEachLogger(id, [logLevel](auto& logger) {
             logger.set_level(logLevel);
         });
     }
