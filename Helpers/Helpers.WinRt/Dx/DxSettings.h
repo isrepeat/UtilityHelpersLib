@@ -36,6 +36,7 @@ namespace Helpers {
 
                 event EventHandler^ MsaaChanged;
                 event EventHandler^ VSyncChanged;
+                event EventHandler^ HDRToneMappingSupportChanged;
                 event EventHandler^ CurrentAdapterChanged;
                 event EventHandler^ AdaptersUpdated;
 
@@ -44,6 +45,10 @@ namespace Helpers {
                     void set(bool enabled);
                 }
                 property bool VSync {
+                    bool get();
+                    void set(bool enabled);
+                }
+                property bool HDRToneMappingSupport {
                     bool get();
                     void set(bool enabled);
                 }

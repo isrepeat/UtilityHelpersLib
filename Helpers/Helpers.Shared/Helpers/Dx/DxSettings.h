@@ -1,6 +1,6 @@
 #pragma once
-#include <Helpers/common.h>
-#include <Helpers/Signal.h>
+#include "Helpers/common.h"
+#include "Helpers/Signal.h"
 #include "DxHelpers.h"
 #include <functional>
 #include <vector>
@@ -13,6 +13,7 @@ namespace HELPERS_NS {
         struct DxSettingsHandlers {
             HELPERS_NS::Signal<void()> msaaChanged;
             HELPERS_NS::Signal<void()> vsyncChanged;
+            HELPERS_NS::Signal<void()> hdrToneMappingSupportChanged;
             HELPERS_NS::Signal<void()> adapersUpdated;
             HELPERS_NS::Signal<void()> currentAdapterChanged;
         };
@@ -27,6 +28,9 @@ namespace HELPERS_NS {
             void EnableVSync(bool enabled);
             bool IsVSyncEnabled();
 
+            void EnableHDRToneMappingSupport(bool enabled);
+            bool IsHDRToneMappingSupportEnabled();
+
             void SetCurrentAdapterByIdx(uint32_t idx);
             Adapter GetCurrentAdapter();
 
@@ -38,6 +42,7 @@ namespace HELPERS_NS {
         private:
             std::atomic<bool> msaa;
             std::atomic<bool> vsync;
+            std::atomic<bool> hdrToneMappingSupport;
             std::vector<Adapter> adapters;
             Adapter currentAdapter;
 

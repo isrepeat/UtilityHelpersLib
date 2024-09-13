@@ -775,6 +775,11 @@ namespace HELPERS_NS {
 			return { this->m_compositionScaleX, this->m_compositionScaleY };
 		}
 
+
+		ex::std::weak_ptr<HELPERS_NS::Dx::DxSettings> STDMETHODCALLTYPE SwapChainPanel::GetDxSettings() const {
+			return this->initData.dxSettingsWeak;
+		}
+
 		Microsoft::WRL::ComPtr<IDXGISwapChain3> STDMETHODCALLTYPE SwapChainPanel::GetSwapChain() const {
 			return this->dxgiSwapChain;
 		}

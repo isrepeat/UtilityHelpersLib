@@ -9,6 +9,7 @@ namespace HELPERS_NS {
         DxSettings::DxSettings()
             : msaa{ false }
             , vsync{ true }
+            , hdrToneMappingSupport{ true }
             , dxSettingsHandlers{ std::make_unique<DxSettingsHandlers>() }
         {
             UpdateAdapters();
@@ -37,6 +38,18 @@ namespace HELPERS_NS {
 
         bool DxSettings::IsVSyncEnabled() {
             return this->vsync;
+        }
+
+
+        void DxSettings::EnableHDRToneMappingSupport(bool enabled) {
+            this->hdrToneMappingSupport = enabled;
+            if (this->dxSettingsHandlers->hdrToneMappingSupportChanged) {
+                this->dxSettingsHandlers->hdrToneMappingSupportChanged();
+            }
+        }
+
+        bool DxSettings::IsHDRToneMappingSupportEnabled() {
+            return this->hdrToneMappingSupport;
         }
 
 
