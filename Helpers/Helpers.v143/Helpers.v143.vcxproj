@@ -68,7 +68,7 @@
   </ImportGroup>
   <ImportGroup Label="Shared">
     <Import Project="..\Helpers.Shared\Helpers.Shared.vcxitems" Label="Shared" />
-    <Import Project="..\..\packages\CrashHandling.1.1.18\build\native\CrashHandling.targets" Condition="Exists('..\..\packages\CrashHandling.1.1.18\build\native\CrashHandling.targets')" />
+    <Import Project="..\..\packages\CrashHandling.1.1.28\build\native\CrashHandling.targets" Condition="Exists('..\..\packages\CrashHandling.1.1.28\build\native\CrashHandling.targets')" />
     <Import Project="..\..\3rdParty\MagicEnum\MagicEnum.Shared\MagicEnum.Shared.vcxitems" Label="Shared" />
     <Import Project="..\..\3rdParty\3rdParty_Packages_Includes\Boost.Includes\Boost.Includes.vcxitems" Label="Shared" />
   </ImportGroup>
@@ -182,6 +182,6 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\packages\CrashHandling.1.1.18\build\native\CrashHandling.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\CrashHandling.1.1.18\build\native\CrashHandling.targets'))" />
+    <Error Condition="!Exists('..\..\packages\CrashHandling.1.1.28\build\native\CrashHandling.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\CrashHandling.1.1.28\build\native\CrashHandling.targets'))" />
   </Target>
 </Project>
