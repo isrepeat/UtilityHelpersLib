@@ -776,7 +776,7 @@ namespace HELPERS_NS {
 		}
 
 
-		ex::std::weak_ptr<HELPERS_NS::Dx::DxSettings> STDMETHODCALLTYPE SwapChainPanel::GetDxSettings() const {
+		std::ex::weak_ptr<HELPERS_NS::Dx::DxSettings> STDMETHODCALLTYPE SwapChainPanel::GetDxSettings() const {
 			return this->initData.dxSettingsWeak;
 		}
 

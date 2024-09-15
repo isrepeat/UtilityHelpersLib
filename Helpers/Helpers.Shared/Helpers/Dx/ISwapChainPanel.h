@@ -71,7 +71,7 @@ namespace HELPERS_NS {
 				virtual float STDMETHODCALLTYPE GetDpi() const = 0;
 				virtual DirectX::XMFLOAT2 STDMETHODCALLTYPE GetCompositionScale() const = 0;
 
-				virtual ex::std::weak_ptr<HELPERS_NS::Dx::DxSettings> STDMETHODCALLTYPE GetDxSettings() const = 0;
+				virtual STD_EXT_NS::weak_ptr<HELPERS_NS::Dx::DxSettings> STDMETHODCALLTYPE GetDxSettings() const = 0;
 
 				// D3D Accessors.
 				virtual Microsoft::WRL::ComPtr<IDXGISwapChain3> STDMETHODCALLTYPE GetSwapChain() const = 0;
