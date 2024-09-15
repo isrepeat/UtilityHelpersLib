@@ -8,6 +8,9 @@
 namespace HELPERS_NS {
     template <typename TClass, typename T = void*>
     class _Singleton {
+    protected:
+        using _Base = _Singleton<TClass,T>;
+    
     public:
         // Call this in constructors of singletons classes (to ensure that TClass destroy after all of them)
         static void InitSingleton() {

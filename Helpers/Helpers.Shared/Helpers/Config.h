@@ -3,6 +3,7 @@
 #include "ThreadSafeObject.hpp"
 #include "TypeTraits.hpp"
 #include "Singleton.hpp"
+#include "Concepts.h"
 
 namespace HELPERS_NS {
 	template <typename T>
@@ -13,12 +14,17 @@ namespace HELPERS_NS {
 	};
 
 	template <typename DerivedT>
+#if __cpp_concepts
+	requires concepts::HasType<typename ConfigData<DerivedT>::Data>
+#endif
 	class ConfigBase : public HELPERS_NS::Singleton<typename DerivedT> {
 	private:
 		using _MyBase = HELPERS_NS::Singleton<typename DerivedT>;
 
-	public:
+	protected:
 		using _Base = ConfigBase<DerivedT>;
+
+	public:
 		using _Data = typename ConfigData<DerivedT>::Data;
 
 		ConfigBase(const _Data& data)
