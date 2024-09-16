@@ -405,13 +405,14 @@ namespace LOGGER_NS {
     }
 
     LoggingMode DefaultLoggers::GetLoggingMode(uint8_t id) {
+        auto& _this = GetInstance();
+
         if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
             auto defaultLogger = H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
             auto mode = SpdlogLevelToLoggingMode(defaultLogger->level());
             return mode;
         }
 
-        auto& _this = GetInstance();
         auto& loggers = _this.standardLoggersList[id];
 
 #if USE_DYNAMIC_SINK
@@ -422,6 +423,7 @@ namespace LOGGER_NS {
     }
 
     void DefaultLoggers::SetLoggingMode(LoggingMode mode, uint8_t id) {
+        auto& _this = GetInstance();
         auto logLevel = LoggingModeToSpdlogLevel(mode);
 
         if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
@@ -430,7 +432,6 @@ namespace LOGGER_NS {
             return;
         }
 
-        auto& _this = GetInstance();
         auto& loggers = _this.standardLoggersList[id];
 
 #if USE_DYNAMIC_SINK
@@ -451,11 +452,12 @@ namespace LOGGER_NS {
     }
 
     uintmax_t DefaultLoggers::GetMaxLogFileSize(uint8_t id) {
+        auto& _this = GetInstance();
+
         if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
             return StandardLoggers::defaultLogSize;
         }
 
-        auto& _this = GetInstance();
         auto& loggers = _this.standardLoggersList[id];
 
 #if USE_DYNAMIC_SINK
@@ -466,11 +468,12 @@ namespace LOGGER_NS {
     }
 
     void DefaultLoggers::SetMaxLogFileSize(uintmax_t size, uint8_t id) {
+        auto& _this = GetInstance();
+
         if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
             return;
         }
 
-        auto& _this = GetInstance();
         auto& loggers = _this.standardLoggersList[id];
 
 #if USE_DYNAMIC_SINK
@@ -482,13 +485,14 @@ namespace LOGGER_NS {
     }
 
     void DefaultLoggers::ForEachLogger(uint8_t id, const std::function<void(spdlog::logger&)>& action) {
+        auto& _this = GetInstance();
+
         if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
             auto defaultLogger = H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
             action(*defaultLogger);
             return;
         }
 
-        auto& _this = GetInstance();
         auto& loggers = _this.standardLoggersList[id];
 
         spdlog::logger* allLoggers[] = {
