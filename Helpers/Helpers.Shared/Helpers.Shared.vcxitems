@@ -75,6 +75,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\ComMutex.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\IUnknownValue.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\UnknownValue.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Concepts.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Config.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\D2DCtxMt.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxConstantBuffer.h" />

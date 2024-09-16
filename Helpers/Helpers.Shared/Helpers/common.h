@@ -27,6 +27,8 @@ namespace HELPERS_NS {} // create uniq "helpers namespace" for this project
 namespace HELPERS_NS_ALIAS = HELPERS_NS; // set your alias for original "helpers namespace" (defined via macro)
 
 
+#define MEDIA_FOUNDATION_NS __MF_ns
+
 #ifndef MEDIA_FOUNDATION_NS_ALIAS
 #define MEDIA_FOUNDATION_NS_ALIAS MF
 #define MEDIA_FOUNDATION_NS_ALIAS_DEFINED_INTERNAL 1
@@ -36,9 +38,21 @@ namespace HELPERS_NS_ALIAS = HELPERS_NS; // set your alias for original "helpers
 #endif
 #endif
 
-#define MEDIA_FOUNDATION_NS __MF_ns
 namespace MEDIA_FOUNDATION_NS {}
 namespace MEDIA_FOUNDATION_NS_ALIAS = MEDIA_FOUNDATION_NS;
+
+
+#ifndef STD_EXT_NS
+#define STD_EXT_NS std::ex
+#define STD_EXT_NS_DEFINED_INTERNAL 1
+#else
+#if !STD_EXT_NS_DEFINED_INTERNAL
+#pragma message(PREPROCESSOR_MSG("STD_EXT_NS already defined outside = '" PP_STRINGIFY(STD_EXT_NS) "'"))
+#endif
+#endif
+
+namespace STD_EXT_NS {}
+
 
 
 #include <winapifamily.h>

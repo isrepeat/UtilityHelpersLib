@@ -11,82 +11,76 @@
 #define __LOG_NULLPTR_OBJECT(T)
 #endif
 
+// TODO: If this header included twice may be problems with 'STD_EXT_NS' macro. Fix it.
 // Extends class with "Try()" method which can be used inside SAFE_RESULT macro
 #define SafeObject(T) \
 	T* Try() { \
 		if (this == nullptr) { \
 			__LOG_NULLPTR_OBJECT(T); \
-			throw ex::std::bad_pointer(); \
+			throw STD_EXT_NS::bad_pointer(); \
 		} \
 		return this; \
 	}
 
 
-namespace HELPERS_NS {
-	namespace ex {
-		namespace std {
-			struct bad_pointer {};
+namespace STD_EXT_NS {
+	struct bad_pointer : ::std::exception {
+		bad_pointer()
+			: ::std::exception("bad pointer")
+		{}
+	};
 
-			template <typename T>
-			struct unique_ptr : public ::std::unique_ptr<T> {
-				using _MyBase = ::std::unique_ptr<T>;
-				using _MyBase::unique_ptr;
+	template <typename T>
+	struct unique_ptr : public ::std::unique_ptr<T> {
+		PP_FORWARD_CTOR(unique_ptr, ::std::unique_ptr<T>);
 
-				unique_ptr<T>& Try() {
-					if (this == nullptr) {
-						throw ex::std::bad_pointer{};
-					}
-					if (this->get() == nullptr) {
-						throw ex::std::bad_pointer{};
-					}
-					return *this;
-				}
-			};
-
-			template <typename T>
-			struct shared_ptr : public ::std::shared_ptr<T> {
-				using _MyBase = ::std::shared_ptr<T>;
-				using _MyBase::shared_ptr;
-
-				shared_ptr<T>& Try() {
-					if (this == nullptr) {
-						throw ex::std::bad_pointer{};
-					}
-					if (this->get() == nullptr) {
-						throw ex::std::bad_pointer{};
-					}
-					return *this;
-				}
-			};
-
-			template <typename T>
-			struct weak_ptr : public ::std::weak_ptr<T> {
-				using _MyBase = ::std::weak_ptr<T>;
-				using _MyBase::weak_ptr;
-
-				shared_ptr<T> Try() {
-					if (this == nullptr) {
-						throw ex::std::bad_pointer{};
-					}
-					auto sharedPtr = this->lock();
-					if (sharedPtr == nullptr) {
-						throw ex::std::bad_pointer{};
-					}
-					return sharedPtr;
-				}
-			};
-
-			// Also you can expose std methods to be available outside through this namespace.
-			//using ::std::make_unique;
+		unique_ptr<T>& Try() {
+			if (this == nullptr) {
+				throw STD_EXT_NS::bad_pointer{};
+			}
+			if (this->get() == nullptr) {
+				throw STD_EXT_NS::bad_pointer{};
+			}
+			return *this;
 		}
-	}
+	};
 
+	template <typename T>
+	struct shared_ptr : public ::std::shared_ptr<T> {
+		PP_FORWARD_CTOR(shared_ptr, ::std::shared_ptr<T>);
+
+		shared_ptr<T>& Try() {
+			if (this == nullptr) {
+				throw STD_EXT_NS::bad_pointer{};
+			}
+			if (this->get() == nullptr) {
+				throw STD_EXT_NS::bad_pointer{};
+			}
+			return *this;
+		}
+	};
+
+	template <typename T>
+	struct weak_ptr : public ::std::weak_ptr<T> {
+		PP_FORWARD_CTOR(weak_ptr, ::std::weak_ptr<T>);
+
+		shared_ptr<T> Try() {
+			if (this == nullptr) {
+				throw STD_EXT_NS::bad_pointer{};
+			}
+			auto sharedPtr = this->lock();
+			if (sharedPtr == nullptr) {
+				throw STD_EXT_NS::bad_pointer{};
+			}
+			return sharedPtr;
+		}
+	};
+}
+
+namespace HELPERS_NS {
 	inline bool SafeConditionResult(std::function<bool()> fnCondition) {
 		try {
 			return static_cast<bool>(fnCondition());
-		}
-		catch (ex::std::bad_pointer&) {
-			return false;
 		}
 		catch (...) {
 			return false;

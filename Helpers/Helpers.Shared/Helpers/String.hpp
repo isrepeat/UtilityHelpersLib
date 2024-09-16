@@ -1,6 +1,8 @@
 #pragma once
 #include "common.h"
 #include <stdexcept>
+#include <algorithm>
+#include <cwctype>
 #include <string>
 #include <memory>
 
@@ -19,6 +21,23 @@ namespace HELPERS_NS {
 	StringDeductor(std::string_view)->StringDeductor<char>;
 	StringDeductor(std::wstring_view)->StringDeductor<wchar_t>;
 
+
+	inline std::wstring ToLower(std::wstring wstr) {
+		std::transform(wstr.begin(), wstr.end(), wstr.begin(), std::towlower);
+		return wstr;
+	}
+	inline std::string ToLower(std::string str) {
+		std::transform(str.begin(), str.end(), str.begin(), std::towlower);
+		return str;
+	}
+	inline std::wstring ToUpper(std::wstring wstr) {
+		std::transform(wstr.begin(), wstr.end(), wstr.begin(), std::towupper);
+		return wstr;
+	}
+	inline std::string ToUpper(std::string str) {
+		std::transform(str.begin(), str.end(), str.begin(), std::towupper);
+		return str;
+	}
 
 	template<typename T, typename... Args>
 	int StringPrintFormat(T* buffer, size_t size, const T* format, Args... args) {

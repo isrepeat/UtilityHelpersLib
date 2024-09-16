@@ -91,7 +91,7 @@ namespace HELPERS_NS {
 			float STDMETHODCALLTYPE GetDpi() const override;
 			DirectX::XMFLOAT2 STDMETHODCALLTYPE GetCompositionScale() const override;
 			
-			ex::std::weak_ptr<HELPERS_NS::Dx::DxSettings> STDMETHODCALLTYPE GetDxSettings() const override;
+			STD_EXT_NS::weak_ptr<HELPERS_NS::Dx::DxSettings> STDMETHODCALLTYPE GetDxSettings() const override;
 
 			// D3D Accessors.
 			Microsoft::WRL::ComPtr<IDXGISwapChain3> STDMETHODCALLTYPE GetSwapChain() const override;

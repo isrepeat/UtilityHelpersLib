@@ -232,3 +232,14 @@
 // Helper to get full namespace from __NAMESPACE__'s macro args
 #define PP_LAST_NAMESPACE \
 	PP_GET_FIRST(__NAMESPACE__) PP_FOR_EACH(__PP_JOIN_NAMESPACE, PP_DROP_FIRST(__NAMESPACE__))
+
+
+/* ---------------------------------------- */
+/*               Class helpers              */
+/* ---------------------------------------- */
+// This is an alternative to "using _MyBase::_MyBase"
+#define PP_FORWARD_CTOR(From, To) \
+	template <typename... _Args> \
+	From(_Args&&... args) \
+		: To(::std::forward<_Args&&>(args)...) \
+	{}

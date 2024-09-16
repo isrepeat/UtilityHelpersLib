@@ -1,6 +1,7 @@
 #pragma once
 #include "Helpers/common.h"
 #include "JsonParser/JsonParser.h"
+#include "Helpers/Concepts.h"
 #include "Helpers/Logger.h"
 #include <fstream>
 #include <vector>
@@ -8,6 +9,11 @@
 
 namespace HELPERS_NS {
 	template <typename JSONObjectT, typename LoadFromT>
+#if __cpp_concepts
+	requires concepts::Conjunction<
+		concepts::HasStaticMethodWithSignature<decltype(&JSONObjectT::AfterLoadHandler), void(*)(const JSONObjectT&)>
+	>
+#endif
 	class JSONConfigLoader {
 		JSONConfigLoader() = delete;
 		~JSONConfigLoader() = delete;
@@ -29,12 +35,19 @@ namespace HELPERS_NS {
 
 				LOG_DEBUG_D("\"{}\" data: \n{}", configName, HELPERS_NS::VecToStr(byteArray));
 
+				// To avoid merge results after parsing ensure that all JSON objects is empty.
 				JSONObjectT jsonObject;
 				if (JS::ParseTo(byteArray, jsonObject)) {
 					JSONObjectT::AfterLoadHandler(jsonObject);
 				}
 				else {
 					LOG_ERROR_D("Cannot parse '{}'", configName);
+					constexpr bool has_LoadErrorHandler = requires {
+						JSONObjectT::LoadErrorHandler();
+					};
+					if constexpr (has_LoadErrorHandler) {
+						JSONObjectT::LoadErrorHandler();
+					}
 					return false;
 				}
 			}
