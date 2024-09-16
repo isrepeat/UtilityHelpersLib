@@ -10,6 +10,10 @@
 #include <ComAPI/ComAPI.h>
 #include <set>
 
+#if USE_DYNAMIC_SINK
+#include "Helpers/Time.h"
+#endif
+
 namespace LOGGER_NS {
     // Free letter flags: 'G', 'h', 'J''j', 'K''k', 'N', 'Q', 'U', 'V', 'W''w', 'Z', '*', "?"
 
@@ -178,11 +182,22 @@ namespace LOGGER_NS {
     }
 
 
-    void DefaultLoggers::Init(std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags) {
-        GetInstance().InitForId(0, logFilePath, initFlags);
+    void DefaultLoggers::Init(
+        std::filesystem::path logFilePath,
+        H::Flags<InitFlags> initFlags,
+        LoggingMode loggingMode,
+        uintmax_t maxSizeLogFile
+    ) {
+        GetInstance().InitForId(0, logFilePath, initFlags, loggingMode, maxSizeLogFile);
     }
 
-    void DefaultLoggers::InitForId(uint8_t loggerId, std::filesystem::path logFilePath, H::Flags<InitFlags> initFlags) {
+    void DefaultLoggers::InitForId(
+        uint8_t loggerId,
+        std::filesystem::path logFilePath,
+        H::Flags<InitFlags> initFlags,
+        LoggingMode loggingMode,
+        uintmax_t maxSizeLogFile
+    ) {
         assertm(loggerId < maxLoggers, "loggerId out of bound");
         // TODO: Use H::Bimap<"loggerPath", loggerId> and move to class member (combine with initializedLoggersById)
         static std::set<std::wstring> initializedLoggersByPath;
@@ -225,16 +240,17 @@ namespace LOGGER_NS {
                     });
             }
         }
-
-
+      
         auto& _this = GetInstance();
         if (_this.initializedLoggersById.count(loggerId) > 0) {
             TimeLogger(loggerId)->warn("the logger on this id = {} has already been initialized, continue reinitalize ...", loggerId);
-        }
-        else {
+        } else {
             _this.initializedLoggersById.insert(loggerId);
         }
-        
+
+        _this.standardLoggersList[loggerId].maxSizeLogFile = maxSizeLogFile;
+
+
 #if USE_DYNAMIC_SINK
         _this.standardLoggersList[loggerId].fileSink = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate), pauseLoggingEventName);
 #else
@@ -244,7 +260,6 @@ namespace LOGGER_NS {
         formatterDefault->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Default));
         formatterDefault->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::Default));
         _this.standardLoggersList[loggerId].fileSink->set_formatter(std::move(formatterDefault));
-        _this.standardLoggersList[loggerId].fileSink->set_level(spdlog::level::trace);
 
 #if USE_DYNAMIC_SINK
         _this.standardLoggersList[loggerId].fileSinkRaw = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate), pauseLoggingEventName);
@@ -258,7 +273,6 @@ namespace LOGGER_NS {
         else {
             _this.standardLoggersList[loggerId].fileSinkRaw->set_pattern(GetPattern(Pattern::Raw));
         }
-        _this.standardLoggersList[loggerId].fileSinkRaw->set_level(spdlog::level::trace);
 
 #if USE_DYNAMIC_SINK
         _this.standardLoggersList[loggerId].fileSinkTime = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate), pauseLoggingEventName);
@@ -266,7 +280,6 @@ namespace LOGGER_NS {
         _this.standardLoggersList[loggerId].fileSinkTime = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, initFlags.Has(InitFlags::Truncate));
 #endif
         _this.standardLoggersList[loggerId].fileSinkTime->set_pattern(GetPattern(Pattern::Time));
-        _this.standardLoggersList[loggerId].fileSinkTime->set_level(spdlog::level::trace);
 
 #if USE_DYNAMIC_SINK
         _this.standardLoggersList[loggerId].fileSinkFunc = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate), pauseLoggingEventName);
@@ -277,7 +290,6 @@ namespace LOGGER_NS {
         formatterFunc->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Func));
         formatterFunc->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::Func));
         _this.standardLoggersList[loggerId].fileSinkFunc->set_formatter(std::move(formatterFunc));
-        _this.standardLoggersList[loggerId].fileSinkFunc->set_level(spdlog::level::trace);
 
 #if USE_DYNAMIC_SINK
         _this.standardLoggersList[loggerId].fileSinkExtend = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate), pauseLoggingEventName);
@@ -288,7 +300,6 @@ namespace LOGGER_NS {
         formatterExtend->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Extend));
         formatterExtend->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, _this.prefixCallback, _this.postfixCallback).set_pattern(GetPattern(Pattern::Extend));
         _this.standardLoggersList[loggerId].fileSinkExtend->set_formatter(std::move(formatterExtend));
-        _this.standardLoggersList[loggerId].fileSinkExtend->set_level(spdlog::level::trace);
 
         if (initFlags.Has(InitFlags::EnableLogToStdout)) {
             _this.stdoutDebugColorSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
@@ -340,28 +351,22 @@ namespace LOGGER_NS {
 
         _this.standardLoggersList[loggerId].logger = std::make_shared<spdlog::logger>("logger" + nameId, loggerSinks);
         _this.standardLoggersList[loggerId].logger->flush_on(spdlog::level::trace);
-        _this.standardLoggersList[loggerId].logger->set_level(spdlog::level::debug);
 
         _this.standardLoggersList[loggerId].rawLogger = std::make_shared<spdlog::logger>("raw_logger" + nameId, rawLoggerSinks);
         _this.standardLoggersList[loggerId].rawLogger->flush_on(spdlog::level::trace);
-        _this.standardLoggersList[loggerId].rawLogger->set_level(spdlog::level::debug);
 
         _this.standardLoggersList[loggerId].timeLogger = std::make_shared<spdlog::logger>("time_logger" + nameId, timeLoggerSinks);
         _this.standardLoggersList[loggerId].timeLogger->flush_on(spdlog::level::trace);
-        _this.standardLoggersList[loggerId].timeLogger->set_level(spdlog::level::debug);
 
         _this.standardLoggersList[loggerId].funcLogger = std::make_shared<spdlog::logger>("func_logger" + nameId, funcLoggerSinks);
         _this.standardLoggersList[loggerId].funcLogger->flush_on(spdlog::level::trace);
-        _this.standardLoggersList[loggerId].funcLogger->set_level(spdlog::level::debug);
 
         _this.standardLoggersList[loggerId].extendLogger = std::make_shared<spdlog::logger>("extend_logger" + nameId, extendLoggerSinks);
         _this.standardLoggersList[loggerId].extendLogger->flush_on(spdlog::level::trace);
-        _this.standardLoggersList[loggerId].extendLogger->set_level(spdlog::level::debug);
 
 #ifdef _DEBUG
         _this.standardLoggersList[loggerId].debugLogger = std::make_shared<spdlog::logger>("debug_logger" + nameId, debugLoggerSinks);
         _this.standardLoggersList[loggerId].debugLogger->flush_on(spdlog::level::trace);
-        _this.standardLoggersList[loggerId].debugLogger->set_level(spdlog::level::debug);
 #endif
 
         if (initFlags.Has(InitFlags::AppendNewSessionMsg)) {
@@ -386,6 +391,8 @@ namespace LOGGER_NS {
         _this.standardLoggersList[loggerId].logSizeLimitChecker = timer;
         _this.standardLoggersList[loggerId].pauseLoggingEvent = std::make_shared<H::EventObject>(pauseLoggingEventName);
 #endif
+
+        SetLoggingMode(loggingMode, loggerId);
     }
 
     bool DefaultLoggers::IsInitialized(uint8_t id) {
@@ -397,6 +404,134 @@ namespace LOGGER_NS {
         return GetInstance().lastMessage;
     }
 
+    LoggingMode DefaultLoggers::GetLoggingMode(uint8_t id) {
+        auto& _this = GetInstance();
+
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
+            auto defaultLogger = H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+            auto mode = SpdlogLevelToLoggingMode(defaultLogger->level());
+            return mode;
+        }
+
+        auto& loggers = _this.standardLoggersList[id];
+
+#if USE_DYNAMIC_SINK
+        auto logLk = loggers.pauseLoggingEvent->ResetScoped();
+#endif
+
+        return loggers.loggingMode;
+    }
+
+    void DefaultLoggers::SetLoggingMode(LoggingMode mode, uint8_t id) {
+        auto& _this = GetInstance();
+        auto logLevel = LoggingModeToSpdlogLevel(mode);
+
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
+            auto defaultLogger = H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+            defaultLogger->set_level(logLevel);
+            return;
+        }
+
+        auto& loggers = _this.standardLoggersList[id];
+
+#if USE_DYNAMIC_SINK
+        auto logLk = loggers.pauseLoggingEvent->ResetScoped();
+#endif
+
+        loggers.loggingMode = mode;
+        
+        loggers.fileSink->set_level(logLevel);
+        loggers.fileSinkRaw->set_level(logLevel);
+        loggers.fileSinkTime->set_level(logLevel);
+        loggers.fileSinkFunc->set_level(logLevel);
+        loggers.fileSinkExtend->set_level(logLevel);
+
+        ForEachLogger(id, [logLevel](auto& logger) {
+            logger.set_level(logLevel);
+        });
+    }
+
+    uintmax_t DefaultLoggers::GetMaxLogFileSize(uint8_t id) {
+        auto& _this = GetInstance();
+
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
+            return StandardLoggers::defaultLogSize;
+        }
+
+        auto& loggers = _this.standardLoggersList[id];
+
+#if USE_DYNAMIC_SINK
+        auto logLk = loggers.pauseLoggingEvent->ResetScoped();
+#endif
+
+        return loggers.maxSizeLogFile;
+    }
+
+    void DefaultLoggers::SetMaxLogFileSize(uintmax_t size, uint8_t id) {
+        auto& _this = GetInstance();
+
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
+            return;
+        }
+
+        auto& loggers = _this.standardLoggersList[id];
+
+#if USE_DYNAMIC_SINK
+        auto logLk = loggers.pauseLoggingEvent->ResetScoped();
+#endif
+
+        // Will have effect after the next dynamic sink filesize check timeout
+        loggers.maxSizeLogFile = size;
+    }
+
+    void DefaultLoggers::ForEachLogger(uint8_t id, const std::function<void(spdlog::logger&)>& action) {
+        auto& _this = GetInstance();
+
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
+            auto defaultLogger = H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+            action(*defaultLogger);
+            return;
+        }
+
+        auto& loggers = _this.standardLoggersList[id];
+
+        spdlog::logger* allLoggers[] = {
+            loggers.debugLogger.get(), loggers.extendLogger.get(), loggers.funcLogger.get(),
+            loggers.logger.get(), loggers.rawLogger.get(), loggers.timeLogger.get()};
+
+        for (auto logger : allLoggers) {
+            if (logger) {
+                action(*logger);
+            }
+        }
+    }
+
+    spdlog::level::level_enum DefaultLoggers::LoggingModeToSpdlogLevel(LoggingMode mode) {
+        switch (mode) {
+        case LoggingMode::DebugAndErrors:
+            return spdlog::level::level_enum::debug;
+
+        case LoggingMode::Verbose:
+            return spdlog::level::level_enum::trace;
+
+        default:
+            assert(false);
+            return spdlog::level::level_enum::off;
+        }
+    }
+
+    LoggingMode DefaultLoggers::SpdlogLevelToLoggingMode(spdlog::level::level_enum level) {
+        switch (level) {
+        case spdlog::level::level_enum::debug:
+            return LoggingMode::DebugAndErrors;
+
+        case spdlog::level::level_enum::trace:
+            return LoggingMode::Verbose;
+
+        default:
+            return LoggingMode::DebugAndErrors;
+        }
+    }
 
     std::shared_ptr<spdlog::logger> DefaultLoggers::Logger(uint8_t id) {
         auto& _this = GetInstance(); // ensure that token set
@@ -483,7 +618,7 @@ namespace LOGGER_NS {
 
 		std::filesystem::path path(loggers.fileSink->GetFilename());
 		auto fileSize = std::filesystem::file_size(path);
-		if (fileSize > maxSizeLogFile || !std::filesystem::exists(path)) {
+		if (fileSize > loggers.maxSizeLogFile || !std::filesystem::exists(path)) {
 			std::initializer_list sinks{
 				loggers.fileSink.get(), loggers.fileSinkRaw.get(), loggers.fileSinkTime.get(),
 				loggers.fileSinkFunc.get(), loggers.fileSinkExtend.get() };
@@ -496,7 +631,7 @@ namespace LOGGER_NS {
 			std::filesystem::path tmpName(path.filename().wstring() + L".tmp");
 			if (TryRenameFile(path, tmpName)) { // If this succeeds, we are the last process to switch to new file
 				auto tmpPath = std::filesystem::path(path).remove_filename() / tmpName;
-				auto truncatedBytes = fileSize - maxSizeLogFile / 2;
+				auto truncatedBytes = fileSize - loggers.maxSizeLogFile / 2;
 
 				std::ifstream oldFile(tmpPath, std::ios::binary);
 				if (!oldFile.is_open()) { // This shouldn't happen

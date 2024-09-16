@@ -83,15 +83,18 @@ namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger na
 #define LOG_RAW(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::RawLogger(), LOG_CTX, spdlog::level::debug, fmt, ##__VA_ARGS__)
 #define LOG_TIME(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::TimeLogger(), LOG_CTX, spdlog::level::debug, fmt, ##__VA_ARGS__)
 
+#define LOG_TRACE(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::trace, fmt, ##__VA_ARGS__)
 #define LOG_DEBUG(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::debug, fmt, ##__VA_ARGS__)
 #define LOG_ERROR(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::err, fmt, ##__VA_ARGS__)
 #define LOG_WARNING(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::warn, fmt, ##__VA_ARGS__)
 
 // Use it inside static functions or with custom context:
+#define LOG_TRACE_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::trace, fmt, ##__VA_ARGS__)
 #define LOG_DEBUG_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::debug, fmt, ##__VA_ARGS__)
 #define LOG_ERROR_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::err, fmt, ##__VA_ARGS__)
 #define LOG_WARNING_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::warn, fmt, ##__VA_ARGS__)
 
+#define LOG_TRACE_D(fmt, ...) LOG_TRACE_S(__LgCtx(), fmt, ##__VA_ARGS__)
 #define LOG_DEBUG_D(fmt, ...) LOG_DEBUG_S(__LgCtx(), fmt, ##__VA_ARGS__)
 #define LOG_ERROR_D(fmt, ...) LOG_ERROR_S(__LgCtx(), fmt, ##__VA_ARGS__)
 #define LOG_WARNING_D(fmt, ...) LOG_WARNING_S(__LgCtx(), fmt, ##__VA_ARGS__)
@@ -134,14 +137,17 @@ namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger na
 #define LOG_RAW(fmt, ...)
 #define LOG_TIME(fmt, ...)
 
+#define LOG_TRACE(fmt, ...)
 #define LOG_DEBUG(fmt, ...)
 #define LOG_ERROR(fmt, ...)
 #define LOG_WARNING(fmt, ...)
 
+#define LOG_TRACE_S(_This, fmt, ...)
 #define LOG_DEBUG_S(_This, fmt, ...)
 #define LOG_ERROR_S(_This, fmt, ...)
 #define LOG_WARNING_S(_This, fmt, ...)
 
+#define LOG_TRACE_D(fmt, ...)
 #define LOG_DEBUG_D(fmt, ...)
 #define LOG_ERROR_D(fmt, ...)
 #define LOG_WARNING_D(fmt, ...)
@@ -213,8 +219,11 @@ namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger na
 // TODO: use forward declaration for DefaultLoggers::Log() static method before LOG_... macros definition above
 //       because Time.h include Rational.h and last one use LOG_... macros with undefined DefaultLoggers class yet
 #include "Helpers/Semaphore.h"
-#include "Helpers/Time.h"
 #include "DynamicFileSink.h"
+
+namespace HELPERS_NS {
+    class Timer;
+}
 #endif
 #include "CustomTypeSpecialization.h"
 //#pragma message("include 'LogHelpers.h' [helpers files included]")
@@ -231,7 +240,21 @@ namespace LOGGER_NS {
     // define a "__classFullnameLogging" "member checker" class
     define_has_member(__ClassFullnameLogging);
    
+    enum class LoggingMode : uint8_t {
+        // Log `debug`, `info`, `warn`, `err`, `critical`.
+        // Ignore only `trace` messages.
+        DebugAndErrors,
+
+        // Log everything, including `trace`.
+        Verbose
+    };
+
     struct LOGGER_API StandardLoggers {
+        static constexpr uintmax_t defaultLogSize = 10 * 1024 * 1024; // 10 MB (~ 50'000 rows)
+        uintmax_t maxSizeLogFile = defaultLogSize;
+
+        LoggingMode loggingMode = LoggingMode::Verbose;
+
         std::shared_ptr<spdlog::logger> logger;
         std::shared_ptr<spdlog::logger> rawLogger;
         std::shared_ptr<spdlog::logger> timeLogger;
@@ -286,14 +309,29 @@ namespace LOGGER_NS {
 
         struct UnscopedData;
 
-        static constexpr uintmax_t maxSizeLogFile = 5 * 1024 * 1024; // 5 MB (~ 50'000 rows)
         static constexpr std::chrono::milliseconds logSizeCheckInterval{30'000};
         static constexpr size_t maxLoggers = 2;
 
-        static void Init(std::filesystem::path logFilePath, HELPERS_NS::Flags<InitFlags> initFlags = InitFlags::DefaultFlags);
-        static void InitForId(uint8_t loggerId, std::filesystem::path logFilePath, HELPERS_NS::Flags<InitFlags> initFlags = InitFlags::DefaultFlags);
+        static void Init(
+            std::filesystem::path logFilePath,
+            HELPERS_NS::Flags<InitFlags> initFlags = InitFlags::DefaultFlags,
+            LoggingMode loggingMode = LoggingMode::Verbose,
+            uintmax_t maxSizeLogFile = StandardLoggers::defaultLogSize);
+
+        static void InitForId(uint8_t loggerId,
+            std::filesystem::path logFilePath,
+            HELPERS_NS::Flags<InitFlags> initFlags = InitFlags::DefaultFlags,
+            LoggingMode loggingMode = LoggingMode::Verbose,
+            uintmax_t maxSizeLogFile = StandardLoggers::defaultLogSize);
+
         static bool IsInitialized(uint8_t id = 0);
         static std::string GetLastMessage();
+
+        static LoggingMode GetLoggingMode(uint8_t id = 0);
+        static void SetLoggingMode(LoggingMode mode, uint8_t id = 0);
+
+        static uintmax_t GetMaxLogFileSize(uint8_t id = 0);
+        static void SetMaxLogFileSize(uintmax_t size, uint8_t id = 0);
 
         static std::shared_ptr<spdlog::logger> Logger(uint8_t id = 0);
         static std::shared_ptr<spdlog::logger> RawLogger(uint8_t id = 0);
@@ -337,6 +375,11 @@ namespace LOGGER_NS {
 #if USE_DYNAMIC_SINK
         static void CheckLogFileSize(StandardLoggers& loggers);
 #endif
+
+        static void ForEachLogger(uint8_t id, const std::function<void(spdlog::logger&)>& action);
+        
+        static spdlog::level::level_enum LoggingModeToSpdlogLevel(LoggingMode mode);
+        static LoggingMode SpdlogLevelToLoggingMode(spdlog::level::level_enum mode);
 
         //const std::unordered_map<uint8_t, bool> initializedLoggersById;
         std::set<uint8_t> initializedLoggersById;
