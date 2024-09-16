@@ -369,7 +369,9 @@ namespace LOGGER_NS {
 #endif
 
         static void ForEachLogger(uint8_t id, const std::function<void(spdlog::logger&)>& action);
+        
         static spdlog::level::level_enum LoggingModeToSpdlogLevel(LoggingMode mode);
+        static LoggingMode SpdlogLevelToLoggingMode(spdlog::level::level_enum mode);
 
         //const std::unordered_map<uint8_t, bool> initializedLoggersById;
         std::set<uint8_t> initializedLoggersById;

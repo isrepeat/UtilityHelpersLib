@@ -411,6 +411,12 @@ namespace LOGGER_NS {
     }
 
     LoggingMode DefaultLoggers::GetLoggingMode(uint8_t id) {
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
+            auto defaultLogger = H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+            auto mode = SpdlogLevelToLoggingMode(defaultLogger->level());
+            return mode;
+        }
+
         auto& _this = GetInstance();
         auto& loggers = _this.standardLoggersList[id];
 
@@ -422,6 +428,14 @@ namespace LOGGER_NS {
     }
 
     void DefaultLoggers::SetLoggingMode(LoggingMode mode, uint8_t id) {
+        auto logLevel = LoggingModeToSpdlogLevel(mode);
+
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
+            auto defaultLogger = H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+            defaultLogger->set_level(logLevel);
+            return;
+        }
+
         auto& _this = GetInstance();
         auto& loggers = _this.standardLoggersList[id];
 
@@ -430,8 +444,6 @@ namespace LOGGER_NS {
 #endif
 
         loggers.loggingMode = mode;
-
-        auto logLevel = LoggingModeToSpdlogLevel(loggers.loggingMode);
         
         ForEachLogger(id, [logLevel](auto logger) {
             logger.set_level(logLevel);
@@ -439,6 +451,10 @@ namespace LOGGER_NS {
     }
 
     uintmax_t DefaultLoggers::GetMaxLogFileSize(uint8_t id) {
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
+            return StandardLoggers::defaultLogSize;
+        }
+
         auto& _this = GetInstance();
         auto& loggers = _this.standardLoggersList[id];
 
@@ -450,6 +466,10 @@ namespace LOGGER_NS {
     }
 
     void DefaultLoggers::SetMaxLogFileSize(uintmax_t size, uint8_t id) {
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
+            return;
+        }
+
         auto& _this = GetInstance();
         auto& loggers = _this.standardLoggersList[id];
 
@@ -462,6 +482,12 @@ namespace LOGGER_NS {
     }
 
     void DefaultLoggers::ForEachLogger(uint8_t id, const std::function<void(spdlog::logger&)>& action) {
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
+            auto defaultLogger = H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+            action(*defaultLogger);
+            return;
+        }
+
         auto& _this = GetInstance();
         auto& loggers = _this.standardLoggersList[id];
 
@@ -470,7 +496,9 @@ namespace LOGGER_NS {
             loggers.logger.get(), loggers.rawLogger.get(), loggers.timeLogger.get()};
 
         for (auto logger : allLoggers) {
-            action(*logger);
+            if (logger) {
+                action(*logger);
+            }
         }
     }
 
@@ -485,6 +513,19 @@ namespace LOGGER_NS {
         default:
             assert(false);
             return spdlog::level::level_enum::off;
+        }
+    }
+
+    LoggingMode DefaultLoggers::SpdlogLevelToLoggingMode(spdlog::level::level_enum level) {
+        switch (level) {
+        case spdlog::level::level_enum::debug:
+            return LoggingMode::DebugAndErrors;
+
+        case spdlog::level::level_enum::trace:
+            return LoggingMode::Verbose;
+
+        default:
+            return LoggingMode::DebugAndErrors;
         }
     }
 
