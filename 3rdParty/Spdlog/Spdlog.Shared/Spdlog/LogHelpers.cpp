@@ -369,6 +369,8 @@ namespace LOGGER_NS {
         _this.standardLoggersList[loggerId].debugLogger->flush_on(spdlog::level::trace);
 #endif
 
+        SetLoggingMode(loggingMode, loggerId);
+
         if (initFlags.Has(InitFlags::AppendNewSessionMsg)) {
             std::string rawEOL = "";
             if (initFlags.Has(InitFlags::DisableEOLforRawLogger)) {
@@ -391,8 +393,6 @@ namespace LOGGER_NS {
         _this.standardLoggersList[loggerId].logSizeLimitChecker = timer;
         _this.standardLoggersList[loggerId].pauseLoggingEvent = std::make_shared<H::EventObject>(pauseLoggingEventName);
 #endif
-
-        SetLoggingMode(loggingMode, loggerId);
     }
 
     bool DefaultLoggers::IsInitialized(uint8_t id) {
