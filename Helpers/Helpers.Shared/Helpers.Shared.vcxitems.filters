@@ -566,6 +566,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Concepts.h">
       <Filter>_Headers</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AppFeaturesBase.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultVS.hlsl">
