@@ -67,6 +67,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\UniqueHandle.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AppFeaturesBase.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\BoostAsioSafe.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\BoostIsSupported.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Byteswap.h" />

@@ -22,7 +22,8 @@ namespace HELPERS_NS {
             static TClass instance;
             return instance;
         }
-    private:
+
+    protected:
         friend TClass;
         _Singleton() = default;
         virtual ~_Singleton() = default;
