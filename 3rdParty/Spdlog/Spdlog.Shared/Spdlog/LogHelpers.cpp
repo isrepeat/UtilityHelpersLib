@@ -496,8 +496,15 @@ namespace LOGGER_NS {
         auto& loggers = _this.standardLoggersList[id];
 
         spdlog::logger* allLoggers[] = {
-            loggers.debugLogger.get(), loggers.extendLogger.get(), loggers.funcLogger.get(),
-            loggers.logger.get(), loggers.rawLogger.get(), loggers.timeLogger.get()};
+#ifdef _DEBUG
+            loggers.debugLogger.get(),
+#endif
+            loggers.extendLogger.get(),
+            loggers.funcLogger.get(),
+            loggers.logger.get(),
+            loggers.rawLogger.get(),
+            loggers.timeLogger.get()
+        };
 
         for (auto logger : allLoggers) {
             if (logger) {
