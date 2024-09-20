@@ -1,6 +1,6 @@
 #pragma once
 #include "common.h"
-#include "JSONConfigLoader.hpp"
+#include "JSONLoader.hpp"
 #include "Singleton.hpp"
 #include "Logger.h"
 
@@ -21,7 +21,7 @@ namespace HELPERS_NS {
 
 		template <typename ConfigJsonT>
 		bool LoadConfig(std::filesystem::path configFile) {
-			if (HELPERS_NS::JSONConfigLoader<ConfigJsonT, AppFeaturesBase>::Load(configFile)) {
+			if (HELPERS_NS::JSONLoader<ConfigJsonT>::Load(configFile)) {
 				return true;
 			}
 			return false;
@@ -29,7 +29,7 @@ namespace HELPERS_NS {
 
 		template <typename ConfigJsonT>
 		void SaveConfig(std::filesystem::path configFile, const ConfigJsonT& configJsonObject) {
-			HELPERS_NS::JSONConfigLoader<ConfigJsonT, AppFeaturesBase>::Save(configFile, configJsonObject);
+			HELPERS_NS::JSONLoader<ConfigJsonT>::Save(configFile, configJsonObject);
 		}
 	};
 }

@@ -500,7 +500,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjHDR.h">
       <Filter>Dx</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\JSONConfigLoader.hpp">
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\JSONLoader.hpp">
       <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\RenderPipeline.h">
