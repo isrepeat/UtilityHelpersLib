@@ -241,11 +241,11 @@ namespace LOGGER_NS {
     define_has_member(__ClassFullnameLogging);
    
     enum class LoggingMode : uint8_t {
-        // Log `debug`, `info`, `warn`, `err`, `critical`.
-        // Ignore only `trace` messages.
+        // Log `info`, `warn`, `err`, `critical`.
+        // Ignore only `trace` and `debug` messages.
         DebugAndErrors,
 
-        // Log everything, including `trace`.
+        // Log everything.
         Verbose
     };
 

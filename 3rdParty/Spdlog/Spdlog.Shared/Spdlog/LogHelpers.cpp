@@ -369,6 +369,18 @@ namespace LOGGER_NS {
         _this.standardLoggersList[loggerId].debugLogger->flush_on(spdlog::level::trace);
 #endif
 
+        // SetLoggingMode requires pauseLoggingEvent to exist
+#if USE_DYNAMIC_SINK
+        auto timer = std::make_shared<H::Timer>();
+        timer->Start(logSizeCheckInterval, [loggerId] {
+            auto& _this = GetInstance();
+            auto& loggers = _this.standardLoggersList[loggerId];
+            CheckLogFileSize(loggers);
+            }, true);
+        _this.standardLoggersList[loggerId].logSizeLimitChecker = timer;
+        _this.standardLoggersList[loggerId].pauseLoggingEvent = std::make_shared<H::EventObject>(pauseLoggingEventName);
+#endif
+
         SetLoggingMode(loggingMode, loggerId);
 
         if (initFlags.Has(InitFlags::AppendNewSessionMsg)) {
@@ -382,17 +394,6 @@ namespace LOGGER_NS {
             _this.standardLoggersList[loggerId].timeLogger->debug("                       New session started");
             _this.standardLoggersList[loggerId].rawLogger->debug("==========================================================================================================" + rawEOL);
         }
-
-#if USE_DYNAMIC_SINK
-        auto timer = std::make_shared<H::Timer>();
-        timer->Start(logSizeCheckInterval, [loggerId] {
-            auto& _this = GetInstance();
-            auto& loggers = _this.standardLoggersList[loggerId];
-            CheckLogFileSize(loggers);
-        }, true);
-        _this.standardLoggersList[loggerId].logSizeLimitChecker = timer;
-        _this.standardLoggersList[loggerId].pauseLoggingEvent = std::make_shared<H::EventObject>(pauseLoggingEventName);
-#endif
     }
 
     bool DefaultLoggers::IsInitialized(uint8_t id) {
@@ -516,7 +517,7 @@ namespace LOGGER_NS {
     spdlog::level::level_enum DefaultLoggers::LoggingModeToSpdlogLevel(LoggingMode mode) {
         switch (mode) {
         case LoggingMode::DebugAndErrors:
-            return spdlog::level::level_enum::debug;
+            return spdlog::level::level_enum::info;
 
         case LoggingMode::Verbose:
             return spdlog::level::level_enum::trace;
@@ -529,7 +530,7 @@ namespace LOGGER_NS {
 
     LoggingMode DefaultLoggers::SpdlogLevelToLoggingMode(spdlog::level::level_enum level) {
         switch (level) {
-        case spdlog::level::level_enum::debug:
+        case spdlog::level::level_enum::info:
             return LoggingMode::DebugAndErrors;
 
         case spdlog::level::level_enum::trace:
