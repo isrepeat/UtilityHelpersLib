@@ -516,7 +516,7 @@ namespace LOGGER_NS {
 
     spdlog::level::level_enum DefaultLoggers::LoggingModeToSpdlogLevel(LoggingMode mode) {
         switch (mode) {
-        case LoggingMode::DebugAndErrors:
+        case LoggingMode::Normal:
             return spdlog::level::level_enum::info;
 
         case LoggingMode::Verbose:
@@ -531,13 +531,13 @@ namespace LOGGER_NS {
     LoggingMode DefaultLoggers::SpdlogLevelToLoggingMode(spdlog::level::level_enum level) {
         switch (level) {
         case spdlog::level::level_enum::info:
-            return LoggingMode::DebugAndErrors;
+            return LoggingMode::Normal;
 
         case spdlog::level::level_enum::trace:
             return LoggingMode::Verbose;
 
         default:
-            return LoggingMode::DebugAndErrors;
+            return LoggingMode::Normal;
         }
     }
 
