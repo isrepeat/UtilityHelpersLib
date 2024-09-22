@@ -13,13 +13,44 @@
 #include <JsonParser/json_struct/json_struct.h> // https://github.com/jorgen/json_struct
 #include "Preprocessor.h"
 #include "Helpers/Singleton.hpp"
+#include <format>
 
 namespace JS {
+    //
+    // Forward declarations:
+    //
     namespace details {
-        class ParserCodePageController : public HELPERS_NS::_Singleton<struct ParserCodePageController> {
+        class ParserCodePageState;
+    };
+
+    class LoggerCallback : public HELPERS_NS::_Singleton<class LoggerCallback> {
+    private:
+        friend _Base;
+        friend class details::ParserCodePageState;
+
+        template <typename T>
+        friend bool ParseTo(const char*, size_t, T&, std::optional<struct ParserParams>);
+
+        template <typename T>
+        friend bool ParseTo(const std::vector<char>&, T&, std::optional<struct ParserParams>);
+
+        LoggerCallback() = default;
+        static void SafeInvoke(const std::string& msg);
+
+    public:
+        ~LoggerCallback() = default;
+        static bool Register(std::function<void(std::string)> callback);
+
+    private:
+        std::function<void(std::string)> loggerCallback;
+    };
+
+
+    namespace details {
+        class ParserCodePageController : public HELPERS_NS::_Singleton<class ParserCodePageController> {
         private:
             friend _Base;
-            friend struct ParserCodePageState;
+            friend class ParserCodePageState;
 
             ParserCodePageController()
                 : activeParserCodePage{ CP_UTF8 }
@@ -38,19 +69,34 @@ namespace JS {
             int activeParserCodePage;
         };
 
-        struct ParserCodePageState {
+
+        class ParserCodePageState {
+        public:
             ParserCodePageState(int newCodePage)
                 : prevCodePage{ ParserCodePageController::GetInstance().GetActiveCodePage() }
             {
+                LoggerCallback::SafeInvoke(std::format("Set parser codePage = {} (before = {})", newCodePage, this->prevCodePage));
                 ParserCodePageController::GetInstance().SetActiveCodePage(newCodePage);
             }
             ~ParserCodePageState() {
-                ParserCodePageController::GetInstance().SetActiveCodePage(this->prevCodePage);
+                if (!this->isMoved) {
+                    LoggerCallback::SafeInvoke(std::format("Return parser codePage to {}", this->prevCodePage));
+                    ParserCodePageController::GetInstance().SetActiveCodePage(this->prevCodePage);
+                }
+            }
+
+            ParserCodePageState(ParserCodePageState&) = delete;
+            ParserCodePageState(ParserCodePageState&& other)
+                : prevCodePage{ other.prevCodePage }
+            {
+                other.isMoved = true;
             }
 
         private:
-            int prevCodePage;
+            bool isMoved = false;
+            const int prevCodePage = 0;
         };
+
 
         inline ParserCodePageState SetParserCodePageScoped(int newParserCodePage) {
             return ParserCodePageState(newParserCodePage);
@@ -73,7 +119,7 @@ namespace JS {
             int sz = MultiByteToWideChar(codePage, 0, str.c_str(), -1, 0, 0);
             std::wstring res(sz, 0);
             MultiByteToWideChar(codePage, 0, str.c_str(), -1, &res[0], sz);
-            return res.c_str(); // To delete '\0' use .c_str()
+            return res.c_str();
         }
     } // namespace datails
 
@@ -90,8 +136,7 @@ namespace JS {
     template <typename T>
     struct TypeHandler<JsonObjectWrapper<T>>
     {
-        static inline Error to(JsonObjectWrapper<T>& to_type, ParseContext& context)
-        {
+        static inline Error to(JsonObjectWrapper<T>& to_type, ParseContext& context) {
             if (context.token.value_type != JS::Type::ObjectStart)
                 return Error::ExpectedObjectStart;
 
@@ -99,8 +144,7 @@ namespace JS {
             if (error != JS::Error::NoError)
                 return error;
 
-            while (context.token.value_type != JS::Type::ObjectEnd)
-            {
+            while (context.token.value_type != JS::Type::ObjectEnd) {
                 error = TypeHandler<T>::to(to_type.valueRef, context);
                 if (error != JS::Error::NoError)
                     break;
@@ -113,8 +157,7 @@ namespace JS {
             return error;
         }
 
-        static inline void from(const JsonObjectWrapper<T>& from_type, Token& token, Serializer& serializer)
-        {
+        static inline void from(const JsonObjectWrapper<T>& from_type, Token& token, Serializer& serializer) {
             token.value_type = Type::ObjectStart;
             token.value = DataRef("{");
             serializer.write(token);
@@ -146,41 +189,17 @@ namespace JS {
         }
     };
 
+
     struct ParserParams {
         std::optional<int> codePage;
     };
-
-
-
-    class LoggerCallback {
-    private:
-        LoggerCallback() = default;
-        static LoggerCallback& GetInstance();
-    public:
-        ~LoggerCallback() = default;
-        static bool Register(std::function<void(std::string)> callback);
-
-    private:
-        template <typename T>
-        friend bool ParseTo(const char*, size_t, T&, std::optional<ParserParams>);
-        
-        template <typename T>
-        friend bool ParseTo(const std::vector<char>&, T&, std::optional<ParserParams>);
-
-        static void SafeInvoke(const std::string& msg);
-
-    private:
-        std::function<void(std::string)> loggerCallback;
-    };
-
-
 
     template <typename T>
     bool ParseTo(const char* jsonRawData, size_t jsonRawDataSize, T& structure, std::optional<ParserParams> parserParams = std::nullopt) {
         std::optional<details::ParserCodePageState> parserCodePageScoped;
         if (parserParams) {
             if (parserParams->codePage) {
-                parserCodePageScoped = details::SetParserCodePageScoped(parserParams->codePage.value());
+                parserCodePageScoped.emplace(details::SetParserCodePageScoped(parserParams->codePage.value()));
             }
         }
 
@@ -199,7 +218,7 @@ namespace JS {
     }
 }
 
-// NOTE: When use enum in structs that need parse don't forget set default value
+// NOTE: When use enum in structs that need to parse don't forget set default value
 //       to avoid pareser error = "InvalidData".
 
 #define __JSONPARSER_ENUM_DECLARE_STRING_PARSER(namespaceName, enumName, ...) \

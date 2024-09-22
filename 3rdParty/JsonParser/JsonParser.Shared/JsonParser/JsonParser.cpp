@@ -3,11 +3,6 @@
 
 
 namespace JS {
-	LoggerCallback& LoggerCallback::GetInstance() {
-		static LoggerCallback instance;
-		return instance;
-	}
-
 	bool LoggerCallback::Register(std::function<void(std::string)> callback) {
 		auto& _this = GetInstance();
 		if (_this.loggerCallback) {

@@ -40,7 +40,9 @@ namespace HELPERS_NS {
 				LOG_DEBUG_D("\"{}\" data: \n{}", jsonFilename, HELPERS_NS::VecToStr(readData.byteArray));
 
 				JS::ParserParams parserParams;
-				parserParams.codePage = readData.codePage;
+				if (parserParams.codePage = readData.codePage) {
+					LOG_DEBUG_D("\"{}\" code page = {}", jsonFilename, parserParams.codePage.value());
+				}
 
 				// To avoid merge results after parsing ensure that all JSON objects is empty.
 				JSONObjectT jsonObject;
