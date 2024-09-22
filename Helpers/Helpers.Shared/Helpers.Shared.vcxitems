@@ -46,6 +46,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Gate.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Helpers.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Input.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Localization.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\MappedFilesCollection.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MFUser.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\MultithreadMutex.cpp" />
@@ -103,6 +104,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IEvent.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IObservableCollection.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IWeakEvent.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Localization.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\JSONLoader.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Mutex.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\EventObject.h" />

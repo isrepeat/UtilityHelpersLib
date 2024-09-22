@@ -2,9 +2,9 @@
 #include "SystemInfo.h"
 
 #if COMPILE_FOR_DESKTOP
-#include "Helpers.h"
-#include "Logger.h"
-#include "Regex.h"
+#include "Helpers/Helpers.h"
+#include "Helpers/Logger.h"
+#include "Helpers/Regex.h"
 
 #define INFO_BUFFER_SIZE 32767
 
@@ -24,43 +24,6 @@ namespace HELPERS_NS {
             }
             return parsedLocale;
         }
-    }
-
-    Locale::operator bool() const {
-        return !this->localName.empty() || !this->languageCode.empty();
-    }
-
-    Locale Locale::ToLower() {
-        return Locale{
-            .localName = HELPERS_NS::ToLower(this->localName),
-            .languageCode = HELPERS_NS::ToLower(this->languageCode),
-            .scriptCode = HELPERS_NS::ToLower(this->scriptCode),
-            .countryCode = HELPERS_NS::ToLower(this->countryCode),
-        };
-    }
-
-    void Locale::Log() {
-        LOG_DEBUG_D(".localName = {}", this->localName);
-        LOG_DEBUG_D(".languageCode = {}", this->languageCode);
-        if (!this->scriptCode.empty()) {
-            LOG_DEBUG_D(".scriptCode = {}", this->scriptCode);
-        }
-        if (!this->countryCode.empty()) {
-            LOG_DEBUG_D(".countryCode = {}", this->countryCode);
-        }
-    }
-
-
-    std::wstring GetUserNameW() {
-        DWORD bufCharCount = INFO_BUFFER_SIZE;
-        std::wstring userName(INFO_BUFFER_SIZE, '\0');
-
-        if (!::GetUserNameW(userName.data(), &bufCharCount)) {
-            LogLastError;
-        }
-
-        userName.resize(bufCharCount);
-        return userName;
     }
 
 	std::wstring GetComputerNameW() {

@@ -174,6 +174,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\SmartPROPVARIANT.cpp">
       <Filter>_Sources</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Localization.cpp">
+      <Filter>_Sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Gate.h">
@@ -567,6 +570,9 @@
       <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AppFeaturesBase.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Localization.h">
       <Filter>_Headers</Filter>
     </ClInclude>
   </ItemGroup>
