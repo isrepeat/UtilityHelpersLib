@@ -12,8 +12,72 @@
 #define JS_STL_SET 1
 #include <JsonParser/json_struct/json_struct.h> // https://github.com/jorgen/json_struct
 #include "Preprocessor.h"
+#include "Helpers/Singleton.hpp"
 
 namespace JS {
+    namespace details {
+        class ParserCodePageController : public HELPERS_NS::_Singleton<struct ParserCodePageController> {
+        private:
+            friend _Base;
+            friend struct ParserCodePageState;
+
+            ParserCodePageController()
+                : activeParserCodePage{ CP_UTF8 }
+            {}
+
+            void SetActiveCodePage(int codePage) {
+                this->activeParserCodePage = codePage;
+            }
+
+        public:
+            int GetActiveCodePage() {
+                return this->activeParserCodePage;
+            }
+
+        private:
+            int activeParserCodePage;
+        };
+
+        struct ParserCodePageState {
+            ParserCodePageState(int newCodePage)
+                : prevCodePage{ ParserCodePageController::GetInstance().GetActiveCodePage() }
+            {
+                ParserCodePageController::GetInstance().SetActiveCodePage(newCodePage);
+            }
+            ~ParserCodePageState() {
+                ParserCodePageController::GetInstance().SetActiveCodePage(this->prevCodePage);
+            }
+
+        private:
+            int prevCodePage;
+        };
+
+        inline ParserCodePageState SetParserCodePageScoped(int newParserCodePage) {
+            return ParserCodePageState(newParserCodePage);
+        }
+
+        inline std::string WStrToStr(const std::wstring& wstr, int codePage = CP_UTF8) {
+            if (wstr.size() == 0)
+                return std::string{};
+
+            int sz = WideCharToMultiByte(codePage, 0, wstr.c_str(), -1, 0, 0, 0, 0);
+            std::string res(sz, 0);
+            WideCharToMultiByte(codePage, 0, wstr.c_str(), -1, &res[0], sz, 0, 0);
+            return res.c_str(); // To delete '\0' use .c_str()
+        }
+
+        inline std::wstring StrToWStr(const std::string& str, int codePage = CP_UTF8) {
+            if (str.size() == 0)
+                return std::wstring{};
+
+            int sz = MultiByteToWideChar(codePage, 0, str.c_str(), -1, 0, 0);
+            std::wstring res(sz, 0);
+            MultiByteToWideChar(codePage, 0, str.c_str(), -1, &res[0], sz);
+            return res.c_str(); // To delete '\0' use .c_str()
+        }
+    } // namespace datails
+
+
     template <typename T>
     struct JsonObjectWrapper {
         JsonObjectWrapper(T& valueRef)
@@ -65,42 +129,25 @@ namespace JS {
         }
     };
 
-
-    namespace details {
-        inline std::string WStrToStr(const std::wstring& wstr, int codePage = CP_ACP) {
-            if (wstr.size() == 0)
-                return std::string{};
-
-            int sz = WideCharToMultiByte(codePage, 0, wstr.c_str(), -1, 0, 0, 0, 0);
-            std::string res(sz, 0);
-            WideCharToMultiByte(codePage, 0, wstr.c_str(), -1, &res[0], sz, 0, 0);
-            return res.c_str(); // To delete '\0' use .c_str()
-        }
-
-        inline std::wstring StrToWStr(const std::string& str, int codePage = CP_ACP) {
-            if (str.size() == 0)
-                return std::wstring{};
-
-            int sz = MultiByteToWideChar(codePage, 0, str.c_str(), -1, 0, 0);
-            std::wstring res(sz, 0);
-            MultiByteToWideChar(codePage, 0, str.c_str(), -1, &res[0], sz);
-            return res.c_str(); // To delete '\0' use .c_str()
-        }
-    }
-
     template <>
     struct TypeHandler<std::wstring>
     {
         static inline Error to(std::wstring& to_type, ParseContext& context) {
             std::string str;
             auto error = TypeHandler<std::string>::to(str, context);
-            to_type = details::StrToWStr(str);
+            auto codePage = details::ParserCodePageController::GetInstance().GetActiveCodePage();
+            to_type = details::StrToWStr(str, codePage);
             return error;
         }
 
         static inline void from(const std::wstring& wstr, Token& token, Serializer& serializer) {
-            TypeHandler<std::string>::from(details::WStrToStr(wstr), token, serializer);
+            auto codePage = details::ParserCodePageController::GetInstance().GetActiveCodePage();
+            TypeHandler<std::string>::from(details::WStrToStr(wstr, codePage), token, serializer);
         }
+    };
+
+    struct ParserParams {
+        std::optional<int> codePage;
     };
 
 
@@ -115,10 +162,10 @@ namespace JS {
 
     private:
         template <typename T>
-        friend bool ParseTo(const char*, size_t, T&);
+        friend bool ParseTo(const char*, size_t, T&, std::optional<ParserParams>);
         
         template <typename T>
-        friend bool ParseTo(const std::vector<char>&, T&);
+        friend bool ParseTo(const std::vector<char>&, T&, std::optional<ParserParams>);
 
         static void SafeInvoke(const std::string& msg);
 
@@ -129,9 +176,15 @@ namespace JS {
 
 
     template <typename T>
-    bool ParseTo(const char* jsonRawData, size_t jsonRawDataSize, T& structure) {
-        ParseContext parseContext(jsonRawData, jsonRawDataSize);
+    bool ParseTo(const char* jsonRawData, size_t jsonRawDataSize, T& structure, std::optional<ParserParams> parserParams = std::nullopt) {
+        std::optional<details::ParserCodePageState> parserCodePageScoped;
+        if (parserParams) {
+            if (parserParams->codePage) {
+                parserCodePageScoped = details::SetParserCodePageScoped(parserParams->codePage.value());
+            }
+        }
 
+        ParseContext parseContext(jsonRawData, jsonRawDataSize);
         if (parseContext.parseTo(structure) != JS::Error::NoError) {
             LoggerCallback::SafeInvoke(parseContext.makeErrorString());
             assert(false && "--> Error parsing json");
@@ -141,8 +194,8 @@ namespace JS {
     }
 
     template <typename T>
-    bool ParseTo(const std::vector<char>& jsonRawData, T& structure) {
-        return ParseTo<T>(jsonRawData.data(), jsonRawData.size(), structure);
+    bool ParseTo(const std::vector<char>& jsonRawData, T& structure, std::optional<ParserParams> parserParams = std::nullopt) {
+        return ParseTo<T>(jsonRawData.data(), jsonRawData.size(), structure, parserParams);
     }
 }
 

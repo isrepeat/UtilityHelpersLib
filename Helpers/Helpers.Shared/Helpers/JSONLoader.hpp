@@ -1,19 +1,22 @@
 #pragma once
 #include "Helpers/common.h"
 #include "JsonParser/JsonParser.h"
+#include "Helpers/Localization.h"
 #include "Helpers/Concepts.h"
 #include "Helpers/Logger.h"
 #include <fstream>
 #include <vector>
 #include <string>
 
+#if !__cpp_concepts
+#pragma message(PP_MSG_ERROR_REQUIRE_CPP_CONCEPTS)
+#endif
+
 namespace HELPERS_NS {
 	template <typename JSONObjectT>
-#if __cpp_concepts
-		requires concepts::Conjunction<
-			concepts::HasStaticMethodWithSignature<decltype(&JSONObjectT::AfterLoadHandler), void(*)(const JSONObjectT&)>
-		>
-#endif
+	requires concepts::Conjunction<
+		concepts::HasStaticMethodWithSignature<decltype(&JSONObjectT::AfterLoadHandler), void(*)(const JSONObjectT&)>
+	>
 	class JSONLoader {
 		JSONLoader() = delete;
 		~JSONLoader() = delete;
@@ -29,42 +32,40 @@ namespace HELPERS_NS {
 			LOG_FUNCTION_ENTER("Load(filepath = {})", filepath.string());
 			std::string jsonFilename = filepath.filename().string();
 
-			std::ifstream jsonFileStream(filepath, std::ios::binary);
-			if (jsonFileStream.is_open()) {
-				std::vector<char> byteArray = std::vector<char>(
-					std::istreambuf_iterator<char>(jsonFileStream),
-					std::istreambuf_iterator<char>());
+			STD_EXT_NS::ifstream jsonConfigFile(filepath, std::ios::binary);
+			if (jsonConfigFile.is_open()) {
+				auto readData = jsonConfigFile.ReadData();
+				jsonConfigFile.close();
 
-				jsonFileStream.close();
+				LOG_DEBUG_D("\"{}\" data: \n{}", jsonFilename, HELPERS_NS::VecToStr(readData.byteArray));
 
-				LOG_DEBUG_D("\"{}\" data: \n{}", jsonFilename, HELPERS_NS::VecToStr(byteArray));
+				JS::ParserParams parserParams;
+				parserParams.codePage = readData.codePage;
 
 				// To avoid merge results after parsing ensure that all JSON objects is empty.
 				JSONObjectT jsonObject;
-				if (JS::ParseTo(byteArray, jsonObject)) {
+				if (JS::ParseTo(readData.byteArray, jsonObject, parserParams)) {
 					JSONObjectT::AfterLoadHandler(jsonObject);
 					return true;
 				}
 				else {
 					LOG_ERROR_D("Cannot parse '{}'", jsonFilename);
-					constexpr bool has_LoadErrorHandler = requires {
-						JSONObjectT::LoadErrorHandler();
-					};
-					if constexpr (has_LoadErrorHandler) {
+					if constexpr (requires {
+						requires concepts::HasStaticMethod<decltype(&JSONObjectT::LoadErrorHandler)>;
+					}) {
 						JSONObjectT::LoadErrorHandler();
 					}
 				}
 			}
 			else {
 				LOG_WARNING_D("{} not found, create with default json", jsonFilename);
-				
+
 				JSONObjectT jsonObject;
 				// If JSONObjectT has 'CreateWithDefaultData' static method so create json with 
 				// specific default data before save.
-				constexpr bool has_CreateWithDefaultData = requires {
+				if constexpr (requires {
 					requires concepts::HasStaticMethodWithSignature<decltype(&JSONObjectT::CreateWithDefaultData), JSONObjectT(*)()>;
-				};
-				if constexpr (has_CreateWithDefaultData) {
+				}) {
 					jsonObject = JSONObjectT::CreateWithDefaultData();
 				}
 
@@ -89,7 +90,7 @@ namespace HELPERS_NS {
 				std::ofstream outFile;
 				outFile.open(filepath);
 				outFile.write(serializedStruct.data(), serializedStruct.size());
-				outFile.close();				
+				outFile.close();
 			}
 			catch (...) {
 				LOG_ERROR_D("Cannot save config");

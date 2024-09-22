@@ -24,9 +24,11 @@
 /* ---------------------------------------- */
 #if !defined(DISABLE_PREPROCESSOR_MESSAGES)
 #ifdef __PROJECT_NAME__
-#	define PREPROCESSOR_MSG(msg) "  PREPROCESSOR<" PP_STRINGIFY(__PROJECT_NAME__) ">: \"" msg "\""
+#	define PREPROCESSOR_MSG(msg)        "  PREPROCESSOR<" PP_STRINGIFY(__PROJECT_NAME__) ">: \"" msg "\""
+#	define PREPROCESSOR_ERROR_MSG(msg)  "  PREPROCESSOR<" PP_STRINGIFY(__PROJECT_NAME__) "> [Error]:\n  \"" msg "\""
 #else
-#	define PREPROCESSOR_MSG(msg) "  PREPROCESSOR: \"" msg "\""
+#	define PREPROCESSOR_MSG(msg)        "  PREPROCESSOR: \"" msg "\""
+#	define PREPROCESSOR_ERROR_MSG(msg)  "  PREPROCESSOR [Error]:\n  \"" msg "\""
 #endif
 #else
 #define PREPROCESSOR_MSG(msg) ""
@@ -39,6 +41,9 @@
 #else
 #define PREPROCESSOR_FILE_INCLUDED(file) ""
 #endif
+
+
+#define PP_MSG_ERROR_REQUIRE_CPP_CONCEPTS  PREPROCESSOR_ERROR_MSG("This file require 'cpp concepts' feature (c++20)")
 
 
 //
