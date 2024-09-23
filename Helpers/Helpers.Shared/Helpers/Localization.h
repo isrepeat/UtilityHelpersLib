@@ -33,6 +33,7 @@ namespace STD_EXT_NS {
 		{}
 	};
 
+	// Mb rename or move to another common file among File.h and Localization.h
 	struct ifstream : public ::std::ifstream {
 		using ::std::ifstream::basic_ifstream;
 
