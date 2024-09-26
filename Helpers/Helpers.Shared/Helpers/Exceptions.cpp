@@ -15,14 +15,14 @@ namespace HELPERS_NS {
 #ifdef CRASH_HANDLING_NUGET
             , backtrace{ std::make_shared<CrashHandling::Backtrace>() }
 #endif
-            , errorMessage{ HELPERS_NS::StrToWStr(message) }
+            , errorMessage{ H::StrToWStr(message) }
             , errorCode{hr}
         {
             LOG_ERROR_D(L"Com exception = [{:#08x}] {}", static_cast<unsigned int>(hr), this->errorMessage);
         }
 
         ComException::ComException(HRESULT hr, const std::wstring& message)
-            : std::exception(HELPERS_NS::WStrToStr(message).c_str())
+            : std::exception(H::WStrToStr(message).c_str())
 #ifdef CRASH_HANDLING_NUGET
             , backtrace{ std::make_shared<CrashHandling::Backtrace>() }
 #endif

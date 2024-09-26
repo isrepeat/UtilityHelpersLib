@@ -26,9 +26,6 @@
       <Project>{4ab35171-9952-4a89-9589-8a63e8be47e9}</Project>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -70,7 +67,6 @@
     <Import Project="..\Helpers.Shared\Helpers.Shared.vcxitems" Label="Shared" />
     <Import Project="..\..\3rdParty\MagicEnum\MagicEnum.Shared\MagicEnum.Shared.vcxitems" Label="Shared" />
     <Import Project="..\..\3rdParty\3rdParty_Packages_Includes\Boost.Includes\Boost.Includes.vcxitems" Label="Shared" />
-    <Import Project="..\..\packages\CrashHandling.1.1.28\build\native\CrashHandling.targets" Condition="Exists('..\..\packages\CrashHandling.1.1.28\build\native\CrashHandling.targets')" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -178,10 +174,4 @@
     </Lib>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\packages\CrashHandling.1.1.28\build\native\CrashHandling.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\CrashHandling.1.1.28\build\native\CrashHandling.targets'))" />
-  </Target>
 </Project>

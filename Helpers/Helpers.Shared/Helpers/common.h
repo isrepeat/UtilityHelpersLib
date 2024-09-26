@@ -96,9 +96,9 @@ namespace WStorage = Windows::Storage;
 #pragma message("'__has_include' directive not found")
 #endif
 
-#if defined(CRASH_HANDLING_NUGET) || __has_include("CrashHandling/CrashHandling.h")
-#define CRASH_HANDLING_SUPPORT 1
-#endif
+//#if defined(CRASH_HANDLING_NUGET) || __has_include("CrashHandling/CrashHandling.h")
+//#define CRASH_HANDLING_SUPPORT 1
+//#endif
 
 #if defined(SPDLOG_SOURCES) || __has_include("Spdlog/LogHelpers.h")
 #define SPDLOG_SUPPORT 1
