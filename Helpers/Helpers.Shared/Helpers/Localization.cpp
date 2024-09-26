@@ -82,11 +82,11 @@ namespace STD_EXT_NS {
 
 			auto prevFileStreamPointerPos = fileStream.tellg();
 			if (prevFileStreamPointerPos != 0) {
+				fileStream.seekg(0, std::ios::beg);
 				LOG_WARNING_D("prevFileStreamPointerPos (= {}) was not point to begin, but after this function finish it will", static_cast<int>(prevFileStreamPointerPos));
 			}
-			fileStream.seekg(0, std::ios::beg);
 
-			std::vector<uint8_t> firstSomeBytes(5);
+			std::vector<uint8_t> firstSomeBytes(10);
 			fileStream.read((char*)firstSomeBytes.data(), firstSomeBytes.size());
 
 			for (auto& utfByteOrderMark : utfByteOrderMarks) {
@@ -95,6 +95,7 @@ namespace STD_EXT_NS {
 					return;
 				}
 			}
+			fileStream.seekg(0, std::ios::beg);
 		}
 	} // namespace details
 
