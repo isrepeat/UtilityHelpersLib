@@ -2,18 +2,43 @@
 #include "MagicEnum/MagicEnum.h"
 #include "Helpers/Flags.h"
 #include <filesystem>
+#include <string>
 #include <ranges>
+
+namespace details {
+	inline std::string WStrToStr(const std::wstring& wstr, int codePage = CP_UTF8) {
+		if (wstr.size() == 0)
+			return std::string{};
+
+		int sz = WideCharToMultiByte(codePage, 0, wstr.c_str(), -1, 0, 0, 0, 0);
+		std::string res(sz, 0);
+		WideCharToMultiByte(codePage, 0, wstr.c_str(), -1, &res[0], sz, 0, 0);
+		return res.c_str(); // To delete '\0' use .c_str()
+	}
+
+	inline std::wstring StrToWStr(const std::string& str, int codePage = CP_UTF8) {
+		if (str.size() == 0)
+			return std::wstring{};
+
+		int sz = MultiByteToWideChar(codePage, 0, str.c_str(), -1, 0, 0);
+		std::wstring res(sz, 0);
+		MultiByteToWideChar(codePage, 0, str.c_str(), -1, &res[0], sz);
+		return res.c_str();
+	}
+}
 
 //
 // std::filesystem::path
 //
+// WARNING: Log dirrectly path.string() may cause some problem (for example for shell item path)
+//          therefore convert it to UTF8.
 template<>
 struct fmt::formatter<std::filesystem::path, char> {
     constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
         return ctx.end();
     }
     auto format(const std::filesystem::path& path, format_context& ctx) -> decltype(ctx.out()) {
-        return fmt::format_to(ctx.out(), "{}", path.string());
+        return fmt::format_to(ctx.out(), "{}", details::WStrToStr(path.wstring(), CP_UTF8));
     }
 };
 
@@ -23,7 +48,7 @@ struct fmt::formatter<std::filesystem::path, wchar_t> {
         return ctx.end();
     }
     auto format(const std::filesystem::path& path, wformat_context& ctx) -> decltype(ctx.out()) {
-        return fmt::format_to(ctx.out(), L"{}", path.wstring());
+        return fmt::format_to(ctx.out(), L"{}", details::StrToWStr(path.string(), CP_UTF8));
     }
 };
 
