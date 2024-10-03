@@ -38,6 +38,11 @@ namespace HELPERS_NS {
             // the i-th argument is equivalent to the i-th tuple element of a tuple
             // composed of those arguments.
         };
+
+        template <size_t i>
+        struct arg_val {
+            using type = std::remove_pointer_t<std::remove_reference_t<typename arg<i>::type>>;
+        };
     };
 
 
@@ -124,4 +129,10 @@ namespace HELPERS_NS {
             return fn(std::forward<Args&&>(args)...);
         }
     }
+
+    template <typename T, size_t i>
+    using FunctionArgT = typename FunctionTraits<T>::template arg<i>::type;
+
+    template <typename T, size_t i>
+    using FunctionArgValT = typename FunctionTraits<T>::template arg_val<i>::type;
 }
