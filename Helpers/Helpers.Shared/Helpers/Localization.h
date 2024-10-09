@@ -23,6 +23,8 @@ namespace HELPERS_NS {
 
 		Locale ToLower();
 		void Log();
+
+		static Locale GetParsedLocaleFromLanguageTag(std::string localName);
 	};
 }
 

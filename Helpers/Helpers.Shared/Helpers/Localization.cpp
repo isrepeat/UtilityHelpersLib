@@ -33,6 +33,21 @@ namespace HELPERS_NS {
             LOG_DEBUG_D(".countryCode = {}", this->countryCode);
         }
     }
+	
+	Locale Locale::GetParsedLocaleFromLanguageTag(std::string localName) {
+		Locale parsedLocale{
+			.localName = localName,
+		};
+		auto matches = H::Regex::GetRegexMatches<char>(localName, std::regex{ Locale::regExToParseLocale });
+		if (matches.size() > 0) {
+			auto& match = matches[0];
+			assert(match.capturedGroups.size() > 3);
+			parsedLocale.languageCode = match.capturedGroups[1];
+			parsedLocale.scriptCode = match.capturedGroups[2];
+			parsedLocale.countryCode = match.capturedGroups[3];
+		}
+		return parsedLocale;
+	}
 }
 
 namespace STD_EXT_NS {
