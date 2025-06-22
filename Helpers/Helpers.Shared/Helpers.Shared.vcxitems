@@ -178,6 +178,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SmartVARIANT.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Span.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StdEnumerable.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StringComparers.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\System.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TypeSwitch.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Rational.h" />

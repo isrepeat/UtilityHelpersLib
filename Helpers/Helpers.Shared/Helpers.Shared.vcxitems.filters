@@ -584,6 +584,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Guid.h">
       <Filter>_Headers</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StringComparers.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultVS.hlsl">
