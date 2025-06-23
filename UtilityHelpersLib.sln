@@ -98,6 +98,23 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilites", "Utilites", "{DD
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SolutionInjector", "Utilities\SolutionInjector\SolutionInjector.vcxproj", "{FD8E8540-5456-474F-8FFE-FEA3B421A1FA}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "!Scripts", "!Scripts", "{6A397F96-97EC-46B4-AE3E-B1A336C8FC01}"
+	ProjectSection(SolutionItems) = preProject
+		Scripts\Utility.InjectHelpersToSolution.cmd = Scripts\Utility.InjectHelpersToSolution.cmd
+		Scripts\Utility.InjectHelpersToSolution.ps1 = Scripts\Utility.InjectHelpersToSolution.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Functions", "Functions", "{78424A04-4ED4-4184-97D8-AF1E10F26B38}"
+	ProjectSection(SolutionItems) = preProject
+		Scripts\Functions\BuildProject.cmd = Scripts\Functions\BuildProject.cmd
+		Scripts\Functions\Message.cmd = Scripts\Functions\Message.cmd
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{A64A39B6-232E-4107-A4D9-A863DE82481F}"
+	ProjectSection(SolutionItems) = preProject
+		Scripts\Modules\MessagingModule\MessagingModule.psm1 = Scripts\Modules\MessagingModule\MessagingModule.psm1
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -520,6 +537,8 @@ Global
 		{78B6B4EA-7617-434F-8FF7-3FA8500557A7} = {27032BEF-A111-4E76-8365-B362FB70CD39}
 		{87BD0FE8-7529-4AAB-9DE0-A17D4E98D8F4} = {4A5644B4-23EF-48F7-8F3E-45A0EBE5C607}
 		{FD8E8540-5456-474F-8FFE-FEA3B421A1FA} = {DD6C695A-26BC-48D8-B0C2-CF7C5BF63674}
+		{78424A04-4ED4-4184-97D8-AF1E10F26B38} = {6A397F96-97EC-46B4-AE3E-B1A336C8FC01}
+		{A64A39B6-232E-4107-A4D9-A863DE82481F} = {6A397F96-97EC-46B4-AE3E-B1A336C8FC01}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A114CB48-500F-4E4B-BC01-3ACE75DCCC4F}
