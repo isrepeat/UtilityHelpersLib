@@ -39,52 +39,7 @@ function WrapInQuotesIfNeeded {
 }
 
 
-<#
-
-class _Module {
-    static [void] Write-ColoredMessage(
-        [string]$message,
-        [string]$color = 'White',
-        [string]$prefix = ''
-    ) {
-        Write-Host "$prefix$message" -ForegroundColor $color
-    }
-}
-
-function GetModule {
-    return [_Module]
-}
-#>
-
-<#
-
-function Say-Hello {
-    param([string]$Name)
-    Write-Host "Hello, $Name"
-}
-
-function Say-Goodbye {
-    param([string]$Name)
-    Write-Host "Goodbye, $Name"
-}
-
-function GetMyFunction {
-    param(
-        [ValidateSet("hello", "bye")]
-        [string]$FunctionName
-    )
-
-    switch ($FunctionName) {
-        "hello" { return (Get-Command Say-Hello).ScriptBlock }
-        "bye"   { return (Get-Command Say-Goodbye).ScriptBlock }
-    }
-}
-#>
-
-
-
 Export-ModuleMember -Function @(
-#    'GetMyFunction',
     'Message',
     'NewLine',
     'TestColoredMessagePalette',
