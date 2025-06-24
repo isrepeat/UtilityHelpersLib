@@ -1,0 +1,25 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <NewLine>%0D%0A</NewLine>
+    <UtilitiesBinDir>$(SolutionDir)Utilities\bin</UtilitiesBinDir>
+  </PropertyGroup>
+  
+  <Target Name="CopyExeAfterBuild"
+          AfterTargets="Build"
+          Condition="'$(Configuration)' == 'Release'"
+          >
+    <MakeDir Directories="$(UtilitiesBinDir)" />
+    
+    <ItemGroup>
+      <BuiltExe Include="$(OutDir)$(TargetName).exe" />
+    </ItemGroup>
+    
+    <Message Importance="high" Text="$(NewLine)" />
+    <Message Importance="high" Text="Copying @(BuiltExe) to $(UtilitiesBinDir)" />
+    
+    <Copy SourceFiles="@(BuiltExe)"
+          DestinationFolder="$(UtilitiesBinDir)"
+          SkipUnchangedFiles="true"
+          />
+  </Target>
+</Project>
