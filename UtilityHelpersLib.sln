@@ -95,7 +95,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "3rdParty.Packages.v143", "3
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ComAPI.v143", "Helpers\ComAPI.v143\ComAPI.v143.vcxproj", "{87BD0FE8-7529-4AAB-9DE0-A17D4E98D8F4}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilites", "Utilites", "{DD6C695A-26BC-48D8-B0C2-CF7C5BF63674}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilities", "Utilities", "{DD6C695A-26BC-48D8-B0C2-CF7C5BF63674}"
+	ProjectSection(SolutionItems) = preProject
+		Utilities\Directory.Build.targets = Utilities\Directory.Build.targets
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SolutionInjector", "Utilities\SolutionInjector\SolutionInjector.vcxproj", "{FD8E8540-5456-474F-8FFE-FEA3B421A1FA}"
 EndProject
