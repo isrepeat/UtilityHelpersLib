@@ -67,6 +67,8 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\ThreadEx.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Time.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\UniqueHandle.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Win32\MainWindow.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Win32\TrayWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AppFeaturesBase.h" />
@@ -204,6 +206,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TypeTraits.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\UniqueHandle.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\WeakEvent.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Win32\MainWindow.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Win32\TrayWindow.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultPS.hlsl">

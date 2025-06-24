@@ -37,6 +37,9 @@
     <Filter Include="Dx\Shaders">
       <UniqueIdentifier>{c19e122f-3d89-42be-9b74-8c6d10c4dccf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Win32">
+      <UniqueIdentifier>{ecf45bd4-d624-4a52-bdd4-20c283af87f9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Gate.cpp">
@@ -179,6 +182,12 @@
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Guid.cpp">
       <Filter>_Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Win32\MainWindow.cpp">
+      <Filter>Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Win32\TrayWindow.cpp">
+      <Filter>Win32</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -586,6 +595,12 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StringComparers.h">
       <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Win32\MainWindow.h">
+      <Filter>Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Win32\TrayWindow.h">
+      <Filter>Win32</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
