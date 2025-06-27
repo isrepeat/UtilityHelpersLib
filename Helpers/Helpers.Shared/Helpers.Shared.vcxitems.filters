@@ -602,6 +602,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Win32\TrayWindow.h">
       <Filter>Win32</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Ranges.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultVS.hlsl">

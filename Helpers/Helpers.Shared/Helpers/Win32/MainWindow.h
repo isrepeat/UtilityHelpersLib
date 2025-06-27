@@ -12,8 +12,11 @@ namespace HELPERS_NS {
 	namespace Win32 {
 		class MainWindow {
 		public:
+			using MessageHandler = std::function<bool(UINT, WPARAM, LPARAM)>;
+
 			H::Signal<void()> eventQuit;
 			H::Signal<void(H::Size)> eventWindowSizeChanged;
+
 
 		public:
 			MainWindow(
@@ -28,6 +31,8 @@ namespace HELPERS_NS {
 
 			HWND GetHwnd();
 			H::Size GetSize();
+
+			void AddMessageHook(const MessageHandler& handler);
 
 			void RunMessageLoop();
 			void Show();
@@ -44,6 +49,7 @@ namespace HELPERS_NS {
 			H::Size windowSize;
 
 			HWND hWnd;
+			std::vector<MessageHandler> messageHooks;
 			std::atomic<bool> isThreadsStopped = true;
 		};
 	}

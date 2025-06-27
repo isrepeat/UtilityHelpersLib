@@ -56,6 +56,7 @@ namespace HELPERS_NS {
 			}
 		}
 
+
 		MainWindow::~MainWindow() {
 			this->isThreadsStopped = true;
 			::PostQuitMessage(0); // ensure PeekMessageW return control
@@ -64,20 +65,29 @@ namespace HELPERS_NS {
 			//	this->renderThread.join();
 		}
 
+
 		HWND MainWindow::GetHwnd() {
 			return this->hWnd;
 		}
+
 
 		H::Size MainWindow::GetSize() {
 			std::lock_guard lk{ mx };
 			return this->windowSize;
 		}
 
+
+		void MainWindow::AddMessageHook(const MessageHandler& handler) {
+			this->messageHooks.push_back(handler);
+		}
+
+
 		// Must be called in main thread
 		void MainWindow::RunMessageLoop() {
 			this->isThreadsStopped = false;
 			while (!this->isThreadsStopped) {
 				MSG msg = {};
+
 				while (::PeekMessageW(&msg, 0, 0, 0, PM_REMOVE)) {
 					if (msg.message == WM_QUIT) { // WM_QUIT should be handle here, window message queue thread (WindowProc) not receive it.
 						this->isThreadsStopped = true;
@@ -123,13 +133,19 @@ namespace HELPERS_NS {
 			}
 		}
 
+
 		LRESULT MainWindow::HandleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
+			for (const auto& messageHook : this->messageHooks) {
+				if (messageHook(message, wParam, lParam)) {
+					return 0; // Сообщение обработано хук-функцией
+				}
+			}
+
 			switch (message) {
 				//case WM_PAINT:
 				//	break;
 
-			case WM_SIZE:
-			{
+			case WM_SIZE: {
 				{
 					std::lock_guard lk{ mx };
 					this->windowSize.width = LOWORD(lParam);
