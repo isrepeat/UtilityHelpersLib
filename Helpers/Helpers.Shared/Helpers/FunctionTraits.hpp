@@ -135,4 +135,29 @@ namespace HELPERS_NS {
 
     template <typename T, size_t i>
     using FunctionArgValT = typename FunctionTraits<T>::template arg_val<i>::type;
+
+
+#if __cpp_concepts
+	namespace concepts {
+		template<typename Fn>
+		concept HasMethod =
+			H::FunctionTraits<Fn>::Kind == H::FuncKind::ClassMember &&
+			H::FunctionTraits<Fn>::IsPointerToMemberFunction == true;
+
+		template<typename Fn, typename Signature>
+		concept HasMethodWithSignature =
+			H::FunctionTraits<Fn>::Kind == H::FuncKind::ClassMember &&
+			H::FunctionTraits<Fn>::IsPointerToMemberFunction == true &&
+			std::is_same_v<typename H::FunctionTraits<Fn>::Function, Signature>;
+
+		template<typename Fn>
+		concept HasStaticMethod =
+			H::FunctionTraits<Fn>::IsPointerToMemberFunction == false;
+
+		template<typename Fn, typename Signature>
+		concept HasStaticMethodWithSignature =
+			H::FunctionTraits<Fn>::IsPointerToMemberFunction == false &&
+			std::is_same_v<typename H::FunctionTraits<Fn>::Function, Signature>;
+	}
+#endif
 }

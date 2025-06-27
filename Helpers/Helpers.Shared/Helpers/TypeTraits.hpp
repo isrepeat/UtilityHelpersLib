@@ -1,5 +1,6 @@
 #pragma once
 #include "common.h"
+#include "Concepts.h"
 #include <type_traits>
 #include <memory>
 
@@ -53,6 +54,34 @@ namespace HELPERS_NS {
 		 template<class T>
 		 static T* Get(std::shared_ptr<T>& v) {
 			 return v.get();
+		 }
+	 };
+
+
+	 class ValueExtractor {
+	 private:
+		 template<typename T>
+		 struct GetFinalType {
+			 using type = T;
+		 };
+
+		 template<typename T>
+			 requires concepts::Dereferenceable<T>
+		 struct GetFinalType<T> {
+			 using type = typename GetFinalType<
+				 std::remove_reference_t<decltype(*std::declval<T>())>
+			 >::type;
+		 };
+
+	 public:
+		 template<typename T>
+		 static const typename GetFinalType<T>::type& From(const T& value) {
+			 if constexpr (concepts::Dereferenceable<T>) {
+				 return ValueExtractor::From(*value);
+			 }
+			 else {
+				 return value;
+			 }
 		 }
 	 };
 }
