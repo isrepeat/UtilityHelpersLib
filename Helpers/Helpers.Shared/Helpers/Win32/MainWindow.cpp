@@ -58,11 +58,7 @@ namespace HELPERS_NS {
 
 
 		MainWindow::~MainWindow() {
-			this->isThreadsStopped = true;
-			::PostQuitMessage(0); // ensure PeekMessageW return control
-
-			//if (this->renderThread.joinable())
-			//	this->renderThread.join();
+			::PostQuitMessage(0); // posts WM_QUIT to end message loop
 		}
 
 
@@ -84,20 +80,18 @@ namespace HELPERS_NS {
 
 		// Must be called in main thread
 		void MainWindow::RunMessageLoop() {
-			this->isThreadsStopped = false;
-			while (!this->isThreadsStopped) {
-				MSG msg = {};
+			MSG msg = {};
 
-				while (::PeekMessageW(&msg, 0, 0, 0, PM_REMOVE)) {
-					if (msg.message == WM_QUIT) { // WM_QUIT should be handle here, window message queue thread (WindowProc) not receive it.
-						this->isThreadsStopped = true;
-						this->eventQuit();
-						break;
-					}
-					::TranslateMessage(&msg);
-					::DispatchMessageW(&msg); // forward msg to WindowProc
-				}
+			// GetMessage returns:
+			//  > 0 — a message was retrieved (msg filled), continue processing
+			//    0 — WM_QUIT received, time to exit the message loop
+			//   -1 — an error occurred (invalid HWND, system failure, etc.)
+			while (::GetMessageW(&msg, nullptr, 0, 0) > 0) {
+				::TranslateMessage(&msg);
+				::DispatchMessageW(&msg); // forward msg to WindowProc
 			}
+
+			this->eventQuit();
 		}
 
 		void MainWindow::Show() {

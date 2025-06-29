@@ -50,7 +50,6 @@ namespace HELPERS_NS {
 
 			HWND hWnd;
 			std::vector<MessageHandler> messageHooks;
-			std::atomic<bool> isThreadsStopped = true;
 		};
 	}
 }
