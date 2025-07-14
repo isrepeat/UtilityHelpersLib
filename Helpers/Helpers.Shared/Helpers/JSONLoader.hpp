@@ -1,8 +1,8 @@
 #pragma once
 #include "Helpers/common.h"
 #include "JsonParser/JsonParser.h"
+#include "Helpers/FunctionTraits.hpp"
 #include "Helpers/Localization.h"
-#include "Helpers/Concepts.h"
 #include "Helpers/Logger.h"
 #include <fstream>
 #include <vector>
