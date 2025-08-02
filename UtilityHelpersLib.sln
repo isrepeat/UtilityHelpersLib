@@ -104,8 +104,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SolutionInjector", "Utiliti
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "!Scripts", "!Scripts", "{6A397F96-97EC-46B4-AE3E-B1A336C8FC01}"
 	ProjectSection(SolutionItems) = preProject
-		Scripts\Utility.InjectHelpersToSolution.cmd = Scripts\Utility.InjectHelpersToSolution.cmd
-		Scripts\Utility.InjectHelpersToSolution.ps1 = Scripts\Utility.InjectHelpersToSolution.ps1
+		Scripts\Utility.InjectCsDependenciesToSolution.cmd = Scripts\Utility.InjectCsDependenciesToSolution.cmd
+		Scripts\Utility.InjectCppDependenciesToSolution.ps1 = Scripts\Utility.InjectCppDependenciesToSolution.ps1
+		Scripts\Utility.InjectCppDependenciesToSolution.cmd = Scripts\Utility.InjectCppDependenciesToSolution.cmd
+		Scripts\Utility.InjectCsDependenciesToSolution.ps1 = Scripts\Utility.InjectCsDependenciesToSolution.ps1
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Functions", "Functions", "{78424A04-4ED4-4184-97D8-AF1E10F26B38}"
