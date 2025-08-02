@@ -17,6 +17,7 @@ if ([string]::IsNullOrWhiteSpace($TargetSolutionPath) -or $TargetSolutionPath -e
 }
 
 $FoldersToInsertArgs = @(
+    '-p', 'CodeAnalyzer'
 )
 
 $ProjectsToInsertArgs = @(
