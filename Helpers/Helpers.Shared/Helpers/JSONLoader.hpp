@@ -1,6 +1,7 @@
 #pragma once
 #include "Helpers/common.h"
 #include "JsonParser/JsonParser.h"
+#include "Helpers/Extensions/fstreamEx.h"
 #include "Helpers/FunctionTraits.hpp"
 #include "Helpers/Localization.h"
 #include "Helpers/Logger.h"

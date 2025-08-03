@@ -1,5 +1,5 @@
 #pragma once
-#include "common.h"
+#include "Helpers/common.h"
 #include <string_view>
 #include <functional>
 #include <memory>
@@ -30,6 +30,10 @@ namespace STD_EXT_NS {
 		{}
 	};
 
+
+	//
+	// unique_ptr
+	//
 	template <typename T>
 	struct unique_ptr : public ::std::unique_ptr<T> {
 		PP_FORWARD_CTOR(unique_ptr, ::std::unique_ptr<T>);
@@ -45,6 +49,10 @@ namespace STD_EXT_NS {
 		}
 	};
 
+
+	//
+	// shared_ptr
+	//
 	template <typename T>
 	struct shared_ptr : public ::std::shared_ptr<T> {
 		PP_FORWARD_CTOR(shared_ptr, ::std::shared_ptr<T>);
@@ -58,11 +66,47 @@ namespace STD_EXT_NS {
 			}
 			return *this;
 		}
+
+		template <typename U>
+		bool Is() const {
+			return ::std::dynamic_pointer_cast<U>(*this) != nullptr;
+		}
+
+		template <typename U>
+		shared_ptr<U> As() const {
+			auto casted = ::std::dynamic_pointer_cast<U>(*this);
+			return casted;
+		}
+
+
+		template <typename U>
+		shared_ptr<U> Cast() const {
+			auto casted = ::std::dynamic_pointer_cast<U>(*this);
+			if (casted == nullptr) {
+				throw ::std::bad_cast{};
+			}
+			return casted;
+		}
 	};
 
+	// Обёртка над std::make_shared, возвращающая std::ex::shared_ptr<T>
+	template <typename T, typename... Args>
+	shared_ptr<T> make_shared_ex(Args&&... args) {
+		return shared_ptr<T>(::std::make_shared<T>(::std::forward<Args>(args)...));
+	}
+
+
+	//
+	// weak_ptr
+	//
 	template <typename T>
 	struct weak_ptr : public ::std::weak_ptr<T> {
 		PP_FORWARD_CTOR(weak_ptr, ::std::weak_ptr<T>);
+
+		// override to retrun extensible struct
+		shared_ptr<T> lock() const {
+			return ::std::weak_ptr<T>::lock();
+		}
 
 		shared_ptr<T> Try() {
 			if (this == nullptr) {
@@ -75,7 +119,8 @@ namespace STD_EXT_NS {
 			return sharedPtr;
 		}
 	};
-}
+} // namespace STD_EXT_NS
+
 
 namespace HELPERS_NS {
 	inline bool SafeConditionResult(std::function<bool()> fnCondition) {

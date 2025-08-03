@@ -40,6 +40,9 @@
     <Filter Include="Win32">
       <UniqueIdentifier>{ecf45bd4-d624-4a52-bdd4-20c283af87f9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Extensions">
+      <UniqueIdentifier>{8b80d707-7b29-47cf-bf02-0d6c72ebb2f6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Gate.cpp">
@@ -575,9 +578,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Regex.h">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ExtStdMemory.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Concepts.h">
       <Filter>_Headers</Filter>
     </ClInclude>
@@ -604,6 +604,12 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Ranges.h">
       <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Extensions\fstreamEx.h">
+      <Filter>Extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Extensions\memoryEx.h">
+      <Filter>Extensions</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
