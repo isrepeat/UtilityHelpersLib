@@ -611,6 +611,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Extensions\memoryEx.h">
       <Filter>Extensions</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Stream.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultVS.hlsl">
