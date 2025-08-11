@@ -1,8 +1,8 @@
 ﻿#pragma once
 #include "Helpers/common.h"
-#include "Helpers/Dx/DxDevice.h"
+#include "Helpers/Extensions/memoryEx.h"
 #include "Helpers/Dx/DxSettings.h"
-#include "Helpers/ExtStdMemory.h"
+#include "Helpers/Dx/DxDevice.h"
 #include "Helpers/Signal.h"
 #include <Unknwn.h>
 #include <memory>
