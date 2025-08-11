@@ -183,6 +183,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Span.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StdEnumerable.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Stream.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Stream\StreamHelpers.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Stream\StreamLineReader.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Stream\StreamLineViewer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StringComparers.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\System.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TypeSwitch.h" />

@@ -43,6 +43,9 @@
     <Filter Include="Extensions">
       <UniqueIdentifier>{8b80d707-7b29-47cf-bf02-0d6c72ebb2f6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Stream">
+      <UniqueIdentifier>{b283f0ab-6859-450d-a737-44661866e37d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Gate.cpp">
@@ -613,6 +616,15 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Stream.h">
       <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Stream\StreamLineReader.h">
+      <Filter>Stream</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Stream\StreamLineViewer.h">
+      <Filter>Stream</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Stream\StreamHelpers.h">
+      <Filter>Stream</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
