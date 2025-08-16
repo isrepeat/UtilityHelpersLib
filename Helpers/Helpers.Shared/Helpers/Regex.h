@@ -90,7 +90,7 @@ namespace HELPERS_NS {
 
 		template<typename CharT, typename OutString = std::basic_string_view<CharT>>
 		inline std::vector<RegexMatchResult<CharT, OutString>> GetRegexMatches(
-			std::basic_string_view<CharT>  text,
+			std::basic_string_view<CharT> text,
 			const std::basic_regex<CharT>& rx
 		) {
 			using It = typename std::basic_string_view<CharT>::const_iterator;
@@ -107,7 +107,7 @@ namespace HELPERS_NS {
 
 		template<typename CharT, typename OutString = std::basic_string_view<CharT>>
 		inline std::optional<RegexMatchResult<CharT, OutString>> GetRegexMatch(
-			std::basic_string_view<CharT>  text,
+			std::basic_string_view<CharT> text,
 			const std::basic_regex<CharT>& rx
 		) {
 			using It = typename std::basic_string_view<CharT>::const_iterator;

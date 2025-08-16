@@ -26,6 +26,11 @@ namespace HELPERS_NS {
 				this->lines = this->SplitToLines(this->buffer);
 			}
 
+			StreamLineViewer(const StreamLineViewer&) = delete;
+			StreamLineViewer& operator=(const StreamLineViewer&) = delete;
+
+			StreamLineViewer(StreamLineViewer&&) noexcept = default;
+			StreamLineViewer& operator=(StreamLineViewer&&) noexcept = default;
 
 			std::span<const std::string_view> GetAllLines() const {
 				return std::span<const std::string_view>(
@@ -65,7 +70,6 @@ namespace HELPERS_NS {
 					count
 				);
 			}
-
 
 		private:
 			std::string ReadAll(std::istream& inStream) {
