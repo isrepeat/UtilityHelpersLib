@@ -103,6 +103,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\RenderPipeline.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\ShadersCommon.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\SwapChainPanel.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Event\IEvent.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Event\Signal.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Extensions\fstreamEx.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Extensions\memoryEx.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Guid.h" />

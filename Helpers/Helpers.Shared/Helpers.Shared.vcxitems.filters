@@ -22,9 +22,6 @@
     <Filter Include="_Sources">
       <UniqueIdentifier>{0acf4eff-0e53-40e7-a31b-9f22cd2b0efc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Async">
-      <UniqueIdentifier>{5fd2a503-a42e-42bb-87bf-98be8fff7a9c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="WinRT">
       <UniqueIdentifier>{52bcaca5-b5f7-4dcc-989d-0f63747814d1}</UniqueIdentifier>
     </Filter>
@@ -45,6 +42,12 @@
     </Filter>
     <Filter Include="Stream">
       <UniqueIdentifier>{b283f0ab-6859-450d-a737-44661866e37d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Event">
+      <UniqueIdentifier>{ae161a71-6107-479f-a441-1b7410431168}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="_Sources\Async">
+      <UniqueIdentifier>{5fd2a503-a42e-42bb-87bf-98be8fff7a9c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -387,13 +390,13 @@
       <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Async\AsyncTasks.h">
-      <Filter>Async</Filter>
+      <Filter>_Sources\Async</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Async\Awaitables.h">
-      <Filter>Async</Filter>
+      <Filter>_Sources\Async</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Async\CoTask.h">
-      <Filter>Async</Filter>
+      <Filter>_Sources\Async</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TypeSwitch.h">
       <Filter>_Headers</Filter>
@@ -625,6 +628,12 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Stream\StreamHelpers.h">
       <Filter>Stream</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Event\Signal.h">
+      <Filter>Event</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Event\IEvent.h">
+      <Filter>Event</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
