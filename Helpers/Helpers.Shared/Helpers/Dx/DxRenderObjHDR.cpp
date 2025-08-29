@@ -7,7 +7,8 @@ namespace HELPERS_NS {
 		namespace details {
 			DxRenderObjHDR::DxRenderObjHDR(
 				Microsoft::WRL::ComPtr<H::Dx::ISwapChainPanel> swapChainPanel,
-				Params params)
+				Params params
+			)
 				: swapChainPanel{ swapChainPanel }
 			{
 				LOG_ASSERT(swapChainPanel);
@@ -37,7 +38,7 @@ namespace HELPERS_NS {
 				}
 				this->CreateTexture(newSize);
 
-				this->additionalSizeDependentHandlers(newSize);
+				this->events.additionalSizeDependentHandlers.Invoke(newSize);
 			}
 
 			void DxRenderObjHDR::ReleaseDeviceDependentResources() {
@@ -55,7 +56,11 @@ namespace HELPERS_NS {
 			}
 
 
-			DxTextureResources DxRenderObjHDR::GetTextureResources() {
+            const DxRenderObjHDR::Events& DxRenderObjHDR::GetEvents() const {
+				return this->events;
+            }
+
+            DxTextureResources DxRenderObjHDR::GetTextureResources() {
 				auto dxDev = this->swapChainPanel->GetDxDevice()->Lock();
 				DxTextureResources dxTextureResources;
 				dxTextureResources.texture = this->dxRenderObjData->texture;

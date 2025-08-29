@@ -1,6 +1,6 @@
 #include "LogHelpers.h"
-#pragma message(PREPROCESSOR_MSG("Build LogHelpers.cpp with LOGGER_API = '" PP_STRINGIFY(LOGGER_API) "'"))
-#pragma message(PREPROCESSOR_MSG("Build LogHelpers.cpp with LOGGER_NS = '" PP_STRINGIFY(LOGGER_NS) "'"))
+//#pragma message(PREPROCESSOR_MSG("Build LogHelpers.cpp with LOGGER_API = '" PP_STRINGIFY(LOGGER_API) "'"))
+//#pragma message(PREPROCESSOR_MSG("Build LogHelpers.cpp with LOGGER_NS = '" PP_STRINGIFY(LOGGER_NS) "'"))
 #include "DynamicFileSink.h"
 #include <Helpers/FileSystem_inline.h>
 #include <Helpers/PackageProvider.h> // need link with Helpers.lib
@@ -121,61 +121,61 @@ namespace LOGGER_NS {
 
 
 
-    struct DefaultLoggers::UnscopedData {
-        UnscopedData()
-            : defaultSink{ std::make_shared<spdlog::sinks::msvc_sink_mt>() }
-            , defaultLogger{ std::make_shared<spdlog::logger>("default_logger", spdlog::sinks_init_list{ defaultSink }) }
-        {
-            auto formatterDebug = std::make_unique<spdlog::pattern_formatter>();
-            formatterDebug->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Debug));
-            formatterDebug->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, nullptr).set_pattern(GetPattern(Pattern::Debug));
-            defaultSink->set_formatter(std::move(formatterDebug));
-            defaultSink->set_level(spdlog::level::trace);
+	struct DefaultLoggers::UnscopedData {
+		UnscopedData()
+			: defaultSink{ std::make_shared<spdlog::sinks::msvc_sink_mt>() }
+			, defaultLogger{ std::make_shared<spdlog::logger>("default_logger", spdlog::sinks_init_list{ defaultSink }) }
+		{
+			auto formatterDebug = std::make_unique<spdlog::pattern_formatter>();
+			formatterDebug->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Debug));
+			formatterDebug->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, nullptr).set_pattern(GetPattern(Pattern::Debug));
+			defaultSink->set_formatter(std::move(formatterDebug));
+			defaultSink->set_level(spdlog::level::trace);
 
-            defaultLogger->flush_on(spdlog::level::trace);
-            defaultLogger->set_level(spdlog::level::trace);
-        }
-        ~UnscopedData() {
-            assertm(false, "Unexpected destructor call");
-        }
+			defaultLogger->flush_on(spdlog::level::trace);
+			defaultLogger->set_level(spdlog::level::trace);
+		}
+		~UnscopedData() {
+			assertm(false, "Unexpected destructor call");
+		}
 
-        const std::shared_ptr<spdlog::logger> DefaultLogger() const {
-            return defaultLogger;
-        }
-        
-    private:
-        const std::shared_ptr<spdlog::sinks::msvc_sink_mt> defaultSink;
-        const std::shared_ptr<spdlog::logger> defaultLogger;
-    };
+		const std::shared_ptr<spdlog::logger> DefaultLogger() const {
+			return defaultLogger;
+		}
+
+	private:
+		const std::shared_ptr<spdlog::sinks::msvc_sink_mt> defaultSink;
+		const std::shared_ptr<spdlog::logger> defaultLogger;
+	};
 
 
 
-    DefaultLoggers::DefaultLoggers()
-        : initializedLoggersById{}
+	DefaultLoggers::DefaultLoggers()
+		: initializedLoggersById{}
 #if USE_DYNAMIC_SINK
-        , logSizeCheckSem{L"DefaultLoggers::CheckLogFileSize"}
+		, logSizeCheckSem{ L"DefaultLoggers::CheckLogFileSize" }
 #endif
 #ifdef _DEBUG
-        , debugSink{ std::make_shared<spdlog::sinks::msvc_sink_mt>() }
+		, debugSink{ std::make_shared<spdlog::sinks::msvc_sink_mt>() }
 #endif
-    {
-        this->prefixCallback = [this] {
-            return this->className;
-        };
-        this->postfixCallback = [this](const std::string& logMsg) {
-            this->lastMessage = logMsg;
-        };
+	{
+		this->prefixCallback = [this] {
+			return this->className;
+			};
+		this->postfixCallback = [this](const std::string& logMsg) {
+			this->lastMessage = logMsg;
+			};
 
 #ifdef _DEBUG
-        auto formatterDebug = std::make_unique<spdlog::pattern_formatter>();
-        formatterDebug->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Debug));
-        formatterDebug->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, this->prefixCallback).set_pattern(GetPattern(Pattern::Debug));
-        this->debugSink->set_formatter(std::move(formatterDebug));
-        this->debugSink->set_level(spdlog::level::trace);
+		auto formatterDebug = std::make_unique<spdlog::pattern_formatter>();
+		formatterDebug->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Debug));
+		formatterDebug->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, this->prefixCallback).set_pattern(GetPattern(Pattern::Debug));
+		this->debugSink->set_formatter(std::move(formatterDebug));
+		this->debugSink->set_level(spdlog::level::trace);
 #endif
-        // DefaultLoggers::UnscopedData is created inside singleton
-        H::TokenSingleton<DefaultLoggers>::SetToken(Passkey<DefaultLoggers>{}, this->token); 
-    }
+		// DefaultLoggers::UnscopedData is created inside singleton
+		H::TokenSingleton<DefaultLoggers>::SetToken(Passkey<DefaultLoggers>{}, this->token);
+	}
 
     DefaultLoggers::~DefaultLoggers() {
         this->standardLoggersList = {}; // clear loggers to release sinks
@@ -666,6 +666,6 @@ namespace LOGGER_NS {
 
 }
 
-LOGGER_API H::nothing* __LgCtx() {
+LOGGER_API H::meta::nothing* __LgCtx() {
     return nullptr;
 }

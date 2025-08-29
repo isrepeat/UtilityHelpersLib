@@ -1,21 +1,21 @@
 #pragma once
 #include "common.h"
+#include "Meta/Diagnostics.h"
+#include "Meta/Concepts.h"
 #include "ThreadSafeObject.hpp"
-#include "TypeTraits.hpp"
 #include "Singleton.hpp"
-#include "Concepts.h"
 
 namespace HELPERS_NS {
 	template <typename T>
 	struct ConfigData {
-		static_assert(HELPERS_NS::dependent_false<T>::value, "You must use specialization");
+		static_assert(meta::dependent_false<T>::value, "You must use specialization");
 		struct Data {
 		};
 	};
 
 	template <typename DerivedT>
 #if __cpp_concepts
-	requires concepts::HasType<typename ConfigData<DerivedT>::Data>
+	requires meta::concepts::has_type<typename ConfigData<DerivedT>::Data>
 #endif
 	class ConfigBase : public HELPERS_NS::Singleton<typename DerivedT> {
 	private:

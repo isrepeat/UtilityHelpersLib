@@ -1,9 +1,10 @@
-﻿#pragma once
+#pragma once
 #include "Helpers/common.h"
-#include "Helpers/Extensions/memoryEx.h"
+#include "Helpers/Std/Extensions/memoryEx.h"
 #include "Helpers/Dx/DxSettings.h"
 #include "Helpers/Dx/DxDevice.h"
-#include "Helpers/Signal.h"
+#include "Helpers/Event/Signal.h"
+
 #include <Unknwn.h>
 #include <memory>
 
@@ -17,7 +18,7 @@ namespace HELPERS_NS {
 
 		struct SwapChainPanelNotifications {
 			// CHECK: if Signal class have std::mutex then may be unexpected errors, see ComMutex notes for it
-			HELPERS_NS::Signal<void()> onPresent;
+			HELPERS_NS::Event::Signal<void()> onPresent;
 		};
 
 		enum DisplayOrientations : unsigned int {

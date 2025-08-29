@@ -1,7 +1,7 @@
 #pragma once
 #include "Helpers/common.h"
+#include "Helpers/Event/Signal.h"
 #include "Helpers/HWindows.h"
-#include "Helpers/Signal.h"
 #include "Helpers/Math.h"
 
 #include <condition_variable>
@@ -14,8 +14,8 @@ namespace HELPERS_NS {
 		public:
 			using MessageHandler = std::function<bool(UINT, WPARAM, LPARAM)>;
 
-			H::Signal<void()> eventQuit;
-			H::Signal<void(H::Size)> eventWindowSizeChanged;
+			HELPERS_NS::Event::Signal<void()> eventQuit;
+			HELPERS_NS::Event::Signal<void(HELPERS_NS::Size)> eventWindowSizeChanged;
 
 
 		public:
@@ -46,7 +46,7 @@ namespace HELPERS_NS {
 			std::mutex mx;
 
 			HINSTANCE hInstance;
-			H::Size windowSize;
+			HELPERS_NS::Size windowSize;
 
 			HWND hWnd;
 			std::vector<MessageHandler> messageHooks;

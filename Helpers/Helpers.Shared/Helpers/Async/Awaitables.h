@@ -1,12 +1,13 @@
 #pragma once
 #include <Helpers/common.h>
+#include "Helpers/Event/Signal.h"
 #include <Helpers/Logger.h>
-#include <Helpers/Signal.h>
 #include <Helpers/Time.h>
 #include "CoTask.h"
+
 #include <coroutine>
-#include <memory>
 #include <optional>
+#include <memory>
 
 // Don't forget return original definitions for these macros at the end of file
 #define LOG_FUNCTION_ENTER_VERBOSE(fmt, ...)
@@ -16,7 +17,6 @@
 
 namespace HELPERS_NS {
     namespace Async {
-
         // TODO: Add type_traits to detect check if caller promise_type does not have Ctor(..., resumeCallback).
         // NOTE: Must be called from coroutine that accepts resumeCallback as parameter.
         //       (resumeCallback will passed to this task::promise_type Ctor)
@@ -72,7 +72,11 @@ namespace HELPERS_NS {
         template<typename ResultT>
         struct SignalAwaitableResult {
             template<typename ResumeSignalT>
-            void AddFinish(ResumeSignalT& resumeSignal, std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback, std::weak_ptr<CoTaskBase> coTaskWeak) {
+            void AddFinish(
+				ResumeSignalT& resumeSignal,
+				std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback,
+				std::weak_ptr<CoTaskBase> coTaskWeak
+			) {
                 resumeSignal->AddFinish([this, resumeCallback, coTaskWeak] (ResultT result) {
                     LOG_FUNCTION_SCOPE_VERBOSE("SignalAwaitableResult<ResultT>::AddFinish__lambda()");
                     this->result.emplace(std::move(result));
@@ -92,7 +96,11 @@ namespace HELPERS_NS {
         template<>
         struct SignalAwaitableResult<void> {
             template<typename ResumeSignalT>
-            void AddFinish(ResumeSignalT& resumeSignal, std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback, std::weak_ptr<CoTaskBase> coTaskWeak) {
+            void AddFinish(
+				ResumeSignalT& resumeSignal,
+				std::function<void(std::weak_ptr<CoTaskBase>)> resumeCallback,
+				std::weak_ptr<CoTaskBase> coTaskWeak
+			) {
                 resumeSignal->AddFinish([resumeCallback, coTaskWeak]() {
                     LOG_FUNCTION_SCOPE_VERBOSE("SignalAwaitableResult<void>::AddFinish__lambda()");
                     resumeCallback(coTaskWeak);
@@ -106,11 +114,13 @@ namespace HELPERS_NS {
 
         template<typename ResultT>
         struct SignalAwaitable : public SignalAwaitableResult<ResultT> {
-            explicit SignalAwaitable(std::function<void(std::weak_ptr<HELPERS_NS::Signal<void(ResultT)>>)> asyncOperation)
-                : asyncOperation{ asyncOperation }
-            {
+            explicit SignalAwaitable(
+				std::function<void(std::weak_ptr<HELPERS_NS::Event::Signal<void(ResultT)>>)> asyncOperation
+			)
+                : asyncOperation{ asyncOperation } {
                 LOG_FUNCTION_ENTER_VERBOSE("Awaitable(asyncOperationTask)");
             }
+
             ~SignalAwaitable() {
                 LOG_FUNCTION_ENTER_VERBOSE("~Awaitable()");
             }
@@ -171,19 +181,21 @@ namespace HELPERS_NS {
             }
 
         private:
-            std::function<void(std::weak_ptr<HELPERS_NS::Signal<void(ResultT)>>)> asyncOperation;
+            std::function<void(std::weak_ptr<HELPERS_NS::Event::Signal<void(ResultT)>>)> asyncOperation;
         };
 
-        inline auto AsyncOperationWithResumeSignal(std::function<void(std::weak_ptr<HELPERS_NS::Signal<void()>>)> asyncOperation) noexcept {
+        inline auto AsyncOperationWithResumeSignal(
+			std::function<void(std::weak_ptr<HELPERS_NS::Event::Signal<void()>>)> asyncOperation
+		) noexcept {
             LOG_FUNCTION_SCOPE_VERBOSE("AsyncOperationWithResumeSignal(asyncOperationTask)");
-
             return SignalAwaitable<void>{ asyncOperation };
         }
 
         template<typename ResultT>
-        auto AsyncOperationWithResumeSignal(std::function<void(std::weak_ptr<HELPERS_NS::Signal<void(ResultT)>>)> asyncOperation) noexcept {
+        auto AsyncOperationWithResumeSignal(
+			std::function<void(std::weak_ptr<HELPERS_NS::Event::Signal<void(ResultT)>>)> asyncOperation
+		) noexcept {
             LOG_FUNCTION_SCOPE_VERBOSE("AsyncOperationWithResumeSignal(asyncOperationTask)");
-
             return SignalAwaitable<ResultT>{ asyncOperation };
         }
     } // namespace Async

@@ -38,6 +38,10 @@ namespace HELPERS_NS {
 			
 			class DxRenderObjHDR : public DxRenderObjWrapper<DxRenderObjHDRData> {
 			public:
+				struct Events {
+					HELPERS_NS::Event::Signal<void(HELPERS_NS::Size)> additionalSizeDependentHandlers;
+				};
+
 				// Shader filepathes are relative to .exe
 				struct Params {
 					std::filesystem::path vertexShader;
@@ -47,18 +51,25 @@ namespace HELPERS_NS {
 
 				DxRenderObjHDR(
 					Microsoft::WRL::ComPtr<HELPERS_NS::Dx::ISwapChainPanel> swapChainPanel,
-					Params params);
+					Params params
+				);
 
 				DxRenderObjHDR(
 					DxDeviceSafeObj* dxDeviceSafeObj,
-					Params params);
+					Params params
+				);
 
-				HELPERS_NS::Signal<void(HELPERS_NS::Size)> additionalSizeDependentHandlers;
-
+				//
+				// DxRenderObjWrapper
+				//
 				void CreateWindowSizeDependentResources(std::optional<HELPERS_NS::Size> size = std::nullopt) override;
 				void ReleaseDeviceDependentResources() override;
 				void UpdateBuffers() override;
 
+				//
+				// API
+				//
+				const Events& GetEvents() const;
 				DxTextureResources GetTextureResources();
 
 			private:
@@ -69,6 +80,7 @@ namespace HELPERS_NS {
 				void CreateTexture(HELPERS_NS::Size size);
 
 			private:
+				Events events;
 				Microsoft::WRL::ComPtr<HELPERS_NS::Dx::ISwapChainPanel> swapChainPanel;
 			};
 		}

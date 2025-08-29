@@ -58,7 +58,7 @@ namespace HELPERS_NS {
 			TParsed out{};
 			TParsed::MapParsedResults(cmdLineParser, out);
 
-			if constexpr (meta::concepts::HasMethodWithSignature<
+			if constexpr (meta::concepts::has_method_with_signature<
 				decltype(&TParsed::Validate), void (TParsed::*)() const
 			>) {
 				out.Validate();
@@ -165,39 +165,4 @@ namespace HELPERS_NS {
 
 	using CommandLineParserA = CommandLineParserBase<char>;
 	using CommandLineParserW = CommandLineParserBase<wchar_t>;
-
-
-	//template<
-	//	typename TParsed,
-	//	typename TCmdParser
-	//>
-	//	requires meta::concepts::rule<
-	//		meta::concepts::placeholder,
-	//			meta::concepts::has_static_function_with_signature<
-	//			decltype(&TParsed::Description), std::vector<typename TCmdParser::FlagDesc>(*)()
-	//			> and
-	//			meta::concepts::has_static_function_with_signature<
-	//			decltype(&TParsed::Bind), void (*)(const TCmdParser&, TParsed&)
-	//			>
-	//	>
-	//TParsed ParseToStruct(
-	//	int argc,
-	//	typename TCmdParser::string_t::value_type* argv[]
-	//) {
-	//	const auto flagDescs = TParsed::Description();
-
-	//	TCmdParser parser{ flagDescs };
-	//	parser.Parse(argc, argv);
-
-	//	TParsed out{};
-	//	TParsed::Bind(parser, out);
-
-	//	if constexpr (meta::concepts::HasMethodWithSignature<
-	//		decltype(&TParsed::Validate), void (TParsed::*)() const
-	//	>) {
-	//		out.Validate();
-	//	}
-
-	//	return out;
-	//}
 }

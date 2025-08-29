@@ -1,11 +1,11 @@
 #pragma once
 #include <Helpers/common.h>
-#include <Helpers/Logger.h>
+#include "Helpers/Event/Signal.h"
 #include <Helpers/Thread.h>
-#include <Helpers/Signal.h>
-#include <coroutine>
-#include <queue>
+#include <Helpers/Logger.h>
+
 #include <type_traits>
+#include <coroutine>
 #include <optional>
 
 // Don't forget return original definitions for these macros at the end of file
@@ -227,7 +227,7 @@ namespace HELPERS_NS {
             template <typename... Args>
             PromiseDefault(InstanceName instanceName, Args&...)
                 : _MyBase(instanceName)
-                , resumeSignal{ std::make_shared<HELPERS_NS::Signal<void()>>() }
+                , resumeSignal{ std::make_shared<HELPERS_NS::Event::Signal<void()>>() }
             {
                 this->SetFullClassNameSilent(instanceName.name);
                 LOG_FUNCTION_ENTER_VERBOSE_C(L"PromiseDefault()");
@@ -241,7 +241,7 @@ namespace HELPERS_NS {
             template <typename Caller, typename... Args>
             PromiseDefault(Caller& caller, InstanceName instanceName, Args&...)
                 : _MyBase(caller, instanceName)
-                , resumeSignal{ std::make_shared<HELPERS_NS::Signal<void()>>() }
+                , resumeSignal{ std::make_shared<HELPERS_NS::Event::Signal<void()>>() }
             {
                 this->SetFullClassNameSilent(instanceName.name);
                 LOG_FUNCTION_ENTER_VERBOSE_C(L"PromiseDefault(Caller)");
@@ -251,18 +251,18 @@ namespace HELPERS_NS {
             template <typename LambdaT, typename... Args>
             PromiseDefault(LambdaBindCoroKey key, LambdaT& lambda, Args&...)
                 : _MyBase(L"LambdaBindCoroKey")
-                , resumeSignal{ std::make_shared<HELPERS_NS::Signal<void()>>() }
+                , resumeSignal{ std::make_shared<HELPERS_NS::Event::Signal<void()>>() }
             {
                 this->SetFullClassNameSilent(L"LambdaBindCoroKey");
                 LOG_FUNCTION_ENTER_VERBOSE_C(L"PromiseDefault(LambdaCtorKey, LambdaT)");
             }
 
-            std::weak_ptr<HELPERS_NS::Signal<void()>> get_resume_signal() {
+            std::weak_ptr<HELPERS_NS::Event::Signal<void()>> get_resume_signal() {
                 return resumeSignal;
             }
 
         private:
-            std::shared_ptr<HELPERS_NS::Signal<void()>> resumeSignal;
+            std::shared_ptr<HELPERS_NS::Event::Signal<void()>> resumeSignal;
         };
 
         template<typename ReturnT>
@@ -278,7 +278,7 @@ namespace HELPERS_NS {
             template <typename... Args>
             PromiseWithResult(InstanceName instanceName, Args&...)
                 : _MyBase(instanceName)
-                , resumeSignal{ std::make_shared<HELPERS_NS::Signal<void(ReturnT)>>() }
+                , resumeSignal{ std::make_shared<HELPERS_NS::Event::Signal<void(ReturnT)>>() }
             {
                 this->SetFullClassNameSilent(instanceName.name);
                 LOG_FUNCTION_ENTER_VERBOSE_C(L"PromiseWithResult()");
@@ -292,7 +292,7 @@ namespace HELPERS_NS {
             template <typename Caller, typename... Args>
             PromiseWithResult(Caller& caller, InstanceName instanceName, Args&...)
                 : _MyBase(caller, instanceName)
-                , resumeSignal{ std::make_shared<HELPERS_NS::Signal<void(ReturnT)>>() }
+                , resumeSignal{ std::make_shared<HELPERS_NS::Event::Signal<void(ReturnT)>>() }
             {
                 this->SetFullClassNameSilent(instanceName.name);
                 LOG_FUNCTION_ENTER_VERBOSE_C(L"PromiseWithResult(Caller)");
@@ -302,18 +302,18 @@ namespace HELPERS_NS {
             template <typename LambdaT, typename... Args>
             PromiseWithResult(LambdaBindCoroKey key, LambdaT& lambda, Args&...)
                 : _MyBase(L"LambdaBindCoroKey")
-                , resumeSignal{ std::make_shared<HELPERS_NS::Signal<void(ReturnT)>>() }
+                , resumeSignal{ std::make_shared<HELPERS_NS::Event::Signal<void(ReturnT)>>() }
             {
                 this->SetFullClassNameSilent(L"LambdaBindCoroKey");
                 LOG_FUNCTION_ENTER_VERBOSE_C(L"PromiseWithResult(LambdaCtorKey, LambdaT)");
             }
 
-            std::weak_ptr<HELPERS_NS::Signal<void(ReturnT)>> get_resume_signal() {
+            std::weak_ptr<HELPERS_NS::Event::Signal<void(ReturnT)>> get_resume_signal() {
                 return resumeSignal;
             }
 
         private:
-            std::shared_ptr<HELPERS_NS::Signal<void(ReturnT)>> resumeSignal;
+            std::shared_ptr<HELPERS_NS::Event::Signal<void(ReturnT)>> resumeSignal;
         };
 
 
@@ -555,25 +555,30 @@ namespace HELPERS_NS {
         };
 
         // TODO: use another specific signal type that associated with coroutines (because H::Signal may be anything)
-        inline void ResumeCoroutineViaSignal(std::weak_ptr<HELPERS_NS::Signal<void()>> resumeSignalWeak) {
+        inline void ResumeCoroutineViaSignal(
+			std::weak_ptr<HELPERS_NS::Event::Signal<void()>> resumeSignalWeak
+		) {
             LOG_FUNCTION_ENTER("ResumeCoroutineViaSignal()");
             auto resumeSignal = resumeSignalWeak.lock();
             if (!resumeSignal) {
                 LOG_ERROR_D("resumeSignal expired");
                 return;
             }
-            (*resumeSignal)();
+            resumeSignal->Invoke();
         }
 
         template<typename ResultT>
-        inline void ResumeCoroutineViaSignal(std::weak_ptr<HELPERS_NS::Signal<void(ResultT)>> resumeSignalWeak, ResultT result) {
+        inline void ResumeCoroutineViaSignal(
+			std::weak_ptr<HELPERS_NS::Event::Signal<void(ResultT)>> resumeSignalWeak,
+			ResultT result
+		) {
             LOG_FUNCTION_ENTER("ResumeCoroutineViaSignal()");
             auto resumeSignal = resumeSignalWeak.lock();
             if (!resumeSignal) {
                 LOG_ERROR_D("resumeSignal expired");
                 return;
             }
-            (*resumeSignal)(std::move(result));
+            resumeSignal->Invoke(std::move(result));
         }
     } // namespace Async
 } // namespace HELPERS_NS

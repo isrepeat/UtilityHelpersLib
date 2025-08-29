@@ -1,11 +1,11 @@
 #pragma once
 #include "Helpers/common.h"
 #include "JsonParser/JsonParser.h"
-#include "Helpers/Extensions/fstreamEx.h"
-#include "Helpers/FunctionTraits.hpp"
+#include "Helpers/Meta/FunctionTraits.h"
+#include "Helpers/Std/Extensions/fstreamEx.h"
 #include "Helpers/Localization.h"
 #include "Helpers/Logger.h"
-#include <fstream>
+
 #include <vector>
 #include <string>
 
@@ -15,9 +15,7 @@
 
 namespace HELPERS_NS {
 	template <typename JSONObjectT>
-	requires concepts::Conjunction<
-		concepts::HasStaticMethodWithSignature<decltype(&JSONObjectT::AfterLoadHandler), void(*)(const JSONObjectT&)>
-	>
+		requires meta::concepts::has_static_function_with_signature<decltype(&JSONObjectT::AfterLoadHandler), void(*)(const JSONObjectT&)>
 	class JSONLoader {
 		JSONLoader() = delete;
 		~JSONLoader() = delete;
@@ -54,7 +52,7 @@ namespace HELPERS_NS {
 				else {
 					LOG_ERROR_D("Cannot parse '{}'", jsonFilename);
 					if constexpr (requires {
-						requires concepts::HasStaticMethod<decltype(&JSONObjectT::LoadErrorHandler)>;
+						requires concepts::has_static_function<decltype(&JSONObjectT::LoadErrorHandler)>;
 					}) {
 						JSONObjectT::LoadErrorHandler();
 					}
@@ -67,7 +65,7 @@ namespace HELPERS_NS {
 				// If JSONObjectT has 'CreateWithDefaultData' static method so create json with 
 				// specific default data before save.
 				if constexpr (requires {
-					requires concepts::HasStaticMethodWithSignature<decltype(&JSONObjectT::CreateWithDefaultData), JSONObjectT(*)()>;
+					requires concepts::has_static_function_with_signature<decltype(&JSONObjectT::CreateWithDefaultData), JSONObjectT(*)()>;
 				}) {
 					jsonObject = JSONObjectT::CreateWithDefaultData();
 				}
