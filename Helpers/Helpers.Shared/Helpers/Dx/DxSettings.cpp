@@ -6,49 +6,48 @@
 
 namespace HELPERS_NS {
     namespace Dx {
-        DxSettings::DxSettings()
-            : msaa{ false }
-            , vsync{ true }
-            , hdrToneMappingSupport{ true }
-            , dxSettingsHandlers{ std::make_unique<DxSettingsHandlers>() }
-        {
-            UpdateAdapters();
-            this->currentAdapter = adapters.at(0);
-        }
+		DxSettings::DxSettings()
+			: events{ std::make_unique<Events>() }
+			, msaa{ false }
+			, vsync{ true }
+			, hdrToneMappingSupport{ true }
+		{
+			this->UpdateAdapters();
+			this->currentAdapter = adapters.at(0);
+		}
+
+
+		const std::unique_ptr<DxSettings::Events>& DxSettings::GetEvents() const {
+			return this->events;
+		}
 
 
         void DxSettings::EnableMSAA(bool enabled) {
             this->msaa = enabled;
-            if (this->dxSettingsHandlers->msaaChanged) {
-                this->dxSettingsHandlers->msaaChanged();
-            }
+			this->events->msaaChanged.Invoke();
         }
 
-        bool DxSettings::IsMSAAEnabled() {
+        bool DxSettings::IsMSAAEnabled() const {
             return this->msaa;
         }
 
 
         void DxSettings::EnableVSync(bool enabled) {
             this->vsync = enabled;
-            if (this->dxSettingsHandlers->vsyncChanged) {
-                this->dxSettingsHandlers->vsyncChanged();
-            }
+			this->events->vsyncChanged.Invoke();
         }
 
-        bool DxSettings::IsVSyncEnabled() {
+        bool DxSettings::IsVSyncEnabled() const {
             return this->vsync;
         }
 
 
         void DxSettings::EnableHDRToneMappingSupport(bool enabled) {
             this->hdrToneMappingSupport = enabled;
-            if (this->dxSettingsHandlers->hdrToneMappingSupportChanged) {
-                this->dxSettingsHandlers->hdrToneMappingSupportChanged();
-            }
+			this->events->hdrToneMappingSupportChanged.Invoke();
         }
 
-        bool DxSettings::IsHDRToneMappingSupportEnabled() {
+        bool DxSettings::IsHDRToneMappingSupportEnabled() const {
             return this->hdrToneMappingSupport;
         }
 
@@ -58,12 +57,10 @@ namespace HELPERS_NS {
                 return;
             }
             this->currentAdapter = this->adapters[idx];
-            if (this->dxSettingsHandlers->currentAdapterChanged) {
-                this->dxSettingsHandlers->currentAdapterChanged();
-            }
+			this->events->currentAdapterChanged.Invoke();
         }
 
-        Adapter DxSettings::GetCurrentAdapter() {
+        Adapter DxSettings::GetCurrentAdapter() const {
             return this->currentAdapter;
         }
 
@@ -76,17 +73,11 @@ namespace HELPERS_NS {
             while (auto adapter = enumAdapters.Next()) {
                 this->adapters.push_back(adapter);
             }
-            if (this->dxSettingsHandlers->adapersUpdated) {
-                this->dxSettingsHandlers->adapersUpdated();
-            }
+			this->events->adapersUpdated.Invoke();
         }
 
-        std::vector<Adapter> DxSettings::GetAdapters() {
+        std::vector<Adapter> DxSettings::GetAdapters() const {
             return this->adapters;
-        }
-       
-        std::unique_ptr<DxSettingsHandlers>& DxSettings::GetDxSettingsHandlers() {
-            return this->dxSettingsHandlers;
         }
     }
 }

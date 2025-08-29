@@ -1,7 +1,8 @@
 #pragma once
 #include "Helpers/common.h"
-#include "Helpers/Signal.h"
+#include "Helpers/Event/Signal.h"
 #include "DxHelpers.h"
+
 #include <functional>
 #include <vector>
 #include <string>
@@ -10,43 +11,42 @@
 
 namespace HELPERS_NS {
     namespace Dx {
-        struct DxSettingsHandlers {
-            HELPERS_NS::Signal<void()> msaaChanged;
-            HELPERS_NS::Signal<void()> vsyncChanged;
-            HELPERS_NS::Signal<void()> hdrToneMappingSupportChanged;
-            HELPERS_NS::Signal<void()> adapersUpdated;
-            HELPERS_NS::Signal<void()> currentAdapterChanged;
-        };
-
         class DxSettings {
         public:
+			struct Events {
+				HELPERS_NS::Event::Signal<void()> msaaChanged;
+				HELPERS_NS::Event::Signal<void()> vsyncChanged;
+				HELPERS_NS::Event::Signal<void()> hdrToneMappingSupportChanged;
+				HELPERS_NS::Event::Signal<void()> adapersUpdated;
+				HELPERS_NS::Event::Signal<void()> currentAdapterChanged;
+			};
+
             DxSettings();
 
+            const std::unique_ptr<Events>& GetEvents() const;
+
             void EnableMSAA(bool enabled);
-            bool IsMSAAEnabled();
+            bool IsMSAAEnabled() const;
 
             void EnableVSync(bool enabled);
-            bool IsVSyncEnabled();
+            bool IsVSyncEnabled() const;
 
             void EnableHDRToneMappingSupport(bool enabled);
-            bool IsHDRToneMappingSupportEnabled();
+            bool IsHDRToneMappingSupportEnabled() const;
 
             void SetCurrentAdapterByIdx(uint32_t idx);
-            Adapter GetCurrentAdapter();
+            Adapter GetCurrentAdapter() const;
 
             void UpdateAdapters();
-            std::vector<Adapter> GetAdapters();
-
-            std::unique_ptr<DxSettingsHandlers>& GetDxSettingsHandlers();
+            std::vector<Adapter> GetAdapters() const;
 
         private:
+            const std::unique_ptr<Events> events;
             std::atomic<bool> msaa;
             std::atomic<bool> vsync;
             std::atomic<bool> hdrToneMappingSupport;
             std::vector<Adapter> adapters;
             Adapter currentAdapter;
-
-            std::unique_ptr<DxSettingsHandlers> dxSettingsHandlers;
         };
     }
 }

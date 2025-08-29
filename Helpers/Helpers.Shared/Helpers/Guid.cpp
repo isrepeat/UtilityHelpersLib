@@ -1,10 +1,7 @@
 #include "Guid.h"
 #include <random>
-#include <sstream>
-#include <iomanip>
 
 namespace HELPERS_NS {
-
 	Guid Guid::NewGuid() {
 		Guid g;
 		std::random_device rd;
@@ -14,33 +11,30 @@ namespace HELPERS_NS {
 			byte = static_cast<uint8_t>(gen() & 0xFF);
 		}
 
-		// Âåðñèÿ 4 (random) + âàðèàíò (RFC4122)
+		// Ð’ÐµÑ€ÑÐ¸Ñ 4 (random) + Ð²Ð°Ñ€Ð¸Ð°Ð½Ñ‚ (RFC4122)
 		g.bytesArray[6] = (g.bytesArray[6] & 0x0F) | 0x40; // version 4
 		g.bytesArray[8] = (g.bytesArray[8] & 0x3F) | 0x80; // variant
 
 		return g;
 	}
 
-
 	Guid::Guid() {
 		this->bytesArray.fill(0);
 	}
-
 
 	Guid::Guid(const std::string& guidStr) {
 		*this = Guid::Parse(guidStr);
 	}
 
-
 	Guid Guid::Parse(const std::string& guidStr) {
 		std::string s = guidStr;
 
-		// Óäàëèì ñêîáêè, åñëè åñòü
+		// Ð£Ð´Ð°Ð»Ð¸Ð¼ ÑÐºÐ¾Ð±ÐºÐ¸, ÐµÑÐ»Ð¸ ÐµÑÑ‚ÑŒ
 		if (!s.empty() && s.front() == '{' && s.back() == '}') {
 			s = s.substr(1, s.size() - 2);
 		}
 
-		// Îæèäàåìûé ôîðìàò: 8-4-4-4-12 = 36 ñèìâîëîâ ñ äåôèñàìè
+		// ÐžÐ¶Ð¸Ð´Ð°ÐµÐ¼Ñ‹Ð¹ Ñ„Ð¾Ñ€Ð¼Ð°Ñ‚: 8-4-4-4-12 = 36 ÑÐ¸Ð¼Ð²Ð¾Ð»Ð¾Ð² Ñ Ð´ÐµÑ„Ð¸ÑÐ°Ð¼Ð¸
 		if (s.size() != 36 ||
 			s[8] != '-' || s[13] != '-' || s[18] != '-' || s[23] != '-') {
 			throw std::invalid_argument("Invalid GUID format: " + guidStr);
@@ -67,24 +61,16 @@ namespace HELPERS_NS {
 		return this->bytesArray;
 	}
 
-
 	const uint8_t* Guid::data() const {
 		return this->bytesArray.data();
 	}
 
-
 	std::string Guid::ToString() const {
-		std::ostringstream oss;
-		oss << std::hex << std::uppercase << std::setfill('0');
-		oss << "{";
-		for (int i = 0; i < 16; ++i) {
-			oss << std::setw(2) << static_cast<int>(this->bytesArray[i]);
-			if (i == 3 || i == 5 || i == 7 || i == 9) {
-				oss << "-";
-			}
-		}
-		oss << "}";
-		return oss.str();
+		return this->ToBasicString<char>();
+	}
+
+	std::wstring Guid::ToWString() const {
+		return this->ToBasicString<wchar_t>();
 	}
 
 

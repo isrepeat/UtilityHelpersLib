@@ -6,10 +6,10 @@
 #include <mutex>
 
 namespace HELPERS_NS {
-	template <typename TClass, typename T = void*>
-	class _Singleton {
+	template <typename TClass, typename TInstance = void*>
+	class Singleton {
 	protected:
-		using _Base = _Singleton<TClass, T>;
+		using SingletonInherited_t = Singleton<TClass, TInstance>;
 
 	public:
 		// Call this in constructors of singletons classes (to ensure that TClass destroy after all of them)
@@ -25,59 +25,55 @@ namespace HELPERS_NS {
 			return instance;
 		}
 
-		struct Proxy {
-			TClass* operator->() const {
-				return &TClass::GetInstance();
-			}
-		};
-
-		// Static inline field initialized at program start.
-		static inline Proxy Instance{};
-
-
-
 	protected:
 		friend TClass;
-		_Singleton() = default;
-		virtual ~_Singleton() = default;
+		Singleton() = default;
+		virtual ~Singleton() = default;
 
 	private:
-		T instance; // by default not used (T = void*)
+		TInstance instance; // by default not used (T = void*)
 	};
 
 
-
-	template <typename C>
-	class Singleton : public _Singleton<Singleton<C>, std::unique_ptr<C>> {
+	//
+	// SingletonUnique
+	//
+	template <typename TClass>
+	class SingletonUnique : public Singleton<SingletonUnique<TClass>, std::unique_ptr<TClass>> {
 	private:
-		using _MyBase = _Singleton<Singleton<C>, std::unique_ptr<C>>;
+		using MyBase_t = Singleton<SingletonUnique<TClass>, std::unique_ptr<TClass>>;
 
 	public:
-		using Instance_t = C&;
+		using Instance_t = TClass&;
 
-		Singleton() = default;
-		~Singleton() = default;
+		SingletonUnique() = default;
+		~SingletonUnique() = default;
 
-		template <typename ...Args>
-		static Instance_t CreateInstance(Args... args) {
-			auto& _this = _MyBase::GetInstance();
+		template <typename ...TArgs>
+		static Instance_t CreateInstance(TArgs&&... args) {
+			auto& _this = MyBase_t::GetInstance();
 			std::unique_lock lk{ _this.mx };
+
 			if (_this.instance == nullptr) {
-				_this.instance = std::make_unique<C>(args...); // NOTE: C must have public Ctor
+				_this.instance = std::make_unique<TClass>(std::forward<TArgs>(args)...);
 			}
+
 			return *_this.instance;
 		}
 
 		static Instance_t GetInstance() {
-			if constexpr (std::is_default_constructible_v<C> == true) {
-				if (!_MyBase::GetInstance().instance) {
-					CreateInstance(); // Try create object with default Ctor.
+			auto& _this = MyBase_t::GetInstance();
+
+			if constexpr (std::is_default_constructible_v<TClass>) {
+				if (!_this.instance) {
+					return CreateInstance(); // default ctor
 				}
 			}
 			else {
-				assert(_MyBase::GetInstance().instance);
+				assert(_this.instance);
 			}
-			return *_MyBase::GetInstance().instance;
+
+			return *_this.instance;
 		}
 
 	private:
@@ -85,38 +81,46 @@ namespace HELPERS_NS {
 	};
 
 
-
-	template <typename C>
-	class SingletonShared : public _Singleton<SingletonShared<C>, std::shared_ptr<C>> {
+	//
+	// SingletonShared
+	//
+	template <typename TClass>
+	class SingletonShared : public Singleton<SingletonShared<TClass>, std::shared_ptr<TClass>> {
 	private:
-		using _MyBase = _Singleton<SingletonShared<C>, std::shared_ptr<C>>;
+		using MyBase_t = Singleton<SingletonShared<TClass>, std::shared_ptr<TClass>>;
 
 	public:
-		using Instance_t = std::shared_ptr<C>;
+		using Instance_t = std::shared_ptr<TClass>;
 
 		SingletonShared() = default;
 		~SingletonShared() = default;
 
-		template <typename ...Args>
-		static Instance_t CreateInstance(Args... args) {
-			auto& _this = _MyBase::GetInstance();
+		template <typename ...TArgs>
+		static Instance_t CreateInstance(TArgs&&... args) {
+			auto& _this = MyBase_t::GetInstance();
 			std::unique_lock lk{ _this.mx };
+
 			if (_this.instance == nullptr) {
-				_this.instance = std::make_shared<C>(args...);
+				_this.instance = std::make_shared<TClass>(std::forward<TArgs>(args)...);
 			}
+
 			return _this.instance;
 		}
 
+
 		static Instance_t GetInstance() {
-			if constexpr (std::is_default_constructible_v<C> == true) {
-				if (!_MyBase::GetInstance().instance) {
-					CreateInstance(); // Try create object with default Ctor.
+			auto& _this = MyBase_t::GetInstance();
+
+			if constexpr (std::is_default_constructible_v<TClass>) {
+				if (!_this.instance) {
+					return CreateInstance();
 				}
 			}
 			else {
-				assert(_MyBase::GetInstance().instance);
+				assert(_this.instance);
 			}
-			return _MyBase::GetInstance().instance;
+
+			return _this.instance;
 		}
 
 	private:
@@ -124,43 +128,53 @@ namespace HELPERS_NS {
 	};
 
 
-
-	template <typename C>
-	class SingletonUnscoped : public _Singleton<SingletonUnscoped<C>, C*> {
+	//
+	// SingletonUnscoped
+	//
+	template <typename TClass>
+	class SingletonUnscoped : public Singleton<SingletonUnscoped<TClass>, TClass*> {
 	private:
-		using _MyBase = _Singleton<SingletonUnscoped<C>, C*>;
+		using MyBase_t = Singleton<SingletonUnscoped<TClass>, TClass*>;
 
 	public:
-		using Instance_t = C*;
+		using Instance_t = TClass*;
 
 		SingletonUnscoped() = default;
 		~SingletonUnscoped() = default;
 
-		template <typename ...Args>
-		static Instance_t CreateInstance(Args... args) {
-			auto& _this = _MyBase::GetInstance();
+		template <typename ...TArgs>
+		static Instance_t CreateInstance(TArgs&&... args) {
+			auto& _this = MyBase_t::GetInstance();
 			std::unique_lock lk{ _this.mx };
+
 			if (_this.instance == nullptr) {
-				_this.instance = new C(args...);
+				_this.instance = new TClass(std::forward<TArgs>(args)...);
 			}
+
 			return _this.instance;
 		}
 
 		static Instance_t GetInstance() {
-			if constexpr (std::is_default_constructible_v<C> == true) {
-				if (!_MyBase::GetInstance().instance) {
-					CreateInstance(); // Try create object with default Ctor.
+			auto& _this = MyBase_t::GetInstance();
+			
+			if constexpr (std::is_default_constructible_v<TClass>) {
+				if (!_this.instance) {
+					return CreateInstance();
 				}
 			}
 			else {
-				assert(_MyBase::GetInstance().instance);
+				assert(_this.instance);
 			}
-			return _MyBase::GetInstance().instance;
+
+			return _this.instance;
 		}
 
 		static void DeleteInstance() {
-			delete _MyBase::GetInstance().instance;
-			_MyBase::GetInstance().instance = nullptr;
+			auto& _this = MyBase_t::GetInstance();
+			std::unique_lock lk{ _this.mx };
+
+			delete _this.instance;
+			_this.instance = nullptr;
 		}
 
 	private:
