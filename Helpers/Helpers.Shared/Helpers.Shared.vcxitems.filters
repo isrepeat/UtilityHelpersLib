@@ -37,16 +37,28 @@
     <Filter Include="Win32">
       <UniqueIdentifier>{ecf45bd4-d624-4a52-bdd4-20c283af87f9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Extensions">
-      <UniqueIdentifier>{8b80d707-7b29-47cf-bf02-0d6c72ebb2f6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Stream">
       <UniqueIdentifier>{b283f0ab-6859-450d-a737-44661866e37d}</UniqueIdentifier>
     </Filter>
     <Filter Include="Event">
       <UniqueIdentifier>{ae161a71-6107-479f-a441-1b7410431168}</UniqueIdentifier>
     </Filter>
-    <Filter Include="_Sources\Async">
+    <Filter Include="Collection">
+      <UniqueIdentifier>{a1910ff1-5b58-4444-90e0-1de5b34a9910}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Std">
+      <UniqueIdentifier>{6d44dd1c-2989-4c89-8903-001aa4f97b18}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Std\Extensions">
+      <UniqueIdentifier>{8b80d707-7b29-47cf-bf02-0d6c72ebb2f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Meta">
+      <UniqueIdentifier>{327dc581-7288-4e4e-a0a6-f59b57240c5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Meta\Utilities">
+      <UniqueIdentifier>{f16e181c-8625-49d7-a65d-591b20a41539}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Async">
       <UniqueIdentifier>{5fd2a503-a42e-42bb-87bf-98be8fff7a9c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -112,9 +124,6 @@
       <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\StdRedirection.cpp">
-      <Filter>_Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\String.cpp">
       <Filter>_Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Exceptions.cpp">
@@ -383,20 +392,17 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TokenSingleton.hpp">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TypeTraits.hpp">
-      <Filter>_Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\UniqueHandle.h">
       <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Async\AsyncTasks.h">
-      <Filter>_Sources\Async</Filter>
+      <Filter>Async</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Async\Awaitables.h">
-      <Filter>_Sources\Async</Filter>
+      <Filter>Async</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Async\CoTask.h">
-      <Filter>_Sources\Async</Filter>
+      <Filter>Async</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TypeSwitch.h">
       <Filter>_Headers</Filter>
@@ -584,9 +590,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Regex.h">
       <Filter>_Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Concepts.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AppFeaturesBase.h">
       <Filter>_Headers</Filter>
     </ClInclude>
@@ -608,15 +611,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Win32\TrayWindow.h">
       <Filter>Win32</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Ranges.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Extensions\fstreamEx.h">
-      <Filter>Extensions</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Extensions\memoryEx.h">
-      <Filter>Extensions</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Stream.h">
       <Filter>_Headers</Filter>
     </ClInclude>
@@ -634,6 +628,60 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Event\IEvent.h">
       <Filter>Event</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ICloneable.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Collection\Algorithms.h">
+      <Filter>Collection</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Collection\fixed_container.h">
+      <Filter>Collection</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Collection\iter_to_last.h">
+      <Filter>Collection</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Collection\iterable_queue.h">
+      <Filter>Collection</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\fstreamEx.h">
+      <Filter>Std\Extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\memoryEx.h">
+      <Filter>Std\Extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\rangesEx.h">
+      <Filter>Std\Extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\FormatSpecializations.h">
+      <Filter>Std</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Meta\FunctionTraits.h">
+      <Filter>Meta</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Meta\Concepts.h">
+      <Filter>Meta</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Meta\Diagnostics.h">
+      <Filter>Meta</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Meta\Logic.h">
+      <Filter>Meta</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Meta\Tags.h">
+      <Filter>Meta</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Meta\TypeTraits.h">
+      <Filter>Meta</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Meta\Utilities\PointerGetter.h">
+      <Filter>Meta\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Meta\Utilities\ValueExtractor.h">
+      <Filter>Meta\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CommandLineParser.h">
+      <Filter>_Headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

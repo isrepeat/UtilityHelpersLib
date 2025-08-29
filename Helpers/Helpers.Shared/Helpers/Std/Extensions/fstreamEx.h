@@ -9,7 +9,6 @@
 #include <string>
 #include <vector>
 
-
 namespace STD_EXT_NS {
 	enum class UTFByteOrderMark {
 		UTF8,
@@ -62,7 +61,7 @@ namespace STD_EXT_NS {
 				throw std::runtime_error("DetectUTFByteOrderMark must be called at the beginning of the stream");
 			}
 
-			// Читаем максимум N байт (по самой длинной сигнатуре BOM)
+			// Р§РёС‚Р°РµРј РјР°РєСЃРёРјСѓРј N Р±Р°Р№С‚ (РїРѕ СЃР°РјРѕР№ РґР»РёРЅРЅРѕР№ СЃРёРіРЅР°С‚СѓСЂРµ BOM)
 			size_t maxLength = 0;
 			for (const auto& [_, bom] : KnownUTFByteOrderMarks) {
 				maxLength = std::max(maxLength, bom.size());
@@ -76,10 +75,10 @@ namespace STD_EXT_NS {
 
 			this->seekg(originalPos);
 
-			// Проверяем наличие любого из BOM
+			// РџСЂРѕРІРµСЂСЏРµРј РЅР°Р»РёС‡РёРµ Р»СЋР±РѕРіРѕ РёР· BOM
 			for (const auto& [bomType, bom] : KnownUTFByteOrderMarks) {
 				if (static_cast<size_t>(readBytes) < bom.size()) {
-					continue; // недостаточно байт для этого BOM
+					continue; // РЅРµРґРѕСЃС‚Р°С‚РѕС‡РЅРѕ Р±Р°Р№С‚ РґР»СЏ СЌС‚РѕРіРѕ BOM
 				}
 
 				if (::std::equal(bom.begin(), bom.end(), buffer.begin())) {
@@ -103,7 +102,7 @@ namespace STD_EXT_NS {
 			}
 
 			const auto& bom = KnownUTFByteOrderMarks.at(*bomType);
-			this->seekg(static_cast<std::streamoff>(bom.size()), std::ios::beg); // Пропускаем UTF BOM
+			this->seekg(static_cast<std::streamoff>(bom.size()), std::ios::beg); // РџСЂРѕРїСѓСЃРєР°РµРј UTF BOM
 			HELPERS_NS::Stream::ThrowIfStreamFailed(*this, "SkipUTFByteOrderMark");
 		}
 
@@ -114,7 +113,7 @@ namespace STD_EXT_NS {
 
 			::std::string firstLine;
 			if (::std::getline(*this, firstLine)) {
-				auto matches = HELPERS_NS::Regex::GetRegexMatches(firstLine, ::std::regex("CodePage\\s*=\\s*(\\d+)"));
+				auto matches = HELPERS_NS::Regex::GetRegexMatches<char, std::string>(firstLine, ::std::regex("CodePage\\s*=\\s*(\\d+)"));
 				if (!matches.empty()) {
 					if (matches[0].capturedGroups.size() > 1) {
 						// Do not recover file stream pointer pos.

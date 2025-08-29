@@ -36,7 +36,13 @@ namespace STD_EXT_NS {
 	//
 	template <typename T>
 	struct unique_ptr : public ::std::unique_ptr<T> {
-		PP_FORWARD_CTOR(unique_ptr, ::std::unique_ptr<T>);
+		using Base_t = ::std::unique_ptr<T>;
+		using Base_t::unique_ptr; // NOTE: спец конструкторы не наследуются, определяем мосты для них ниже.
+
+		//PP_FORWARD_CTOR(unique_ptr, ::std::unique_ptr<T>);
+		unique_ptr(Base_t&& other) noexcept
+			: Base_t{ ::std::move(other) } {
+		}
 
 		unique_ptr<T>& Try() {
 			if (this == nullptr) {
@@ -55,12 +61,19 @@ namespace STD_EXT_NS {
 	//
 	template <typename T>
 	struct shared_ptr : public ::std::shared_ptr<T> {
-		PP_FORWARD_CTOR(shared_ptr, ::std::shared_ptr<T>);
+		using Base_t = ::std::shared_ptr<T>;
+		using Base_t::shared_ptr;
+
+		//PP_FORWARD_CTOR(shared_ptr, ::std::shared_ptr<T>);
+		shared_ptr(const Base_t& other)
+			: Base_t{ other } {
+		}
+
+		shared_ptr(Base_t&& other) noexcept
+			: Base_t{ ::std::move(other) } {
+		}
 
 		shared_ptr<T>& Try() {
-			if (this == nullptr) {
-				throw STD_EXT_NS::bad_pointer{};
-			}
 			if (this->get() == nullptr) {
 				throw STD_EXT_NS::bad_pointer{};
 			}
@@ -89,7 +102,7 @@ namespace STD_EXT_NS {
 		}
 	};
 
-	// ������ ��� std::make_shared, ������������ std::ex::shared_ptr<T>
+	// Обёртка над std::make_shared, возвращающая std::ex::shared_ptr<T>
 	template <typename T, typename... Args>
 	shared_ptr<T> make_shared_ex(Args&&... args) {
 		return shared_ptr<T>(::std::make_shared<T>(::std::forward<Args>(args)...));
@@ -101,7 +114,17 @@ namespace STD_EXT_NS {
 	//
 	template <typename T>
 	struct weak_ptr : public ::std::weak_ptr<T> {
-		PP_FORWARD_CTOR(weak_ptr, ::std::weak_ptr<T>);
+		using Base_t = ::std::weak_ptr<T>;
+		using Base_t::weak_ptr;
+
+		//PP_FORWARD_CTOR(weak_ptr, ::std::weak_ptr<T>);
+		weak_ptr(const Base_t& other)
+			: Base_t{ other } {
+		}
+
+		weak_ptr(Base_t&& other) noexcept
+			: Base_t{ ::std::move(other) } {
+		}
 
 		// override to retrun extensible struct
 		shared_ptr<T> lock() const {
