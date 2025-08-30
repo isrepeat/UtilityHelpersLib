@@ -196,6 +196,10 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\fstreamEx.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\memoryEx.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\rangesEx.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\rangesEx\ranges_concat.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\rangesEx\ranges_drop_last.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\rangesEx\ranges_to.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\rangesEx\Tools.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\FormatSpecializations.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Stream.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Stream\StreamHelpers.h" />

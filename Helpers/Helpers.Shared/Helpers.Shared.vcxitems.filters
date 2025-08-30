@@ -61,6 +61,9 @@
     <Filter Include="Async">
       <UniqueIdentifier>{5fd2a503-a42e-42bb-87bf-98be8fff7a9c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Std\Extensions\rangesEx">
+      <UniqueIdentifier>{563cee07-0026-4ebb-82a4-2a14853aec42}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Gate.cpp">
@@ -682,6 +685,18 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CommandLineParser.h">
       <Filter>_Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\rangesEx\ranges_concat.h">
+      <Filter>Std\Extensions\rangesEx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\rangesEx\ranges_drop_last.h">
+      <Filter>Std\Extensions\rangesEx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\rangesEx\ranges_to.h">
+      <Filter>Std\Extensions\rangesEx</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\rangesEx\Tools.h">
+      <Filter>Std\Extensions\rangesEx</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
