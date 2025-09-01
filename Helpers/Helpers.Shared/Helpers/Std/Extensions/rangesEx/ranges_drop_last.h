@@ -18,7 +18,9 @@ namespace STD_EXT_NS {
 				::std::size_t countToDrop;
 
 				template <typename TRange>
-					requires ::std::ranges::forward_range<TRange>
+				__requires requires { requires
+					::std::ranges::forward_range<TRange>;
+				}
 				auto operator() (
 					TRange&& range
 					) const {
@@ -44,6 +46,7 @@ namespace STD_EXT_NS {
 				}
 			};
 
+
 			//
 			// ░ drop_last_closure
 			//
@@ -57,7 +60,9 @@ namespace STD_EXT_NS {
 				}
 
 				template <typename TRange>
-					requires ::std::ranges::forward_range<TRange>
+				__requires requires { requires
+					::std::ranges::forward_range<TRange>;
+				}
 				friend auto operator|(
 					TRange&& range,
 					const drop_last_closure& self

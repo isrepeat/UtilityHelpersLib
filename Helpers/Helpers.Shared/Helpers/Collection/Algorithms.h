@@ -11,22 +11,6 @@
 #include <set>
 
 namespace HELPERS_NS {
-#if __cpp_concepts
-	namespace meta {
-		namespace concepts {
-			// У контейнера есть erase(first,last) и он возвращает iterator
-			template <typename TContainer>
-			concept is_erasable_container = requires (
-				TContainer c,
-				typename TContainer::iterator f,
-				typename TContainer::iterator l
-				) {
-					{ c.erase(f, l) } -> std::same_as<typename TContainer::iterator>;
-			};
-		}
-	}
-#endif
-
 	namespace Collection {
 		//
 		// ░ Extract
@@ -38,12 +22,10 @@ namespace HELPERS_NS {
 			typename TPredicate
 		>
 #if __cpp_concepts
-			requires meta::concepts::rule<
-				meta::concepts::placeholder,
-					// Итератор принадлежит контейнеру
-					std::same_as<TIter, typename TContainer::iterator> and
-					meta::concepts::is_erasable_container<TContainer>
-			>
+		__requires requires { requires
+			HELPERS_NS::meta::concepts::iterator_of<TIter, TContainer>&&
+			HELPERS_NS::meta::concepts::is_erasable_container<TContainer>;
+		}
 #endif
 		TContainer Extract(
 			TContainer& collection,
@@ -74,7 +56,9 @@ namespace HELPERS_NS {
 			typename TPredicate
 		>
 #if __cpp_concepts
-		requires meta::concepts::is_erasable_container<TContainer>
+		__requires requires { requires
+			HELPERS_NS::meta::concepts::is_erasable_container<TContainer>;
+		}
 #endif
 		TContainer Extract(TContainer& collection, TPredicate&& predicate) {
 			return Extract(

@@ -12,7 +12,9 @@ namespace HELPERS_NS {
 			};
 
 			template<typename T>
-				requires meta::concepts::is_dereferenceable<T>
+			__requires requires { requires
+				meta::concepts::is_dereferenceable<T>;
+			}
 			struct GetFinalType<T> {
 				using type = typename GetFinalType<
 					std::remove_reference_t<decltype(*std::declval<T>())>

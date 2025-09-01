@@ -15,7 +15,9 @@ namespace HELPERS_NS {
 
 	template <typename DerivedT>
 #if __cpp_concepts
-	requires meta::concepts::has_type<typename ConfigData<DerivedT>::Data>
+	__requires requires { requires
+		meta::concepts::has_type<typename ConfigData<DerivedT>::Data>;
+	}
 #endif
 	class ConfigBase : public HELPERS_NS::Singleton<typename DerivedT> {
 	private:

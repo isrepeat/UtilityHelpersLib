@@ -1,5 +1,6 @@
 #pragma once
 #include "Helpers/common.h"
+#include "rangesEx/ranges_flatten_tree.h"
 #include "rangesEx/ranges_drop_last.h"
 #include "rangesEx/ranges_concat.h"
 #include "rangesEx/ranges_to.h"

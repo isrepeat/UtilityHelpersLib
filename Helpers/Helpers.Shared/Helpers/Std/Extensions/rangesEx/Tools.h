@@ -12,10 +12,10 @@ namespace STD_EXT_NS {
 			//
 			// ░ view_of
 			// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-			// Типовой алиас: вычисляет тип view для произвольного viewable_range R.
+			// Типовой алиас: вычисляет тип view для произвольного viewable_range TRange.
 			//
-			template <class R>
-			using view_of_t = decltype(::std::ranges::views::all(::std::declval<R>()));
+			template <class TRange>
+			using view_of_t = decltype(::std::ranges::views::all(::std::declval<TRange>()));
 		}
 
 		namespace views {
@@ -31,9 +31,9 @@ namespace STD_EXT_NS {
 				//   - если lvalue-контейнер — оборачивает в ref_view;
 				//   - если rvalue-viewable — материализует совместимое view.
 				//
-				template <class R>
-				constexpr auto as_view(R&& r) -> decltype(::std::ranges::views::all(::std::forward<R>(r))) {
-					return ::std::ranges::views::all(::std::forward<R>(r));
+				template <class TRange>
+				constexpr auto as_view(TRange&& r) -> decltype(::std::ranges::views::all(::std::forward<TRange>(r))) {
+					return ::std::ranges::views::all(::std::forward<TRange>(r));
 				}
 			}
 		}
