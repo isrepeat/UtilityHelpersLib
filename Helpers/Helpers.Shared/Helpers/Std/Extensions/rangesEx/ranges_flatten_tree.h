@@ -14,36 +14,31 @@
 namespace STD_EXT_NS {
 	namespace ranges {
 		namespace views {
-			//
-			// ░ flatten_tree
-			// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 
-			//
-			// Идея:
-
 			namespace details {
 				namespace concepts {
-					//
-					// TGetChildrenFn соответствует узлу TNode
-					//
-					template <
-						typename TGetChildrenFn,
-						typename TNode
-					>
-					concept children_provider_for = requires(
+					template <typename TGetChildrenFn, typename TNode>
+					concept children_fn_return_input_range = requires(
 						TGetChildrenFn getChildrenFn,
 						TNode node
 						) {
 							{ getChildrenFn(node) } -> ::std::ranges::input_range;
-							requires
-							::std::same_as<
-								::std::ranges::range_value_t<::std::invoke_result_t<TGetChildrenFn, TNode>>,
-								TNode
-							>;
 					};
+
+					// TGetChildrenFn соответствует узлу TNode и возвращает input_range
+					template <typename TGetChildrenFn, typename TNode>
+					concept children_fn_valid =
+						::std::same_as<
+						::std::ranges::range_value_t<::std::invoke_result_t<TGetChildrenFn, TNode>>,
+						TNode
+						>
+						&&
+						children_fn_return_input_range<TGetChildrenFn, TNode>;
 				}
 			}
 
-			
+			//
+			// ░ flatten_tree
+			// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 
 			//
 			// ░ flatten_tree_view
 			//
@@ -57,7 +52,7 @@ namespace STD_EXT_NS {
 			class flatten_tree_view : public ::std::ranges::view_interface<flatten_tree_view<TView, TGetChildrenFn>> {
 			public:
 				using Node_t = ::std::ranges::range_value_t<TView>;
-				
+
 				class iterator {
 				public:
 					// Соглашения итераторов для STL
@@ -164,7 +159,7 @@ namespace STD_EXT_NS {
 					: rootsView{ ::std::move(rootsView) }
 					, getChildrenFn{ getChildrenFn } {
 					static_assert(
-						details::concepts::children_provider_for<TGetChildrenFn, Node_t>,
+						details::concepts::children_fn_valid<TGetChildrenFn, Node_t>,
 						"TGetChildrenFn must return an input_range with range_value_t == Node_t"
 						);
 				}
@@ -196,47 +191,14 @@ namespace STD_EXT_NS {
 
 
 			//
-			// ░ flatten_tree_fn
-			//
-			template <typename TGetChildrenFn>
-			struct flatten_tree_fn {
-				TGetChildrenFn getChildrenFn;
-
-				template <typename TRange>
-				__requires requires { requires
-					::std::ranges::viewable_range<TRange>;
-				}
-				auto operator()(
-					TRange&& rootsViewable
-					) const {
-					using TView = ranges::tools::view_of_t<TRange>;
-					using Node_t = ::std::ranges::range_value_t<TView>;
-
-					static_assert(
-						details::concepts::children_provider_for<TGetChildrenFn, Node_t>,
-						"get_children(node) must return an input_range with range_value_t == Node_t"
-						);
-
-					return flatten_tree_view<TView, TGetChildrenFn>{
-						views::tools::as_view(::std::forward<TRange>(rootsViewable)), this->getChildrenFn
-					};
-				}
-			};
-
-
-			//
 			// ░ flatten_tree_closure
 			//
 			template <typename TGetChildrenFn>
 			struct flatten_tree_closure {
-			private:
+			public:
 				TGetChildrenFn getChildrenFn;
 
 			public:
-				explicit flatten_tree_closure(TGetChildrenFn getChildrenFn)
-					: getChildrenFn{ ::std::move(getChildrenFn) } {
-				}
-
 				template <typename TRange>
 				__requires requires { requires
 					::std::ranges::viewable_range<TRange>;
@@ -245,15 +207,61 @@ namespace STD_EXT_NS {
 					TRange&& roots,
 					const flatten_tree_closure& self
 					) {
-					return flatten_tree_fn<TGetChildrenFn>{ self.getChildrenFn }(::std::forward<TRange>(roots));
+					using TView = ranges::tools::view_of_t<TRange>;
+					using Node_t = ::std::ranges::range_value_t<TView>;
+
+					static_assert(
+						details::concepts::children_fn_valid<TGetChildrenFn, Node_t>,
+						"TGetChildrenFn(node) must return an input_range with range_value_t == Node_t"
+						);
+
+					return flatten_tree_view<TView, TGetChildrenFn>{
+						views::tools::as_view(::std::forward<TRange>(roots)),
+							self.getChildrenFn
+					};
 				}
 			};
 
 
-			template <typename TGetChildrenFn>
-			inline flatten_tree_closure<TGetChildrenFn> flatten_tree(TGetChildrenFn getChildrenFn) {
-				return flatten_tree_closure<TGetChildrenFn>{ ::std::move(getChildrenFn) };
-			}
+			//
+			// ░ flatten_tree_fn
+			//
+			struct flatten_tree_fn {
+			public:
+				template <typename TRange, typename TGetChildrenFn>
+				__requires requires { requires 
+					::std::ranges::viewable_range<TRange>;
+				}
+				constexpr auto operator()(
+					TRange&& roots,
+					TGetChildrenFn&& getChildrenFn
+					) const {
+					using TView = ranges::tools::view_of_t<TRange>;
+					using Node_t = ::std::ranges::range_value_t<TView>;
+
+					static_assert(
+						details::concepts::children_fn_valid<TGetChildrenFn, Node_t>,
+						"get_children(node) must return an input_range with range_value_t == Node_t"
+						);
+
+					return flatten_tree_view<TView, TGetChildrenFn>{
+						views::tools::as_view(::std::forward<TRange>(roots)),
+							::std::forward<TGetChildrenFn>(getChildrenFn)
+					};
+				}
+
+				template <typename TGetChildrenFn>
+				constexpr auto operator()(
+					TGetChildrenFn&& getChildrenFn
+					) const {
+					return flatten_tree_closure<TGetChildrenFn>{
+						.getChildrenFn = ::std::forward<TGetChildrenFn>(getChildrenFn)
+					};
+				}
+			};
+
+
+			inline constexpr flatten_tree_fn flatten_tree{};
 		}
 	}
 

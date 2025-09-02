@@ -12,38 +12,57 @@ namespace STD_EXT_NS {
 			// ░ drop_last
 			// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 
 			//
-			// ░ drop_last_fn
+			// ░ drop_last_view
 			//
-			struct drop_last_fn {
-				::std::size_t countToDrop;
+			template <typename TView>
+			__requires requires { requires
+				::std::ranges::forward_range<TView>&&
+				::std::ranges::view<TView>;
+			}
+			class drop_last_view : public ::std::ranges::view_interface<drop_last_view<TView>> {
+			public:
+				drop_last_view() = default;
 
-				template <typename TRange>
-				__requires requires { requires
-					::std::ranges::forward_range<TRange>;
+				constexpr drop_last_view(
+					TView baseView,
+					::std::size_t countToDrop
+				)
+					: baseView{ ::std::move(baseView) }
+					, countToDrop{ countToDrop }
+					, takeCountCached{ 0 } {
+					const auto total = ::std::ranges::distance(this->baseView);
+					const auto safeDrop = static_cast<::std::size_t>(::std::min<::std::ptrdiff_t>(
+						total,
+						static_cast<::std::ptrdiff_t>(this->countToDrop)
+					));
+					this->takeCountCached = static_cast<::std::size_t>(::std::max<::std::ptrdiff_t>(
+						total - static_cast<::std::ptrdiff_t>(safeDrop),
+						0
+					));;
 				}
-				auto operator() (
-					TRange&& range
-					) const {
-					// Общее количество элементов
-					const auto total = ::std::ranges::distance(range);
 
-					// Сколько реально можем отбросить (не больше, чем есть элементов)
-					const auto safeDrop = static_cast<::std::size_t>(
-						::std::min<::std::ptrdiff_t>(
-							total,
-							static_cast<::std::ptrdiff_t>(this->countToDrop)
-						));
-
-					// Сколько элементов нужно оставить
-					const ::std::size_t countToTake = static_cast<::std::size_t>(
-						::std::max<::std::ptrdiff_t>(
-							total - static_cast<::std::ptrdiff_t>(safeDrop),
-							0
-						));
-
-					// Возвращаем view на первые countToTake элементов
-					return ::std::ranges::views::take(::std::forward<TRange>(range), countToTake);
+				// при желании можно сделать и const-версии
+				constexpr auto begin() {
+					return ::std::ranges::begin(
+						::std::ranges::views::take(this->baseView, this->takeCountCached)
+					);
 				}
+
+				constexpr auto end() {
+					return ::std::ranges::end(
+						::std::ranges::views::take(this->baseView, this->takeCountCached)
+					);
+				}
+
+				// бонус: size(), если базовый — sized_range
+				constexpr auto size() requires ::std::ranges::sized_range<TView> {
+					return this->takeCountCached;
+				}
+
+			private:
+				TView baseView;
+				::std::size_t countToDrop{ 0 };
+				::std::size_t takeCountCached{ 0 };
 			};
 
 
@@ -51,29 +70,54 @@ namespace STD_EXT_NS {
 			// ░ drop_last_closure
 			//
 			struct drop_last_closure {
-			private:
-				::std::size_t countToDrop;
+			public:
+				::std::size_t countToDrop{ 0 };
 
 			public:
-				explicit drop_last_closure(::std::size_t n)
-					: countToDrop{ n } {
-				}
-
 				template <typename TRange>
-				__requires requires { requires
+				__requires requires { requires 
 					::std::ranges::forward_range<TRange>;
 				}
 				friend auto operator|(
 					TRange&& range,
 					const drop_last_closure& self
 					) {
-					return drop_last_fn{ self.countToDrop }(::std::forward<TRange>(range));
+					using View_t = ranges::tools::view_of_t<TRange>;
+					return drop_last_view<View_t>{
+						views::tools::as_view(::std::forward<TRange>(range)),
+							self.countToDrop
+					};
 				}
 			};
 
-			inline drop_last_closure drop_last(::std::size_t n) {
-				return drop_last_closure{ n };
-			}
+			//
+			// ░ drop_last_fn
+			//
+			struct drop_last_fn {
+				constexpr auto operator()(
+					::std::size_t n
+					) const {
+					return drop_last_closure{ .countToDrop = n };
+				}
+
+				template <typename TRange>
+				__requires requires { requires
+					::std::ranges::forward_range<TRange>;
+				}
+				constexpr auto operator()(
+					TRange&& range,
+					::std::size_t n
+					) const {
+					using View_t = ranges::tools::view_of_t<TRange>;
+					return drop_last_view<View_t>{
+						views::tools::as_view(::std::forward<TRange>(range)),
+							n
+					};
+				}
+			};
+
+
+			inline constexpr drop_last_fn drop_last{};
 		}
 	}
 

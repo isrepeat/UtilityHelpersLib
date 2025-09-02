@@ -39,10 +39,21 @@ namespace STD_EXT_NS {
 				}
 			};
 
+
+			//
+			// ░ to_fn
+			//
 			template <typename TContainer>
-			constexpr to_closure<TContainer> to() noexcept {
-				return {};
-			}
+			struct to_fn {
+			public:
+				constexpr auto operator()() const noexcept {
+					return to_closure<TContainer>{};
+				}
+			};
+
+
+			template <typename TContainer>
+			inline constexpr to_fn<TContainer> to{};
 		}
 	}
 

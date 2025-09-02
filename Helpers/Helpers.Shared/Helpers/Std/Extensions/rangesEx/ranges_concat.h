@@ -230,13 +230,11 @@ namespace STD_EXT_NS {
 					TRange1&& viewFirst,
 					const concat_closure& closure
 					) {
-					using result_t = concat_view<
-						ranges::tools::view_of_t<TRange1>,
-						ranges::tools::view_of_t<TRange2>
-					>;
-					return result_t{
+					using View1_t = ranges::tools::view_of_t<TRange1>;
+					using View2_t = ranges::tools::view_of_t<TRange2>;
+					return concat_view<View1_t, View2_t>{
 						views::tools::as_view(::std::forward<TRange1>(viewFirst)),
-						closure.viewSecond
+							closure.viewSecond
 					};
 				}
 			};
@@ -245,20 +243,16 @@ namespace STD_EXT_NS {
 			//
 			// ░ concat_fn
 			//
-			// Функциональный объект-адаптер:
-			//   - унарная форма: concat(r2) -> closure (для пайпа);
-			//   - бинарная форма: concat(r1, r2) -> сразу concat_view.
-			//
 			struct concat_fn {
 				template <typename TRange2>
 				__requires requires { requires
 					::std::ranges::viewable_range<TRange2>;
 				}
-				auto operator()(
+				constexpr auto operator()(
 					TRange2&& r2
 					) const {
 					return concat_closure<TRange2>{
-						.viewSecond = views::tools::as_view(::std::forward<TRange2>(r2))
+						views::tools::as_view(::std::forward<TRange2>(r2))
 					};
 				}
 
@@ -270,17 +264,15 @@ namespace STD_EXT_NS {
 					::std::ranges::viewable_range<TRange1>&&
 					::std::ranges::viewable_range<TRange2>;
 				}
-				auto operator()(
+				constexpr auto operator()(
 					TRange1&& r1,
 					TRange2&& r2
 					) const {
-					using result_t = concat_view<
-						ranges::tools::view_of_t<TRange1>,
-						ranges::tools::view_of_t<TRange2>
-					>;
-					return result_t{
+					using View1_t = ranges::tools::view_of_t<TRange1>;
+					using View2_t = ranges::tools::view_of_t<TRange2>;
+					return concat_view<View1_t, View2_t>{
 						views::tools::as_view(::std::forward<TRange1>(r1)),
-						views::tools::as_view(::std::forward<TRange2>(r2))
+							views::tools::as_view(::std::forward<TRange2>(r2))
 					};
 				}
 			};
