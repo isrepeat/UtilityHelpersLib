@@ -113,6 +113,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IEnumerable.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IEvent.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IObservableCollection.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IServiceProvider.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IWeakEvent.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Localization.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\JSONLoader.hpp" />
@@ -195,6 +196,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StdEnumerable.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\fstreamEx.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\memoryEx.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\optional_ref.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\rangesEx.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\rangesEx\ranges_concat.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\rangesEx\ranges_drop_last.h" />

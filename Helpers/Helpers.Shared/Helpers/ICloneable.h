@@ -36,15 +36,17 @@ namespace HELPERS_NS {
 				}
 				else if constexpr (std::is_constructible_v<TDerived, const TProxyBase&, TArgs...>) {
 					// Fallback: Копия с параметрами, с потенциальной потерей данных.
-					// Сработает если в TDerived есть "using CloneableMixinInherited_t::CloneableMixinInherited_t;",
-					// а в TProxyBase есть "using TBase::TBase;" или TProxyBase предоставляет соответствующие copy Ctors.
 					// ctor TDerived(const TProxyBase&, TArgs...)
+					//
+					// Сработает если в TDerived есть "using DefaultCloneableImplInherited_t::DefaultCloneableImplInherited_t;",
+					// а в TProxyBase есть "using TBase::TBase;" или TProxyBase предоставляет соответствующие copy Ctors.
 					//
 					// NOTE: проверка делается именно с TProxyBase, а не с TBase.
 					// Причина: через "using TProxyBase::TProxyBase" в TDerived появляются перегрузки
 					// конструкторов с параметром TProxyBase, но НЕ появляются с TBase.
 					// То есть у TDerived может существовать ctor(const TProxyBase&, TArgs...),
-					// но ctor(const TBase&, TArgs...) в нём не возникает автоматически.
+					// но ctor(const TBase&, TArgs...) в нём не возникает автоматически, 
+					// поэтому приводим TDerived к TProxyBase.
 					return std::ex::make_shared_ex<TDerived>(
 						static_cast<const TProxyBase&>(static_cast<const TDerived&>(*this)),
 						std::forward<TArgs>(args)...

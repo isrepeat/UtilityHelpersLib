@@ -42,6 +42,20 @@ namespace STD_EXT_NS {
 			//
 			// ░ flatten_tree_view
 			//
+			// Почему внутри этого класса мы используем decayed-тип коллэбла (TGetChildrenFn_decayed_t)?
+			// 1) Без нормализации тип TGetChildrenFn может выводиться как ссылочный (например, const Lambda&
+			//    из-за perfect-forwarding). Тогда при хранении указателя на такой тип получится «указатель на
+			//    ссылку», что в C++ запрещено и приводит к ошибке вида "pointer to reference is illegal".
+			//    Decay гарантирует, что мы храним ЗНАЧЕНИЕ, а итератор держит обычный указатель на это значение.
+			// 2) Хранение по значению даёт стабильное время жизни и предсказуемость: ни висячих ссылок, ни
+			//    зависимости от того, был ли исходный коллэбл lvalue/rvalue/const и т.п.
+			// 3) Унификация типов и чище ошибки компиляции: независимо от cv/ref-квалификаций на входе внутри
+			//    view всегда один «канонический» тип. Это сокращает число инстанциаций и делает диагностические
+			//    сообщения короче.
+			// 4) Хотя для лямбд/функторов обычно достаточно remove_cvref_t, мы используем decay_t как более
+			//    универсальную нормализацию: помимо снятия cv/ref, она обрабатывает «функция → указатель на
+			//    функцию» и «массив → указатель на элемент». Это делает код устойчивее, если когда-нибудь
+			//    коллэбл окажется типом функции.
 			template <
 				typename TView,
 				typename TGetChildrenFn
@@ -52,6 +66,7 @@ namespace STD_EXT_NS {
 			class flatten_tree_view : public ::std::ranges::view_interface<flatten_tree_view<TView, TGetChildrenFn>> {
 			public:
 				using Node_t = ::std::ranges::range_value_t<TView>;
+				using TGetChildrenFn_decayed_t = ::std::decay_t<TGetChildrenFn>; // нормализуем тип коллэбла
 
 				class iterator {
 				public:
@@ -66,7 +81,7 @@ namespace STD_EXT_NS {
 					iterator() = default;
 
 					explicit iterator(
-						const TGetChildrenFn* getChildrenFnPtr,
+						const TGetChildrenFn_decayed_t* getChildrenFnPtr,
 						::std::vector<Node_t>&& roots
 					)
 						: getChildrenFnPtr{ getChildrenFnPtr }
@@ -145,7 +160,7 @@ namespace STD_EXT_NS {
 					}
 
 				private:
-					const TGetChildrenFn* getChildrenFnPtr{ nullptr };
+					const TGetChildrenFn_decayed_t* getChildrenFnPtr{ nullptr };
 					::std::vector<Node_t> stack; // LIFO-стек для обхода слева-направо
 					Node_t currentNode;
 					bool atEnd = false;
@@ -154,12 +169,12 @@ namespace STD_EXT_NS {
 
 				flatten_tree_view(
 					TView rootsView,
-					const TGetChildrenFn& getChildrenFn
+					const TGetChildrenFn_decayed_t& getChildrenFn
 				)
 					: rootsView{ ::std::move(rootsView) }
 					, getChildrenFn{ getChildrenFn } {
 					static_assert(
-						details::concepts::children_fn_valid<TGetChildrenFn, Node_t>,
+						details::concepts::children_fn_valid<TGetChildrenFn_decayed_t, Node_t>,
 						"TGetChildrenFn must return an input_range with range_value_t == Node_t"
 						);
 				}
@@ -186,7 +201,7 @@ namespace STD_EXT_NS {
 
 			private:
 				TView rootsView;
-				TGetChildrenFn getChildrenFn;
+				TGetChildrenFn_decayed_t getChildrenFn;
 			};
 
 
