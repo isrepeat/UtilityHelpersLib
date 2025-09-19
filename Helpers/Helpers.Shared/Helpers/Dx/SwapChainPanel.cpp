@@ -1,4 +1,4 @@
-﻿#include "SwapChainPanel.h"
+#include "SwapChainPanel.h"
 #include <MagicEnum/MagicEnum.h>
 #include <Helpers/Dx/DxHelpers.h>
 #include <Helpers/Passkey.hpp>
@@ -6,7 +6,6 @@
 #include <Helpers/System.h>
 
 #include <windows.ui.xaml.media.dxinterop.h>
-
 
 namespace DisplayMetrics {
 	// High resolution displays can require a lot of GPU and battery power to render.
@@ -126,11 +125,11 @@ namespace HELPERS_NS {
 
 			// Set dxSettings handlers.
 			if (auto dxSettings = this->initData.dxSettingsWeak.lock()) {
-				dxSettings->GetDxSettingsHandlers()->msaaChanged.Add([this] {
+				dxSettings->GetEvents()->msaaChanged.Subscribe([this] {
 					this->CreateWindowSizeDependentResources();
 				});
 
-				dxSettings->GetDxSettingsHandlers()->vsyncChanged.Add([] {
+				dxSettings->GetEvents()->vsyncChanged.Subscribe([] {
 				});
 			}
 		}
@@ -700,9 +699,7 @@ namespace HELPERS_NS {
 			DXGI_PRESENT_PARAMETERS parameters = { 0 };
 			hr = this->dxgiSwapChain->Present1(isVSync, 0, &parameters);
 
-			if (this->swapChainPanelNotifications.onPresent) {
-				this->swapChainPanelNotifications.onPresent();
-			}
+			this->swapChainPanelNotifications.onPresent.Invoke();			
 
 			// Discard the contents of the render target.
 			// This is a valid operation only when the existing contents will be entirely

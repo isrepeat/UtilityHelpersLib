@@ -2,12 +2,7 @@
 #include "common.h"
 
 #if COMPILE_FOR_DESKTOP
-#include <string_view>
-#include <filesystem>
-#include <optional>
-#include <fstream>
 #include <string>
-#include <vector>
 
 namespace HELPERS_NS {
 	struct Locale {
@@ -25,26 +20,6 @@ namespace HELPERS_NS {
 		void Log();
 
 		static Locale GetParsedLocaleFromLanguageTag(std::string localName);
-	};
-}
-
-namespace STD_EXT_NS {
-	struct fstream_not_opened : ::std::exception {
-		fstream_not_opened()
-			: ::std::exception("stream not opened")
-		{}
-	};
-
-	// Mb rename or move to another common file among File.h and Localization.h
-	struct ifstream : public ::std::ifstream {
-		using ::std::ifstream::basic_ifstream;
-
-		struct Data {
-			::std::vector<char> byteArray;
-			::std::optional<int> codePage;
-		};
-
-		Data ReadData();
 	};
 }
 #endif

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Helpers/common.h"
 #include "Helpers/Callback.hpp"
 #include "Helpers/Flags.h"
@@ -46,8 +46,8 @@ namespace HELPERS_NS {
 				DXGI_SWAP_EFFECT dxgiSwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 
 				HWND hWnd = nullptr;
-				Callback<void, IDXGISwapChain3*> fnCreateSwapChainPannelDxgi = {};
-				Callback<HELPERS_NS::Rect> fnGetWindowBounds = {};
+				HELPERS_NS::Callback<void, IDXGISwapChain3*> fnCreateSwapChainPannelDxgi = {};
+				HELPERS_NS::Callback<HELPERS_NS::Rect> fnGetWindowBounds = {};
 
 				std::weak_ptr<HELPERS_NS::Dx::DxSettings> dxSettingsWeak;
 			};

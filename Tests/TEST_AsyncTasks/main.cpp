@@ -5,6 +5,7 @@
 
 #include <Helpers/Async/AsyncTasks.h>
 #include <Helpers/ConcurrentQueue.h>
+#include <Helpers/Signal.h>
 #include <Helpers/Logger.h>
 
 #include <gtest/gtest.h> // GoogleTest: https://google.github.io/googletest/primer.html
@@ -18,6 +19,7 @@ namespace HELPERS_NS {
             std::function<void(std::weak_ptr<CoTaskBase>)> GetResumeCallback() {
                 return resumeCallback;
             }
+
             int RemainingTasksCount() {
                 std::unique_lock lk{ mx };
                 return tasks.size();
@@ -34,7 +36,7 @@ namespace HELPERS_NS {
         });
 
 
-void SomeAsyncOperationWithResumeSignal(std::chrono::milliseconds duration, std::weak_ptr<H::Signal> resumeSignalWeak) {
+void SomeAsyncOperationWithResumeSignal(std::chrono::milliseconds duration, std::weak_ptr<H::Signal<void()>> resumeSignalWeak) {
     LOG_FUNCTION_SCOPE(L"SomeAsyncOperationWithResumeSignal()");
 
     H::Timer::Once(duration, [resumeSignalWeak] { // (1)
@@ -56,7 +58,7 @@ public:
 
     H::Async::CoTask<H::Async::PromiseDefault>::Ret_t TaskMethod() {
         LOG_FUNCTION_SCOPE(L"TaskMethod()");
-        co_await H::Async::AsyncOperationWithResumeSignal([](std::weak_ptr<H::Signal> resumeSignalWeak) {
+        co_await H::Async::AsyncOperationWithResumeSignal([](std::weak_ptr<H::Signal<void()>> resumeSignalWeak) {
             //SomeAsyncOperationWithResumeSignal(resumeSignalWeak);
             });
         co_return;
@@ -139,7 +141,7 @@ TEST_F(WorkQueueCoroutineTest, AsyncLambdaCalledInWorkQueueAfterShowEvent) {
         LOG_FUNCTION_SCOPE(L"TaskLambda()");
                 
         auto timePointA = std::chrono::high_resolution_clock::now();
-        co_await H::Async::AsyncOperationWithResumeSignal([&](std::weak_ptr<H::Signal> resumeSignalWeak) {
+        co_await H::Async::AsyncOperationWithResumeSignal([&](std::weak_ptr<H::Signal<void()>> resumeSignalWeak) {
             SomeAsyncOperationWithResumeSignal(someAsyncOperation_duration, resumeSignalWeak);
             });
         auto timePointB = std::chrono::high_resolution_clock::now();

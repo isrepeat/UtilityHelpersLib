@@ -23,9 +23,9 @@ namespace JS {
         class ParserCodePageState;
     };
 
-    class LoggerCallback : public HELPERS_NS::_Singleton<class LoggerCallback> {
+    class LoggerCallback : public HELPERS_NS::Singleton<class LoggerCallback> {
     private:
-        friend _Base;
+        friend SingletonInherited_t;
         friend class details::ParserCodePageState;
 
         template <typename T>
@@ -47,9 +47,9 @@ namespace JS {
 
 
     namespace details {
-        class ParserCodePageController : public HELPERS_NS::_Singleton<class ParserCodePageController> {
+        class ParserCodePageController : public HELPERS_NS::Singleton<class ParserCodePageController> {
         private:
-            friend _Base;
+			friend SingletonInherited_t;
             friend class ParserCodePageState;
 
             ParserCodePageController()

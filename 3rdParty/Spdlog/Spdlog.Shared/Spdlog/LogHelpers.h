@@ -1,7 +1,6 @@
 #pragma once
 #include "Preprocessor.h"
-#pragma message(PREPROCESSOR_FILE_INCLUDED("LogHelpers.h"))
-//#pragma message("include 'LogHelpers.h' [begin]")
+//#pragma message(PREPROCESSOR_FILE_INCLUDED("LogHelpers.h"))
 
 // You can compile static library with "dllexport" to export symbols through dll.
 // WARNING: Client must use "dllimport" if this project compiled as dll otherwise will be problems, for example:
@@ -48,7 +47,6 @@ namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger na
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/callback_sink.h>
-//#pragma message("include 'LogHelpers.h' [spdlog files included]")
 
 //
 // Define macros to make ability use it in custom includes before DefaultLoggers defined.
@@ -214,7 +212,7 @@ namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger na
 
 
 #define USE_DYNAMIC_SINK 0
-#include "Helpers/TypeTraits.hpp"
+#include "Helpers/Meta/Tags.h" // H::meta::nothing
 #include "Helpers/Singleton.hpp"
 #include "Helpers/String.hpp"
 #include "Helpers/Macros.h"
@@ -304,10 +302,9 @@ namespace LOGGER_NS {
     };
 
     // mb rename?
-    class LOGGER_API DefaultLoggers : public HELPERS_NS::_Singleton<class DefaultLoggers> {
+    class LOGGER_API DefaultLoggers : public HELPERS_NS::Singleton<class DefaultLoggers> {
     private:
-        using _MyBase = HELPERS_NS::_Singleton<DefaultLoggers>;
-        friend _MyBase; // to have access to private Ctor DefaultLoggers()
+        friend SingletonInherited_t; // to have access to private Ctor
 
         DefaultLoggers();
     public:
@@ -322,13 +319,16 @@ namespace LOGGER_NS {
             std::filesystem::path logFilePath,
             HELPERS_NS::Flags<InitFlags> initFlags = InitFlags::DefaultFlags,
             LoggingMode loggingMode = LoggingMode::Verbose,
-            uintmax_t maxSizeLogFile = StandardLoggers::defaultLogSize);
+            uintmax_t maxSizeLogFile = StandardLoggers::defaultLogSize
+		);
 
-        static void InitForId(uint8_t loggerId,
+        static void InitForId(
+			uint8_t loggerId,
             std::filesystem::path logFilePath,
             HELPERS_NS::Flags<InitFlags> initFlags = InitFlags::DefaultFlags,
             LoggingMode loggingMode = LoggingMode::Verbose,
-            uintmax_t maxSizeLogFile = StandardLoggers::defaultLogSize);
+            uintmax_t maxSizeLogFile = StandardLoggers::defaultLogSize
+		);
 
         static bool IsInitialized(uint8_t id = 0);
         static std::string GetLastMessage();
@@ -357,12 +357,15 @@ namespace LOGGER_NS {
         //    Log<T, TClass, Args...>(classPtr, logger, location, level, formatSv, std::forward<Args>(args)...);
         //}
         
-        template<typename T, typename TClass, typename... Args>
+        template<typename T, typename TClass, typename... TArgs>
         static void Log(
             TClass* classPtr,
             std::shared_ptr<spdlog::logger> logger,
-            spdlog::source_loc location, spdlog::level::level_enum level, fmt::basic_format_string<T, std::type_identity_t<Args>...> format, Args&&... args)
-        {
+            spdlog::source_loc location,
+			spdlog::level::level_enum level,
+			fmt::basic_format_string<T, std::type_identity_t<TArgs>...> format,
+			TArgs&&... args
+		) {
             auto& _this = GetInstance();
             std::unique_lock lk{ _this.mxCustomFlagHandlers };
 
@@ -374,7 +377,7 @@ namespace LOGGER_NS {
             else {
                 _this.className = L"";
             }
-            logger->log(location, level, format, std::forward<Args&&>(args)...);
+            logger->log(location, level, format, std::forward<TArgs&&>(args)...);
         }
 
     private:
@@ -412,10 +415,10 @@ namespace LOGGER_NS {
         static constexpr std::string_view logTruncationMessage{"... [truncated] \n\n"};
     };
 
-    constexpr HELPERS_NS::nothing* nullctx = nullptr; // used to pass null ctx for logger explicilty
+    constexpr HELPERS_NS::meta::nothing* nullctx = nullptr; // used to pass null ctx for logger explicilty
 }
 
 // TODO: find better solution to detect class context
-LOGGER_API HELPERS_NS::nothing* __LgCtx(); // may be overwritten as class method that returned "this" (throught class fullname logging macro)
+LOGGER_API HELPERS_NS::meta::nothing* __LgCtx(); // may be overwritten as class method that returned "this" (throught class fullname logging macro)
 
 //#pragma message("include 'LogHelpers.h' [end]")

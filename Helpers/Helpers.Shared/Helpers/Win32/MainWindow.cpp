@@ -83,15 +83,15 @@ namespace HELPERS_NS {
 			MSG msg = {};
 
 			// GetMessage returns:
-			//  > 0 — a message was retrieved (msg filled), continue processing
-			//    0 — WM_QUIT received, time to exit the message loop
-			//   -1 — an error occurred (invalid HWND, system failure, etc.)
+			//  > 0 â€” a message was retrieved (msg filled), continue processing
+			//    0 â€” WM_QUIT received, time to exit the message loop
+			//   -1 â€” an error occurred (invalid HWND, system failure, etc.)
 			while (::GetMessageW(&msg, nullptr, 0, 0) > 0) {
 				::TranslateMessage(&msg);
 				::DispatchMessageW(&msg); // forward msg to WindowProc
 			}
 
-			this->eventQuit();
+			this->eventQuit.Invoke();
 		}
 
 		void MainWindow::Show() {
@@ -131,7 +131,7 @@ namespace HELPERS_NS {
 		LRESULT MainWindow::HandleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
 			for (const auto& messageHook : this->messageHooks) {
 				if (messageHook(message, wParam, lParam)) {
-					return 0; // Ñîîáùåíèå îáðàáîòàíî õóê-ôóíêöèåé
+					return 0; // Ð¡Ð¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ Ð¾Ð±Ñ€Ð°Ð±Ð¾Ñ‚Ð°Ð½Ð¾ Ñ…ÑƒÐº-Ñ„ÑƒÐ½ÐºÑ†Ð¸ÐµÐ¹
 				}
 			}
 
@@ -145,7 +145,7 @@ namespace HELPERS_NS {
 					this->windowSize.width = LOWORD(lParam);
 					this->windowSize.height = HIWORD(lParam);
 				}
-				this->eventWindowSizeChanged(this->windowSize);
+				this->eventWindowSizeChanged.Invoke(this->windowSize);
 				return 0;
 			}
 

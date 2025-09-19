@@ -105,7 +105,7 @@ namespace HELPERS_NS {
 				this->inputLayout = dxRenderObjData.inputLayout;
 			}
 
-			this->swapChainPanel->GetNotifications()->onPresent.Add([this] {
+			this->swapChainPanel->GetNotifications()->onPresent.Subscribe([this] {
 				this->ClearState();
 				});
 		}

@@ -1,10 +1,9 @@
 #pragma once
+#pragma message(PREPROCESSOR_MSG("Deprecated 'Signal.h'"))
 #include "common.h"
-#include "FunctionTraits.hpp"
 #include <functional>
 #include <utility>
 #include <vector>
-
 
 namespace HELPERS_NS {
     enum class SignalType {

@@ -13,10 +13,9 @@ namespace HELPERS_NS {
 		RAM
 	};
 
-	class SystemDataProvider : public _Singleton<class SystemDataProvider> {
+	class SystemDataProvider : public Singleton<class SystemDataProvider> {
 	private:
-		using _MyBase = _Singleton<SystemDataProvider>;
-		friend _MyBase; // to have access to private Ctor SystemDataProvider()
+		friend SingletonInherited_t; // to have access to private Ctor
 
 		SystemDataProvider();
 	public:
