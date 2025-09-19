@@ -10,6 +10,12 @@
 namespace HELPERS_NS {
 	class Guid {
 	public:
+		enum Format {
+			Uppercase,
+			Lowercase,
+			Default = Uppercase
+		};
+
 		static Guid NewGuid();
 
 		Guid();
@@ -23,9 +29,18 @@ namespace HELPERS_NS {
 		const uint8_t* data() const;
 
 		template<typename CharT>
-		std::basic_string<CharT> ToBasicString() const {
+		std::basic_string<CharT> ToBasicString(Format format) const {
 			std::basic_ostringstream<CharT> oss;
-			oss << std::hex << std::uppercase << std::setfill(static_cast<CharT>('0'));
+			oss << std::hex;
+
+			if (format == Format::Uppercase) {
+				oss << std::uppercase;
+			}
+			else if (format == Format::Lowercase) {
+				oss << std::nouppercase;
+			}
+
+			oss << std::setfill(static_cast<CharT>('0'));
 			oss << static_cast<CharT>('{');
 
 			for (int i = 0; i < 16; ++i) {
@@ -39,8 +54,8 @@ namespace HELPERS_NS {
 			return oss.str();
 		}
 
-		std::string ToString() const;
-		std::wstring ToWString() const;
+		std::string ToString(Format format = Format::Default) const;
+		std::wstring ToWString(Format format = Format::Default) const;
 
 		bool operator==(const Guid& other) const;
 		bool operator!=(const Guid& other) const;
@@ -50,7 +65,7 @@ namespace HELPERS_NS {
 		bool operator>=(const Guid& other) const;
 
 	private:
-		std::array<uint8_t, 16> bytesArray{};
+		std::array<uint8_t, 16> bytesArray;
 	};
 }
 

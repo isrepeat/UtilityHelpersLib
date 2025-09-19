@@ -65,12 +65,12 @@ namespace HELPERS_NS {
 		return this->bytesArray.data();
 	}
 
-	std::string Guid::ToString() const {
-		return this->ToBasicString<char>();
+	std::string Guid::ToString(Format format) const {
+		return this->ToBasicString<char>(format);
 	}
 
-	std::wstring Guid::ToWString() const {
-		return this->ToBasicString<wchar_t>();
+	std::wstring Guid::ToWString(Format format) const {
+		return this->ToBasicString<wchar_t>(format);
 	}
 
 
