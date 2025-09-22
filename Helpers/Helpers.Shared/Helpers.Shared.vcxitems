@@ -124,6 +124,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Meta\Tags.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Meta\TypeTraits.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Meta\Utilities\PointerGetter.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Meta\Utilities\TypeErasedDeleter.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Meta\Utilities\ValueExtractor.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Mutex.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\EventObject.h" />
@@ -135,6 +136,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingVerbose.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ObservableCollection.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ObservableCollectionTransform.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Pipeline.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PropertyStoreKeyRef.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PropertyStoreReader.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Regex.h" />

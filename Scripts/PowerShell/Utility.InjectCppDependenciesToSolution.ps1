@@ -17,25 +17,35 @@ if ([string]::IsNullOrWhiteSpace($TargetSolutionPath) -or $TargetSolutionPath -e
 }
 
 $FoldersToInsertArgs = @(
-    '-p', 'CodeAnalyzer'
+    '-f', '3rdParty'
 )
 
 $ProjectsToInsertArgs = @(
-    '-p', 'HelpersCs',
-    '-p', 'HelpersCs.Visual',
-    '-p', 'HelpersCs.Attributes',
-    '-p', 'HelpersCs.Diagnostic'
+    '-p', 'ComAPI',
+    '-p', 'ComAPI.Shared',
+    '-p', 'Helpers.Raw',
+    '-p', 'Helpers.Shared',
+    '-p', 'Helpers.Includes'
 )
 
-
 $SolutionInjectorExtraArgs = @()
+
+#$RootNameOpt = Read-Host "Enter root name (root solution folder for injected items)"
 $RootNameOpt = "UtilityHelpersLib [submodule]"
 $RootNameOpt = m::WrapInQuotesIfNeeded $RootNameOpt
-if ([string]::IsNullOrWhiteSpace($RootNameOpt) -or $RootNameOpt -eq '""') {
-}
-else {
+if (-not [string]::IsNullOrWhiteSpace($RootNameOpt) -and
+	$RootNameOpt -ne '""'
+) {
 	$SolutionInjectorExtraArgs += @('--rootName', $RootNameOpt)
 }
+
+$SolutionConfigsToRemoveArgs = @(
+    "-rmCfg", "Debug|ARM",
+	"-rmCfg", "Debug|ARM64",
+	"-rmCfg", "Release|ARM",
+	"-rmCfg", "Release|ARM64"
+)
+$SolutionInjectorExtraArgs += $SolutionConfigsToRemoveArgs
 
 # --- Show args ---
 m::Message -color Blue -Text "Source solution: $SourceSolutionPath"

@@ -707,6 +707,12 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\optional_ref.h">
       <Filter>Std\Extensions</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Meta\Utilities\TypeErasedDeleter.h">
+      <Filter>Meta\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Pipeline.h">
+      <Filter>_Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultVS.hlsl">

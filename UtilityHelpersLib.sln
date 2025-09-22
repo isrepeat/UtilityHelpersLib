@@ -94,9 +94,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "!Scripts", "!Scripts", "{6A397F96-97EC-46B4-AE3E-B1A336C8FC01}"
 	ProjectSection(SolutionItems) = preProject
 		Scripts\Utility.InjectCppDependenciesToSolution.cmd = Scripts\Utility.InjectCppDependenciesToSolution.cmd
-		Scripts\Utility.InjectCppDependenciesToSolution.ps1 = Scripts\Utility.InjectCppDependenciesToSolution.ps1
 		Scripts\Utility.InjectCsDependenciesToSolution.cmd = Scripts\Utility.InjectCsDependenciesToSolution.cmd
-		Scripts\Utility.InjectCsDependenciesToSolution.ps1 = Scripts\Utility.InjectCsDependenciesToSolution.ps1
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Functions", "Functions", "{78424A04-4ED4-4184-97D8-AF1E10F26B38}"
@@ -107,7 +105,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Functions", "Functions", "{
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{A64A39B6-232E-4107-A4D9-A863DE82481F}"
 	ProjectSection(SolutionItems) = preProject
-		Scripts\Modules\MessagingModule\MessagingModule.psm1 = Scripts\Modules\MessagingModule\MessagingModule.psm1
+		Scripts\PowerShell\Modules\MessagingModule\MessagingModule.psm1 = Scripts\PowerShell\Modules\MessagingModule\MessagingModule.psm1
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HelpersCs", "HelpersCs", "{F1B4D38D-BA09-4048-A514-C94292450E70}"
@@ -123,6 +121,12 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CodeAnalyzer", "CodeAnalyzer", "{17B40609-A6C7-4BD8-A744-9BF915D7D554}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeAnalyzer", "CodeAnalyzer\CodeAnalyzer.csproj", "{D52F7AC6-8A94-4332-9B40-F5E898479C68}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PowerShell", "PowerShell", "{C07AED25-F071-4AA5-B251-02EB51B50FE4}"
+	ProjectSection(SolutionItems) = preProject
+		Scripts\PowerShell\Utility.InjectCppDependenciesToSolution.ps1 = Scripts\PowerShell\Utility.InjectCppDependenciesToSolution.ps1
+		Scripts\PowerShell\Utility.InjectCsDependenciesToSolution.ps1 = Scripts\PowerShell\Utility.InjectCsDependenciesToSolution.ps1
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -441,12 +445,13 @@ Global
 		{6BEC93A0-E1A2-4037-A5DF-5CEEE0AAA5FD} = {4A5644B4-23EF-48F7-8F3E-45A0EBE5C607}
 		{FD8E8540-5456-474F-8FFE-FEA3B421A1FA} = {DD6C695A-26BC-48D8-B0C2-CF7C5BF63674}
 		{78424A04-4ED4-4184-97D8-AF1E10F26B38} = {6A397F96-97EC-46B4-AE3E-B1A336C8FC01}
-		{A64A39B6-232E-4107-A4D9-A863DE82481F} = {6A397F96-97EC-46B4-AE3E-B1A336C8FC01}
+		{A64A39B6-232E-4107-A4D9-A863DE82481F} = {C07AED25-F071-4AA5-B251-02EB51B50FE4}
 		{0EEEEB5D-BB3B-4E9F-B2A7-410CA571AC97} = {F1B4D38D-BA09-4048-A514-C94292450E70}
 		{CD563DC0-5C5F-423C-B1CE-74B120659770} = {F1B4D38D-BA09-4048-A514-C94292450E70}
 		{5DC1B831-8A22-4C59-9D3F-B081E2F6AF36} = {F1B4D38D-BA09-4048-A514-C94292450E70}
 		{86AC5B14-7FBA-4D5B-B711-90E3F7798E0C} = {F1B4D38D-BA09-4048-A514-C94292450E70}
 		{D52F7AC6-8A94-4332-9B40-F5E898479C68} = {17B40609-A6C7-4BD8-A744-9BF915D7D554}
+		{C07AED25-F071-4AA5-B251-02EB51B50FE4} = {6A397F96-97EC-46B4-AE3E-B1A336C8FC01}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A114CB48-500F-4E4B-BC01-3ACE75DCCC4F}
