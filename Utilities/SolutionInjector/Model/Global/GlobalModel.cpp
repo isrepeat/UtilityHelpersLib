@@ -339,6 +339,8 @@ namespace Core {
 
 				auto sortedEntries = this->entries;
 
+
+
 				std::stable_sort(
 					sortedEntries.begin(),
 					sortedEntries.end(),
