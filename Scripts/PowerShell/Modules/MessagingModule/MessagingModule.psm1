@@ -1,11 +1,33 @@
+function NewLine {
+    Write-Host ""
+}
+
+
 function Message {
-    param (
+    param(
+        [Parameter(Position = 0, Mandatory = $true)]
+        [string]$text,
         [string]$color = "White",
-        [string]$prefix = "",
+        [string]$prefix = ""
+    )
+	
+    Write-Host "$prefix$text" -ForegroundColor $color
+}
+
+function MessageError {
+    param (
+        [Parameter(Position = 0, Mandatory = $true)]
         [string]$text
     )
+    Message -color Red -text $text
+}
 
-    Write-Host "$prefix$text" -ForegroundColor $color
+function MessageAction {
+    param (
+		[Parameter(Position = 0, Mandatory = $true)]
+        [string]$text
+    )
+    Message -color Yellow -text $text
 }
 
 
@@ -23,10 +45,6 @@ function TestColoredMessagePalette {
     }
 }
 
-function NewLine {
-    Write-Host ""
-}
-
 
 function WrapInQuotesIfNeeded {
     param ([string]$text)
@@ -41,6 +59,8 @@ function WrapInQuotesIfNeeded {
 
 Export-ModuleMember -Function @(
     'Message',
+    'MessageError',
+    'MessageAction',
     'NewLine',
     'TestColoredMessagePalette',
     'WrapInQuotesIfNeeded'
