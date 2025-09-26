@@ -1,4 +1,12 @@
-# Ќазначаем рабочим каталогом текущий каталог скрипта 
+param(
+    [string]$BatDir = $null
+)
+
+if ($BatDir) {
+    Write-Host "$BatDir"
+}
+
+# Ќазначаем рабочим каталогом текущий каталог скрипта
 # (все относительные пути далее будут относительно этого каталога).
 Set-Location -Path $PSScriptRoot
 
@@ -21,6 +29,7 @@ if ($LASTEXITCODE -ne 0) {
 	exit 1
 }
 
+<#
 m::MessageAction "Detecting gh..."
 if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
 	m::MessageError "gh not found in PATH"
@@ -29,10 +38,11 @@ if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
 m::Message "PS version: $($PSVersionTable.PSVersion)"
 m::Message "gh path: $((Get-Command gh).Source)"
 m::Message "gh version: $(gh --version)"
+m::NewLine
+#>
 
 
 # --- Input ---
-m::NewLine
 $HeadRaw = Read-Host "Enter Source Branch (head)"
 $BaseRaw = Read-Host "Enter Target Branch (base)"
 $Title = Read-Host "Enter Pull Request Title"
