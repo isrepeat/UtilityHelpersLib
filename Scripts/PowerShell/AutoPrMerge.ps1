@@ -16,10 +16,12 @@ Import-Module -Name MessagingModule -Prefix m:: -ErrorAction Stop
 git rev-parse --is-inside-work-tree 2>$null | Out-Null # "Out-Null" не выводит результат команды в консоль
 if ($LASTEXITCODE -ne 0) { 
 	m::MessageError "This is not a Git repository."
+	exit 1
 }
 
 if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
 	m::MessageError "GitHub CLI (gh) is not installed."
+	exit 1
 }
 
 # --- Input ---
@@ -30,33 +32,22 @@ $NewBranchRaw = Read-Host "Enter optional new branch name (leave empty to skip)"
 $Body = "Auto-generated PR from script"
 
 # Нормализуем ввод
-$Head = if ([string]::IsNullOrWhiteSpace($HeadRaw)) {
-    $null
-} else {
-    $HeadRaw.Trim()
-}
-
-$Base = if ([string]::IsNullOrWhiteSpace($BaseRaw)) {
-    $null
-} else {
-    $BaseRaw.Trim()
-}
-
-$NewBranch = if ([string]::IsNullOrWhiteSpace($NewBranchRaw)) {
-    $null
-} else {
-    $NewBranchRaw.Trim()
-}
+$Head = if ([string]::IsNullOrWhiteSpace($HeadRaw)) { $null } else { $HeadRaw.Trim() }
+$Base = if ([string]::IsNullOrWhiteSpace($BaseRaw)) { $null } else { $BaseRaw.Trim() }
+$NewBranch = if ([string]::IsNullOrWhiteSpace($NewBranchRaw)) { $null } else { $NewBranchRaw.Trim() }
 
 # Валидация
 if ([string]::IsNullOrWhiteSpace($Head)) { 
 	m::MessageError "Head branch is required."
+	exit 1
 }
 if ([string]::IsNullOrWhiteSpace($Base)) {
 	m::MessageError "Base branch is required."
+	exit 1
 }
 if ([string]::IsNullOrWhiteSpace($Title)) {
 	m::MessageError "PR Title is required."
+	exit 1
 }
 
 
@@ -65,20 +56,57 @@ m::MessageAction "Pushing '$Head' to origin..."
 git push origin "$Head"
 if ($LASTEXITCODE -ne 0) { 
 	m::MessageError "Failed to push '$Head' to origin."
+	exit 1
 }
 m::Message "Pushed."
 
 
 # --- Create PR ---
 m::MessageAction "Creating Pull Request..."
-gh pr create --title "$Title" --body "$Body" --base "$Base" --head "$Head" #| Out-Null
-if ($LASTEXITCODE -ne 0) { 
-	m::MessageError "Failed to create Pull Request."
+# Попробуем сразу получить JSON с номером (gh 2.x это умеет)
+# "--json number,url" означает включить в JSON поля number и url.
+$createdPrJson = gh pr create --title "$Title" --body "$Body" --base "$Base" --head "$Head" --json number,url
+if ($LASTEXITCODE -ne 0) {
+    m::MessageError "Failed to create Pull Request."
+	exit 1
 }
 
-$PR_Number = gh pr list --state open --head "$Head" --json number --jq ".[0].number"
-if ([string]::IsNullOrWhiteSpace($PR_Number)) { 
-	m::MessageError "Unable to find Pull Request number."
+# 1) Прямая попытка: разобрать JSON
+$PR_Number = $null
+$PR_Url = $null
+if ($createJson) {
+    try {
+        $obj = $createdPrJson | ConvertFrom-Json
+        $PR_Number = $obj.number
+        $PR_Url = $obj.url
+    } catch { }
+}
+
+# 2) Если JSON не дали номер (или старая версия gh), попробуем вытащить номер из URL в обычном выводе
+if (-not $PR_Number) {
+    # gh обычно печатает ссылку вида https://github.com/<owner>/<repo>/pull/123
+    # Получим последний вывод из буфера create, если он был пуст — запросим view
+    if (-not $PR_Url) {
+        # как запасной вариант: спросим "последний созданный" по head через view
+        $PR_Url = gh pr view --head "$Head" --json url --jq ".url" #2>$null
+    }
+    if ($PR_Url -and ($PR_Url -match '/pull/(\d+)$')) {
+        $PR_Number = $matches[1]
+    }
+}
+
+# 3) Если всё ещё нет номера — даём запрос на list (иногда PR появляется с задержкой)
+if (-not $PR_Number) {
+    $attempts = 5
+    for ($i = 1; $i -le $attempts -and -not $PR_Number; $i++) {
+        Start-Sleep -Milliseconds 400
+        $PR_Number = gh pr list --state open --head "$Head" --json number --jq ".[0].number" #2>$null
+    }
+}
+
+if ([string]::IsNullOrWhiteSpace($PR_Number)) {
+    m::MessageError "Unable to find Pull Request number (creation output not parsable, list returned empty)."
+	exit 1
 }
 m::Message "Pull Request created: #$PR_Number"
 
@@ -88,6 +116,7 @@ m::MessageAction "Merging PR #$PR_Number..."
 gh pr merge $PR_Number --merge --subject "Merge PR #$PR_Number $Title" #| Out-Null
 if ($LASTEXITCODE -ne 0) { 
 	m::MessageError "Failed to merge Pull Request."
+	exit 1
 }
 m::Message "Pull Request #$PR_Number successfully merged."
 
@@ -96,6 +125,7 @@ m::Message "Pull Request #$PR_Number successfully merged."
 $RepoPath = gh repo view --json nameWithOwner --jq ".nameWithOwner"
 if ([string]::IsNullOrWhiteSpace($RepoPath)) { 
 	m::MessageError "Unable to resolve repo path (nameWithOwner)."
+	exit 1
 }
 
 
@@ -104,6 +134,7 @@ m::MessageAction "Deleting remote branch '$Head'..."
 gh api "repos/$RepoPath/git/refs/heads/$Head" -X DELETE #| Out-Null
 if ($LASTEXITCODE -ne 0) { 
 	m::MessageError "Failed to delete remote branch '$Head'."
+	exit 1
 }
 m::Message "Remote branch '$Head' deleted."
 
@@ -113,6 +144,7 @@ m::MessageAction "Pruning local references..."
 git fetch origin --prune
 if ($LASTEXITCODE -ne 0) { 
 	m::MessageError "Failed to prune local references."
+	exit 1
 }
 m::Message "Local references pruned."
 
@@ -136,6 +168,7 @@ if ($shouldKeepHead) {
         git checkout "$Head"
         if ($LASTEXITCODE -ne 0) {
             m::MessageError "Failed to checkout '$Head'."
+			exit 1
         }
     }
 
@@ -143,6 +176,7 @@ if ($shouldKeepHead) {
     git rebase "origin/$Base"
     if ($LASTEXITCODE -ne 0) {
         m::MessageError "Rebase failed. Resolve conflicts and run 'git rebase --continue' (or '--abort')."
+		exit 1
     }
 
     m::Message "Done. '$Head' is now rebased onto 'origin/$Base'."
@@ -156,6 +190,7 @@ else {
     git checkout --no-track -b "$NewBranch" "origin/$Base"
     if ($LASTEXITCODE -ne 0) {
         m::MessageError "Failed to create '$NewBranch' from origin/$Base."
+		exit 1
     }
 
     # (Опционально) сразу опубликовать и назначить upstream:
@@ -169,7 +204,10 @@ else {
     if ($isHeadExists) {
         m::MessageAction "Deleting local branch '$Head'..."
         git branch -D "$Head"
-        if ($LASTEXITCODE -ne 0) { m::MessageError "Failed to delete local branch '$Head'." }
+        if ($LASTEXITCODE -ne 0) { 
+			m::MessageError "Failed to delete local branch '$Head'."
+			exit 1
+		}
         m::Message "Local branch '$Head' deleted."
     }
 
