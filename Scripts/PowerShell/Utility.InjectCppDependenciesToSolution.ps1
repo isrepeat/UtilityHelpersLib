@@ -1,13 +1,19 @@
-# ƒобавить путь к модул€м во временный PSModulePath
+# Ќазначаем рабочим каталогом текущий каталог скрипта 
+# (все относительные пути далее будут относительно этого каталога).
+Set-Location -Path $PSScriptRoot
+
+# ƒобавл€ем в PSModulePath путь к кастомным модул€м,
+# чтобы подключить их по названию модул€ (вместо абсолютного пути).
 $modulePath = Join-Path $PSScriptRoot "Modules"
 if (-not ($env:PSModulePath -split ';' | Where-Object { $_ -eq $modulePath })) {
     $env:PSModulePath = "$modulePath;$env:PSModulePath"
 }
 
-Import-Module -Name MessagingModule -Prefix m::
+# --- Import ---
+Import-Module -Name MessagingModule -Prefix m:: -ErrorAction Stop
 
-
-$SourceSolutionPath = '"..\UtilityHelpersLib.sln"'
+# --- Main ---
+$SourceSolutionPath = '"..\..\UtilityHelpersLib.sln"'
 
 $TargetSolutionPath = Read-Host "Enter path to the target .sln file"
 $TargetSolutionPath = m::WrapInQuotesIfNeeded $TargetSolutionPath
