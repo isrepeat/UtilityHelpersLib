@@ -13,18 +13,26 @@ if (-not ($env:PSModulePath -split ';' | Where-Object { $_ -eq $modulePath })) {
 Import-Module -Name MessagingModule -Prefix m:: -ErrorAction Stop
 
 # --- Checks ---
-git rev-parse --is-inside-work-tree 2>$null | Out-Null # "Out-Null" не выводит результат команды в консоль
+# "Out-Null" подавл€ет обычный вывод команды
+# "2>$null" подавл€ет вывод ошибок команды
+git rev-parse --is-inside-work-tree 2>$null | Out-Null
 if ($LASTEXITCODE -ne 0) { 
 	m::MessageError "This is not a Git repository."
 	exit 1
 }
 
+m::MessageAction "Detecting gh..."
 if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
-	m::MessageError "GitHub CLI (gh) is not installed."
+	m::MessageError "gh not found in PATH"
 	exit 1
 }
+m::Message "PS version: $($PSVersionTable.PSVersion)"
+m::Message "gh path: $((Get-Command gh).Source)"
+m::Message "gh version: $(gh --version)"
+
 
 # --- Input ---
+m::NewLine
 $HeadRaw = Read-Host "Enter Source Branch (head)"
 $BaseRaw = Read-Host "Enter Target Branch (base)"
 $Title = Read-Host "Enter Pull Request Title"
@@ -63,49 +71,42 @@ m::Message "Pushed."
 
 # --- Create PR ---
 m::MessageAction "Creating Pull Request..."
-# ѕопробуем сразу получить JSON с номером (gh 2.x это умеет)
-# "--json number,url" означает включить в JSON пол€ number и url.
-$createdPrJson = gh pr create --title "$Title" --body "$Body" --base "$Base" --head "$Head" --json number,url
-if ($LASTEXITCODE -ne 0) {
-    m::MessageError "Failed to create Pull Request."
-	exit 1
-}
-
-# 1) ѕр€ма€ попытка: разобрать JSON
 $PR_Number = $null
-$PR_Url = $null
-if ($createJson) {
-    try {
-        $obj = $createdPrJson | ConvertFrom-Json
-        $PR_Number = $obj.number
-        $PR_Url = $obj.url
-    } catch { }
+
+# 1) создаем pr и сохран€ем вывод
+$prCreationOutput = gh pr create `
+    --title "$Title" `
+    --body "$Body" `
+    --base "$Base" `
+    --head "$Head" `
+    2>&1
+if ($LASTEXITCODE -ne 0) {
+    m::MessageError "Failed to create Pull Request.`n$prCreationOutput"
+    exit 1
 }
 
-# 2) ≈сли JSON не дали номер (или стара€ верси€ gh), попробуем вытащить номер из URL в обычном выводе
-if (-not $PR_Number) {
-    # gh обычно печатает ссылку вида https://github.com/<owner>/<repo>/pull/123
-    # ѕолучим последний вывод из буфера create, если он был пуст Ч запросим view
-    if (-not $PR_Url) {
-        # как запасной вариант: спросим "последний созданный" по head через view
-        $PR_Url = gh pr view --head "$Head" --json url --jq ".url" #2>$null
-    }
-    if ($PR_Url -and ($PR_Url -match '/pull/(\d+)$')) {
-        $PR_Number = $matches[1]
-    }
+# 2) пробуем вытащить номер пр€мо из выведенного URL: .../pull/123
+if ($prCreationOutput -match '/pull/(\d+)\b') {
+    $PR_Number = $matches[1]
 }
 
 # 3) ≈сли всЄ ещЄ нет номера Ч даЄм запрос на list (иногда PR по€вл€етс€ с задержкой)
 if (-not $PR_Number) {
     $attempts = 5
     for ($i = 1; $i -le $attempts -and -not $PR_Number; $i++) {
+		m::MessageAction "Request pr number..."
         Start-Sleep -Milliseconds 400
-        $PR_Number = gh pr list --state open --head "$Head" --json number --jq ".[0].number" #2>$null
+        $PR_Number = gh pr list `
+			--state open `
+			--head "$Head" `
+			--json number `
+			--jq ".[0].number" `
+			2>$null
     }
 }
 
 if ([string]::IsNullOrWhiteSpace($PR_Number)) {
-    m::MessageError "Unable to find Pull Request number (creation output not parsable, list returned empty)."
+    m::MessageError "Unable to obtain Pull Request number after creation."
 	exit 1
 }
 m::Message "Pull Request created: #$PR_Number"
