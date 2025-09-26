@@ -120,8 +120,8 @@ if (-not [string]::IsNullOrWhiteSpace($NewBranch)) {
     }
 
     # Diagnostics
-    m::Message "Upstream for '$NewBranch':"
-    git rev-parse --abbrev-ref --symbolic-full-name @{u}
+    #m::Message "Upstream for '$NewBranch':"
+    #git rev-parse --abbrev-ref --symbolic-full-name @{u}
 }
 
 m::Message "Done."
