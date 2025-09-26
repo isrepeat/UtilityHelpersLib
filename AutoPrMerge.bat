@@ -78,7 +78,7 @@ GOTO :EXIT_SCRIPT
 
 :FOUND_PS1
 REM Run PowerShell implementation, forwarding all arguments.
-powershell -NoProfile -ExecutionPolicy Bypass -File "%_PS1_PATH%" -BatDir "%~dp0" %*
+powershell -NoProfile -ExecutionPolicy Bypass -File "%_PS1_PATH%" -BatDir "%~dp0." %*
 SET "_RC=%ERRORLEVEL%"
 GOTO :EXIT_SCRIPT
 
