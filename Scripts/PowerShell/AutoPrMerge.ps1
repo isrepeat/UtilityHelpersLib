@@ -19,10 +19,23 @@ if ($LASTEXITCODE -ne 0) {
 	exit 1
 }
 
+<#
 if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
 	m::MessageError "GitHub CLI (gh) is not installed."
 	exit 1
 }
+#>
+
+$m::MessageAction "Detecting gh..."
+$ghCmd = Get-Command gh -ErrorAction SilentlyContinue
+if (-not $ghCmd) { m::MessageError "gh not found in PATH"; exit 1 }
+
+m::Message "gh path: $($ghCmd.Source)"
+m::Message "gh vers: $(gh --version)"
+m::Message "gh create supports --json: $(
+    (gh pr create --help 2>$null | Select-String -SimpleMatch '--json') ? 'yes' : 'no'
+)"
+
 
 # --- Input ---
 $HeadRaw = Read-Host "Enter Source Branch (head)"
