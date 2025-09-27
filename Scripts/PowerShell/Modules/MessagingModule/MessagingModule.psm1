@@ -7,7 +7,7 @@ function Message {
     param(
         [Parameter(Position = 0, Mandatory = $true)]
         [string]$text,
-        [string]$color = "White",
+        [string]$color = "Gray",
         [string]$prefix = ""
     )
 	
