@@ -117,6 +117,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IWeakEvent.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Localization.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\JSONLoader.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Math\Rect.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Math\Size.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Math\Tensor.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Meta\Concepts.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Meta\Diagnostics.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Meta\FunctionTraits.h" />
