@@ -15,11 +15,10 @@ namespace STD_EXT_NS {
 			// ░ drop_last_view
 			//
 			template <typename TView>
-			__requires requires { requires
+			__requires_expr(
 				::std::ranges::forward_range<TView>&&
-				::std::ranges::view<TView>;
-			}
-			class drop_last_view : public ::std::ranges::view_interface<drop_last_view<TView>> {
+				::std::ranges::view<TView>
+			) class drop_last_view : public ::std::ranges::view_interface<drop_last_view<TView>> {
 			public:
 				drop_last_view() = default;
 
@@ -75,10 +74,9 @@ namespace STD_EXT_NS {
 
 			public:
 				template <typename TRange>
-				__requires requires { requires 
-					::std::ranges::forward_range<TRange>;
-				}
-				friend auto operator|(
+				__requires_expr(
+					::std::ranges::forward_range<TRange>
+				) friend auto operator|(
 					TRange&& range,
 					const drop_last_closure& self
 					) {
@@ -101,10 +99,9 @@ namespace STD_EXT_NS {
 				}
 
 				template <typename TRange>
-				__requires requires { requires
-					::std::ranges::forward_range<TRange>;
-				}
-				constexpr auto operator()(
+				__requires_expr(
+					::std::ranges::forward_range<TRange>
+				) constexpr auto operator()(
 					TRange&& range,
 					::std::size_t n
 					) const {

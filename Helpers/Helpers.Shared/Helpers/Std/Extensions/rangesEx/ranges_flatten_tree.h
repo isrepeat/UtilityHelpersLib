@@ -60,10 +60,9 @@ namespace STD_EXT_NS {
 				typename TView,
 				typename TGetChildrenFn
 			>
-			__requires requires { requires
-				::std::ranges::view<TView>;
-			}
-			class flatten_tree_view : public ::std::ranges::view_interface<flatten_tree_view<TView, TGetChildrenFn>> {
+			__requires_expr(
+				::std::ranges::view<TView>
+			) class flatten_tree_view : public ::std::ranges::view_interface<flatten_tree_view<TView, TGetChildrenFn>> {
 			public:
 				using Node_t = ::std::ranges::range_value_t<TView>;
 				using TGetChildrenFn_decayed_t = ::std::decay_t<TGetChildrenFn>; // нормализуем тип коллэбла
@@ -215,10 +214,9 @@ namespace STD_EXT_NS {
 
 			public:
 				template <typename TRange>
-				__requires requires { requires
-					::std::ranges::viewable_range<TRange>;
-				}
-				friend auto operator|(
+				__requires_expr(
+					::std::ranges::viewable_range<TRange>
+				) friend auto operator|(
 					TRange&& roots,
 					const flatten_tree_closure& self
 					) {
@@ -244,10 +242,9 @@ namespace STD_EXT_NS {
 			struct flatten_tree_fn {
 			public:
 				template <typename TRange, typename TGetChildrenFn>
-				__requires requires { requires 
-					::std::ranges::viewable_range<TRange>;
-				}
-				constexpr auto operator()(
+				__requires_expr(
+					::std::ranges::viewable_range<TRange>
+				) constexpr auto operator()(
 					TRange&& roots,
 					TGetChildrenFn&& getChildrenFn
 					) const {

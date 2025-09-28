@@ -42,7 +42,7 @@ namespace STD_EXT_NS {
 				typename TView1,
 				typename TView2
 			>
-			__requires requires { requires
+			__requires_expr(
 				::std::ranges::input_range<TView1>&&
 				::std::ranges::input_range<TView2>&&
 				::std::ranges::view<TView1>&&
@@ -50,9 +50,8 @@ namespace STD_EXT_NS {
 				::std::common_reference_with<
 				::std::ranges::range_reference_t<TView1>,
 				::std::ranges::range_reference_t<TView2>
-				>;
-			}
-			class concat_view : public ::std::ranges::view_interface<concat_view<TView1, TView2>> {
+				>
+			) class concat_view : public ::std::ranges::view_interface<concat_view<TView1, TView2>> {
 			public:
 				// Держит ссылку на родителя (для доступа к viewFirst/viewSecond) и состояние:
 				//   - inFirst          : мы сейчас в первой части?
@@ -216,17 +215,15 @@ namespace STD_EXT_NS {
 			// Гарантируем lifetime второго за счёт хранения внутри closure.
 			//
 			template <typename TRange2>
-			__requires requires { requires
-				::std::ranges::viewable_range<TRange2>;
-			}
-			struct concat_closure {
+			__requires_expr(
+				::std::ranges::viewable_range<TRange2>
+			) struct concat_closure {
 				ranges::tools::view_of_t<TRange2> viewSecond;
 
 				template <typename TRange1>
-				__requires requires { requires
-					::std::ranges::viewable_range<TRange1>;
-				}
-				friend auto operator|(
+				__requires_expr(
+					::std::ranges::viewable_range<TRange1>
+				) friend auto operator|(
 					TRange1&& viewFirst,
 					const concat_closure& closure
 					) {
@@ -245,10 +242,9 @@ namespace STD_EXT_NS {
 			//
 			struct concat_fn {
 				template <typename TRange2>
-				__requires requires { requires
-					::std::ranges::viewable_range<TRange2>;
-				}
-				constexpr auto operator()(
+				__requires_expr(
+					::std::ranges::viewable_range<TRange2>
+				) constexpr auto operator()(
 					TRange2&& r2
 					) const {
 					return concat_closure<TRange2>{
@@ -260,11 +256,10 @@ namespace STD_EXT_NS {
 					typename TRange1,
 					typename TRange2
 				>
-				__requires requires { requires
+				__requires_expr(
 					::std::ranges::viewable_range<TRange1>&&
-					::std::ranges::viewable_range<TRange2>;
-				}
-				constexpr auto operator()(
+					::std::ranges::viewable_range<TRange2>
+				) constexpr auto operator()(
 					TRange1&& r1,
 					TRange2&& r2
 					) const {

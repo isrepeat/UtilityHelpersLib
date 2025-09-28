@@ -3,8 +3,16 @@
 #include <concepts>
 
 #if __cpp_concepts
-// Первый requires всегда «в линию» с template-закрывающей '>'.
-#define __requires requires
+
+// Пока Microsoft не пофиксит дефолтный стиль (отступы) написания requires - используй следуюий стиль:
+// __requires_expr(
+//   Condition1 &&
+//   Condition2 &&
+//   ...
+//   ConditionN
+// ) 
+// 
+#define __requires_expr(...) requires (__VA_ARGS__)
 
 namespace HELPERS_NS {
 	namespace meta {
@@ -40,4 +48,6 @@ namespace HELPERS_NS {
 		}
 	}
 }
+#else
+#define __requires_expr(...)
 #endif

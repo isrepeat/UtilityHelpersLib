@@ -258,13 +258,12 @@ namespace HELPERS_NS {
 		// ░ FunctionTraits: callable-тип (класс/union с одиночным operator())
 		//
 		template <typename TFn>
-		__requires requires { requires (
+		__requires_expr((
 			std::is_class_v<TFn> ||
 			std::is_union_v<TFn>
 			) &&
-			concepts::has_non_overloaded_call_op<TFn>;
-		}
-		struct FunctionTraits<TFn> : impl::FunctionTraitsCallable<TFn>::FunctionTraitsImpl_t {
+			concepts::has_non_overloaded_call_op<TFn>
+		) struct FunctionTraits<TFn> : impl::FunctionTraitsCallable<TFn>::FunctionTraitsImpl_t {
 			static constexpr FuncKind Kind = FuncKind::Functor;
 		};
 
@@ -279,10 +278,9 @@ namespace HELPERS_NS {
 		// ░ FunctionTraitsWithSignature: для перегруженного operator().
 		//
 		template <typename TFn, typename TSignature>
-		__requires requires { requires
-			concepts::has_call_op_with_signature<TFn, TSignature>;
-		}
-		struct FunctionTraitsWithSignature<TFn, TSignature> : FunctionTraits<impl::select_call_operator_t<TFn, TSignature>> {
+		__requires_expr(
+			concepts::has_call_op_with_signature<TFn, TSignature>
+		) struct FunctionTraitsWithSignature<TFn, TSignature> : FunctionTraits<impl::select_call_operator_t<TFn, TSignature>> {
 		};
 
 		namespace concepts {

@@ -21,13 +21,10 @@ namespace HELPERS_NS {
 			typename TContainer,
 			typename TPredicate
 		>
-#if __cpp_concepts
-		__requires requires { requires
+		__requires_expr(
 			HELPERS_NS::meta::concepts::iterator_of<TIter, TContainer>&&
-			HELPERS_NS::meta::concepts::is_erasable_container<TContainer>;
-		}
-#endif
-		TContainer Extract(
+			HELPERS_NS::meta::concepts::is_erasable_container<TContainer>
+		) TContainer Extract(
 			TContainer& collection,
 			TIter firstIt,
 			TIter lastIt,
@@ -55,12 +52,9 @@ namespace HELPERS_NS {
 			typename TContainer,
 			typename TPredicate
 		>
-#if __cpp_concepts
-		__requires requires { requires
-			HELPERS_NS::meta::concepts::is_erasable_container<TContainer>;
-		}
-#endif
-		TContainer Extract(TContainer& collection, TPredicate&& predicate) {
+		__requires_expr(
+			HELPERS_NS::meta::concepts::is_erasable_container<TContainer>
+		) TContainer Extract(TContainer& collection, TPredicate&& predicate) {
 			return Extract(
 				collection,
 				collection.begin(),

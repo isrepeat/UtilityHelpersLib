@@ -1,5 +1,6 @@
 #pragma once
 #include "Helpers/common.h"
+#include "Helpers/Meta/Concepts.h"
 #include <type_traits>
 #include <functional>
 #include <optional>
@@ -29,8 +30,9 @@ namespace STD_EXT_NS {
 		}
 
 		template <typename U>
-			requires (::std::is_convertible_v<U*, T*>)
-		constexpr optional_ref(optional_ref<U> other) noexcept
+		__requires_expr(
+			::std::is_convertible_v<U*, T*>
+		) constexpr optional_ref(optional_ref<U> other) noexcept
 			: ptr{ other.get() } {
 		}
 
@@ -51,8 +53,9 @@ namespace STD_EXT_NS {
 		}
 
 		template <typename U>
-			requires (::std::is_convertible_v<U*, T*>)
-		constexpr optional_ref& operator=(optional_ref<U> other) noexcept {
+		__requires_expr(
+			::std::is_convertible_v<U*, T*>
+		) constexpr optional_ref& operator=(optional_ref<U> other) noexcept {
 			this->ptr = other.get();
 			return *this;
 		}
