@@ -15,21 +15,24 @@ namespace HELPERS_NS {
 			using _MyBase::duration;
 
 			template <typename _OtherRep>
-			DurationBase(Rational<_OtherRep> rational)
+			DurationBase(HELPERS_NS::Rational<_OtherRep> rational)
 				: _MyBase::duration{ rational.CastToRational<_Rep>(this->ToRational()).Value() }
 			{}
 
 			template <typename _OtherDuration>
 			DurationBase<typename _OtherDuration::rep, typename _OtherDuration::period> ToDuration() const {
-				return std::chrono::duration_cast<std::chrono::duration<typename _OtherDuration::rep, typename _OtherDuration::period>>(*this);
+				return std::chrono::duration_cast<
+					std::chrono::duration<typename _OtherDuration::rep,
+					typename _OtherDuration::period>
+				>(*this);
 			}
 
-			Rational<_Rep> ToRational() const {
+			HELPERS_NS::Rational<_Rep> ToRational() const {
 				return { _Period::num, _Period::den, this->count() };
 			}
 
 			template <typename _OtherRep>
-			Rational<_Rep> CastToRational(Rational<_OtherRep> other) const {
+			HELPERS_NS::Rational<_Rep> CastToRational(HELPERS_NS::Rational<_OtherRep> other) const {
 				return this->ToRational().CastToRational<_Rep>(other);
 			}
 
@@ -54,19 +57,26 @@ namespace HELPERS_NS {
 		};
 
 		template <typename _Rep, typename _Period>
-		constexpr DurationBase<_Rep, _Period> operator+(const DurationBase<_Rep, _Period>& _Left, const DurationBase<_Rep, _Period>& _Right) noexcept {
+		constexpr DurationBase<_Rep, _Period> operator+(
+			const DurationBase<_Rep, _Period>& _Left,
+			const DurationBase<_Rep, _Period>& _Right
+			) noexcept {
 			return std::chrono::operator+(_Left, _Right);
 		}
 
 		template <typename _Rep, typename _Period>
-		constexpr DurationBase<_Rep, _Period> operator-(const DurationBase<_Rep, _Period>& _Left, const DurationBase<_Rep, _Period>& _Right) noexcept {
+		constexpr DurationBase<_Rep, _Period> operator-(
+			const DurationBase<_Rep, _Period>& _Left,
+			const DurationBase<_Rep, _Period>& _Right
+			) noexcept {
 			return std::chrono::operator-(_Left, _Right);
 		}
 
 		using milliseconds_f = DurationBase<float, typename std::chrono::milliseconds::period>;
 		using seconds_f = DurationBase<float, typename std::chrono::seconds::period>;
 		using Hns = DurationBase<long long, std::ratio<1, 10'000'000>>; // Do not use unsigned bacause may be sideeffects when cast to float
-	}
+	} // namespace Chrono
+
 
 	inline namespace Literals {
 		inline namespace ChronoLiterals {
@@ -74,7 +84,7 @@ namespace HELPERS_NS {
 				return Chrono::Hns(_Val);
 			}
 		}
-	}
+	} // inline namespace Literals
 
 
 	class Timer	{
@@ -196,6 +206,7 @@ namespace HELPERS_NS {
 	std::string GetTimeNow(TimeFormat format = TimeFormat::None);
 	std::string GetTimezone();
 };
+
 
 using namespace std::chrono_literals;
 using namespace HELPERS_NS::ChronoLiterals;

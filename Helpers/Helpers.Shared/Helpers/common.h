@@ -111,3 +111,5 @@ namespace WStorage = Windows::Storage;
 // Force include some hedaers at the top to avoid compile error
 //
 #include "Helpers/HWindows.h"
+
+#define HELPERS_ENABLE_COMPILETIME_TESTS 0

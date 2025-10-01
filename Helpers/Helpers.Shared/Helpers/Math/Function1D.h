@@ -212,6 +212,7 @@ namespace HELPERS_NS {
 		struct is_function1d_form<Function1D::Primitive<N, TFn>> : std::true_type {};
 
 
+#if HELPERS_ENABLE_COMPILETIME_TESTS // == 0
 		//
 		// ░ Tests
 		// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 
@@ -226,6 +227,7 @@ namespace HELPERS_NS {
 
 			constexpr int __function1D_tests_anchor = (TestAll(), 0);
 		}
+#endif // HELPERS_ENABLE_COMPILETIME_TESTS
 	}
 }
 #endif

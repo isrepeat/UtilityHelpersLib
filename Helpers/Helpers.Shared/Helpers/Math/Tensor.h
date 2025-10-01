@@ -193,6 +193,7 @@ namespace HELPERS_NS {
 		using Mat3x3f = Tensor<double, 3, 3>;
 		using Mat4x4f = Tensor<double, 4, 4>;
 
+
 		//
 		// ░ Details
 		// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 
@@ -402,6 +403,8 @@ namespace HELPERS_NS {
 		// ░ Operators
 		// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 
 		//
+		// ░ Tensor multiplication
+		//
 		template <typename T, std::size_t... L, std::size_t... R>
 		__requires_expr(
 			details::ContractibleDimsPacks<details::dims_pack<L...>, details::dims_pack<R...>>
@@ -414,10 +417,126 @@ namespace HELPERS_NS {
 
 
 		//
+		// ░ Elementwise operators
+		//
+		template <typename T, std::size_t... Dims>
+		constexpr Tensor<T, Dims...> operator+(
+			const Tensor<T, Dims...>& lhs,
+			const Tensor<T, Dims...>& rhs
+			) {
+			Tensor<T, Dims...> out{};
+			for (std::size_t i = 0; i < Tensor<T, Dims...>::kSize; ++i) {
+				out.Data()[i] = lhs.Data()[i] + rhs.Data()[i];
+			}
+			return out;
+		}
+
+		template <typename T, std::size_t... Dims>
+		constexpr Tensor<T, Dims...>& operator+=(
+			Tensor<T, Dims...>& lhs,
+			const Tensor<T, Dims...>& rhs
+			) {
+			for (std::size_t i = 0; i < Tensor<T, Dims...>::kSize; ++i) {
+				lhs.Data()[i] += rhs.Data()[i];
+			}
+			return lhs;
+		}
+
+		template <typename T, std::size_t... Dims>
+		constexpr Tensor<T, Dims...> operator-(
+			const Tensor<T, Dims...>& lhs,
+			const Tensor<T, Dims...>& rhs
+			) {
+			Tensor<T, Dims...> out{};
+			for (std::size_t i = 0; i < Tensor<T, Dims...>::kSize; ++i) {
+				out.Data()[i] = lhs.Data()[i] - rhs.Data()[i];
+			}
+			return out;
+		}
+
+		template <typename T, std::size_t... Dims>
+		constexpr Tensor<T, Dims...>& operator-=(
+			Tensor<T, Dims...>& lhs,
+			const Tensor<T, Dims...>& rhs
+			) {
+			for (std::size_t i = 0; i < Tensor<T, Dims...>::kSize; ++i) {
+				lhs.Data()[i] -= rhs.Data()[i];
+			}
+			return lhs;
+		}
+
+		//
+		// ░ Scalar multiplication
+		//
+		template <typename T, std::size_t... Dims, typename S>
+		__requires_expr(
+			std::is_convertible_v<S, T>
+		) constexpr Tensor<T, Dims...> operator*(
+			const Tensor<T, Dims...>& lhs,
+			S scalar
+			) {
+			Tensor<T, Dims...> out{};
+			for (std::size_t i = 0; i < Tensor<T, Dims...>::kSize; ++i) {
+				out.Data()[i] = lhs.Data()[i] * static_cast<T>(scalar);
+			}
+			return out;
+		}
+
+		template <typename T, std::size_t... Dims, typename S>
+		__requires_expr(
+			std::is_convertible_v<S, T>
+		) constexpr Tensor<T, Dims...> operator*(
+			S scalar,
+			const Tensor<T, Dims...>& rhs
+			) {
+			return rhs * scalar;
+		}
+
+		template <typename T, std::size_t... Dims, typename S>
+		__requires_expr(
+			std::is_convertible_v<S, T>
+		) constexpr Tensor<T, Dims...>& operator*=(
+			Tensor<T, Dims...>& lhs,
+			S scalar
+			) {
+			for (std::size_t i = 0; i < Tensor<T, Dims...>::kSize; ++i) {
+				lhs.Data()[i] *= static_cast<T>(scalar);
+			}
+			return lhs;
+		}
+
+
+#if HELPERS_ENABLE_COMPILETIME_TESTS // == 0
+		//
 		// ░ Tests
 		// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 
 		//
 		namespace TensorTests {
+			namespace concepts {
+				// Проверка наличия оператора перемнжения тензоров
+				template <typename A, typename B>
+				concept Multipliable = requires (A a, B b) {
+					a* b;
+				};
+
+				// Проверка наличия element-wise операторов для одинаковых размеров
+				template <typename A, typename B>
+				concept Addable = requires (A a, B b) {
+					a + b;
+					a - b;
+					a += b;
+					a -= b;
+				};
+
+				// Проверка наличия скалярного умножения (оба порядка) и *=
+				template <typename A, typename S>
+				concept ScalarMultipliable = requires (A a, S s) {
+					a* s;
+					s* a;
+					a *= s;
+				};
+			}
+
 			consteval void TestMeta() {
 				using T = Tensor<int, 2, 3, 4>;
 
@@ -428,11 +547,6 @@ namespace HELPERS_NS {
 				static_assert(T::Strides()[2] == 1);
 				static_assert(T::IndexToOffset(1, 2, 3) == 23);
 			}
-
-			template <typename A, typename B>
-			concept Multipliable = requires (A a, B b) {
-				a* b;
-			};
 
 			consteval void TestMatrixMul() {
 				using MatA = Tensor<int, 2, 3>;
@@ -461,17 +575,105 @@ namespace HELPERS_NS {
 				using M3x4 = Mat<int, 3, 4>;
 				using M4x5 = Mat<int, 4, 5>;
 
-				static_assert(Multipliable<M2x3, M3x4>);
-				static_assert(!Multipliable<M2x3, M4x5>);
+				static_assert(concepts::Multipliable<M2x3, M3x4>);
+				static_assert(!concepts::Multipliable<M2x3, M4x5>);
+			}
+
+			consteval void TestElementwise() {
+				using T = Tensor<int, 2, 3>;
+				using M2x3 = Mat<int, 2, 3>;
+				using M3x2 = Mat<int, 3, 2>;
+
+				// Доступность/недоступность операторов
+				static_assert(concepts::Addable<M2x3, M2x3>);
+				static_assert(!concepts::Addable<M2x3, M3x2>);
+
+				static_assert(concepts::ScalarMultipliable<M2x3, int>);
+				static_assert(concepts::ScalarMultipliable<M2x3, double>);
+
+				// Данные для проверки
+				constexpr T a{
+					1, 2, 3,
+					4, 5, 6
+				};
+				constexpr T b{
+					6, 5, 4,
+					3, 2, 1
+				};
+
+				// Ожидаемые результаты
+				constexpr T sum_exp{
+					7, 7, 7,
+					7, 7, 7
+				};
+				constexpr T diff_exp{
+					-5, -3, -1,
+					1, 3, 5
+				};
+				constexpr T mul3_exp{
+					3, 6, 9,
+					12, 15, 18
+				};
+
+				// +, -
+				{
+					constexpr auto sum = a + b;
+					constexpr auto diff = a - b;
+
+					static_assert(sum == sum_exp);
+					static_assert(diff == diff_exp);
+				}
+
+				// +=, -= (мутация в constexpr-контексте допустима, т.к. операторы constexpr)
+				{
+					constexpr auto check_plus_assign = []() {
+						auto x = a;
+						x += b;
+						return x == sum_exp;
+						};
+					static_assert(check_plus_assign());
+
+					constexpr auto check_minus_assign = []() {
+						auto x = a;
+						x -= b;
+						return x == diff_exp;
+						};
+					static_assert(check_minus_assign());
+				}
+
+				// Скалярное умножение (оба порядка) и *=
+				{
+					// tensor * scalar
+					constexpr auto p1 = a * 3;
+					static_assert(p1 == mul3_exp);
+
+					// scalar * tensor (зеркальный)
+					constexpr auto p2 = 3 * a;
+					static_assert(p2 == mul3_exp);
+
+					// *= scalar
+					constexpr auto check_mul_assign = []() {
+						auto x = a;
+						x *= 3;
+						return x == mul3_exp;
+						};
+					static_assert(check_mul_assign());
+
+					// Скаляр, конвертируемый к T (double -> int)
+					constexpr auto p3 = a * 3.0;
+					static_assert(p3 == mul3_exp);
+				}
 			}
 
 			consteval void TestAll() {
 				TestMeta();
 				TestMatrixMul();
+				TestElementwise();
 			}
 
 			constexpr int __tensor_tests_anchor = (TestAll(), 0);
 		}
+#endif // HELPERS_ENABLE_COMPILETIME_TESTS
 	}
 }
 #endif

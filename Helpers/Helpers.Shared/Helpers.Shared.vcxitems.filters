@@ -728,6 +728,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Math\Function1D.h">
       <Filter>Math</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Math\Differentation.h">
+      <Filter>Math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultVS.hlsl">
