@@ -1,7 +1,6 @@
 #pragma once
 #include "Helpers/common.h"
 #include "Helpers/Meta/Concepts.h"
-#include "Helpers/Rational.h"
 #include "Tensor.h"
 
 #if _HAS_CXX20
@@ -38,18 +37,18 @@ namespace HELPERS_NS {
 		template <typename T, std::size_t... Dims>
 		struct DifferentialVar<HELPERS_NS::Math::Tensor<T, Dims...>> {
 			using Tensor_t = HELPERS_NS::Math::Tensor<T, Dims...>;
-			using Tensor_value_t = typename Tensor_t::value_type;
+			using value_type = typename Tensor_t::value_type;
 
 			Tensor_t value{};
 			Tensor_t grad{};
 
 			constexpr void Reset() {
-				this->value.Fill(Tensor_value_t{ 0 });
-				this->grad.Fill(Tensor_value_t{ 0 });
+				this->value.Fill(value_type{ 0 });
+				this->grad.Fill(value_type{ 0 });
 			}
 
 			constexpr void ResetGrad() {
-				this->grad.Fill(Tensor_value_t{ 0 });
+				this->grad.Fill(value_type{ 0 });
 			}
 
 			constexpr void AccumulateGrad(const Tensor_t& g) {
@@ -67,21 +66,21 @@ namespace HELPERS_NS {
 			// По умолчанию разрешим любой арифметический тип как скаляр.
 			std::is_arithmetic_v<std::remove_cvref_t<T>>
 		) struct DifferentialVar<T> {
-			using Scalar_t = std::remove_cvref_t<T>;
+			using value_type = std::remove_cvref_t<T>;
 
-			Scalar_t value{};
-			Scalar_t grad{};
+			value_type value{};
+			value_type grad{};
 
 			constexpr void Reset() {
-				this->value = Scalar_t{ 0 };
-				this->grad = Scalar_t{ 0 };
+				this->value = value_type{ 0 };
+				this->grad = value_type{ 0 };
 			}
 
 			constexpr void ResetGrad() {
-				this->grad = Scalar_t{ 0 };
+				this->grad = value_type{ 0 };
 			}
 
-			constexpr void AccumulateGrad(Scalar_t g) {
+			constexpr void AccumulateGrad(value_type g) {
 				this->grad += g;
 			}
 		};

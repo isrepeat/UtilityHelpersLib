@@ -18,7 +18,7 @@ namespace HELPERS_NS {
 		template <typename TValue, std::size_t... Dims>
 		class Tensor {
 		public:
-			using value_type = TValue;
+			using value_type = std::remove_cvref_t<TValue>;
 
 			static constexpr std::size_t kRank = sizeof...(Dims);
 			static constexpr std::size_t kSize = (1 * ... * Dims);
@@ -54,10 +54,10 @@ namespace HELPERS_NS {
 			template <typename... TVals>			
 			__requires_expr(
 				(sizeof...(TVals) == kSize) &&
-				(std::conjunction_v<std::is_convertible<TVals, TValue>...>)
+				(std::conjunction_v<std::is_convertible<TVals, value_type>...>)
 			) constexpr explicit Tensor(TVals&&... vals)
 				: dataArray{
-					static_cast<TValue>(std::forward<TVals>(vals))...
+					static_cast<value_type>(std::forward<TVals>(vals))...
 				} {
 			}
 
@@ -80,17 +80,17 @@ namespace HELPERS_NS {
 				return Tensor::IndexToOffset(indicesArray);
 			}
 
-			constexpr TValue* Data() {
+			constexpr value_type* Data() {
 				return this->dataArray.data();
 			}
 
-			constexpr const TValue* Data() const {
+			constexpr const value_type* Data() const {
 				return this->dataArray.data();
 			}
 
-			constexpr void Fill(const TValue& valueTValue) {
+			constexpr void Fill(const value_type& value) {
 				for (std::size_t i = 0; i < Tensor::kSize; ++i) {
-					this->dataArray[i] = valueTValue;
+					this->dataArray[i] = value;
 				}
 			}
 
@@ -170,7 +170,7 @@ namespace HELPERS_NS {
 			}
 
 		private:
-			std::array<TValue, kSize> dataArray{};
+			std::array<value_type, kSize> dataArray{};
 		};
 
 
