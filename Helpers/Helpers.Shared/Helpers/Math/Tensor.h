@@ -31,13 +31,22 @@ namespace HELPERS_NS {
 
 			// Strides: шаги по осям (row-major).
 			static consteval std::array<std::size_t, kRank> MakeStrides() {
-				const auto& extentsRef = Tensor::kExtents;
 				std::array<std::size_t, kRank> strides{};
-				strides[kRank - 1] = 1;
-				for (std::size_t i = kRank - 1; i > 0; --i) {
-					strides[i - 1] = strides[i] * extentsRef[i];
+
+				if constexpr (kRank == 0) {
+					// Ранг 0: пустые extents/strides; размер = 1, данных 1 элемент.
+					return strides;
 				}
-				return strides;
+				else {
+					const auto& extentsRef = Tensor::kExtents;
+
+					strides[kRank - 1] = 1;
+					for (std::size_t i = kRank - 1; i > 0; --i) {
+						strides[i - 1] = strides[i] * extentsRef[i];
+					}
+
+					return strides;
+				}
 			}
 
 		public:
@@ -407,12 +416,28 @@ namespace HELPERS_NS {
 		//
 		template <typename T, std::size_t... L, std::size_t... R>
 		__requires_expr(
+			(sizeof...(L) != 1 || sizeof...(R) != 1) && // Исключаем "вектор × вектор", чтобы не конкурировать с dot-версией.
 			details::ContractibleDimsPacks<details::dims_pack<L...>, details::dims_pack<R...>>
 		) constexpr auto operator*(
 			const Tensor<T, L...>& lhs,
 			const Tensor<T, R...>& rhs
 			) {
 			return details::contract_last_first(lhs, rhs);
+		}
+		
+		//
+		// ░ Dot product for vectors (rank==1): Vec<T,N> * Vec<T,N> -> T
+		//
+		template <typename T, std::size_t N>
+		constexpr T operator*(
+			const Tensor<T, N>& lhs,
+			const Tensor<T, N>& rhs
+			) {
+			T acc{ static_cast<T>(0) };
+			for (std::size_t i = 0; i < Tensor<T, N>::kSize; ++i) {
+				acc += lhs.Data()[i] * rhs.Data()[i];
+			}
+			return acc;
 		}
 
 
@@ -506,7 +531,7 @@ namespace HELPERS_NS {
 		}
 
 
-#if HELPERS_ENABLE_COMPILETIME_TESTS // == 0
+#if HELPERS_ENABLE_COMPILETIME_TESTS //== 0
 		//
 		// ░ Tests
 		// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 
@@ -546,6 +571,31 @@ namespace HELPERS_NS {
 				static_assert(T::Strides()[1] == 4);
 				static_assert(T::Strides()[2] == 1);
 				static_assert(T::IndexToOffset(1, 2, 3) == 23);
+			}
+
+			consteval void TestVectorMul() {
+				// Vec*Vec must use dot-product operator*
+				static_assert(std::same_as<
+					decltype(std::declval<Vec<double, 4>>() * std::declval<Vec<double, 4>>()),
+					double
+				>);
+
+				// Mat*Vec must use universal operator*
+				static_assert(std::same_as<
+					decltype(std::declval<Mat<float, 2, 3>>() * std::declval<Vec<float, 3>>()),
+					Vec<float, 2>
+				>);
+
+				// Vec*Mat must use universal operator*
+				static_assert(std::same_as<
+					decltype(std::declval<Vec<float, 2>>() * std::declval<Mat<float, 2, 3>>()),
+					Vec<float, 3>
+				>);
+
+				constexpr Vec<int, 3> a{ 1, 2, 3 };
+				constexpr Vec<int, 3> b{ 4, 5, 6 };
+
+				static_assert(a * b == 32);
 			}
 
 			consteval void TestMatrixMul() {
@@ -667,6 +717,7 @@ namespace HELPERS_NS {
 
 			consteval void TestAll() {
 				TestMeta();
+				TestVectorMul();
 				TestMatrixMul();
 				TestElementwise();
 			}
