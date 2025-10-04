@@ -60,11 +60,11 @@ namespace HELPERS_NS {
 
 			constexpr Tensor() = default;
 
-			template <typename... TVals>			
+			template <typename... TVals>
 			__requires_expr(
 				(sizeof...(TVals) == kSize) &&
 				(std::conjunction_v<std::is_convertible<TVals, value_type>...>)
-			) constexpr explicit Tensor(TVals&&... vals)
+			) constexpr /*explicit*/ Tensor(TVals&&... vals)
 				: dataArray{
 					static_cast<value_type>(std::forward<TVals>(vals))...
 				} {
@@ -141,28 +141,38 @@ namespace HELPERS_NS {
 			}; // class IndexProxy
 
 
-			constexpr auto operator[](std::size_t i) {
-				const std::size_t off = i * Tensor::kStrides[0];
-
-				if constexpr (Tensor::kRank == 1) {
-					return this->dataArray[off];
-				}
-				else {
-					using proxy_t = IndexProxy<false, 1>; // non-const
-					return proxy_t{ this->dataArray.data(), off };
-				}
+			// rank == 1: возвращаем ссылки на элементы
+			template <std::size_t Rank = Tensor::kRank>
+			__requires_expr(
+				Rank == 1
+			) constexpr value_type& operator[](std::size_t i) {
+				const std::size_t off = i * this->kStrides[0];
+				return this->dataArray[off];
 			}
 
-			constexpr auto operator[](std::size_t i) const {
-				const std::size_t off = i * Tensor::kStrides[0];
+			template <std::size_t Rank = Tensor::kRank>
+			__requires_expr(
+				Rank == 1
+			) constexpr const value_type& operator[](std::size_t i) const {
+				const std::size_t off = i * this->kStrides[0];
+				return this->dataArray[off];
+			}
 
-				if constexpr (Tensor::kRank == 1) {
-					return this->dataArray[off];
-				}
-				else {
-					using proxy_t = IndexProxy<true, 1>; // const
-					return proxy_t{ this->dataArray.data(), off };
-				}
+			// rank != 1: возвращаем прокси-объект
+			template <std::size_t Rank = Tensor::kRank>
+			__requires_expr(
+				Rank != 1
+			) constexpr IndexProxy<false, 1> operator[](std::size_t i) {
+				const std::size_t off = i * this->kStrides[0];
+				return IndexProxy<false, 1>{ this->dataArray.data(), off};
+			}
+
+			template <std::size_t Rank = Tensor::kRank>
+			__requires_expr(
+				Rank != 1
+			) constexpr IndexProxy<true, 1> operator[](std::size_t i) const {
+				const std::size_t off = i * this->kStrides[0];
+				return IndexProxy<true, 1>{ this->dataArray.data(), off};
 			}
 
 			constexpr bool operator==(const Tensor& other) const {
@@ -424,7 +434,7 @@ namespace HELPERS_NS {
 			) {
 			return details::contract_last_first(lhs, rhs);
 		}
-		
+
 		//
 		// ░ Dot product for vectors (rank==1): Vec<T,N> * Vec<T,N> -> T
 		//
@@ -531,7 +541,7 @@ namespace HELPERS_NS {
 		}
 
 
-#if HELPERS_ENABLE_COMPILETIME_TESTS //== 0
+#if HELPERS_ENABLE_COMPILETIME_TESTS == 0
 		//
 		// ░ Tests
 		// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 
@@ -641,6 +651,20 @@ namespace HELPERS_NS {
 				static_assert(concepts::ScalarMultipliable<M2x3, int>);
 				static_assert(concepts::ScalarMultipliable<M2x3, double>);
 
+				// 1) Возврат ссылки для rank==1 (non-const и const)
+				static_assert(
+					std::is_lvalue_reference_v<decltype(std::declval<Vec3f&>()[0])>,
+					"operator[] on rank-1 must return T&"
+					);
+				static_assert(
+					std::is_lvalue_reference_v<decltype(std::declval<const Vec3f&>()[0])>,
+					"operator[] on const rank-1 must return const T&"
+					);
+				static_assert(
+					std::is_const_v<std::remove_reference_t<decltype(std::declval<const Vec3f&>()[0])>>,
+					"const Vec: operator[] element must be const"
+					);
+
 				// Данные для проверки
 				constexpr T a{
 					1, 2, 3,
@@ -676,19 +700,36 @@ namespace HELPERS_NS {
 
 				// +=, -= (мутация в constexpr-контексте допустима, т.к. операторы constexpr)
 				{
-					constexpr auto check_plus_assign = []() {
+					constexpr auto check_plus_assign = [=]() {
 						auto x = a;
 						x += b;
 						return x == sum_exp;
 						};
 					static_assert(check_plus_assign());
 
-					constexpr auto check_minus_assign = []() {
+					constexpr auto check_minus_assign = [=]() {
 						auto x = a;
 						x -= b;
 						return x == diff_exp;
 						};
 					static_assert(check_minus_assign());
+
+					//constexpr auto add_assign_ok = []() {
+					//	Vec3f a{
+					//		1.0,
+					//		2.0,
+					//		3.0
+					//	};
+					//	Vec3f b{
+					//		0.5,
+					//		0.5,
+					//		0.5
+					//	};
+
+					//	a[1] += b[1]; // должно компилироваться и менять a[1]
+					//	return a[1] == 2.5;
+					//	};
+					//static_assert(add_assign_ok(), "a[i] += b[i] must work for rank-1 tensor.");
 				}
 
 				// Скалярное умножение (оба порядка) и *=
@@ -702,7 +743,7 @@ namespace HELPERS_NS {
 					static_assert(p2 == mul3_exp);
 
 					// *= scalar
-					constexpr auto check_mul_assign = []() {
+					constexpr auto check_mul_assign = [=]() {
 						auto x = a;
 						x *= 3;
 						return x == mul3_exp;
