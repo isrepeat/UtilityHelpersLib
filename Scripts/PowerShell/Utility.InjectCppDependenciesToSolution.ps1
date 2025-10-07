@@ -1,5 +1,6 @@
 # Назначаем рабочим каталогом текущий каталог скрипта 
 # (все относительные пути далее будут относительно этого каталога).
+$callerLocation = Get-Location
 Set-Location -Path $PSScriptRoot
 
 # Добавляем в PSModulePath путь к кастомным модулям,
@@ -13,25 +14,40 @@ if (-not ($env:PSModulePath -split ';' | Where-Object { $_ -eq $modulePath })) {
 Import-Module -Name MessagingModule -Prefix m:: -ErrorAction Stop
 
 # --- Main ---
-$SourceSolutionPath = '"..\..\UtilityHelpersLib.sln"'
+$solutionInjectorExe = Join-Path $PSScriptRoot "..\..\Utilities\bin\SolutionInjector.exe"
+$solutionInjectorExe = (Resolve-Path $solutionInjectorExe -ErrorAction Stop).Path
+
+if (-not (Test-Path $solutionInjectorExe)) {
+    m::MessageError "Executable not found: $solutionInjectorExe"
+    exit 1
+}
+
+# Назначаем рабочим каталогом каталог caller'а чтобы все относительные пути 
+# далее в скрипте и в solutionInjectorExe были относительна caller'а.
+Set-Location -Path $callerLocation
+
+$SourceSolutionPath = '"..\UtilityHelpersLib.sln"'
 
 $TargetSolutionPath = Read-Host "Enter path to the target .sln file"
 $TargetSolutionPath = m::WrapInQuotesIfNeeded $TargetSolutionPath
 if ([string]::IsNullOrWhiteSpace($TargetSolutionPath) -or $TargetSolutionPath -eq '""') {
-    m::Message -color Red -Text "no path provided"
+    m::MessageError "no path provided"
 	exit 1
 }
 
 $FoldersToInsertArgs = @(
     '-f', '3rdParty'
+    '-f', 'Helpers'
+	#TODO: Improve SolutionInjector to support removing projects from added folder.
 )
 
 $ProjectsToInsertArgs = @(
-    '-p', 'ComAPI',
-    '-p', 'ComAPI.Shared',
-    '-p', 'Helpers.Raw',
-    '-p', 'Helpers.Shared',
-    '-p', 'Helpers.Includes'
+	#TODO: Improve SolutionInjector to support grouping added projects under custom solutionFolder.
+    #'-p', 'ComAPI'
+    #'-p', 'ComAPI.Shared',
+    #'-p', 'Helpers.Raw',
+    #'-p', 'Helpers.Shared',
+    #'-p', 'Helpers.Includes'
 )
 
 $SolutionInjectorExtraArgs = @()
@@ -61,12 +77,10 @@ m::Message -color Blue -Text "Projects to insert: $($ProjectsToInsertArgs -join 
 m::Message -color Blue -Text "Extra args: $($SolutionInjectorExtraArgs -join ' ')"
 
 # --- Run tool ---
-$EXE = "..\Utilities\bin\SolutionInjector.exe"
-m::Message -color Yellow -Text "Launching $EXE ..."
-
-& $EXE `
-  $SourceSolutionPath `
-  $TargetSolutionPath `
-  $FoldersToInsertArgs `
-  $ProjectsToInsertArgs `
-  $SolutionInjectorExtraArgs
+m::MessageAction "Launching `"$solutionInjectorExe`" ..."
+& "$solutionInjectorExe" `
+    $SourceSolutionPath `
+    $TargetSolutionPath `
+    $FoldersToInsertArgs `
+    $ProjectsToInsertArgs `
+    $SolutionInjectorExtraArgs

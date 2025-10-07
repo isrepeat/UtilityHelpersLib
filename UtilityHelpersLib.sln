@@ -95,6 +95,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "!Scripts", "!Scripts", "{6A
 	ProjectSection(SolutionItems) = preProject
 		Scripts\Utility.InjectCppDependenciesToSolution.cmd = Scripts\Utility.InjectCppDependenciesToSolution.cmd
 		Scripts\Utility.InjectCsDependenciesToSolution.cmd = Scripts\Utility.InjectCsDependenciesToSolution.cmd
+		Scripts\Utility.NormilizeSolution.cmd = Scripts\Utility.NormilizeSolution.cmd
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Functions", "Functions", "{78424A04-4ED4-4184-97D8-AF1E10F26B38}"
@@ -127,6 +128,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PowerShell", "PowerShell", 
 		Scripts\PowerShell\AutoPrMerge.ps1 = Scripts\PowerShell\AutoPrMerge.ps1
 		Scripts\PowerShell\Utility.InjectCppDependenciesToSolution.ps1 = Scripts\PowerShell\Utility.InjectCppDependenciesToSolution.ps1
 		Scripts\PowerShell\Utility.InjectCsDependenciesToSolution.ps1 = Scripts\PowerShell\Utility.InjectCsDependenciesToSolution.ps1
+		Scripts\PowerShell\Utility.NormilizeSolution.ps1 = Scripts\PowerShell\Utility.NormilizeSolution.ps1
 	EndProjectSection
 EndProject
 Global
