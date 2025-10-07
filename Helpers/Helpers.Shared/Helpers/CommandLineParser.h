@@ -37,15 +37,14 @@ namespace HELPERS_NS {
 
 	public:
 		template<typename TParsed>
-		__requires requires { requires
+		__requires_expr(
 			HELPERS_NS::meta::concepts::has_static_function_with_signature<
 			decltype(&TParsed::Description), std::vector<FlagDesc>(*)()
 			>&&
 			HELPERS_NS::meta::concepts::has_static_function_with_signature<
 			decltype(&TParsed::MapParsedResults), void (*)(const CommandLineParserBase<TChar>&, TParsed&)
-			>;
-		}
-		static const TParsed ParseTo(
+			>
+		) static const TParsed ParseTo(
 			int argc,
 			typename string_t::value_type* argv[]
 		) {

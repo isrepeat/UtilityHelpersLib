@@ -18,10 +18,9 @@ namespace STD_EXT_NS {
 			template <typename TContainer>
 			struct to_closure {
 				template <typename TRange>
-				__requires requires { requires
-					::std::ranges::input_range<TRange>;
-				}
-				friend auto operator|(
+				__requires_expr(
+					::std::ranges::input_range<TRange>
+				) friend auto operator|(
 					TRange&& range,
 					to_closure /*self*/
 					) {

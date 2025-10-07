@@ -15,10 +15,9 @@
 
 namespace HELPERS_NS {
 	template <typename JSONObjectT>
-	__requires requires { requires
-		meta::concepts::has_static_function_with_signature<decltype(&JSONObjectT::AfterLoadHandler), void(*)(const JSONObjectT&)>;
-	}
-	class JSONLoader {
+	__requires_expr(
+		meta::concepts::has_static_function_with_signature<decltype(&JSONObjectT::AfterLoadHandler), void(*)(const JSONObjectT&)>
+	) class JSONLoader {
 		JSONLoader() = delete;
 		~JSONLoader() = delete;
 
@@ -54,7 +53,7 @@ namespace HELPERS_NS {
 				else {
 					LOG_ERROR_D("Cannot parse '{}'", jsonFilename);
 					if constexpr (requires { requires
-						meta::concepts::has_static_function<decltype(&JSONObjectT::LoadErrorHandler)>;
+						meta::concepts::has_static_function<decltype(&JSONObjectT::LoadErrorHandler)>
 					}) {
 						JSONObjectT::LoadErrorHandler();
 					}
@@ -67,7 +66,7 @@ namespace HELPERS_NS {
 				// If JSONObjectT has 'CreateWithDefaultData' static method so create json with 
 				// specific default data before save.
 				if constexpr (requires { requires
-					meta::concepts::has_static_function_with_signature<decltype(&JSONObjectT::CreateWithDefaultData), JSONObjectT(*)()>;
+					meta::concepts::has_static_function_with_signature<decltype(&JSONObjectT::CreateWithDefaultData), JSONObjectT(*)()>
 				}) {
 					jsonObject = JSONObjectT::CreateWithDefaultData();
 				}
