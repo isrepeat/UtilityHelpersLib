@@ -4,7 +4,7 @@ param(
 
 # Ќазначаем рабочим каталогом текущий каталог скрипта
 # (все относительные пути далее будут относительно этого каталога).
-$origLocation = Get-Location # current script location
+$callerLocation = Get-Location
 Set-Location -Path $PSScriptRoot
 
 # ƒобавл€ем в PSModulePath путь к кастомным модул€м,
@@ -30,7 +30,7 @@ if ($BatDir) {
     }
 } else {
 	# »наче берЄм рабочий каталог, откуда запустили .ps1.
-    $workDir = $origLocation.Path
+    $workDir = $callerLocation.Path
 }
 
 # ќпредел€ем корень git-репозитори€ дл€ выбранного каталога.
