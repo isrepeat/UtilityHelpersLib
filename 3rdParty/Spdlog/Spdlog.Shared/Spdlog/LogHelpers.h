@@ -1,5 +1,5 @@
 #pragma once
-#include "Preprocessor.h"
+#include "Helpers/Preprocessor.h"
 //#pragma message(PREPROCESSOR_FILE_INCLUDED("LogHelpers.h"))
 
 // You can compile static library with "dllexport" to export symbols through dll.

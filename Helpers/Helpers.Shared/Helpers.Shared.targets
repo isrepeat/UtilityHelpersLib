@@ -11,8 +11,8 @@
     <!-- TODO: maybe add metadata that save 'Helpers' dir and use it when copy sources for nugets -->
     <HelpersCommonHeaders Include="$(HelpersSourcesDir)\common.h" />
     <HelpersCommonHeaders Include="$(HelpersSourcesDir)\HWindows.h" />
+    <HelpersCommonHeaders Include="$(HelpersSourcesDir)\Preprocessor.h" />
     <HelpersCommonHeaders Include="$(HelpersSourcesDir)\BoostIsSupported.h" />
-    <HelpersCommonHeaders Include="@(UtilityHelpersLibSharedHeaders)" />
   </ItemGroup>
 
   <PropertyGroup>

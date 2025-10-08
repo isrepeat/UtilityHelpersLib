@@ -55,10 +55,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{82723E30
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TEST_AsyncTasks", "Tests\TEST_AsyncTasks\TEST_AsyncTasks.vcxproj", "{0061E887-26E6-40E8-9FA6-CA2C7FC73967}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{01CCDD93-E851-4CAF-8584-11B40149F589}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Preprocessor", "Shared\Preprocessor\Preprocessor.vcxitems", "{A204FD66-46BC-4871-A6AC-75785C2C271D}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Helpers.MovieMaker", "Helpers.MovieMaker", "{5563DFA3-7547-4D86-8657-F8311EEF8A9A}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Helpers.MovieMaker.Shared", "Helpers.MovieMaker\Helpers.MovieMaker.Shared\Helpers.MovieMaker.Shared.vcxitems", "{2481C6A9-BEC9-4AAA-B9D1-7480CEE35FD1}"
@@ -438,7 +434,6 @@ Global
 		{4DC532AD-A19B-4EC5-9923-990DF8F4A9AB} = {E1A87477-9E41-4151-99A3-3C202225C9C2}
 		{1F26DD5B-02C2-4192-AC91-06BED3D214F3} = {4A5644B4-23EF-48F7-8F3E-45A0EBE5C607}
 		{0061E887-26E6-40E8-9FA6-CA2C7FC73967} = {82723E30-0CB2-4283-9642-3C200BE9CE5F}
-		{A204FD66-46BC-4871-A6AC-75785C2C271D} = {01CCDD93-E851-4CAF-8584-11B40149F589}
 		{2481C6A9-BEC9-4AAA-B9D1-7480CEE35FD1} = {5563DFA3-7547-4D86-8657-F8311EEF8A9A}
 		{68E45821-1434-4594-A8DA-EC8D7B6F7CCE} = {5563DFA3-7547-4D86-8657-F8311EEF8A9A}
 		{C4998F75-24DB-454D-9A2D-F602FFBEA9D0} = {5563DFA3-7547-4D86-8657-F8311EEF8A9A}
@@ -494,7 +489,6 @@ Global
 		3rdParty\MagicEnum\MagicEnum.Shared\MagicEnum.Shared.vcxitems*{9119a10a-d27c-4eaf-8ee9-1a3097d8c6f6}*SharedItemsImports = 9
 		Helpers\ComAPI.Shared\ComAPI.Shared.vcxitems*{9ae2e2f4-5b16-4d19-9d1f-799a9e18ca69}*SharedItemsImports = 9
 		MediaRecorderCore\MediaRecorderCore\MediaRecorderCore.vcxitems*{9b70a232-1bc1-4bc4-b4c2-4932da0af224}*SharedItemsImports = 9
-		Shared\Preprocessor\Preprocessor.vcxitems*{a204fd66-46bc-4871-a6ac-75785c2c271d}*SharedItemsImports = 9
 		Helpers\Helpers.Shared\Helpers.Shared.vcxitems*{a3451486-ab38-4360-b752-94680b491792}*SharedItemsImports = 9
 		3rdParty\3rdParty_Packages_Includes\Boost.Includes\Boost.Includes.vcxitems*{a6a390c3-171d-47b9-b50c-39764ba0bd68}*SharedItemsImports = 4
 		3rdParty\MagicEnum\MagicEnum.Shared\MagicEnum.Shared.vcxitems*{a6a390c3-171d-47b9-b50c-39764ba0bd68}*SharedItemsImports = 4

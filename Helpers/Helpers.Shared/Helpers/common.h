@@ -1,7 +1,4 @@
 #pragma once
-// Use "" instead <> beacause 'Preprocessor.h' always must be placed in 'Helpers' dir
-// when create nuget with local helpers. You can also copy 'Preprocessor.h' to another dir
-// and expose this path in YOUR_NUGET.targets.
 #include "Preprocessor.h"
 
 #ifndef HELPERS_NS
