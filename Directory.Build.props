@@ -81,16 +81,9 @@ This file defines the properties required to build C++/C# projects.
   -->
   <PropertyGroup Condition="'$(__IsLocal)' == 'true'">
     <!-- The project will rebuild always when do Build (it is really for non simple projects that have at least refs on other projects) -->
-    <!--<DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>-->    
-    
-    <!-- Expose Shared dir for other projects -->
-    <__SharedProjectsDir>$(MSBuildThisFileDirectory)Shared</__SharedProjectsDir>
-    <PublicIncludeDirectories>$(__SharedProjectsDir);$(PublicIncludeDirectories)</PublicIncludeDirectories>
+    <!--<DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>-->
   </PropertyGroup>
   
-  <!-- Import header-only commonly used projects / packages -->
-  <Import Project="$(__SharedProjectsDir)\Preprocessor\Preprocessor.targets" Condition="'$(__IsLocal)' == 'true'" />
-
   <!-- Import PROJECT.props -->
   <Import Project="$(MSBuildProjectDirectory)\$(MSBuildProjectName).props"
           Condition="Exists('$(MSBuildProjectDirectory)\$(MSBuildProjectName).props') and '$(__IsLocal)' == 'true'" />

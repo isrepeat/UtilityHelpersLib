@@ -67,6 +67,9 @@
     <Filter Include="Math">
       <UniqueIdentifier>{f22ca3f5-fb8c-4052-b004-62bd315c4482}</UniqueIdentifier>
     </Filter>
+    <Filter Include="_Common">
+      <UniqueIdentifier>{940beac5-5d53-481c-8aad-d053e47f93ab}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Gate.cpp">
