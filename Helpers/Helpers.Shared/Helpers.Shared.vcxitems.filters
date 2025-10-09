@@ -16,9 +16,6 @@
     <Filter Include="CLR">
       <UniqueIdentifier>{dd52f1ce-fdf6-41f6-b46b-7ee1c00b035d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="_Headers">
-      <UniqueIdentifier>{94881117-0062-4ba2-b449-c3a4f5bd5d67}</UniqueIdentifier>
-    </Filter>
     <Filter Include="_Sources">
       <UniqueIdentifier>{0acf4eff-0e53-40e7-a31b-9f22cd2b0efc}</UniqueIdentifier>
     </Filter>
@@ -272,138 +269,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CallbackCLR.hpp">
       <Filter>CLR</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Action.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AlignedAllocator.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Bimap.hpp">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\BIOS.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Callback.hpp">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CancellationToken.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Channel.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\common.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Container.hpp">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Conversion.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CoUniquePtr.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CrashHandler.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CrashInfo.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Event.hpp">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\File.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Flags.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\FunctionTraits.hpp">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\GetAddressOf.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Helpers.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\HWindows.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Input.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IpTranslator.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LocalPtr.hpp">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Logger.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Macros.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MoveLambda.hpp">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PackageProvider.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Passkey.hpp">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Rational.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\RegistryManager.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Scope.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Signal.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Singleton.hpp">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Socket.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\String.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\String.hpp">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Exceptions.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SystemDataProvider.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SystemInfo.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StdRedirection.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Time.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TokenContext.hpp">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TokenSingleton.hpp">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\UniqueHandle.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Async\AsyncTasks.h">
       <Filter>Async</Filter>
     </ClInclude>
@@ -413,14 +278,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Async\CoTask.h">
       <Filter>Async</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TypeSwitch.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CallbackWinRT.hpp">
       <Filter>WinRT</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Math.h">
-      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MediaFoundation\MediaTypeInfo.h">
       <Filter>MediaFoundation</Filter>
@@ -434,44 +293,11 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSettings.h">
       <Filter>Dx</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Memory.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Semaphore.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\EventObject.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxSharedTexture.h">
       <Filter>Dx</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxgiDeviceLock.h">
       <Filter>Dx</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Span.hpp">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\System.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingAssert.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingErrors.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingMultifile.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingThread.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingVerbose.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingHresult.h">
-      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\SwapChainPanel.h">
       <Filter>Dx</Filter>
@@ -503,21 +329,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Com\ComMutex.h">
       <Filter>Com</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\BoostAsioSafe.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\BoostIsSupported.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SmartVARIANT.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Byteswap.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IEvent.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Mutex.h">
       <Filter>Thread</Filter>
     </ClInclude>
@@ -538,9 +349,6 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\DxRenderObjHDR.h">
       <Filter>Dx</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\JSONLoader.hpp">
-      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Dx\RenderPipeline.h">
       <Filter>Dx</Filter>
@@ -563,65 +371,11 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CLR\SharedPtr.h">
       <Filter>CLR</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IEnumerable.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IObservableCollection.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IWeakEvent.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\WeakEvent.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StdEnumerable.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SmartPROPVARIANT.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ObservableCollection.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ObservableCollectionTransform.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PropertyStoreKeyRef.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PropertyStoreReader.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Config.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Regex.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AppFeaturesBase.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Localization.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AsRefOrPtr.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Guid.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StringComparers.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Win32\MainWindow.h">
       <Filter>Win32</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Win32\TrayWindow.h">
       <Filter>Win32</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Stream.h">
-      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Stream\StreamLineReader.h">
       <Filter>Stream</Filter>
@@ -637,9 +391,6 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Event\IEvent.h">
       <Filter>Event</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ICloneable.h">
-      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Collection\Algorithms.h">
       <Filter>Collection</Filter>
@@ -689,9 +440,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Meta\Utilities\ValueExtractor.h">
       <Filter>Meta\Utilities</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CommandLineParser.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\rangesEx\ranges_concat.h">
       <Filter>Std\Extensions\rangesEx</Filter>
     </ClInclude>
@@ -707,17 +455,11 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\rangesEx\ranges_flatten_tree.h">
       <Filter>Std\Extensions\rangesEx</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IServiceProvider.h">
-      <Filter>_Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Std\Extensions\optional_ref.h">
       <Filter>Std\Extensions</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Meta\Utilities\TypeErasedDeleter.h">
       <Filter>Meta\Utilities</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Pipeline.h">
-      <Filter>_Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Math\Tensor.h">
       <Filter>Math</Filter>
@@ -733,6 +475,261 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Math\Differentation.h">
       <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Action.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AlignedAllocator.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AppFeaturesBase.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\AsRefOrPtr.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Bimap.hpp">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\BIOS.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\BoostAsioSafe.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\BoostIsSupported.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Byteswap.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Callback.hpp">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CancellationToken.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Channel.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CommandLineParser.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Config.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Container.hpp">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Conversion.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CoUniquePtr.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CrashHandler.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\CrashInfo.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Event.hpp">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\EventObject.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Exceptions.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\File.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Flags.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\FunctionTraits.hpp">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\GetAddressOf.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Guid.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Helpers.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\HWindows.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ICloneable.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IEnumerable.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IEvent.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Input.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IObservableCollection.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IpTranslator.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IServiceProvider.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\IWeakEvent.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\JSONLoader.hpp">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Localization.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LocalPtr.hpp">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Logger.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingAssert.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingErrors.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingHresult.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingMultifile.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingThread.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\LoggingVerbose.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Macros.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Math.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Memory.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\MoveLambda.hpp">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ObservableCollection.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ObservableCollectionTransform.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PackageProvider.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Passkey.hpp">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Pipeline.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PropertyStoreKeyRef.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PropertyStoreReader.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Rational.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Regex.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\RegistryManager.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Scope.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Semaphore.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Signal.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Singleton.hpp">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SmartPROPVARIANT.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SmartVARIANT.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Socket.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Span.hpp">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StdEnumerable.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StdRedirection.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Stream.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\String.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StringComparers.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\System.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SystemDataProvider.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SystemInfo.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Time.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TokenContext.hpp">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TokenSingleton.hpp">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TypeSwitch.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\UniqueHandle.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\WeakEvent.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\common.h">
+      <Filter>_Common</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Preprocessor.h">
+      <Filter>_Common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -38,10 +38,12 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>
-        %(AdditionalIncludeDirectories);
-        $(MSBuildThisFileDirectory)
+        $(MSBuildThisFileDirectory);
+        %(AdditionalIncludeDirectories)
       </AdditionalIncludeDirectories>
       <PreprocessorDefinitions>
+        NOMINMAX;
+        WINDOWS_LEAN_AND_MEAN;
         HELPERS_INCLUDES_DIR=Helpers;
         %(PreprocessorDefinitions)
       </PreprocessorDefinitions>

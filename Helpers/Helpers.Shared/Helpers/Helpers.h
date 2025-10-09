@@ -35,7 +35,6 @@ namespace HELPERS_NS {
     std::wstring StrToWStr(const std::string& str, int codePage = CP_ACP);
     std::wstring VecToWStr(const std::vector<wchar_t>& vec);
     std::string VecToStr(const std::vector<char>& vec);
-    std::string VecToStr(const std::vector<char>& vec);
 
     std::filesystem::path ExePath();
     std::filesystem::path ExeFullname();
