@@ -217,52 +217,91 @@ using namespace HELPERS_NS::ChronoLiterals;
 //       Developer may specialize it for log duration to other units. (Also need handle "ms" string)
 
 //
-// For 'DurationBase'
+// ░ fmt::formatter specializations
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 
 //
-template<typename _Rep, typename _Period>
-struct fmt::formatter<HELPERS_NS::Chrono::DurationBase<_Rep, _Period>, char> {
-	constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
-		return ctx.end();
+// ░ HELPERS_NS::Chrono::DurationBase
+//
+template<class Rep, class Period, class CharT>
+struct fmt::formatter<HELPERS_NS::Chrono::DurationBase<Rep, Period>, CharT> {
+	constexpr auto parse(fmt::basic_format_parse_context<CharT>& ctx) {
+		return this->innerFormatter.parse(ctx); // делегируем парсинг спецификаторов
 	}
-	auto format(const HELPERS_NS::Chrono::DurationBase<_Rep, _Period>& duration, format_context& ctx) -> decltype(ctx.out()) {
-		return fmt::format_to(ctx.out(), "{}ms", HELPERS_NS::Chrono::milliseconds_f{ duration }.count());
+
+	template<class FormatContext>
+	auto format(const HELPERS_NS::Chrono::DurationBase<Rep, Period>& duration, FormatContext& ctx) const {
+		const auto value = HELPERS_NS::Chrono::milliseconds_f{ duration }.count();
+		auto it = this->innerFormatter.format(value, ctx); // форматируем число по заданным спекам
+
+		if constexpr (std::is_same_v<CharT, wchar_t>) {
+			return fmt::format_to(it, L"ms");
+		}
+		else {
+			return fmt::format_to(it, "ms");
+		}
 	}
+
+private:
+	fmt::formatter<float, CharT> innerFormatter;
 };
 
-template<typename _Rep, typename _Period>
-struct fmt::formatter<HELPERS_NS::Chrono::DurationBase<_Rep, _Period>, wchar_t> {
-	constexpr auto parse(wformat_parse_context& ctx) -> decltype(ctx.begin()) {
-		return ctx.end();
+//
+// ░ std::chrono::duration
+//
+template<class Rep, class Period, class CharT>
+struct fmt::formatter<std::chrono::duration<Rep, Period>, CharT> {
+	constexpr auto parse(fmt::basic_format_parse_context<CharT>& ctx) {
+		return this->innerFormatter.parse(ctx);
 	}
-	auto format(const HELPERS_NS::Chrono::DurationBase<_Rep, _Period>& duration, wformat_context& ctx) -> decltype(ctx.out()) {
-		return fmt::format_to(ctx.out(), L"{}ms", HELPERS_NS::Chrono::milliseconds_f{ duration }.count());
+
+	template<class FormatContext>
+	auto format(const std::chrono::duration<Rep, Period>& duration, FormatContext& ctx) const {
+		const auto value = HELPERS_NS::Chrono::milliseconds_f{ duration }.count();
+		auto it = this->innerFormatter.format(value, ctx);
+
+		if constexpr (std::is_same_v<CharT, wchar_t>) {
+			return fmt::format_to(it, L"ms");
+		}
+		else {
+			return fmt::format_to(it, "ms");
+		}
 	}
+
+private:
+	fmt::formatter<float, CharT> innerFormatter;
 };
 
 
 //
-// For 'std::chrono::duration'
+// ░ std::formatter specializations
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 
 //
-template<typename _Rep, typename _Period>
-struct fmt::formatter<std::chrono::duration<_Rep, _Period>, char> {
-	constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
-		return ctx.end();
+//
+// ░ HELPERS_NS::Chrono::DurationBase
+//
+template<class Rep, class Period, class CharT>
+struct std::formatter<HELPERS_NS::Chrono::DurationBase<Rep, Period>, CharT> {
+	constexpr auto parse(std::basic_format_parse_context<CharT>& ctx) {
+		return this->innerFormatter.parse(ctx);
 	}
-	auto format(const std::chrono::duration<_Rep, _Period>& duration, format_context& ctx) -> decltype(ctx.out()) {
-		return fmt::format_to(ctx.out(), "{}ms", HELPERS_NS::Chrono::milliseconds_f{ duration }.count());
-	}
-};
 
-template<typename _Rep, typename _Period>
-struct fmt::formatter<std::chrono::duration<_Rep, _Period>, wchar_t> {
-	constexpr auto parse(wformat_parse_context& ctx) -> decltype(ctx.begin()) {
-		return ctx.end();
+	template<class FormatContext>
+	auto format(const HELPERS_NS::Chrono::DurationBase<Rep, Period>& duration, FormatContext& ctx) const {
+		const auto value = HELPERS_NS::Chrono::milliseconds_f{ duration }.count();
+		auto it = this->innerFormatter.format(value, ctx);
+
+		if constexpr (std::is_same_v<typename FormatContext::char_type, wchar_t>) {
+			return std::format_to(it, L"ms");
+		}
+		else {
+			return std::format_to(it, "ms");
+		}
 	}
-	auto format(const std::chrono::duration<_Rep, _Period>& duration, wformat_context& ctx) -> decltype(ctx.out()) {
-		return fmt::format_to(ctx.out(), L"{}ms", HELPERS_NS::Chrono::milliseconds_f{ duration }.count());
-	}
+
+private:
+	std::formatter<float, CharT> innerFormatter;
 };
-#endif
+#endif // SPDLOG_SUPPORT
 
 
 

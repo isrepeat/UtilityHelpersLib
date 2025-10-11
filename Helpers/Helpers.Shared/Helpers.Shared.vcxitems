@@ -218,6 +218,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Stream\StreamLineViewer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StringComparers.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\System.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Text.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TypeSwitch.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Rational.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\RegistryManager.h" />

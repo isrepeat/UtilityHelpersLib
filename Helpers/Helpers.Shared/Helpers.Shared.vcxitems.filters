@@ -731,6 +731,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Preprocessor.h">
       <Filter>_Common</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Text.h">
+      <Filter>_Sources</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultVS.hlsl">
