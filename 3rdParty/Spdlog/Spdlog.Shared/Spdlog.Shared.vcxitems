@@ -20,7 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Spdlog\CustomTypeSpecialization.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Spdlog\DynamicFileSink.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Spdlog\LogHelpers.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Spdlog\spdlog\async.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Spdlog\spdlog\async_logger-inl.h" />

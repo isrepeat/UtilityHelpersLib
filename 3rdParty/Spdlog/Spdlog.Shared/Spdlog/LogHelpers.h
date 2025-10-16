@@ -211,8 +211,6 @@ namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger na
 #define CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(className)
 #endif
 
-
-#define USE_DYNAMIC_SINK 0
 #include "Helpers/Meta/Tags.h" // H::meta::nothing
 #include "Helpers/Singleton.hpp"
 #include "Helpers/String.h"
@@ -220,16 +218,6 @@ namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger na
 #include "Helpers/Scope.h"
 #include "Helpers/Flags.h"
 
-#if USE_DYNAMIC_SINK
-// TODO: use forward declaration for DefaultLoggers::Log() static method before LOG_... macros definition above
-//       because Time.h include Rational.h and last one use LOG_... macros with undefined DefaultLoggers class yet
-#include "Helpers/Semaphore.h"
-#include "DynamicFileSink.h"
-
-namespace HELPERS_NS {
-    class Timer;
-}
-#endif
 #include "CustomTypeSpecialization.h"
 //#pragma message("include 'LogHelpers.h' [helpers files included]")
 
@@ -269,22 +257,11 @@ namespace LOGGER_NS {
         std::shared_ptr<spdlog::logger> debugLogger;
 #endif
 
-#if USE_DYNAMIC_SINK
-        std::shared_ptr<DynamicFileSinkMt> fileSink;
-        std::shared_ptr<DynamicFileSinkMt> fileSinkRaw;
-        std::shared_ptr<DynamicFileSinkMt> fileSinkTime;
-        std::shared_ptr<DynamicFileSinkMt> fileSinkFunc;
-        std::shared_ptr<DynamicFileSinkMt> fileSinkExtend;
-
-        std::shared_ptr<HELPERS_NS::Timer> logSizeLimitChecker;
-        std::shared_ptr<HELPERS_NS::EventObject> pauseLoggingEvent;
-#else
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSink;
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkRaw;
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkTime;
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkFunc;
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkExtend;
-#endif
     };
 
 
@@ -370,7 +347,7 @@ namespace LOGGER_NS {
             auto& _this = GetInstance();
             std::unique_lock lk{ _this.mxCustomFlagHandlers };
 
-            if constexpr (has_member(std::remove_reference_t<decltype(std::declval<TClass>())>, __ClassFullnameLogging)) {
+            if constexpr (has_member(std::remove_cvref_t<TClass>, __ClassFullnameLogging)) {
                 _this.className = L" ["
                     + (classPtr ? classPtr->GetFullClassNameW() : TClass::GetOriginalClassName() + L"(nullptr)")
                     + L"]";
@@ -378,23 +355,19 @@ namespace LOGGER_NS {
             else {
                 _this.className = L"";
             }
-            logger->log(location, level, format, std::forward<TArgs&&>(args)...);
+            logger->log(location, level, format, std::forward<TArgs>(args)...);
         }
 
     private:
-#if USE_DYNAMIC_SINK
-        static void CheckLogFileSize(StandardLoggers& loggers);
-#endif
-
         static void ForEachLogger(uint8_t id, const std::function<void(spdlog::logger&)>& action);
         
         static spdlog::level::level_enum LoggingModeToSpdlogLevel(LoggingMode mode);
         static LoggingMode SpdlogLevelToLoggingMode(spdlog::level::level_enum mode);
 
-        //const std::unordered_map<uint8_t, bool> initializedLoggersById;
         std::set<uint8_t> initializedLoggersById;
 #ifdef _DEBUG
-        const std::shared_ptr<spdlog::sinks::msvc_sink_mt> debugSink;
+        std::shared_ptr<spdlog::sinks::msvc_sink_mt> debugSink;
+		std::shared_ptr<spdlog::sinks::msvc_sink_mt> debugFnSink;
 #endif
         std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> stdoutDebugColorSink;
         std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> stdoutDebugFnColorSink;
@@ -408,10 +381,6 @@ namespace LOGGER_NS {
         std::function<void(const std::string&)> postfixCallback = nullptr;
 
         std::shared_ptr<int> token = std::make_shared<int>();
-
-#if USE_DYNAMIC_SINK
-        HELPERS_NS::Semaphore logSizeCheckSem;
-#endif
 
         static constexpr std::string_view logTruncationMessage{"... [truncated] \n\n"};
     };

@@ -1,7 +1,6 @@
 #include "LogHelpers.h"
 //#pragma message(PREPROCESSOR_MSG("Build LogHelpers.cpp with LOGGER_API = '" PP_STRINGIFY(LOGGER_API) "'"))
 //#pragma message(PREPROCESSOR_MSG("Build LogHelpers.cpp with LOGGER_NS = '" PP_STRINGIFY(LOGGER_NS) "'"))
-#include "DynamicFileSink.h"
 #include <Helpers/FileSystem_inline.h>
 #include <Helpers/PackageProvider.h> // need link with Helpers.lib
 #include <Helpers/TokenSingleton.hpp>
@@ -10,9 +9,6 @@
 #include <ComAPI/ComAPI.h>
 #include <set>
 
-#if USE_DYNAMIC_SINK
-#include "Helpers/Time.h"
-#endif
 
 namespace LOGGER_NS {
     // Free letter flags: 'G', 'h', 'J''j', 'K''k', 'N', 'Q', 'U', 'V', 'W''w', 'Z', '*', "?"
@@ -124,40 +120,71 @@ namespace LOGGER_NS {
 	struct DefaultLoggers::UnscopedData {
 		UnscopedData()
 			: defaultSink{ std::make_shared<spdlog::sinks::msvc_sink_mt>() }
-			, defaultLogger{ std::make_shared<spdlog::logger>("default_logger", spdlog::sinks_init_list{ defaultSink }) }
-		{
-			auto formatterDebug = std::make_unique<spdlog::pattern_formatter>();
-			formatterDebug->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Debug));
-			formatterDebug->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, nullptr).set_pattern(GetPattern(Pattern::Debug));
-			defaultSink->set_formatter(std::move(formatterDebug));
-			defaultSink->set_level(spdlog::level::trace);
+			, defaultFnSink{ std::make_shared<spdlog::sinks::msvc_sink_mt>() }
+			, defaultLogger{ std::make_shared<spdlog::logger>(
+				"default_logger",
+				spdlog::sinks_init_list{ defaultSink }
+			) }
+			, defaultFuncLogger{ std::make_shared<spdlog::logger>(
+				"default_func_logger",
+				spdlog::sinks_init_list{ defaultFnSink }
+			) } {
+			// обычный (Debug)
+			{
+				auto fmt = std::make_unique<spdlog::pattern_formatter>();
+				fmt->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag)
+					.set_pattern(GetPattern(Pattern::Debug));
 
-			defaultLogger->flush_on(spdlog::level::trace);
-			defaultLogger->set_level(spdlog::level::trace);
+				fmt->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, nullptr)
+					.set_pattern(GetPattern(Pattern::Debug));
+
+				this->defaultSink->set_formatter(std::move(fmt));
+				this->defaultSink->set_level(spdlog::level::trace);
+
+				this->defaultLogger->flush_on(spdlog::level::trace);
+				this->defaultLogger->set_level(spdlog::level::trace);
+			}
+
+			// функциональный (DebugFn)
+			{
+				auto fmtFn = std::make_unique<spdlog::pattern_formatter>();
+				fmtFn->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag)
+					.set_pattern(GetPattern(Pattern::DebugFn));
+
+				fmtFn->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, nullptr)
+					.set_pattern(GetPattern(Pattern::DebugFn));
+
+				this->defaultFnSink->set_formatter(std::move(fmtFn));
+				this->defaultFnSink->set_level(spdlog::level::trace);
+
+				this->defaultFuncLogger->flush_on(spdlog::level::trace);
+				this->defaultFuncLogger->set_level(spdlog::level::trace);
+			}
 		}
 		~UnscopedData() {
 			assertm(false, "Unexpected destructor call");
 		}
 
 		const std::shared_ptr<spdlog::logger> DefaultLogger() const {
-			return defaultLogger;
+			return this->defaultLogger;
+		}
+
+		const std::shared_ptr<spdlog::logger> DefaultFuncLogger() const {
+			return this->defaultFuncLogger;
 		}
 
 	private:
 		const std::shared_ptr<spdlog::sinks::msvc_sink_mt> defaultSink;
+		const std::shared_ptr<spdlog::sinks::msvc_sink_mt> defaultFnSink;
+
 		const std::shared_ptr<spdlog::logger> defaultLogger;
+		const std::shared_ptr<spdlog::logger> defaultFuncLogger;
 	};
 
 
 
 	DefaultLoggers::DefaultLoggers()
 		: initializedLoggersById{}
-#if USE_DYNAMIC_SINK
-		, logSizeCheckSem{ L"DefaultLoggers::CheckLogFileSize" }
-#endif
-#ifdef _DEBUG
-		, debugSink{ std::make_shared<spdlog::sinks::msvc_sink_mt>() }
-#endif
 	{
 		this->prefixCallback = [this] {
 			return this->className;
@@ -167,12 +194,33 @@ namespace LOGGER_NS {
 			};
 
 #ifdef _DEBUG
-		auto formatterDebug = std::make_unique<spdlog::pattern_formatter>();
-		formatterDebug->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Debug));
-		formatterDebug->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, this->prefixCallback).set_pattern(GetPattern(Pattern::Debug));
-		this->debugSink->set_formatter(std::move(formatterDebug));
-		this->debugSink->set_level(spdlog::level::trace);
+		this->debugSink = std::make_shared<spdlog::sinks::msvc_sink_mt>();
+		{
+			auto formatterDebug = std::make_unique<spdlog::pattern_formatter>();
+			formatterDebug->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag)
+				.set_pattern(GetPattern(Pattern::Debug));
+
+			formatterDebug->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, this->prefixCallback)
+				.set_pattern(GetPattern(Pattern::Debug));
+
+			this->debugSink->set_formatter(std::move(formatterDebug));
+			this->debugSink->set_level(spdlog::level::trace);
+		}
+
+		this->debugFnSink = std::make_shared<spdlog::sinks::msvc_sink_mt>();
+		{
+			auto formatterDebugFn = std::make_unique<spdlog::pattern_formatter>();
+			formatterDebugFn->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag)
+				.set_pattern(GetPattern(Pattern::DebugFn));
+
+			formatterDebugFn->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, this->prefixCallback)
+				.set_pattern(GetPattern(Pattern::DebugFn));
+
+			this->debugFnSink->set_formatter(std::move(formatterDebugFn));
+			this->debugFnSink->set_level(spdlog::level::trace);
+		}
 #endif
+
 		// DefaultLoggers::UnscopedData is created inside singleton
 		H::TokenSingleton<DefaultLoggers>::SetToken(Passkey<DefaultLoggers>{}, this->token);
 	}
@@ -188,7 +236,7 @@ namespace LOGGER_NS {
         LoggingMode loggingMode,
         uintmax_t maxSizeLogFile
     ) {
-        GetInstance().InitForId(0, logFilePath, initFlags, loggingMode, maxSizeLogFile);
+		DefaultLoggers::GetInstance().InitForId(0, logFilePath, initFlags, loggingMode, maxSizeLogFile);
     }
 
     void DefaultLoggers::InitForId(
@@ -215,17 +263,12 @@ namespace LOGGER_NS {
         }
 
         if (initializedLoggersByPath.count(logFilePath) > 0) {
-            TimeLogger(loggerId)->warn("the logger on this path has already been initialized");
+			DefaultLoggers::TimeLogger(loggerId)->warn("the logger on this path has already been initialized");
             return;
         }
         else {
             initializedLoggersByPath.insert(logFilePath);
         }
-
-#if USE_DYNAMIC_SINK
-        std::wstring pauseLoggingEventName = logFilePath.filename().wstring() + L"-PauseLogging";
-        logFilePath = DynamicFileSinkMt::PickLogFile(logFilePath);
-#endif
 
         if (!std::filesystem::exists(logFilePath)) {
             initFlags &= ~InitFlags::AppendNewSessionMsg; // don't append new session message at first created log file
@@ -241,31 +284,22 @@ namespace LOGGER_NS {
             }
         }
       
-        auto& _this = GetInstance();
+        auto& _this = DefaultLoggers::GetInstance();
         if (_this.initializedLoggersById.count(loggerId) > 0) {
-            TimeLogger(loggerId)->warn("the logger on this id = {} has already been initialized, continue reinitalize ...", loggerId);
+			DefaultLoggers::TimeLogger(loggerId)->warn("the logger on this id = {} has already been initialized, continue reinitalize ...", loggerId);
         } else {
             _this.initializedLoggersById.insert(loggerId);
         }
 
         _this.standardLoggersList[loggerId].maxSizeLogFile = maxSizeLogFile;
 
-
-#if USE_DYNAMIC_SINK
-        _this.standardLoggersList[loggerId].fileSink = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate), pauseLoggingEventName);
-#else
         _this.standardLoggersList[loggerId].fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, initFlags.Has(InitFlags::Truncate));
-#endif
         auto formatterDefault = std::make_unique<spdlog::pattern_formatter>();
         formatterDefault->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Default));
         formatterDefault->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::Default));
         _this.standardLoggersList[loggerId].fileSink->set_formatter(std::move(formatterDefault));
 
-#if USE_DYNAMIC_SINK
-        _this.standardLoggersList[loggerId].fileSinkRaw = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate), pauseLoggingEventName);
-#else
         _this.standardLoggersList[loggerId].fileSinkRaw = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, initFlags.Has(InitFlags::Truncate));
-#endif
         if (initFlags.Has(InitFlags::DisableEOLforRawLogger)) {
             auto formatterRaw = std::make_unique<spdlog::pattern_formatter>(GetPattern(Pattern::Raw), spdlog::pattern_time_type::local, std::string(""));
             _this.standardLoggersList[loggerId].fileSinkRaw->set_formatter(std::move(formatterRaw));
@@ -274,28 +308,16 @@ namespace LOGGER_NS {
             _this.standardLoggersList[loggerId].fileSinkRaw->set_pattern(GetPattern(Pattern::Raw));
         }
 
-#if USE_DYNAMIC_SINK
-        _this.standardLoggersList[loggerId].fileSinkTime = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate), pauseLoggingEventName);
-#else
         _this.standardLoggersList[loggerId].fileSinkTime = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, initFlags.Has(InitFlags::Truncate));
-#endif
         _this.standardLoggersList[loggerId].fileSinkTime->set_pattern(GetPattern(Pattern::Time));
 
-#if USE_DYNAMIC_SINK
-        _this.standardLoggersList[loggerId].fileSinkFunc = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate), pauseLoggingEventName);
-#else
         _this.standardLoggersList[loggerId].fileSinkFunc = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, initFlags.Has(InitFlags::Truncate));
-#endif
         auto formatterFunc = std::make_unique<spdlog::pattern_formatter>();
         formatterFunc->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Func));
         formatterFunc->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, _this.prefixCallback).set_pattern(GetPattern(Pattern::Func));
         _this.standardLoggersList[loggerId].fileSinkFunc->set_formatter(std::move(formatterFunc));
 
-#if USE_DYNAMIC_SINK
-        _this.standardLoggersList[loggerId].fileSinkExtend = std::make_shared<DynamicFileSinkMt>(logFilePath, initFlags.Has(InitFlags::Truncate), pauseLoggingEventName);
-#else
         _this.standardLoggersList[loggerId].fileSinkExtend = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, initFlags.Has(InitFlags::Truncate));
-#endif
         auto formatterExtend = std::make_unique<spdlog::pattern_formatter>();
         formatterExtend->add_flag<FunctionNameFormatter>(FunctionNameFormatter::flag).set_pattern(GetPattern(Pattern::Extend));
         formatterExtend->add_flag<MsgCallbackFormatter>(MsgCallbackFormatter::flag, _this.prefixCallback, _this.postfixCallback).set_pattern(GetPattern(Pattern::Extend));
@@ -322,66 +344,103 @@ namespace LOGGER_NS {
         }
 
 
-        spdlog::sinks_init_list loggerSinks = { _this.standardLoggersList[loggerId].fileSink };
-        spdlog::sinks_init_list rawLoggerSinks = { _this.standardLoggersList[loggerId].fileSinkRaw };
-        spdlog::sinks_init_list timeLoggerSinks = { _this.standardLoggersList[loggerId].fileSinkTime };
-        spdlog::sinks_init_list funcLoggerSinks = { _this.standardLoggersList[loggerId].fileSinkFunc };
-        spdlog::sinks_init_list extendLoggerSinks = { _this.standardLoggersList[loggerId].fileSinkExtend };
+		// Формирование sink-листов
+		auto& list = _this.standardLoggersList[loggerId];
 
-        if (initFlags.Has(InitFlags::EnableLogToStdout)) {
-            loggerSinks = { _this.stdoutDebugColorSink, _this.standardLoggersList[loggerId].fileSink };
-            funcLoggerSinks = { _this.stdoutDebugFnColorSink, _this.standardLoggersList[loggerId].fileSinkFunc };
+		std::vector<spdlog::sink_ptr> loggerSinks;
+		std::vector<spdlog::sink_ptr> rawLoggerSinks;
+		std::vector<spdlog::sink_ptr> timeLoggerSinks;
+		std::vector<spdlog::sink_ptr> funcLoggerSinks;
+		std::vector<spdlog::sink_ptr> extendLoggerSinks;
 
-            if (initFlags.Has(InitFlags::RedirectRawTimeLogToStdout)) {
-                rawLoggerSinks = { _this.stdoutDebugColorSink, _this.standardLoggersList[loggerId].fileSinkRaw };
-                timeLoggerSinks = { _this.stdoutDebugColorSink, _this.standardLoggersList[loggerId].fileSinkTime };
-            }
-        }
+		// Базовые логгеры (только файл)
+		loggerSinks.push_back(list.fileSink);
+		rawLoggerSinks.push_back(list.fileSinkRaw);
+		timeLoggerSinks.push_back(list.fileSinkTime);
+		funcLoggerSinks.push_back(list.fileSinkFunc);
+		extendLoggerSinks.push_back(list.fileSinkExtend);
+
+		// Добавляем stdout (если включено)
+		if (initFlags.Has(InitFlags::EnableLogToStdout)) {
+			loggerSinks.push_back(_this.stdoutDebugColorSink);
+			funcLoggerSinks.push_back(_this.stdoutDebugFnColorSink);
+			
+			if (initFlags.Has(InitFlags::RedirectRawTimeLogToStdout)) {
+				rawLoggerSinks.push_back(_this.stdoutDebugColorSink);
+				timeLoggerSinks.push_back(_this.stdoutDebugColorSink);
+			}
+		}
+
 
 #ifdef _DEBUG
-        extendLoggerSinks = { _this.debugSink, _this.standardLoggersList[loggerId].fileSinkExtend };
+		funcLoggerSinks.push_back(_this.debugFnSink); // чтобы LOG_FUNCTION_SCOPE_* летели в Output (паттерн DebugFn)
+		extendLoggerSinks.push_back(_this.debugSink); // extend тоже в Output
 
-        spdlog::sinks_init_list debugLoggerSinks = { _this.debugSink, _this.standardLoggersList[loggerId].fileSink };
-        if (initFlags.Has(InitFlags::EnableLogToStdout)) {
-            debugLoggerSinks = { _this.debugSink, _this.stdoutDebugColorSink, _this.standardLoggersList[loggerId].fileSink };
-        }
+		std::vector<spdlog::sink_ptr> debugLoggerSinks = { list.fileSink, _this.debugSink };
+		if (initFlags.Has(InitFlags::EnableLogToStdout)) {
+			debugLoggerSinks.push_back(_this.stdoutDebugColorSink);
+		}
 #endif
 
         std::string nameId = loggerId > 0 ? "_" + std::to_string(loggerId) : "";
 
-        _this.standardLoggersList[loggerId].logger = std::make_shared<spdlog::logger>("logger" + nameId, loggerSinks);
-        _this.standardLoggersList[loggerId].logger->flush_on(spdlog::level::trace);
+		_this.standardLoggersList[loggerId].logger =
+			std::make_shared<spdlog::logger>(
+				"logger" + nameId,
+				loggerSinks.begin(),
+				loggerSinks.end()
+			);
+		_this.standardLoggersList[loggerId].logger->flush_on(spdlog::level::trace);
 
-        _this.standardLoggersList[loggerId].rawLogger = std::make_shared<spdlog::logger>("raw_logger" + nameId, rawLoggerSinks);
-        _this.standardLoggersList[loggerId].rawLogger->flush_on(spdlog::level::trace);
 
-        _this.standardLoggersList[loggerId].timeLogger = std::make_shared<spdlog::logger>("time_logger" + nameId, timeLoggerSinks);
-        _this.standardLoggersList[loggerId].timeLogger->flush_on(spdlog::level::trace);
+		_this.standardLoggersList[loggerId].rawLogger =
+			std::make_shared<spdlog::logger>(
+				"raw_logger" + nameId,
+				rawLoggerSinks.begin(),
+				rawLoggerSinks.end()
+			);
+		_this.standardLoggersList[loggerId].rawLogger->flush_on(spdlog::level::trace);
 
-        _this.standardLoggersList[loggerId].funcLogger = std::make_shared<spdlog::logger>("func_logger" + nameId, funcLoggerSinks);
-        _this.standardLoggersList[loggerId].funcLogger->flush_on(spdlog::level::trace);
 
-        _this.standardLoggersList[loggerId].extendLogger = std::make_shared<spdlog::logger>("extend_logger" + nameId, extendLoggerSinks);
-        _this.standardLoggersList[loggerId].extendLogger->flush_on(spdlog::level::trace);
+		_this.standardLoggersList[loggerId].timeLogger =
+			std::make_shared<spdlog::logger>(
+				"time_logger" + nameId,
+				timeLoggerSinks.begin(),
+				timeLoggerSinks.end()
+			);
+		_this.standardLoggersList[loggerId].timeLogger->flush_on(spdlog::level::trace);
+
+
+		_this.standardLoggersList[loggerId].funcLogger =
+			std::make_shared<spdlog::logger>(
+				"func_logger" + nameId,
+				funcLoggerSinks.begin(),
+				funcLoggerSinks.end()
+			);
+		_this.standardLoggersList[loggerId].funcLogger->flush_on(spdlog::level::trace);
+
+
+		_this.standardLoggersList[loggerId].extendLogger =
+			std::make_shared<spdlog::logger>(
+				"extend_logger" + nameId,
+				extendLoggerSinks.begin(),
+				extendLoggerSinks.end()
+			);
+		_this.standardLoggersList[loggerId].extendLogger->flush_on(spdlog::level::trace);
+
 
 #ifdef _DEBUG
-        _this.standardLoggersList[loggerId].debugLogger = std::make_shared<spdlog::logger>("debug_logger" + nameId, debugLoggerSinks);
-        _this.standardLoggersList[loggerId].debugLogger->flush_on(spdlog::level::trace);
+		_this.standardLoggersList[loggerId].debugLogger =
+			std::make_shared<spdlog::logger>(
+				"debug_logger" + nameId,
+				debugLoggerSinks.begin(),
+				debugLoggerSinks.end()
+			);
+		_this.standardLoggersList[loggerId].debugLogger->flush_on(spdlog::level::trace);
 #endif
 
         // SetLoggingMode requires pauseLoggingEvent to exist
-#if USE_DYNAMIC_SINK
-        auto timer = std::make_shared<H::Timer>();
-        timer->Start(logSizeCheckInterval, [loggerId] {
-            auto& _this = GetInstance();
-            auto& loggers = _this.standardLoggersList[loggerId];
-            CheckLogFileSize(loggers);
-            }, true);
-        _this.standardLoggersList[loggerId].logSizeLimitChecker = timer;
-        _this.standardLoggersList[loggerId].pauseLoggingEvent = std::make_shared<H::EventObject>(pauseLoggingEventName);
-#endif
-
-        SetLoggingMode(loggingMode, loggerId);
+		DefaultLoggers::SetLoggingMode(loggingMode, loggerId);
 
         if (initFlags.Has(InitFlags::AppendNewSessionMsg)) {
             std::string rawEOL = "";
@@ -396,36 +455,35 @@ namespace LOGGER_NS {
         }
     }
 
+
     bool DefaultLoggers::IsInitialized(uint8_t id) {
-        return GetInstance().initializedLoggersById.count(id) > 0;
+        return DefaultLoggers::GetInstance().initializedLoggersById.count(id) > 0;
     }
+
 
     std::string DefaultLoggers::GetLastMessage() {
-        std::unique_lock lk{ GetInstance().mxCustomFlagHandlers };
-        return GetInstance().lastMessage;
+        std::unique_lock lk{ DefaultLoggers::GetInstance().mxCustomFlagHandlers };
+        return DefaultLoggers::GetInstance().lastMessage;
     }
 
+
     LoggingMode DefaultLoggers::GetLoggingMode(uint8_t id) {
-        auto& _this = GetInstance();
+        auto& _this = DefaultLoggers::GetInstance();
 
         if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
             auto defaultLogger = H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
-            auto mode = SpdlogLevelToLoggingMode(defaultLogger->level());
+            auto mode = DefaultLoggers::SpdlogLevelToLoggingMode(defaultLogger->level());
             return mode;
         }
 
         auto& loggers = _this.standardLoggersList[id];
-
-#if USE_DYNAMIC_SINK
-        auto logLk = loggers.pauseLoggingEvent->ResetScoped();
-#endif
-
         return loggers.loggingMode;
     }
 
+
     void DefaultLoggers::SetLoggingMode(LoggingMode mode, uint8_t id) {
-        auto& _this = GetInstance();
-        auto logLevel = LoggingModeToSpdlogLevel(mode);
+        auto& _this = DefaultLoggers::GetInstance();
+        auto logLevel = DefaultLoggers::LoggingModeToSpdlogLevel(mode);
 
         if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
             auto defaultLogger = H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
@@ -435,41 +493,34 @@ namespace LOGGER_NS {
 
         auto& loggers = _this.standardLoggersList[id];
 
-#if USE_DYNAMIC_SINK
-        auto logLk = loggers.pauseLoggingEvent->ResetScoped();
-#endif
-
         loggers.loggingMode = mode;
-        
+
         loggers.fileSink->set_level(logLevel);
         loggers.fileSinkRaw->set_level(logLevel);
         loggers.fileSinkTime->set_level(logLevel);
         loggers.fileSinkFunc->set_level(logLevel);
         loggers.fileSinkExtend->set_level(logLevel);
 
-        ForEachLogger(id, [logLevel](auto& logger) {
+		DefaultLoggers::ForEachLogger(id, [logLevel](auto& logger) {
             logger.set_level(logLevel);
         });
     }
 
+
     uintmax_t DefaultLoggers::GetMaxLogFileSize(uint8_t id) {
-        auto& _this = GetInstance();
+        auto& _this = DefaultLoggers::GetInstance();
 
         if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
             return StandardLoggers::defaultLogSize;
         }
 
         auto& loggers = _this.standardLoggersList[id];
-
-#if USE_DYNAMIC_SINK
-        auto logLk = loggers.pauseLoggingEvent->ResetScoped();
-#endif
-
         return loggers.maxSizeLogFile;
     }
 
+
     void DefaultLoggers::SetMaxLogFileSize(uintmax_t size, uint8_t id) {
-        auto& _this = GetInstance();
+        auto& _this = DefaultLoggers::GetInstance();
 
         if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
             return;
@@ -477,16 +528,13 @@ namespace LOGGER_NS {
 
         auto& loggers = _this.standardLoggersList[id];
 
-#if USE_DYNAMIC_SINK
-        auto logLk = loggers.pauseLoggingEvent->ResetScoped();
-#endif
-
         // Will have effect after the next dynamic sink filesize check timeout
         loggers.maxSizeLogFile = size;
     }
 
+
     void DefaultLoggers::ForEachLogger(uint8_t id, const std::function<void(spdlog::logger&)>& action) {
-        auto& _this = GetInstance();
+        auto& _this = DefaultLoggers::GetInstance();
 
         if (H::TokenSingleton<DefaultLoggers>::IsExpired()) {
             auto defaultLogger = H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
@@ -528,6 +576,7 @@ namespace LOGGER_NS {
         }
     }
 
+
     LoggingMode DefaultLoggers::SpdlogLevelToLoggingMode(spdlog::level::level_enum level) {
         switch (level) {
         case spdlog::level::level_enum::info:
@@ -541,130 +590,83 @@ namespace LOGGER_NS {
         }
     }
 
-    std::shared_ptr<spdlog::logger> DefaultLoggers::Logger(uint8_t id) {
-        auto& _this = GetInstance(); // ensure that token set
 
-        if (H::TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].logger) {
+    std::shared_ptr<spdlog::logger> DefaultLoggers::Logger(uint8_t id) {
+        auto& _this = DefaultLoggers::GetInstance(); // ensure that token set
+
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired() ||
+			!_this.standardLoggersList[id].logger
+			) {
             return H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
         }
-        return GetInstance().standardLoggersList[id].logger;
+        return _this.standardLoggersList[id].logger;
     }
+
 
     std::shared_ptr<spdlog::logger> DefaultLoggers::RawLogger(uint8_t id) {
-        auto& _this = GetInstance();
+        auto& _this = DefaultLoggers::GetInstance();
 
-        if (H::TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].rawLogger) {
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired() ||
+			!_this.standardLoggersList[id].rawLogger
+			) {
             return H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
         }
-        return GetInstance().standardLoggersList[id].rawLogger;
+        return _this.standardLoggersList[id].rawLogger;
     }
+
 
     std::shared_ptr<spdlog::logger> DefaultLoggers::TimeLogger(uint8_t id) {
-        auto& _this = GetInstance();
+        auto& _this = DefaultLoggers::GetInstance();
 
-        if (H::TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].timeLogger) {
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired() ||
+			!_this.standardLoggersList[id].timeLogger
+			) {
             return H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
         }
-        return GetInstance().standardLoggersList[id].timeLogger;
+        return _this.standardLoggersList[id].timeLogger;
     }
+
 
     std::shared_ptr<spdlog::logger> DefaultLoggers::FuncLogger(uint8_t id) {
-        auto& _this = GetInstance();
+        auto& _this = DefaultLoggers::GetInstance();
 
-        if (H::TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].funcLogger) {
-            return H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired() ||
+			!_this.standardLoggersList[id].funcLogger
+			) {
+            return H::TokenSingleton<DefaultLoggers>::GetData().DefaultFuncLogger();
         }
-        return GetInstance().standardLoggersList[id].funcLogger;
+        return _this.standardLoggersList[id].funcLogger;
     }
+
 
     std::shared_ptr<spdlog::logger> DefaultLoggers::DebugLogger(uint8_t id) {
 #ifdef _DEBUG
-        auto& _this = GetInstance();
+        auto& _this = DefaultLoggers::GetInstance();
 
-        if (H::TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].debugLogger) {
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired() ||
+			!_this.standardLoggersList[id].debugLogger
+			) {
             return H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
         }
-        return GetInstance().standardLoggersList[id].debugLogger;
+        return _this.standardLoggersList[id].debugLogger;
 #else
-        return Logger(id);
+        return DefaultLoggers::Logger(id);
 #endif
     }
+
 
     std::shared_ptr<spdlog::logger> DefaultLoggers::ExtendLogger(uint8_t id) {
-        auto& _this = GetInstance();
+        auto& _this = DefaultLoggers::GetInstance();
 
-        if (H::TokenSingleton<DefaultLoggers>::IsExpired() || !_this.standardLoggersList[id].extendLogger) {
+        if (H::TokenSingleton<DefaultLoggers>::IsExpired() ||
+			!_this.standardLoggersList[id].extendLogger
+			) {
             return H::TokenSingleton<DefaultLoggers>::GetData().DefaultLogger();
         }
-        return GetInstance().standardLoggersList[id].extendLogger;
+        return _this.standardLoggersList[id].extendLogger;
     }
-
-#if USE_DYNAMIC_SINK
-	void TryDeleteFile(const std::filesystem::path& filePath) {
-		try {
-			std::filesystem::remove(filePath);
-		}
-		catch (...) {
-			// Ignore
-		}
-	}
-
-	bool TryRenameFile(const std::filesystem::path& filePath, const std::filesystem::path& newName) {
-		try {
-			std::filesystem::rename(filePath, std::filesystem::path(filePath).remove_filename() / newName);
-			return true;
-		}
-		catch (...) {
-			return false;
-		}
-	}
-
-	void DefaultLoggers::CheckLogFileSize(StandardLoggers& loggers) {
-		auto& _this = GetInstance();
-		auto lk = _this.logSizeCheckSem.LockScoped();
-		auto logLk = loggers.pauseLoggingEvent->ResetScoped();
-
-		std::filesystem::path path(loggers.fileSink->GetFilename());
-		auto fileSize = std::filesystem::file_size(path);
-		if (fileSize > loggers.maxSizeLogFile || !std::filesystem::exists(path)) {
-			std::initializer_list sinks{
-				loggers.fileSink.get(), loggers.fileSinkRaw.get(), loggers.fileSinkTime.get(),
-				loggers.fileSinkFunc.get(), loggers.fileSinkExtend.get() };
-
-			for (auto& sink : sinks) {
-				sink->SwitchFile();
-			}
-
-			// Rename old file and copy last `maxSizeLogFile / 2` bytes from it to new file
-			std::filesystem::path tmpName(path.filename().wstring() + L".tmp");
-			if (TryRenameFile(path, tmpName)) { // If this succeeds, we are the last process to switch to new file
-				auto tmpPath = std::filesystem::path(path).remove_filename() / tmpName;
-				auto truncatedBytes = fileSize - loggers.maxSizeLogFile / 2;
-
-				std::ifstream oldFile(tmpPath, std::ios::binary);
-				if (!oldFile.is_open()) { // This shouldn't happen
-					TryDeleteFile(tmpPath);
-					return;
-				}
-
-				oldFile.seekg(0, std::ios::end);
-				uintmax_t oldFileSize = oldFile.tellg();
-				uintmax_t newFilesize = oldFileSize - std::min(oldFileSize, truncatedBytes);
-				oldFile.seekg(truncatedBytes, std::ios::beg);
-
-				std::vector<char> data(logTruncationMessage.begin(), logTruncationMessage.end());
-				data.resize(newFilesize + logTruncationMessage.size());
-				oldFile.read(data.data() + logTruncationMessage.size(), data.size());
-				oldFile.close();
-
-				H::FS::PrependToFile(loggers.fileSink->GetFilename(), data.data(), data.size());
-				TryDeleteFile(tmpPath);
-			}
-		}
-	}
-#endif
-
 }
+
 
 LOGGER_API H::meta::nothing* __LgCtx() {
     return nullptr;
