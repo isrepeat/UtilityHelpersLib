@@ -53,7 +53,48 @@ namespace STD_EXT_NS {
 			}
 			return *this;
 		}
+
+        // Проверка типа без изменения владения
+        template <typename U>
+        bool Is() const {
+            return dynamic_cast<U*>(this->get()) != nullptr;
+        }
+
+        // Наблюдающий "view" без изменения владения (иногда удобно)
+        template <typename U>
+        U* AsView() const {
+            return dynamic_cast<U*>(this->get());
+        }
+
+        // Безопасный up/downcast с передачей владения (успешно -> новый unique_ptr<U>, иначе -> nullptr)
+        // Требует rvalue, чтобы явно показать перемещение владения.
+        template <typename U>
+        unique_ptr<U> As()&& {
+            T* const rawPtr = this->get();
+            if (U* const casted = dynamic_cast<U*>(rawPtr)) {
+                (void)this->release(); // отдать владение только после успешного каста
+                return unique_ptr<U>{ casted };
+            }
+            return {};
+        }
+
+        // Жёсткий вариант: если каст невозможен — бросаем std::bad_cast
+        template <typename U>
+        unique_ptr<U> Cast()&& {
+            T* const rawPtr = this->get();
+            if (U* const casted = dynamic_cast<U*>(rawPtr)) {
+                (void)this->release();
+                return unique_ptr<U>{ casted };
+            }
+            throw ::std::bad_cast{};
+        }
 	};
+
+    // Обёртка над std::make_unique, возвращающая std::ex::unique_ptr<T>
+    template <typename T, typename... Args>
+    unique_ptr<T> make_unique_ex(Args&&... args) {
+        return unique_ptr<T>(::std::make_unique<T>(::std::forward<Args>(args)...));
+    }
 
 
 	//
@@ -102,11 +143,11 @@ namespace STD_EXT_NS {
 		}
 	};
 
-	// Обёртка над std::make_shared, возвращающая std::ex::shared_ptr<T>
-	template <typename T, typename... Args>
-	shared_ptr<T> make_shared_ex(Args&&... args) {
-		return shared_ptr<T>(::std::make_shared<T>(::std::forward<Args>(args)...));
-	}
+    // Обёртка над std::make_shared, возвращающая std::ex::shared_ptr<T>
+    template <typename T, typename... Args>
+    shared_ptr<T> make_shared_ex(Args&&... args) {
+        return shared_ptr<T>(::std::make_shared<T>(::std::forward<Args>(args)...));
+    }
 
 
 	//
