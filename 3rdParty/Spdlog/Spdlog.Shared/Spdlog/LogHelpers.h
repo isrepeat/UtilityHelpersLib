@@ -76,23 +76,27 @@ namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger na
 
 
 #if !defined(DISABLE_COMMON_LOGGING)
+// Использование HELPERS_NS типов / методов сдесь считается норм,
+// поскольку они инкапсулированы внутри макросов LOG_XXX которые 
+// будут использоваться позже, когда уже HELPERS_NS инклюды подключены.
+
 #define LOG_CTX spdlog::source_loc{__FILE__, __LINE__, SPDLOG_FUNCTION}
 
-#define LOG_RAW(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::RawLogger(), LOG_CTX, spdlog::level::debug, fmt, ##__VA_ARGS__)
-#define LOG_TIME(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::TimeLogger(), LOG_CTX, spdlog::level::debug, fmt, ##__VA_ARGS__)
+#define LOG_RAW(fmt, ...) LOGGER_NS::DefaultLoggers::Log<typename decltype(HELPERS_NS::StringDeductor(fmt))::type>(__LgCtx(), LOGGER_NS::DefaultLoggers::RawLogger(), LOG_CTX, spdlog::level::debug, fmt, ##__VA_ARGS__)
+#define LOG_TIME(fmt, ...) LOGGER_NS::DefaultLoggers::Log<typename decltype(HELPERS_NS::StringDeductor(fmt))::type>(__LgCtx(), LOGGER_NS::DefaultLoggers::TimeLogger(), LOG_CTX, spdlog::level::debug, fmt, ##__VA_ARGS__)
 
-#define LOG_TRACE(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::trace, fmt, ##__VA_ARGS__)
-#define LOG_DEBUG(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::debug, fmt, ##__VA_ARGS__)
-#define LOG_INFO(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::info, fmt, ##__VA_ARGS__)
-#define LOG_WARNING(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::warn, fmt, ##__VA_ARGS__)
-#define LOG_ERROR(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::err, fmt, ##__VA_ARGS__)
+#define LOG_TRACE(fmt, ...) LOGGER_NS::DefaultLoggers::Log<typename decltype(HELPERS_NS::StringDeductor(fmt))::type>(__LgCtx(), LOGGER_NS::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::trace, fmt, ##__VA_ARGS__)
+#define LOG_DEBUG(fmt, ...) LOGGER_NS::DefaultLoggers::Log<typename decltype(HELPERS_NS::StringDeductor(fmt))::type>(__LgCtx(), LOGGER_NS::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::debug, fmt, ##__VA_ARGS__)
+#define LOG_INFO(fmt, ...) LOGGER_NS::DefaultLoggers::Log<typename decltype(HELPERS_NS::StringDeductor(fmt))::type>(__LgCtx(), LOGGER_NS::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::info, fmt, ##__VA_ARGS__)
+#define LOG_WARNING(fmt, ...) LOGGER_NS::DefaultLoggers::Log<typename decltype(HELPERS_NS::StringDeductor(fmt))::type>(__LgCtx(), LOGGER_NS::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::warn, fmt, ##__VA_ARGS__)
+#define LOG_ERROR(fmt, ...) LOGGER_NS::DefaultLoggers::Log<typename decltype(HELPERS_NS::StringDeductor(fmt))::type>(__LgCtx(), LOGGER_NS::DefaultLoggers::Logger(), LOG_CTX, spdlog::level::err, fmt, ##__VA_ARGS__)
 
 // Use it inside static functions or with custom context:
-#define LOG_TRACE_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::trace, fmt, ##__VA_ARGS__)
-#define LOG_DEBUG_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::debug, fmt, ##__VA_ARGS__)
-#define LOG_INFO_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::info, fmt, ##__VA_ARGS__)
-#define LOG_WARNING_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::warn, fmt, ##__VA_ARGS__)
-#define LOG_ERROR_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::err, fmt, ##__VA_ARGS__)
+#define LOG_TRACE_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<typename decltype(HELPERS_NS::StringDeductor(fmt))::type>(_This, LOGGER_NS::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::trace, fmt, ##__VA_ARGS__)
+#define LOG_DEBUG_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<typename decltype(HELPERS_NS::StringDeductor(fmt))::type>(_This, LOGGER_NS::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::debug, fmt, ##__VA_ARGS__)
+#define LOG_INFO_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<typename decltype(HELPERS_NS::StringDeductor(fmt))::type>(_This, LOGGER_NS::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::info, fmt, ##__VA_ARGS__)
+#define LOG_WARNING_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<typename decltype(HELPERS_NS::StringDeductor(fmt))::type>(_This, LOGGER_NS::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::warn, fmt, ##__VA_ARGS__)
+#define LOG_ERROR_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<typename decltype(HELPERS_NS::StringDeductor(fmt))::type>(_This, LOGGER_NS::DefaultLoggers::DebugLogger(), LOG_CTX, spdlog::level::err, fmt, ##__VA_ARGS__)
 
 #define LOG_TRACE_D(fmt, ...) LOG_TRACE_S(__LgCtx(), fmt, ##__VA_ARGS__)
 #define LOG_DEBUG_D(fmt, ...) LOG_DEBUG_S(__LgCtx(), fmt, ##__VA_ARGS__)
@@ -101,21 +105,21 @@ namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger na
 #define LOG_ERROR_D(fmt, ...) LOG_ERROR_S(__LgCtx(), fmt, ##__VA_ARGS__)
 
 // Extend logger save last message
-#define LOG_DEBUG_EX(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::ExtendLogger(), LOG_CTX, spdlog::level::debug, fmt, ##__VA_ARGS__)
-#define LOG_ERROR_EX(fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(__LgCtx(), LOGGER_NS::DefaultLoggers::ExtendLogger(), LOG_CTX, spdlog::level::err, fmt, ##__VA_ARGS__)
+#define LOG_DEBUG_EX(fmt, ...) LOGGER_NS::DefaultLoggers::Log<typename decltype(HELPERS_NS::StringDeductor(fmt))::type>(__LgCtx(), LOGGER_NS::DefaultLoggers::ExtendLogger(), LOG_CTX, spdlog::level::debug, fmt, ##__VA_ARGS__)
+#define LOG_ERROR_EX(fmt, ...) LOGGER_NS::DefaultLoggers::Log<typename decltype(HELPERS_NS::StringDeductor(fmt))::type>(__LgCtx(), LOGGER_NS::DefaultLoggers::ExtendLogger(), LOG_CTX, spdlog::level::err, fmt, ##__VA_ARGS__)
 
 
-#define LOG_FUNCTION_ENTER_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::FuncLogger(), LOG_CTX, spdlog::level::debug, fmt, ##__VA_ARGS__)
+#define LOG_FUNCTION_ENTER_S(_This, fmt, ...) LOGGER_NS::DefaultLoggers::Log<typename decltype(HELPERS_NS::StringDeductor(fmt))::type>(_This, LOGGER_NS::DefaultLoggers::FuncLogger(), LOG_CTX, spdlog::level::debug, fmt, ##__VA_ARGS__)
 #define LOG_FUNCTION_ENTER_C(fmt, ...) LOG_FUNCTION_ENTER_S(__LgCtx(), fmt, ##__VA_ARGS__)
 #define LOG_FUNCTION_ENTER(fmt, ...) LOG_FUNCTION_ENTER_S(LOGGER_NS::nullctx, fmt, ##__VA_ARGS__)
 
 
 #define LOG_SCOPED(__LOGGER__, _This, fmt, ...) \
     auto __fnCtx = LOG_CTX; \
-    LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, __LOGGER__, __fnCtx, spdlog::level::debug, fmt, ##__VA_ARGS__); \
+    LOGGER_NS::DefaultLoggers::Log<typename decltype(HELPERS_NS::StringDeductor(fmt))::type>(_This, __LOGGER__, __fnCtx, spdlog::level::debug, fmt, ##__VA_ARGS__); \
     \
     auto __functionFinishLogScoped = HELPERS_NS::MakeScope([&] { \
-        LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, __LOGGER__, __fnCtx, spdlog::level::debug, EXPAND_1_VA_ARGS_(JOIN_STRING("<= ", fmt), ##__VA_ARGS__));  \
+        LOGGER_NS::DefaultLoggers::Log<typename decltype(HELPERS_NS::StringDeductor(fmt))::type>(_This, __LOGGER__, __fnCtx, spdlog::level::debug, EXPAND_1_VA_ARGS_(JOIN_STRING("<= ", fmt), ##__VA_ARGS__));  \
         });
 
 
@@ -124,15 +128,14 @@ namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger na
 
 #define LOG_FUNCTION_SCOPE_S(_This, fmt, ...) \
     auto __fnCtx = LOG_CTX; \
-	LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::FuncLogger(), __fnCtx, spdlog::level::debug, fmt, ##__VA_ARGS__); \
+	LOGGER_NS::DefaultLoggers::Log<typename decltype(HELPERS_NS::StringDeductor(fmt))::type>(_This, LOGGER_NS::DefaultLoggers::FuncLogger(), __fnCtx, spdlog::level::debug, fmt, ##__VA_ARGS__); \
     \
 	auto __functionFinishLogScoped = HELPERS_NS::MakeScope([&] { \
-		LOGGER_NS::DefaultLoggers::Log<INNER_TYPE_STR(fmt)>(_This, LOGGER_NS::DefaultLoggers::FuncLogger(), __fnCtx, spdlog::level::debug, JOIN_STRING("<= ", fmt), ##__VA_ARGS__); \
+		LOGGER_NS::DefaultLoggers::Log<typename decltype(HELPERS_NS::StringDeductor(fmt))::type>(_This, LOGGER_NS::DefaultLoggers::FuncLogger(), __fnCtx, spdlog::level::debug, JOIN_STRING("<= ", fmt), ##__VA_ARGS__); \
 		});
 
 #define LOG_FUNCTION_SCOPE_C(fmt, ...) LOG_FUNCTION_SCOPE_S(__LgCtx(), fmt, ##__VA_ARGS__)
 #define LOG_FUNCTION_SCOPE(fmt, ...) LOG_FUNCTION_SCOPE_S(LOGGER_NS::nullctx, fmt, ##__VA_ARGS__)
-
 #else
 #define LOG_CTX
 #define LOG_RAW(fmt, ...)
@@ -163,7 +166,7 @@ namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger na
 #define LOG_FUNCTION_SCOPE_S(_This, fmt, ...)
 #define LOG_FUNCTION_SCOPE_C(fmt, ...)
 #define LOG_FUNCTION_SCOPE(fmt, ...)
-#endif
+#endif // !defined(DISABLE_COMMON_LOGGING)
 
 
 #if !defined(DISABLE_CLASS_FULLNAME_LOGGING)
@@ -204,31 +207,17 @@ namespace LOGGER_NS_ALIAS = LOGGER_NS; // set your alias for original "logger na
 		} \
         \
 	private: // back default class modifier
-
 #else
 #define CLASS_FULLNAME_LOGGING_INLINE_IMPLEMENTATION(className)
 #endif
 
-
-
-#define USE_DYNAMIC_SINK 0
 #include "Helpers/Meta/Tags.h" // H::meta::nothing
 #include "Helpers/Singleton.hpp"
-#include "Helpers/String.hpp"
+#include "Helpers/String.h"
 #include "Helpers/Macros.h"
 #include "Helpers/Scope.h"
 #include "Helpers/Flags.h"
 
-#if USE_DYNAMIC_SINK
-// TODO: use forward declaration for DefaultLoggers::Log() static method before LOG_... macros definition above
-//       because Time.h include Rational.h and last one use LOG_... macros with undefined DefaultLoggers class yet
-#include "Helpers/Semaphore.h"
-#include "DynamicFileSink.h"
-
-namespace HELPERS_NS {
-    class Timer;
-}
-#endif
 #include "CustomTypeSpecialization.h"
 //#pragma message("include 'LogHelpers.h' [helpers files included]")
 
@@ -268,22 +257,11 @@ namespace LOGGER_NS {
         std::shared_ptr<spdlog::logger> debugLogger;
 #endif
 
-#if USE_DYNAMIC_SINK
-        std::shared_ptr<DynamicFileSinkMt> fileSink;
-        std::shared_ptr<DynamicFileSinkMt> fileSinkRaw;
-        std::shared_ptr<DynamicFileSinkMt> fileSinkTime;
-        std::shared_ptr<DynamicFileSinkMt> fileSinkFunc;
-        std::shared_ptr<DynamicFileSinkMt> fileSinkExtend;
-
-        std::shared_ptr<HELPERS_NS::Timer> logSizeLimitChecker;
-        std::shared_ptr<HELPERS_NS::EventObject> pauseLoggingEvent;
-#else
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSink;
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkRaw;
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkTime;
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkFunc;
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> fileSinkExtend;
-#endif
     };
 
 
@@ -369,7 +347,7 @@ namespace LOGGER_NS {
             auto& _this = GetInstance();
             std::unique_lock lk{ _this.mxCustomFlagHandlers };
 
-            if constexpr (has_member(std::remove_reference_t<decltype(std::declval<TClass>())>, __ClassFullnameLogging)) {
+            if constexpr (has_member(std::remove_cvref_t<TClass>, __ClassFullnameLogging)) {
                 _this.className = L" ["
                     + (classPtr ? classPtr->GetFullClassNameW() : TClass::GetOriginalClassName() + L"(nullptr)")
                     + L"]";
@@ -377,23 +355,19 @@ namespace LOGGER_NS {
             else {
                 _this.className = L"";
             }
-            logger->log(location, level, format, std::forward<TArgs&&>(args)...);
+            logger->log(location, level, format, std::forward<TArgs>(args)...);
         }
 
     private:
-#if USE_DYNAMIC_SINK
-        static void CheckLogFileSize(StandardLoggers& loggers);
-#endif
-
         static void ForEachLogger(uint8_t id, const std::function<void(spdlog::logger&)>& action);
         
         static spdlog::level::level_enum LoggingModeToSpdlogLevel(LoggingMode mode);
         static LoggingMode SpdlogLevelToLoggingMode(spdlog::level::level_enum mode);
 
-        //const std::unordered_map<uint8_t, bool> initializedLoggersById;
         std::set<uint8_t> initializedLoggersById;
 #ifdef _DEBUG
-        const std::shared_ptr<spdlog::sinks::msvc_sink_mt> debugSink;
+        std::shared_ptr<spdlog::sinks::msvc_sink_mt> debugSink;
+		std::shared_ptr<spdlog::sinks::msvc_sink_mt> debugFnSink;
 #endif
         std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> stdoutDebugColorSink;
         std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> stdoutDebugFnColorSink;
@@ -407,10 +381,6 @@ namespace LOGGER_NS {
         std::function<void(const std::string&)> postfixCallback = nullptr;
 
         std::shared_ptr<int> token = std::make_shared<int>();
-
-#if USE_DYNAMIC_SINK
-        HELPERS_NS::Semaphore logSizeCheckSem;
-#endif
 
         static constexpr std::string_view logTruncationMessage{"... [truncated] \n\n"};
     };

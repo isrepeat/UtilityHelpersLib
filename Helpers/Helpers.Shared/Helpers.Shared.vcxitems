@@ -142,6 +142,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ObservableCollection.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\ObservableCollectionTransform.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Pipeline.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Preprocessor.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PropertyStoreKeyRef.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\PropertyStoreReader.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Regex.h" />
@@ -217,6 +218,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Stream\StreamLineViewer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StringComparers.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\System.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Text.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\TypeSwitch.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Rational.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\RegistryManager.h" />
@@ -226,7 +228,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Socket.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\StdRedirection.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\String.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\String.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Exceptions.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SystemDataProvider.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\SystemInfo.h" />

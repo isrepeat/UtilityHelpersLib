@@ -327,9 +327,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Spdlog\spdlog\fmt\bundled\xchar.h">
       <Filter>Sources\spdlog</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Spdlog\DynamicFileSink.h">
-      <Filter>Sources</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Spdlog\spdlog\mdc.h">
       <Filter>Sources\spdlog</Filter>
     </ClInclude>
