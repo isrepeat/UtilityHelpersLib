@@ -6,48 +6,47 @@
 
 namespace HELPERS_NS {
     namespace Dx {
-        namespace {
-            // Producer/Consumer keys:
-            // - producer (srcDevice) acquires key 0, releases key 1 when frame is written
-            // - consumer (dstDevice/render) acquires key 1, releases key 0 when frame is done
-            constexpr UINT64 kKeyProducer = 0;
-            constexpr UINT64 kKeyConsumer = 1;
+        // Producer/Consumer keys:
+        // - producer (srcDevice) acquires key 0, releases key 1 when frame is written
+        // - consumer (dstDevice/render) acquires key 1, releases key 0 when frame is done
+        constexpr UINT64 kKeyProducer = 0;
+        constexpr UINT64 kKeyConsumer = 1;
 
-            class RenderLease final {
-            public:
-                RenderLease() = default;
+        class DxSharedTexture::RenderLease {
+        public:
+            RenderLease() = default;
 
-                RenderLease(
-                    DxSharedTexture* owner,
-                    uint32_t slotIndex,
-                    Microsoft::WRL::ComPtr<IDXGIKeyedMutex> dstMtx)
-                    : owner(owner)
-                    , slotIndex(slotIndex)
-                    , dstMtx(dstMtx) {
-                    HRESULT hr = this->dstMtx->AcquireSync(kKeyConsumer, INFINITE);
+            RenderLease(
+                DxSharedTexture* owner,
+                uint32_t slotIndex,
+                Microsoft::WRL::ComPtr<IDXGIKeyedMutex> dstMtx)
+                : owner(owner)
+                , slotIndex(slotIndex)
+                , dstMtx(dstMtx) {
+                HRESULT hr = this->dstMtx->AcquireSync(kKeyConsumer, INFINITE);
+                HELPERS_NS::System::ThrowIfFailed(hr);
+            }
+
+            ~RenderLease() {
+                if (this->dstMtx) {
+                    HRESULT hr = this->dstMtx->ReleaseSync(kKeyProducer);
                     HELPERS_NS::System::ThrowIfFailed(hr);
                 }
 
-                ~RenderLease() {
-                    if (this->dstMtx) {
-                        HRESULT hr = this->dstMtx->ReleaseSync(kKeyProducer);
-                        HELPERS_NS::System::ThrowIfFailed(hr);
-                    }
-
-                    if (this->owner) {
-                        this->owner->ReleaseSlotIndex(this->slotIndex);
-                    }
+                if (this->owner) {
+                    this->owner->ReleaseSlotIndex(this->slotIndex);
                 }
+            }
 
-                RenderLease(const RenderLease&) = delete;
-                RenderLease& operator=(const RenderLease&) = delete;
+            RenderLease(const RenderLease&) = delete;
+            RenderLease& operator=(const RenderLease&) = delete;
 
-            private:
-                DxSharedTexture* owner = nullptr;
-                uint32_t slotIndex = 0;
-                Microsoft::WRL::ComPtr<IDXGIKeyedMutex> dstMtx;
-            };
-        }
+        private:
+            DxSharedTexture* owner = nullptr;
+            uint32_t slotIndex = 0;
+            Microsoft::WRL::ComPtr<IDXGIKeyedMutex> dstMtx;
+        };
+        
 
         DxSharedTexture::DxSharedTexture(
             const D3D11_TEXTURE2D_DESC& desc,
@@ -256,11 +255,11 @@ namespace HELPERS_NS {
             *ppDstTexture = slot.dstDeviceTexture.Get();
             (*ppDstTexture)->AddRef();
 
-            auto leaseImpl = std::make_shared<RenderLease>(
+            auto leaseImpl = std::make_shared<DxSharedTexture::RenderLease>(
                 this,
                 slotIndex,
-                slot.dstDeviceTextureMtx)
-                ;
+                slot.dstDeviceTextureMtx
+            );
 
             *outRenderLease = std::shared_ptr<void>(leaseImpl, leaseImpl.get());
         }

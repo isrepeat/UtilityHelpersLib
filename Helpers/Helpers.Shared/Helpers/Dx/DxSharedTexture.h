@@ -18,8 +18,6 @@ namespace HELPERS_NS {
         // creates texture shared between 2 ID3D11Device's
         class DxSharedTexture {
         public:
-            friend class RenderLease;
-
             DxSharedTexture() = default;
             DxSharedTexture(
                 const D3D11_TEXTURE2D_DESC& desc,
@@ -55,6 +53,8 @@ namespace HELPERS_NS {
             void ReleaseSlotIndex(uint32_t slotIndex);
 
         private:
+            class RenderLease;
+
             struct Slot {
                 Microsoft::WRL::ComPtr<ID3D11Texture2D> dstDeviceTexture;
                 Microsoft::WRL::ComPtr<IDXGIKeyedMutex> dstDeviceTextureMtx;
