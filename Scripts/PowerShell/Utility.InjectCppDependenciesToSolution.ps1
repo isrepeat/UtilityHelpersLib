@@ -14,7 +14,7 @@ if (-not ($env:PSModulePath -split ';' | Where-Object { $_ -eq $modulePath })) {
 Import-Module -Name MessagingModule -Prefix m:: -ErrorAction Stop
 
 # --- Main ---
-$solutionInjectorExe = Join-Path $PSScriptRoot "..\..\Utilities\bin\SolutionInjector.exe"
+$solutionInjectorExe = Join-Path $PSScriptRoot "..\bin\SolutionInjector.exe"
 $solutionInjectorExe = (Resolve-Path $solutionInjectorExe -ErrorAction Stop).Path
 
 if (-not (Test-Path $solutionInjectorExe)) {

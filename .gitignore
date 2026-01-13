@@ -335,4 +335,4 @@ ASALocalRun/
 
 
 ## Specific excluded dirs:
-!Utilities/bin/
+!Scripts/bin/
