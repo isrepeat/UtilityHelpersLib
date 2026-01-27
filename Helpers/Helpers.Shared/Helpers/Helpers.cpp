@@ -3,14 +3,17 @@
 #include "Logger.h"
 #include "Memory.h"
 
-#include <filesystem>
+#ifdef _WIN32
 #include <shellapi.h>
 #include <Shlobj.h>
+#endif
+
+#include <filesystem>
 #include <codecvt>
 #include <locale>
 #include <regex>
 
-
+#ifdef _WIN32
 namespace HELPERS_NS {
     std::vector<std::string> split(std::string str, const std::string& delim) {
         std::vector<std::string> result;
@@ -116,7 +119,6 @@ namespace HELPERS_NS {
     std::string WrapInQuotes(const std::string& str) {
         return "\"" + str + "\"";
     }
-
 
     // CP_ACP - default code page
     std::string WStrToStr(const std::wstring& wstr, int codePage) {
@@ -384,3 +386,4 @@ namespace HELPERS_NS {
     }
 #endif
 }
+#endif

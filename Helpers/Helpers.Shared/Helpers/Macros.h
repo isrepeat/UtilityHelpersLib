@@ -1,6 +1,8 @@
 #pragma once
 #include "common.h"
+#ifdef _WIN32
 #include <debugapi.h>
+#endif
 #include <cassert>
 
 #define H_CONCAT_BASE(a, b) a ## b

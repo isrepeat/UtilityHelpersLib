@@ -3,12 +3,15 @@
 #include "HWindows.h"
 #include "Macros.h"
 
+#ifdef _WIN32
 #include <KnownFolders.h>
-#include <filesystem>
 #include <tlhelp32.h>
 #include <guiddef.h>
-#include <algorithm>
 #include <tchar.h>
+#endif
+
+#include <filesystem>
+#include <algorithm>
 #include <utility>
 #include <variant>
 #include <vector>
