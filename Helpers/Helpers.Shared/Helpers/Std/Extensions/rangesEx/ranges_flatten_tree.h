@@ -24,7 +24,7 @@ namespace STD_EXT_NS {
 							{ getChildrenFn(node) } -> ::std::ranges::input_range;
 					};
 
-					// TGetChildrenFn соответствует узлу TNode и возвращает input_range
+					// TGetChildrenFn accepts a TNode and returns an input_range of child nodes.
 					template <typename TGetChildrenFn, typename TNode>
 					concept children_fn_valid =
 						::std::same_as<
@@ -42,20 +42,17 @@ namespace STD_EXT_NS {
 			//
 			// ░ flatten_tree_view
 			//
-			// Почему внутри этого класса мы используем decayed-тип коллэбла (TGetChildrenFn_decayed_t)?
-			// 1) Без нормализации тип TGetChildrenFn может выводиться как ссылочный (например, const Lambda&
-			//    из-за perfect-forwarding). Тогда при хранении указателя на такой тип получится «указатель на
-			//    ссылку», что в C++ запрещено и приводит к ошибке вида "pointer to reference is illegal".
-			//    Decay гарантирует, что мы храним ЗНАЧЕНИЕ, а итератор держит обычный указатель на это значение.
-			// 2) Хранение по значению даёт стабильное время жизни и предсказуемость: ни висячих ссылок, ни
-			//    зависимости от того, был ли исходный коллэбл lvalue/rvalue/const и т.п.
-			// 3) Унификация типов и чище ошибки компиляции: независимо от cv/ref-квалификаций на входе внутри
-			//    view всегда один «канонический» тип. Это сокращает число инстанциаций и делает диагностические
-			//    сообщения короче.
-			// 4) Хотя для лямбд/функторов обычно достаточно remove_cvref_t, мы используем decay_t как более
-			//    универсальную нормализацию: помимо снятия cv/ref, она обрабатывает «функция → указатель на
-			//    функцию» и «массив → указатель на элемент». Это делает код устойчивее, если когда-нибудь
-			//    коллэбл окажется типом функции.
+			// Why does this class store a decayed callback type (TGetChildrenFn_decayed_t)?
+			// 1) Without normalization, perfect forwarding may deduce TGetChildrenFn as a reference,
+			//    such as const Lambda&. A pointer to that type would become an illegal pointer to a
+			//    reference. decay_t ensures that the view owns a value and the iterator stores a
+			//    regular pointer to that value.
+			// 2) Value storage provides a stable lifetime and avoids dangling references regardless
+			//    of whether the original callback was an lvalue, rvalue, or const object.
+			// 3) A canonical internal type reduces template instantiations and produces clearer
+			//    compiler diagnostics independent of the input cv/ref qualifiers.
+			// 4) remove_cvref_t would be enough for most lambdas and function objects, but decay_t
+			//    also converts functions to function pointers and arrays to element pointers.
 			template <
 				typename TView,
 				typename TGetChildrenFn
@@ -65,11 +62,11 @@ namespace STD_EXT_NS {
 			) class flatten_tree_view : public ::std::ranges::view_interface<flatten_tree_view<TView, TGetChildrenFn>> {
 			public:
 				using Node_t = ::std::ranges::range_value_t<TView>;
-				using TGetChildrenFn_decayed_t = ::std::decay_t<TGetChildrenFn>; // нормализуем тип коллэбла
+				using TGetChildrenFn_decayed_t = ::std::decay_t<TGetChildrenFn>; // Normalize the callback type.
 
 				class iterator {
 				public:
-					// Соглашения итераторов для STL
+					// Standard iterator type aliases.
 					using iterator_concept = ::std::input_iterator_tag;
 					using iterator_category = ::std::input_iterator_tag;
 					using difference_type = ::std::ptrdiff_t;
@@ -85,8 +82,8 @@ namespace STD_EXT_NS {
 					)
 						: getChildrenFnPtr{ getChildrenFnPtr }
 						, stack{ ::std::move(roots) } {
-						// stack изначально содержит только корни, причем в прямом порядке.
-						// Для правильного обхода слева-напрво разворачиваем корни.
+						// The stack initially contains roots in their original order.
+						// Reverse them so LIFO traversal still visits roots from left to right.
 						::std::reverse(this->stack.begin(), this->stack.end());
 						this->advance_to_next();
 					}
@@ -118,8 +115,8 @@ namespace STD_EXT_NS {
 
 				private:
 					void advance_to_next() {
-						// Реализует обход дерева слева-направо.
-						// К примру есть дерево:
+						// Implements a left-to-right pre-order tree traversal.
+						// For example, given this tree:
 						// Root
 						//  ├─ A
 						//  │  ├─ A1
@@ -127,7 +124,7 @@ namespace STD_EXT_NS {
 						//  └─ B
 						//     └─ B1
 						// 
-						// тогда результат обхода будет: [Root, A, A1, A2, B, B1, B2].
+						// the traversal result is [Root, A, A1, A2, B, B1, B2].
 
 						if (this->stack.empty()) {
 							this->atEnd = true;
@@ -137,30 +134,30 @@ namespace STD_EXT_NS {
 						this->currentNode = ::std::move(this->stack.back());
 						this->stack.pop_back();
 
-						auto currentNodeСhildrenView = (*this->getChildrenFnPtr)(this->currentNode);
+						auto currentNodeChildrenView = (*this->getChildrenFnPtr)(this->currentNode);
 
-						// Собираем детей «слева направо»:
-						::std::vector<Node_t> currentNodeСhildren;
-						for (auto&& child : currentNodeСhildrenView) {
+						// Collect child nodes from left to right.
+						::std::vector<Node_t> currentNodeChildren;
+						for (auto&& child : currentNodeChildrenView) {
 							if (static_cast<bool>(child)) {
-								currentNodeСhildren.push_back(child);
+								currentNodeChildren.push_back(child);
 							}
 						}
 
-						// ...и затем кладём их в стек в ОБРАТНОМ порядке (right => left),
-						// чтобы при LIFO-извлечении порядок обхода стал left => right.
+						// Push them in reverse order (right to left), so LIFO extraction
+						// visits them from left to right.
 						// 
-						// К примеру если сейчас stack = [B, A*, Root*] == [B]
-						// то после цикла станет stack = [B, A*, Root*, A2, A1] == [B, A2, A1]
-						// (* - означает что элемент пройден и удален из стека)
-						for (auto it = currentNodeСhildren.rbegin(); it != currentNodeСhildren.rend(); ++it) {
+						// For example, if stack = [B, A*, Root*] == [B], after this loop it
+						// becomes [B, A*, Root*, A2, A1] == [B, A2, A1].
+						// An asterisk marks an item that has already been visited and removed.
+						for (auto it = currentNodeChildren.rbegin(); it != currentNodeChildren.rend(); ++it) {
 							this->stack.push_back(::std::move(*it));
 						}
 					}
 
 				private:
 					const TGetChildrenFn_decayed_t* getChildrenFnPtr{ nullptr };
-					::std::vector<Node_t> stack; // LIFO-стек для обхода слева-направо
+					::std::vector<Node_t> stack; // LIFO stack used for left-to-right traversal.
 					Node_t currentNode;
 					bool atEnd = false;
 				}; // class iterator
@@ -181,7 +178,7 @@ namespace STD_EXT_NS {
 				auto begin() {
 					::std::vector<Node_t> roots;
 
-					// Собираем корни «слева направо»:
+					// Collect root nodes from left to right.
 					for (auto&& r : this->rootsView) {
 						if (static_cast<bool>(r)) {
 							roots.push_back(r);

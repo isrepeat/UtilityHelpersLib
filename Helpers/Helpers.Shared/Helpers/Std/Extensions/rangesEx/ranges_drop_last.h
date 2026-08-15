@@ -40,7 +40,7 @@ namespace STD_EXT_NS {
 					));;
 				}
 
-				// при желании можно сделать и const-версии
+				// Const overloads can be added if needed.
 				constexpr auto begin() {
 					return ::std::ranges::begin(
 						::std::ranges::views::take(this->baseView, this->takeCountCached)
@@ -53,7 +53,7 @@ namespace STD_EXT_NS {
 					);
 				}
 
-				// бонус: size(), если базовый — sized_range
+				// Expose size() when the underlying range is a sized_range.
 				constexpr auto size() requires ::std::ranges::sized_range<TView> {
 					return this->takeCountCached;
 				}

@@ -12,6 +12,7 @@
       <AdditionalIncludeDirectories>
         <!-- Add sources dir to have access to .pch from any subfolder-->
         $(HelpersMovieMakerSourcesDir);
+        $(MSBuildThisFileDirectory)..\..\Helpers\Helpers.Shared;
         %(AdditionalIncludeDirectories)
       </AdditionalIncludeDirectories>
       <PreprocessorDefinitions>

@@ -35,7 +35,7 @@ namespace HELPERS_NS {
 
     template<typename T>
     std::vector<uint8_t> NumToBytes(T src) {
-        int size = sizeof T;
+        int size = sizeof(T);
         if (size == 1)
             return { (uint8_t)src };
 
@@ -49,7 +49,7 @@ namespace HELPERS_NS {
 
     template<typename T>
     T BytesToNum(const std::vector<uint8_t>& bytes) {
-        int size = sizeof T;
+        int size = sizeof(T);
         if (bytes.size() == 0 || bytes.size() < size)
             return 0;
 

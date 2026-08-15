@@ -17,24 +17,21 @@ namespace STD_EXT_NS {
 			// ░ concat
 			// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 
 			//
-			// Идея:
-			//   Лениво склеиваем ДВА произвольных viewable_range так, чтобы можно было писать:
+			// Purpose:
+			//   Lazily concatenate two arbitrary viewable_range objects so callers can write:
 			//     rng1 | std::ex::ranges::views::concat(rng2)
-			//   Адаптер ничего не копирует из элементов, просто "прочитав" первый диапазон,
-			//   продолжает итерацию вторым. Жизненный цикл обоих исходных представлений (views)
-			//   хранится внутри concat_view, поэтому итераторы безопасны.
+			//   The adaptor does not copy elements. After consuming the first range, it continues
+			//   with the second. concat_view owns both source views, keeping its iterators valid.
 			//
-			// Ограничения (requires):
-			//   - Оба аргумента — input_range и уже "представления" (view), чтобы их можно было хранить по значению.
-			//   - Ссылочные типы элементов совместимы через common_reference_with: у concat_view должен быть единый
-			//     type reference, который подходит и для TView1::reference, и для TView2::reference.
+			// Constraints:
+			//   - Both arguments are input_range views that can be stored by value.
+			//   - Their reference types satisfy common_reference_with, giving concat_view one
+			//     reference type compatible with both source ranges.
 			//
-			// Замечания по реализации:
-			//   - Категория итератора: input_iterator (достаточно для большинства наших сценариев).
-			//     При желании можно нарастить поддержку forward_range и т.п.
-			//   - Конец диапазона — default_sentinel. Итератор == end тогда и только тогда, когда
-			//     мы уже перешли ко второй части И дошли до её конца.
-			//   - Если первая часть пустая, begin() сразу начинает со второй.
+			// Implementation notes:
+			//   - The iterator category is input_iterator; forward_range support can be added later.
+			//   - The range uses default_sentinel and reaches the end only after the second range ends.
+			//   - If the first range is empty, begin() starts directly in the second range.
 			//
 			// ░ concat_view
 			//
@@ -53,19 +50,19 @@ namespace STD_EXT_NS {
 				>
 			) class concat_view : public ::std::ranges::view_interface<concat_view<TView1, TView2>> {
 			public:
-				// Держит ссылку на родителя (для доступа к viewFirst/viewSecond) и состояние:
-				//   - inFirst          : мы сейчас в первой части?
-				//   - iterFirstOpt     : активный итератор первой части (если inFirst == true)
-				//   - iterSecondOpt    : активный итератор второй части (если inFirst == false)
+				// Stores a parent pointer for view access and the current iteration state:
+				//   - inFirst          : true while iterating over the first range;
+				//   - iterFirstOpt     : active first-range iterator when inFirst is true;
+				//   - iterSecondOpt    : active second-range iterator when inFirst is false.
 				//
-				// Ленивая "стыковка":
-				//   - ++ на первой части двигает iterFirst; при достижении end(first) — переключаемся
-				//     на начало второй части (inFirst = false, iterSecondOpt = begin(second)).
-				//   - ++ на второй части просто двигает iterSecond.
+				// Lazy transition:
+				//   - incrementing in the first range advances iterFirst and switches to begin(second)
+				//     when end(first) is reached;
+				//   - incrementing in the second range advances iterSecond.
 				//
 				class iterator {
 				public:
-					// Соглашения итераторов для STL
+					// Standard iterator type aliases.
 					using iterator_concept = ::std::input_iterator_tag;
 					using iterator_category = ::std::input_iterator_tag;
 					using difference_type = ::std::ptrdiff_t;
@@ -96,7 +93,7 @@ namespace STD_EXT_NS {
 					}
 
 					reference operator*() const {
-						// Разыменование транслируется либо к итератору первой части, либо ко второй.
+						// Dereference the active iterator from either the first or second range.
 						if (this->inFirst) {
 							return **this->iterFirstOpt;
 						}
@@ -106,10 +103,8 @@ namespace STD_EXT_NS {
 					}
 
 					iterator& operator++() {
-						// Шаг итератора:
-						//   - если мы в первой части — пытаемся сдвинуться;
-						//     при достижении конца первой части переключаемся на начало второй.
-						//   - если во второй — сдвигаем её итератор.
+						// Advance the active iterator. Reaching the end of the first range
+						// switches iteration to the beginning of the second range.
 						if (this->inFirst) {
 							auto& it1 = *this->iterFirstOpt;
 							++it1;
@@ -133,9 +128,9 @@ namespace STD_EXT_NS {
 						return iteratorCopy;
 					}
 
-					// Методная форма сравнения: it == default_sentinel
+					// Member comparison form: iterator == default_sentinel.
 					bool operator==(::std::default_sentinel_t) const {
-						// Конец достигается ТОЛЬКО когда мы уже во второй части и дошли до её end().
+						// The concatenated range ends only after the second range reaches its end.
 						if (this->inFirst) {
 							return false;
 						}
@@ -143,7 +138,7 @@ namespace STD_EXT_NS {
 						return *(this->iterSecondOpt) == ::std::ranges::end(this->parent->viewSecond);
 					}
 
-					// Симметричная свободная форма: default_sentinel == it
+					// Symmetric free-function form: default_sentinel == iterator.
 					friend bool operator==(::std::default_sentinel_t s, const iterator& it) {
 						return it == s;
 					}
@@ -155,7 +150,7 @@ namespace STD_EXT_NS {
 					::std::optional<It2_t> iterSecondOpt;
 				}; // class iterator
 
-				friend class iterator; // доступ к приватным полям viewFirst / viewSecond.
+				friend class iterator; // Grants access to viewFirst and viewSecond.
 
 
 				concat_view() = default;
@@ -172,8 +167,7 @@ namespace STD_EXT_NS {
 					auto it1 = ::std::ranges::begin(this->viewFirst);
 					auto e1 = ::std::ranges::end(this->viewFirst);
 
-					// Если первая часть пуста — начинаем сразу со второй.
-					// Иначе — начинаем с первой.
+					// Start in the second range when the first is empty; otherwise start in the first.
 					if (it1 == e1) {
 						auto it2 = ::std::ranges::begin(this->viewSecond);
 
@@ -199,8 +193,7 @@ namespace STD_EXT_NS {
 				}
 
 			private:
-				// Храним оба представления ПО ЗНАЧЕНИЮ — так мы контролируем их lifetime
-				// на всём протяжении итерирования результирующего view.
+				// Store both views by value to control their lifetime for the entire iteration.
 				TView1 viewFirst;
 				TView2 viewSecond;
 			};
@@ -209,10 +202,10 @@ namespace STD_EXT_NS {
 			//
 			// ░ concat_losure
 			//
-			// Объект-замыкание для пайп-синтаксиса.
+			// Closure object used by pipeline syntax.
 			//   v1 | concat(v2)
-			// храним второй операнд (как view), а первый придёт в operator|.
-			// Гарантируем lifetime второго за счёт хранения внутри closure.
+			// Store the second operand as a view; operator| supplies the first operand.
+			// Keeping the second view inside the closure guarantees its lifetime.
 			//
 			template <typename TRange2>
 			__requires_expr(
