@@ -1,251 +1,289 @@
-param(
-    [string]$BatDir = $null
+п»їparam(
+    [string]$BatDir = $null,
+    [string]$Head = $null,
+    [string]$Base = $null,
+    [string]$Title = $null,
+    [string]$NewBranch = $null
 )
 
-# Назначаем рабочим каталогом текущий каталог скрипта
-# (все относительные пути далее будут относительно этого каталога).
 $callerLocation = Get-Location
 Set-Location -Path $PSScriptRoot
 
-# Добавляем в PSModulePath путь к кастомным модулям,
-# чтобы подключить их по названию модуля (вместо абсолютного пути).
 $modulePath = Join-Path $PSScriptRoot "Modules"
 if (-not ($env:PSModulePath -split ';' | Where-Object { $_ -eq $modulePath })) {
     $env:PSModulePath = "$modulePath;$env:PSModulePath"
 }
 
-# --- Import ---
 Import-Module -Name MessagingModule -Prefix m:: -ErrorAction Stop
 
+function ExitWithError {
+    param([string]$Message)
 
-# --- Определяем репозиторий, для которого запускался .bat ---
-if ($BatDir) {
-	# Нормализуем BatDir, убираем случайные кавычки, пробелы по краям.
-	$BatDir = $BatDir.Trim().Trim('"')
-    try {
-        $workDir = (Resolve-Path -LiteralPath $BatDir).Path
-    } catch {
-        m::MessageError "Incorrect path BatDir: '$BatDir'"
-        exit 1
-    }
-} else {
-	# Иначе берём рабочий каталог, откуда запустили .ps1.
-    $workDir = $callerLocation.Path
-}
-
-# Определяем корень git-репозитория для выбранного каталога.
-$gitRoot = (& git -C "$workDir" rev-parse --show-toplevel 2>$null).Trim()
-if (-not $gitRoot) {
-    m::MessageError "Not a Git repository at: $workDir"
+    m::MessageError $Message
     exit 1
 }
 
-# Переходим в корень репозитория; указываем gh, с каким репо работать.
+function Test-LocalBranch {
+    param([string]$Branch)
+
+    git show-ref --verify --quiet "refs/heads/$Branch"
+    return $LASTEXITCODE -eq 0
+}
+
+function Test-RemoteBranch {
+    param([string]$Branch)
+
+    git show-ref --verify --quiet "refs/remotes/origin/$Branch"
+    return $LASTEXITCODE -eq 0
+}
+
+# The .bat launcher may be located in the repository or next to the submodule.
+if ($BatDir) {
+    $BatDir = $BatDir.Trim().Trim('"')
+    try {
+        $workDir = (Resolve-Path -LiteralPath $BatDir).Path
+    }
+    catch {
+        ExitWithError "Incorrect path BatDir: '$BatDir'"
+    }
+}
+else {
+    $workDir = $callerLocation.Path
+}
+
+$gitRoot = (& git -C "$workDir" rev-parse --show-toplevel 2>$null).Trim()
+if (-not $gitRoot) {
+    ExitWithError "Not a Git repository at: $workDir"
+}
+
 Push-Location $gitRoot
 $env:GH_REPO = (& git config --get remote.origin.url 2>$null).Trim()
 
 try {
     m::Message "Working repo: $gitRoot"
     if ($env:GH_REPO) {
-		m::Message "Remote: $env:GH_REPO"
-	}
-	m::NewLine
+        m::Message "Remote: $env:GH_REPO"
+    }
+    m::NewLine
 
-	<#
-	m::MessageAction "Detecting gh..."
-	if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
-		m::MessageError "gh not found in PATH"
-		exit 1
-	}
-	m::Message "PS version: $($PSVersionTable.PSVersion)"
-	m::Message "gh path: $((Get-Command gh).Source)"
-	m::Message "gh version: $(gh --version)"
-	#>
-
-
-    # --- Проверка, что мы внутри репозитория ---
-    git rev-parse --is-inside-work-tree 2>$null | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-		m::MessageError "This is not a Git repository."
-        exit 1
+    # GitHub CLI may have been installed after the parent process started,
+    # so also check the standard winget installation path.
+    $ghCommand = Get-Command gh -ErrorAction SilentlyContinue
+    if ($ghCommand) {
+        $gh = $ghCommand.Source
+    }
+    else {
+        $standardGhPath = Join-Path $env:ProgramFiles "GitHub CLI\gh.exe"
+        if (Test-Path -LiteralPath $standardGhPath) {
+            $gh = $standardGhPath
+        }
+        else {
+            ExitWithError "GitHub CLI (gh) was not found. Install it and run 'gh auth login'."
+        }
     }
 
+    & $gh auth status 2>$null | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        ExitWithError "GitHub CLI is not authenticated. Run 'gh auth login'."
+    }
 
-	# --- Ввод ---
-	$HeadRaw = Read-Host "Enter Source Branch (head)"
-	$BaseRaw = Read-Host "Enter Target Branch (base)"
-	$Title = Read-Host "Enter Pull Request Title"
-	$NewBranchRaw = Read-Host "Enter optional new branch name (leave empty to skip)"
-	$Body = "Auto-generated PR from script"
+    # Arguments can be supplied on the command line. When the .bat file is
+    # started directly, missing values are requested interactively.
+    if ([string]::IsNullOrWhiteSpace($Head)) {
+        $Head = Read-Host "Enter Source Branch (head)"
+    }
+    if ([string]::IsNullOrWhiteSpace($Base)) {
+        $Base = Read-Host "Enter Target Branch (base)"
+    }
+    if ([string]::IsNullOrWhiteSpace($Title)) {
+        $Title = Read-Host "Enter Pull Request Title"
+    }
+    if ($null -eq $NewBranch) {
+        $NewBranch = Read-Host "Enter branch to recreate from target HEAD (empty = source branch)"
+    }
 
-    # Нормализация ввода
-    $Head = if ([string]::IsNullOrWhiteSpace($HeadRaw)) { $null } else { $HeadRaw.Trim() }
-    $Base = if ([string]::IsNullOrWhiteSpace($BaseRaw)) { $null } else { $BaseRaw.Trim() }
-    $NewBranch = if ([string]::IsNullOrWhiteSpace($NewBranchRaw)) { $null } else { $NewBranchRaw.Trim() }
+    $Head = $Head.Trim()
+    $Base = $Base.Trim()
+    $Title = $Title.Trim()
+    $NewBranch = if ([string]::IsNullOrWhiteSpace($NewBranch)) { $Head } else { $NewBranch.Trim() }
 
-	if ([string]::IsNullOrWhiteSpace($Head)) { 
-		m::MessageError "Head branch is required."
-		exit 1
-	}
-	if ([string]::IsNullOrWhiteSpace($Base)) {
-		m::MessageError "Base branch is required."
-		exit 1
-	}
-	if ([string]::IsNullOrWhiteSpace($Title)) {
-		m::MessageError "PR Title is required."
-		exit 1
-	}
+    if ([string]::IsNullOrWhiteSpace($Head)) {
+        ExitWithError "Head branch is required."
+    }
+    if ([string]::IsNullOrWhiteSpace($Base)) {
+        ExitWithError "Base branch is required."
+    }
+    if ($Head -ieq $Base) {
+        ExitWithError "Head and Base must be different branches."
+    }
+    if ([string]::IsNullOrWhiteSpace($Title)) {
+        ExitWithError "PR title is required."
+    }
 
+    # Recreating a branch requires switching the checkout. Do not risk local
+    # uncommitted files even when Git would technically allow the switch.
+    $dirtyFiles = @(git status --porcelain)
+    if ($dirtyFiles.Count -gt 0) {
+        ExitWithError "Working tree is not clean. Commit or stash local changes first."
+    }
 
-	# --- Push head ---
-	m::MessageAction "Pushing '$Head' to origin..."
-	git push origin "$Head"
-	if ($LASTEXITCODE -ne 0) { 
-		m::MessageError "Failed to push '$Head' to origin."
-		exit 1
-	}
-	m::Message "Pushed."
+    m::MessageAction "Fetching remote branches..."
+    git fetch origin --prune
+    if ($LASTEXITCODE -ne 0) {
+        ExitWithError "Failed to fetch remote branches."
+    }
 
+    if (-not (Test-RemoteBranch $Base)) {
+        ExitWithError "Target branch 'origin/$Base' does not exist."
+    }
 
-	# --- Create PR ---
-	m::MessageAction "Creating Pull Request..."
-	$PR_Number = $null
+    # The source may exist only on the remote. Create a local branch so the
+    # workflow behaves consistently regardless of the current branch.
+    if (-not (Test-LocalBranch $Head)) {
+        if (-not (Test-RemoteBranch $Head)) {
+            ExitWithError "Source branch '$Head' does not exist locally or on origin."
+        }
 
-	# 1) создаем pr и сохраняем вывод
-	$prCreationOutput = gh pr create `
-		--title "$Title" `
-		--body "$Body" `
-		--base "$Base" `
-		--head "$Head" `
-		2>&1
-	if ($LASTEXITCODE -ne 0) {
-		m::MessageError "Failed to create Pull Request.`n$prCreationOutput"
-		exit 1
-	}
+        m::MessageAction "Creating local '$Head' from 'origin/$Head'..."
+        git branch --track "$Head" "origin/$Head"
+        if ($LASTEXITCODE -ne 0) {
+            ExitWithError "Failed to create local branch '$Head'."
+        }
+    }
 
-	# 2) пробуем вытащить номер прямо из выведенного URL: .../pull/123
-	if ($prCreationOutput -match '/pull/(\d+)\b') {
-		$PR_Number = $matches[1]
-	}
+    # A fully published branch is a normal state here: Git reports
+    # Everything up-to-date and the workflow continues.
+    m::MessageAction "Publishing '$Head' to origin..."
+    git push origin "$Head`:$Head"
+    if ($LASTEXITCODE -ne 0) {
+        ExitWithError "Failed to push '$Head' to origin."
+    }
 
-	# 3) Если всё ещё нет номера — даём запрос на list (иногда PR появляется с задержкой)
-	if (-not $PR_Number) {
-		$attempts = 5
-		for ($i = 1; $i -le $attempts -and -not $PR_Number; $i++) {
-			m::MessageAction "Request pr number..."
-			Start-Sleep -Milliseconds 400
-			$PR_Number = gh pr list `
-				--state open `
-				--head "$Head" `
-				--json number `
-				--jq ".[0].number" `
-				2>$null
-		}
-	}
+    git fetch origin --prune
+    if ($LASTEXITCODE -ne 0) {
+        ExitWithError "Failed to refresh remote branches after push."
+    }
 
-	if ([string]::IsNullOrWhiteSpace($PR_Number)) {
-		m::MessageError "Unable to obtain Pull Request number after creation."
-		exit 1
-	}
-	m::Message "Pull Request created: #$PR_Number"
+    $commitsToMerge = [int](git rev-list --count "origin/$Base..origin/$Head")
+    if ($LASTEXITCODE -ne 0) {
+        ExitWithError "Failed to compare 'origin/$Head' with 'origin/$Base'."
+    }
 
+    if ($commitsToMerge -gt 0) {
+        # A repeated run must reuse a Pull Request that is already open.
+        $prNumber = (& $gh pr list `
+            --state open `
+            --base "$Base" `
+            --head "$Head" `
+            --json number `
+            --jq ".[0].number" 2>$null).Trim()
 
-	# --- Merge PR ---
-	m::MessageAction "Merging PR #$PR_Number..."
-	gh pr merge $PR_Number --merge --subject "Merge PR #$PR_Number $Title" #| Out-Null
-	if ($LASTEXITCODE -ne 0) { 
-		m::MessageError "Failed to merge Pull Request."
-		exit 1
-	}
-	m::Message "Pull Request #$PR_Number successfully merged."
+        if ([string]::IsNullOrWhiteSpace($prNumber)) {
+            m::MessageAction "Creating Pull Request '$Head' -> '$Base'..."
+            $prCreationOutput = & $gh pr create `
+                --title "$Title" `
+                --body "Auto-generated PR from AutoPrMerge workflow." `
+                --base "$Base" `
+                --head "$Head" 2>&1
 
+            if ($LASTEXITCODE -ne 0) {
+                ExitWithError "Failed to create Pull Request.`n$prCreationOutput"
+            }
 
-	# --- Resolve repo path ---
-	$RepoPath = gh repo view --json nameWithOwner --jq ".nameWithOwner"
-	if ([string]::IsNullOrWhiteSpace($RepoPath)) { 
-		m::MessageError "Unable to resolve repo path (nameWithOwner)."
-		exit 1
-	}
+            if ($prCreationOutput -match '/pull/(\d+)\b') {
+                $prNumber = $matches[1]
+            }
+            else {
+                $prNumber = (& $gh pr list `
+                    --state open `
+                    --base "$Base" `
+                    --head "$Head" `
+                    --json number `
+                    --jq ".[0].number" 2>$null).Trim()
+            }
+        }
+        else {
+            m::Message "Using existing Pull Request #$prNumber."
+        }
 
+        if ([string]::IsNullOrWhiteSpace($prNumber)) {
+            ExitWithError "Unable to resolve Pull Request number."
+        }
 
-	# --- Delete source branch on remote ---
-	m::MessageAction "Deleting remote branch '$Head'..."
-	gh api "repos/$RepoPath/git/refs/heads/$Head" -X DELETE #| Out-Null
-	if ($LASTEXITCODE -ne 0) { 
-		m::MessageError "Failed to delete remote branch '$Head'."
-		exit 1
-	}
-	m::Message "Remote branch '$Head' deleted."
+        m::MessageAction "Merging Pull Request #$prNumber..."
+        & $gh pr merge $prNumber --merge --subject "Merge PR #$prNumber $Title"
+        if ($LASTEXITCODE -ne 0) {
+            ExitWithError "Failed to merge Pull Request #$prNumber."
+        }
+        m::Message "Pull Request #$prNumber successfully merged."
+    }
+    else {
+        # GitHub cannot create a Pull Request without differences. This is not
+        # an error; synchronize the working branch with the target HEAD.
+        m::Message "No commits to merge from '$Head' into '$Base'. Pull Request is not required."
+    }
 
+    m::MessageAction "Refreshing merged target 'origin/$Base'..."
+    git fetch origin --prune
+    if ($LASTEXITCODE -ne 0) {
+        ExitWithError "Failed to refresh 'origin/$Base' after merge."
+    }
 
-	# --- Prune locals ---
-	m::MessageAction "Pruning local references..."
-	git fetch origin --prune
-	if ($LASTEXITCODE -ne 0) { 
-		m::MessageError "Failed to prune local references."
-		exit 1
-	}
-	m::Message "Local references pruned."
+    # Delete the old remote source branch as in the original workflow. The
+    # recreated branch can then be published with a regular, non-forced push.
+    if (Test-RemoteBranch $Head) {
+        m::MessageAction "Deleting old remote branch '$Head'..."
+        git push origin --delete "$Head"
+        if ($LASTEXITCODE -ne 0) {
+            ExitWithError "Failed to delete remote branch '$Head'."
+        }
+    }
 
+    git fetch origin --prune
+    if ($LASTEXITCODE -ne 0) {
+        ExitWithError "Failed to prune deleted remote branch '$Head'."
+    }
 
-	# --- Optional: create new branch logic (handles empty/same-name cases) ---
-	$CurrentBranch = (git branch --show-current).Trim()
-	$shouldKeepHead =
-		(-not $NewBranch) -or
-		($NewBranch -ieq $Head) -or
-		($NewBranch -ieq $CurrentBranch)
+    # Recreate the branch at the exact target HEAD. A detached checkout allows
+    # the branch to be moved safely even when it was the current branch.
+    m::MessageAction "Recreating '$NewBranch' from 'origin/$Base'..."
+    git switch --detach "origin/$Base"
+    if ($LASTEXITCODE -ne 0) {
+        ExitWithError "Failed to switch to 'origin/$Base'."
+    }
 
-	if ($shouldKeepHead) {
-		m::MessageAction "Keeping the same branch name '$Head'. Rebasing it onto 'origin/$Base'..."
+    if (Test-LocalBranch $NewBranch) {
+        git branch -f "$NewBranch" "origin/$Base"
+    }
+    else {
+        git branch "$NewBranch" "origin/$Base"
+    }
+    if ($LASTEXITCODE -ne 0) {
+        ExitWithError "Failed to create local branch '$NewBranch' from 'origin/$Base'."
+    }
 
-		# Обновим remote ссылки
-		git fetch origin #| Out-Null
+    git switch "$NewBranch"
+    if ($LASTEXITCODE -ne 0) {
+        ExitWithError "Failed to switch to '$NewBranch'."
+    }
 
-		# Переключимся на Head, если внезапно не на ней
-		$current = (git branch --show-current).Trim()
-		if ($current -ne $Head) {
-			git checkout "$Head"
-			if ($LASTEXITCODE -ne 0) {
-				m::MessageError "Failed to checkout '$Head'."
-				exit 1
-			}
-		}
+    # When the new working branch has a different name, remove the obsolete
+    # local source branch after switching successfully.
+    if (($NewBranch -ine $Head) -and (Test-LocalBranch $Head)) {
+        git branch -D "$Head"
+        if ($LASTEXITCODE -ne 0) {
+            ExitWithError "Failed to delete old local branch '$Head'."
+        }
+    }
 
-		# Rebase на свежую origin/Base
-		git rebase "origin/$Base"
-		if ($LASTEXITCODE -ne 0) {
-			m::MessageError "Rebase failed. Resolve conflicts and run 'git rebase --continue' (or '--abort')."
-			exit 1
-		}
+    m::MessageAction "Publishing recreated branch '$NewBranch'..."
+    git push -u origin "$NewBranch`:$NewBranch"
+    if ($LASTEXITCODE -ne 0) {
+        ExitWithError "Failed to publish recreated branch '$NewBranch'."
+    }
 
-		m::Message "Done. '$Head' is now rebased onto 'origin/$Base'."
-	}
-	else {
-		# --- обычный сценарий: создаём новую ветку от origin/Base ---
-		m::MessageAction "Refreshing 'origin/$Base'..."
-		git fetch origin #| Out-Null
-
-		m::MessageAction "Creating new branch '$NewBranch' from 'origin/$Base'..."
-		git checkout --no-track -b "$NewBranch" "origin/$Base"
-		if ($LASTEXITCODE -ne 0) {
-			m::MessageError "Failed to create '$NewBranch' from origin/$Base."
-			exit 1
-		}
-
-		# После переключения можно удалить локальную Head
-		$isHeadExists = git branch --list "$Head"
-		if ($isHeadExists) {
-			m::MessageAction "Deleting local branch '$Head'..."
-			git branch -D "$Head"
-			if ($LASTEXITCODE -ne 0) { 
-				m::MessageError "Failed to delete local branch '$Head'."
-				exit 1
-			}
-			m::Message "Local branch '$Head' deleted."
-		}
-
-		m::Message "Done. New branch '$NewBranch' is created from 'origin/$Base'."
-	}
+    m::NewLine
+    m::Message "Done. 'origin/$Base' and 'origin/$NewBranch' now point to the same commit."
 }
 finally {
     Pop-Location

@@ -5,6 +5,8 @@ REM AutoPrMerge.bat
 REM - Searches for %_SUBMODULE_NAME%.sln (independent of submodule folder name)
 REM - Inside %_SUBMODULE_DIR% searches for AutoPrMerge.ps1
 REM - Runs the PowerShell script, forwarding all arguments
+REM - Example non-interactive call:
+REM   AutoPrMerge.bat -Head Last -Base master -Title "Helpers update" -NewBranch Last
 REM ===============================================================
 
 REM Determine search root: repo root if available, otherwise batch file folder.
