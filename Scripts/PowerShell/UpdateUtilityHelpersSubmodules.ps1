@@ -569,7 +569,7 @@ if ($dirtyProjects.Count -gt 0) {
     Write-Host ""
     Write-Host "Published Integration commit: $integrationHead" -ForegroundColor Green
     Write-Host 'Dirty source checkouts will be replaced with published content.' -ForegroundColor Yellow
-    Write-Host 'Their previous content remains in these recovery branches:' -ForegroundColor Yellow
+    Write-Host 'Temporary recovery branches protect their previous content until all project updates succeed:' -ForegroundColor Yellow
     $dirtyProjects | ForEach-Object { Write-Host "  $($_.SubmoduleDirectory): $($_.BackupRef)" }
     $confirm = (Read-Host 'Continue with replacement and parent-project updates? [y/N]').Trim().ToUpperInvariant()
     if ($confirm -ne 'Y') { Stop-WithError 'Replacement cancelled. Integration and recovery branches were preserved.' }
@@ -607,11 +607,22 @@ foreach ($project in $projects) {
     Write-Host "  DONE $($project.Root): $recorded -> $target" -ForegroundColor Green
 }
 
+# Recovery refs are needed until every parent project has been updated
+# successfully. Remove only refs created by this completed operation; an earlier
+# failure exits before this point and therefore keeps all recovery data intact.
+if ($dirtyProjects.Count -gt 0) {
+    Write-Info 'Removing completed-operation recovery branches...'
+    foreach ($project in $dirtyProjects) {
+        Invoke-Git $project.SubmoduleDirectory @('update-ref', '--delete', $project.BackupRef) | Out-Null
+        Write-Host "  DELETED $($project.BackupRef)" -ForegroundColor Green
+    }
+}
+
 Write-Host ""
 Write-Host '[UtilityHelpers updater] Completed. Parent-project commits were not pushed or merged.' -ForegroundColor Green
 if ($integrationPath) {
     Write-Host "[UtilityHelpers updater] Integration available at: $integrationPath" -ForegroundColor Green
-    Write-Host '[UtilityHelpers updater] Recovery branches were preserved in source submodules.' -ForegroundColor Green
+    Write-Host '[UtilityHelpers updater] Recovery branches for this completed operation were deleted.' -ForegroundColor Green
 
     Write-Host ""
     $deleteCompleted = (Read-Host 'Delete the temporary Integration repository? [Y/n]').Trim().ToUpperInvariant()
