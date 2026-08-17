@@ -1,0 +1,12 @@
+# Repository configuration files use stable LF line endings.
+.editorconfig text eol=lf
+.gitattributes text eol=lf
+
+# The updater engine is stored and checked out with LF line endings. Keep this
+# rule narrow so adding .gitattributes does not renormalize legacy PowerShell
+# scripts as an unrelated part of an updater snapshot.
+/Scripts/PowerShell/UpdateUtilityHelpersSubmodules.ps1 text eol=lf
+
+# Windows command scripts use their native CRLF line endings.
+*.bat text eol=crlf
+*.cmd text eol=crlf

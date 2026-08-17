@@ -1,8 +1,19 @@
 root = true
 
-# C/C++ (и сопутствующие)
+# Keep script line endings consistent with the submodule-owner repositories.
+[*.ps1]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+
+[*.{bat,cmd}]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+
+# C/C++ (Рё СЃРѕРїСѓС‚СЃС‚РІСѓСЋС‰РёРµ)
 [*.{c,cc,cpp,cxx,h,hpp,hxx,ipp,inl,ixx,rc,idl,def}]
-charset = utf-8        # или utf-8-bom, если нужен BOM
+charset = utf-8        # РёР»Рё utf-8-bom, РµСЃР»Рё РЅСѓР¶РµРЅ BOM
 [*.{cs,vb}]
 
 
