@@ -11,13 +11,15 @@ REM
 REM If any submodule is dirty, the engine creates recovery snapshots and imports
 REM candidate branches into Integration next to this .bat. The user manually
 REM chooses commits, order and messages, resolves conflicts, and pushes the final
-REM Integration HEAD. Only then are parent projects updated.
+REM Integration HEAD. The engine then creates and merges a Pull Request from the
+REM integration branch into the final branch and only then updates parent projects.
 REM ============================================================================
 
 REM Defaults used by most projects.
 SET "SUBMODULE_NAME=UtilityHelpersLib"
 SET "PROJECT_BRANCH=Last"
-SET "SUBMODULE_BRANCH=Last"
+SET "SUBMODULE_INTEGRATION_BRANCH=Last"
+SET "SUBMODULE_UPDATE_BRANCH=master"
 SET "SCAN_DEPTH=1"
 
 REM The scan starts beside this copied .bat, not in the console's current folder.
@@ -27,9 +29,10 @@ REM Full path to the PowerShell engine. Keep this explicit because project and
 REM submodule directory names may differ in the future. Spaces are supported.
 SET "CORE_SCRIPT=C:\WORK\Projects\Cpp\UtilityHelpersLib\Scripts\PowerShell\UpdateUtilityHelpersSubmodules.ps1"
 
-REM Exact overrides: path^|project branch^|UtilityHelpersLib branch
+REM Exact overrides:
+REM path^|project branch^|integration branch^|final update branch
 REM Separate multiple entries with a semicolon. Paths may contain spaces.
-SET "PROJECT_OVERRIDES=%~dp0Cpp|Last|Last"
+SET "PROJECT_OVERRIDES=%~dp0Cpp|Last|Last|master"
 
 REM Integration is created beside the wrapper as Integration-SUBMODULE_NAME. The
 REM engine offers to remove a stale copy and the completed temporary clone.
@@ -51,7 +54,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%CORE_SCRIPT%" ^
     -ScanRoot "%SCAN_ROOT%" ^
     -ScanDepth %SCAN_DEPTH% ^
     -ScanProjectBranch "%PROJECT_BRANCH%" ^
-    -ScanSubmoduleBranch "%SUBMODULE_BRANCH%" ^
+    -ScanSubmoduleIntegrationBranch "%SUBMODULE_INTEGRATION_BRANCH%" ^
+    -ScanSubmoduleUpdateBranch "%SUBMODULE_UPDATE_BRANCH%" ^
     -ProjectOverrides "%PROJECT_OVERRIDES%" ^
     -SubmoduleName "%SUBMODULE_NAME%" ^
     -IntegrationDirectory "%INTEGRATION_DIR%" ^

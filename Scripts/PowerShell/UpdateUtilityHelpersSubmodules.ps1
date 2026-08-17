@@ -17,7 +17,9 @@ param(
     [Parameter(Mandatory = $true)][string]$ScanRoot,
     [ValidateRange(0, 1)][int]$ScanDepth = 1,
     [string]$ScanProjectBranch = "Last",
-    [string]$ScanSubmoduleBranch = "Last",
+    [string]$ScanSubmoduleIntegrationBranch = "Last",
+
+    [string]$ScanSubmoduleUpdateBranch = "master",
     [string]$ProjectOverrides = $null,
     [string]$SubmodulePath = "UtilityHelpersLib",
     [string]$CommitMessage = "Update UtilityHelpersLib submodule",
@@ -86,13 +88,14 @@ function Parse-ProjectSpecs {
     $result = @()
     foreach ($entry in ($Value -split ';' | Where-Object { $_.Trim() })) {
         $parts = $entry.Split('|')
-        if ($parts.Count -ne 3) {
-            Stop-WithError "Invalid override '$entry'. Expected: path|project-branch|submodule-branch"
+        if ($parts.Count -notin @(3, 4)) {
+            Stop-WithError "Invalid override '$entry'. Expected: path|project-branch|integration-branch|update-branch"
         }
         $result += [pscustomobject]@{
-            InputPath       = $parts[0].Trim().Trim('"')
-            ProjectBranch   = $parts[1].Trim()
-            SubmoduleBranch = $parts[2].Trim()
+            InputPath                 = $parts[0].Trim().Trim('"')
+            ProjectBranch             = $parts[1].Trim()
+            SubmoduleIntegrationBranch = $parts[2].Trim()
+            SubmoduleUpdateBranch      = if ($parts.Count -eq 4) { $parts[3].Trim() } else { $parts[2].Trim() }
         }
     }
     $result
@@ -162,7 +165,8 @@ function Find-Projects {
             Name               = Split-Path $candidate -Leaf
             Slug               = Convert-ToSlug (Split-Path $candidate -Leaf)
             ProjectBranch      = if ($override) { $override.ProjectBranch } else { $ScanProjectBranch }
-            SubmoduleBranch    = if ($override) { $override.SubmoduleBranch } else { $ScanSubmoduleBranch }
+            SubmoduleIntegrationBranch = if ($override) { $override.SubmoduleIntegrationBranch } else { $ScanSubmoduleIntegrationBranch }
+            SubmoduleUpdateBranch      = if ($override) { $override.SubmoduleUpdateBranch } else { $ScanSubmoduleUpdateBranch }
             SubmoduleDirectory = Join-Path $candidate $SubmodulePath
             IsOverride         = $null -ne $override
         }
@@ -322,6 +326,137 @@ function Wait-ForPublishedIntegration {
     }
 }
 
+# Locate GitHub CLI using PATH or its standard winget installation directory.
+function Get-GitHubCli {
+    $command = Get-Command gh -ErrorAction SilentlyContinue
+    if ($command) { return $command.Source }
+
+    $standardPath = Join-Path $env:ProgramFiles 'GitHub CLI\gh.exe'
+    if (Test-Path -LiteralPath $standardPath) { return $standardPath }
+    Stop-WithError "GitHub CLI (gh) was not found. Install it and run 'gh auth login'."
+}
+
+function Invoke-GitHubCli {
+    param(
+        [string]$Executable,
+        [string[]]$Arguments,
+        [switch]$AllowFailure
+    )
+
+    $savedErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $output = @(& $Executable @Arguments 2>&1)
+        $exitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $savedErrorActionPreference
+    }
+
+    if ($exitCode -ne 0 -and -not $AllowFailure) {
+        $details = ($output | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
+        throw "gh $($Arguments -join ' ') failed with exit code $exitCode.`n$details"
+    }
+    [pscustomobject]@{ ExitCode = $exitCode; Output = $output }
+}
+
+# Merge the published working branch through a GitHub Pull Request, then recreate
+# that working branch from the merged stable branch as AutoPrMerge does.
+function Merge-IntegrationBranchUsingPullRequest {
+    param(
+        [string]$Repository,
+        [string]$RemoteUrl,
+        [string]$IntegrationBranch,
+        [string]$IntegrationCommit,
+        [string]$UpdateBranch,
+        [string]$Title
+    )
+
+    if ($IntegrationBranch -ceq $UpdateBranch) { return $IntegrationCommit }
+
+    $gh = Get-GitHubCli
+    $auth = Invoke-GitHubCli $gh @('auth', 'status') -AllowFailure
+    if ($auth.ExitCode -ne 0) { Stop-WithError "GitHub CLI is not authenticated. Run 'gh auth login'." }
+
+    $savedGhRepo = $env:GH_REPO
+    $env:GH_REPO = $RemoteUrl
+    try {
+        Invoke-Git $Repository @('fetch', 'origin', '--prune') | Out-Null
+        $commitsToMerge = [int](Invoke-Git $Repository @(
+            'rev-list', '--count', "origin/$UpdateBranch..origin/$IntegrationBranch"
+        )).Output[0]
+
+        if ($commitsToMerge -gt 0) {
+            $prList = Invoke-GitHubCli $gh @(
+                'pr', 'list', '--state', 'open', '--base', $UpdateBranch,
+                '--head', $IntegrationBranch, '--json', 'number', '--jq', '.[0].number'
+            )
+            $prNumber = (($prList.Output | ForEach-Object { $_.ToString() }) -join "`n").Trim()
+
+            if (-not $prNumber) {
+                Write-Info "Creating Pull Request '$IntegrationBranch' -> '$UpdateBranch'..."
+                $creation = Invoke-GitHubCli $gh @(
+                    'pr', 'create', '--title', $Title,
+                    '--body', 'Auto-generated PR from UtilityHelpers submodule updater.',
+                    '--base', $UpdateBranch, '--head', $IntegrationBranch
+                )
+                $creationText = ($creation.Output | ForEach-Object { $_.ToString() }) -join "`n"
+                if ($creationText -match '/pull/(\d+)\b') {
+                    $prNumber = $matches[1]
+                }
+                else {
+                    $prList = Invoke-GitHubCli $gh @(
+                        'pr', 'list', '--state', 'open', '--base', $UpdateBranch,
+                        '--head', $IntegrationBranch, '--json', 'number', '--jq', '.[0].number'
+                    )
+                    $prNumber = (($prList.Output | ForEach-Object { $_.ToString() }) -join "`n").Trim()
+                }
+            }
+            else {
+                Write-Info "Using existing Pull Request #$prNumber."
+            }
+
+            if (-not $prNumber) { Stop-WithError 'Unable to resolve Pull Request number.' }
+            Write-Info "Merging Pull Request #$prNumber..."
+            Invoke-GitHubCli $gh @(
+                'pr', 'merge', $prNumber, '--merge', '--subject', "Merge PR #$prNumber $Title"
+            ) | Out-Null
+        }
+        else {
+            Write-Info "No commits need merging from '$IntegrationBranch' into '$UpdateBranch'."
+        }
+
+        Invoke-Git $Repository @('fetch', 'origin', '--prune') | Out-Null
+        $updateCommit = (Invoke-Git $Repository @('rev-parse', "origin/$UpdateBranch")).Output[0].ToString().Trim()
+        $containsIntegration = Invoke-Git $Repository @(
+            'merge-base', '--is-ancestor', $IntegrationCommit, $updateCommit
+        ) -AllowFailure
+        if ($containsIntegration.ExitCode -ne 0) {
+            Stop-WithError "origin/$UpdateBranch does not contain the published $IntegrationBranch commit after PR merge."
+        }
+
+        $remoteIntegration = Invoke-Git $Repository @(
+            'show-ref', '--verify', '--quiet', "refs/remotes/origin/$IntegrationBranch"
+        ) -AllowFailure
+        if ($remoteIntegration.ExitCode -eq 0) {
+            Write-Info "Deleting old remote branch '$IntegrationBranch'..."
+            Invoke-Git $Repository @('push', 'origin', '--delete', $IntegrationBranch) | Out-Null
+        }
+
+        Invoke-Git $Repository @('fetch', 'origin', '--prune') | Out-Null
+        Invoke-Git $Repository @('switch', '--detach', $updateCommit) | Out-Null
+        Invoke-Git $Repository @('branch', '--force', $IntegrationBranch, $updateCommit) | Out-Null
+        Invoke-Git $Repository @('switch', $IntegrationBranch) | Out-Null
+        Invoke-Git $Repository @('push', '--set-upstream', 'origin', "$IntegrationBranch`:$IntegrationBranch") | Out-Null
+
+        Write-Host "origin/$UpdateBranch and origin/$IntegrationBranch now point to $updateCommit" -ForegroundColor Green
+        return $updateCommit
+    }
+    finally {
+        $env:GH_REPO = $savedGhRepo
+    }
+}
+
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) { Stop-WithError 'Git was not found in PATH.' }
 
 $requestedIntegrationPath = [IO.Path]::GetFullPath($IntegrationDirectory)
@@ -375,11 +510,14 @@ if ($dirtyProjects.Count -gt 0) {
     if (@($projects | Group-Object { Normalize-RemoteUrl $_.RemoteUrl }).Count -ne 1) {
         Stop-WithError 'Discovered UtilityHelpersLib instances use different origin URLs.'
     }
-    if (@($dirtyProjects | Group-Object SubmoduleBranch).Count -ne 1) {
+    if (@($dirtyProjects | Group-Object SubmoduleIntegrationBranch).Count -ne 1) {
         Stop-WithError 'Dirty submodules target different UtilityHelpersLib branches.'
     }
+    if (@($projects | Group-Object SubmoduleUpdateBranch).Count -ne 1) {
+        Stop-WithError 'Projects use different final UtilityHelpersLib update branches; automatic PR merge requires one common branch.'
+    }
 
-    $targetBranch = $dirtyProjects[0].SubmoduleBranch
+    $targetBranch = $dirtyProjects[0].SubmoduleIntegrationBranch
     $operationId = Get-Date -Format 'yyyyMMdd-HHmmss'
     $integrationPath = $requestedIntegrationPath
     if (Test-Path -LiteralPath $integrationPath) {
@@ -415,6 +553,19 @@ if ($dirtyProjects.Count -gt 0) {
     Start-Process explorer.exe -ArgumentList $integrationPath
     $integrationHead = Wait-ForPublishedIntegration $integrationPath $targetBranch
 
+    $updateBranch = $projects[0].SubmoduleUpdateBranch
+    $defaultMergeTitle = "Update $SubmoduleName"
+    $mergeTitle = (Read-Host "Pull Request title [$defaultMergeTitle]").Trim()
+    if (-not $mergeTitle) { $mergeTitle = $defaultMergeTitle }
+
+    Merge-IntegrationBranchUsingPullRequest `
+        -Repository $integrationPath `
+        -RemoteUrl $dirtyProjects[0].RemoteUrl `
+        -IntegrationBranch $targetBranch `
+        -IntegrationCommit $integrationHead `
+        -UpdateBranch $updateBranch `
+        -Title $mergeTitle | Out-Null
+
     Write-Host ""
     Write-Host "Published Integration commit: $integrationHead" -ForegroundColor Green
     Write-Host 'Dirty source checkouts will be replaced with published content.' -ForegroundColor Yellow
@@ -426,9 +577,15 @@ if ($dirtyProjects.Count -gt 0) {
 
 Write-Info 'Updating all submodules and parent-project gitlinks...'
 foreach ($project in $projects) {
-    Invoke-Git $project.SubmoduleDirectory @('fetch', '--prune', 'origin', $project.SubmoduleBranch) | Out-Null
+    Invoke-Git $project.SubmoduleDirectory @('fetch', '--prune', 'origin', $project.SubmoduleIntegrationBranch) | Out-Null
+    $integrationTarget = (Invoke-Git $project.SubmoduleDirectory @('rev-parse', 'FETCH_HEAD^{commit}')).Output[0].ToString().Trim()
+    Update-LocalTrackingBranch $project.SubmoduleDirectory $project.SubmoduleIntegrationBranch $integrationTarget
+
+    Invoke-Git $project.SubmoduleDirectory @('fetch', '--prune', 'origin', $project.SubmoduleUpdateBranch) | Out-Null
     $target = (Invoke-Git $project.SubmoduleDirectory @('rev-parse', 'FETCH_HEAD^{commit}')).Output[0].ToString().Trim()
-    Update-LocalTrackingBranch $project.SubmoduleDirectory $project.SubmoduleBranch $target
+    if ($project.SubmoduleUpdateBranch -cne $project.SubmoduleIntegrationBranch) {
+        Update-LocalTrackingBranch $project.SubmoduleDirectory $project.SubmoduleUpdateBranch $target
+    }
 
     if ($project.WasDirty) {
         # Non-ignored untracked files are recoverable from the snapshot. Ignored
