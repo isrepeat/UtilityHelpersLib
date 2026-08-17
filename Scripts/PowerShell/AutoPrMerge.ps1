@@ -152,9 +152,25 @@ try {
     }
 
     # A fully published branch is a normal state here: Git reports
-    # Everything up-to-date and the workflow continues.
+    # Everything up-to-date and the workflow continues. A stale remote working
+    # branch may belong to an earlier cycle. Replace it only when its fetched
+    # commit still matches the expected value (--force-with-lease).
     m::MessageAction "Publishing '$Head' to origin..."
-    git push origin "$Head`:$Head"
+    $useForceWithLease = $false
+    $remoteHeadCommit = $null
+    if (Test-RemoteBranch $Head) {
+        $remoteHeadCommit = (git rev-parse "origin/$Head").Trim()
+        git merge-base --is-ancestor "origin/$Head" "$Head"
+        $useForceWithLease = $LASTEXITCODE -ne 0
+    }
+
+    if ($useForceWithLease) {
+        m::Message "Remote '$Head' is from an earlier workflow cycle; replacing it with lease protection."
+        git push --force-with-lease="refs/heads/$Head`:$remoteHeadCommit" origin "$Head`:$Head"
+    }
+    else {
+        git push origin "$Head`:$Head"
+    }
     if ($LASTEXITCODE -ne 0) {
         ExitWithError "Failed to push '$Head' to origin."
     }
