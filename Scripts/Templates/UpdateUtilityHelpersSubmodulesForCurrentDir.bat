@@ -17,6 +17,7 @@ REM ============================================================================
 
 REM Defaults used by most projects.
 SET "SUBMODULE_NAME=UtilityHelpersLib"
+SET "INTEGRATION_SOLUTION_FILE=UtilityHelpersLib.sln"
 SET "PROJECT_BRANCH=Last"
 SET "SUBMODULE_INTEGRATION_BRANCH=Last"
 SET "SUBMODULE_UPDATE_BRANCH=master"
@@ -58,6 +59,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%CORE_SCRIPT%" ^
     -ScanSubmoduleUpdateBranch "%SUBMODULE_UPDATE_BRANCH%" ^
     -ProjectOverrides "%PROJECT_OVERRIDES%" ^
     -SubmoduleName "%SUBMODULE_NAME%" ^
+    -IntegrationSolutionFile "%INTEGRATION_SOLUTION_FILE%" ^
     -IntegrationDirectory "%INTEGRATION_DIR%" ^
     %*
 SET "RESULT=%ERRORLEVEL%"

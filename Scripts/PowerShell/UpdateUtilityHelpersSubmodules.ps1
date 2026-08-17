@@ -27,6 +27,8 @@ param(
     [ValidatePattern('^[A-Za-z0-9._-]+$')]
     [string]$SubmoduleName = "UtilityHelpersLib",
 
+    [string]$IntegrationSolutionFile = "UtilityHelpersLib.sln",
+
     [Parameter(Mandatory = $true)][string]$IntegrationDirectory
 )
 
@@ -113,6 +115,135 @@ function Normalize-RemoteUrl {
     (($Url.Trim() -replace '\\', '/') -replace '\.git$', '').ToLowerInvariant()
 }
 
+# Open the Integration directory and select its configured solution file so it
+# can be launched directly from Explorer. Fall back to the directory if absent.
+function Open-IntegrationRepository {
+    param([string]$Path)
+
+    $solutionPath = Join-Path $Path $IntegrationSolutionFile
+    if (Test-Path -LiteralPath $solutionPath -PathType Leaf) {
+        Start-Process explorer.exe -ArgumentList "/select,`"$solutionPath`""
+    }
+    else {
+        Start-Process explorer.exe -ArgumentList "`"$Path`""
+    }
+}
+
+# Close only Explorer windows currently showing the Integration directory. This
+# does not terminate Visual Studio or unrelated Explorer windows.
+function Close-IntegrationExplorerWindows {
+    param([string]$Path)
+
+    $targetPath = [IO.Path]::GetFullPath($Path).TrimEnd([char[]]@('\', '/'))
+    try {
+        $shell = New-Object -ComObject Shell.Application
+        foreach ($window in @($shell.Windows())) {
+            try {
+                $folderPath = $window.Document.Folder.Self.Path
+                if ($folderPath -and ([IO.Path]::GetFullPath($folderPath).TrimEnd([char[]]@('\', '/')) -ieq $targetPath)) {
+                    $window.Quit()
+                }
+            }
+            catch {
+                # Ignore non-Explorer Shell windows and windows being closed.
+            }
+        }
+    }
+    catch {
+        Write-Host "WARN: Could not close the Integration Explorer window: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+}
+
+# Enumerate Visual Studio DTE objects through the COM Running Object Table and
+# close only instances whose loaded solution belongs to this Integration clone.
+function Close-IntegrationVisualStudioSessions {
+    param([string]$Path)
+
+    if (-not ('UtilityHelpersUpdater.RunningObjects' -as [type])) {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
+
+namespace UtilityHelpersUpdater
+{
+    public static class RunningObjects
+    {
+        [DllImport("ole32.dll")]
+        private static extern int GetRunningObjectTable(int reserved, out IRunningObjectTable table);
+
+        public static object[] GetAll()
+        {
+            IRunningObjectTable table;
+            if (GetRunningObjectTable(0, out table) != 0)
+                return new object[0];
+
+            var result = new List<object>();
+            IEnumMoniker enumerator;
+            table.EnumRunning(out enumerator);
+            enumerator.Reset();
+            var monikers = new IMoniker[1];
+            IntPtr fetched = Marshal.AllocCoTaskMem(sizeof(int));
+            try
+            {
+                while (enumerator.Next(1, monikers, fetched) == 0)
+                {
+                    object instance;
+                    try
+                    {
+                        table.GetObject(monikers[0], out instance);
+                        if (instance != null)
+                            result.Add(instance);
+                    }
+                    catch { }
+                    finally
+                    {
+                        if (monikers[0] != null)
+                            Marshal.ReleaseComObject(monikers[0]);
+                    }
+                }
+            }
+            finally
+            {
+                Marshal.FreeCoTaskMem(fetched);
+                Marshal.ReleaseComObject(enumerator);
+                Marshal.ReleaseComObject(table);
+            }
+            return result.ToArray();
+        }
+    }
+}
+'@
+    }
+
+    $targetPath = [IO.Path]::GetFullPath($Path).TrimEnd([char[]]@('\', '/'))
+    $targetPrefix = $targetPath + [IO.Path]::DirectorySeparatorChar
+    foreach ($instance in [UtilityHelpersUpdater.RunningObjects]::GetAll()) {
+        try {
+            $solutionPath = $instance.Solution.FullName
+            if (-not $solutionPath) { continue }
+            $fullSolutionPath = [IO.Path]::GetFullPath($solutionPath)
+            if (-not $fullSolutionPath.StartsWith($targetPrefix, [StringComparison]::OrdinalIgnoreCase)) { continue }
+
+            Write-Info "Closing Visual Studio Integration session: $fullSolutionPath"
+            $instance.SuppressUI = $true
+            $instance.Solution.Close($false)
+            $instance.Quit()
+        }
+        catch {
+            # Most ROT objects are unrelated COM applications; ignore them. A
+            # matching VS instance that refuses to close will make deletion fail
+            # later with the actual filesystem error.
+        }
+        finally {
+            if ([Runtime.InteropServices.Marshal]::IsComObject($instance)) {
+                [void][Runtime.InteropServices.Marshal]::ReleaseComObject($instance)
+            }
+        }
+    }
+}
+
 # Remove only the explicitly configured Integration directory. The leaf-name and
 # filesystem-root checks protect against an accidentally broad recursive delete.
 function Remove-IntegrationRepository {
@@ -129,6 +260,8 @@ function Remove-IntegrationRepository {
         Stop-WithError "Refusing to recursively delete unsafe Integration path: '$fullPath'"
     }
 
+    Close-IntegrationVisualStudioSessions $fullPath
+    Close-IntegrationExplorerWindows $fullPath
     Remove-Item -LiteralPath $fullPath -Recurse -Force
     Write-Host "Deleted temporary Integration repository: $fullPath" -ForegroundColor Green
 }
@@ -297,7 +430,7 @@ function Wait-ForPublishedIntegration {
             Stop-WithError "Integration was not completed. Integration and recovery branches were preserved."
         }
         if ($choice -eq 'O') {
-            Start-Process explorer.exe -ArgumentList $Repository
+            Open-IntegrationRepository $Repository
             continue
         }
         if ($choice -ne 'R') { continue }
@@ -550,7 +683,7 @@ if ($dirtyProjects.Count -gt 0) {
         Write-Host "  candidate/$($project.Slug) <- $($project.SubmoduleDirectory)" -ForegroundColor Green
     }
 
-    Start-Process explorer.exe -ArgumentList $integrationPath
+    Open-IntegrationRepository $integrationPath
     $integrationHead = Wait-ForPublishedIntegration $integrationPath $targetBranch
 
     $updateBranch = $projects[0].SubmoduleUpdateBranch
@@ -608,13 +741,20 @@ foreach ($project in $projects) {
 }
 
 # Recovery refs are needed until every parent project has been updated
-# successfully. Remove only refs created by this completed operation; an earlier
-# failure exits before this point and therefore keeps all recovery data intact.
+# successfully. After full success, remove all updater-created backup refs from
+# each dirty submodule. An earlier failure exits before this cleanup point.
 if ($dirtyProjects.Count -gt 0) {
     Write-Info 'Removing completed-operation recovery branches...'
     foreach ($project in $dirtyProjects) {
-        Invoke-Git $project.SubmoduleDirectory @('update-ref', '--delete', $project.BackupRef) | Out-Null
-        Write-Host "  DELETED $($project.BackupRef)" -ForegroundColor Green
+        $backupRefs = @(Invoke-Git $project.SubmoduleDirectory @(
+            'for-each-ref', '--format=%(refname)', 'refs/heads/utility-updater/backup'
+        )).Output
+        foreach ($backupRef in $backupRefs) {
+            $backupRefName = $backupRef.ToString().Trim()
+            if (-not $backupRefName) { continue }
+            Invoke-Git $project.SubmoduleDirectory @('update-ref', '-d', $backupRefName) | Out-Null
+            Write-Host "  DELETED $backupRefName" -ForegroundColor Green
+        }
     }
 }
 
