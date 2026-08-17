@@ -219,6 +219,7 @@ namespace UtilityHelpersUpdater
 
     $targetPath = [IO.Path]::GetFullPath($Path).TrimEnd([char[]]@('\', '/'))
     $targetPrefix = $targetPath + [IO.Path]::DirectorySeparatorChar
+    $closedProcessIds = @()
     foreach ($instance in [UtilityHelpersUpdater.RunningObjects]::GetAll()) {
         try {
             $solutionPath = $instance.Solution.FullName
@@ -227,9 +228,12 @@ namespace UtilityHelpersUpdater
             if (-not $fullSolutionPath.StartsWith($targetPrefix, [StringComparison]::OrdinalIgnoreCase)) { continue }
 
             Write-Info "Closing Visual Studio Integration session: $fullSolutionPath"
+            $processId = $null
+            try { $processId = $instance.ProcessID } catch { }
             $instance.SuppressUI = $true
             $instance.Solution.Close($false)
             $instance.Quit()
+            if ($processId) { $closedProcessIds += [int]$processId }
         }
         catch {
             # Most ROT objects are unrelated COM applications; ignore them. A
@@ -241,6 +245,12 @@ namespace UtilityHelpersUpdater
                 [void][Runtime.InteropServices.Marshal]::ReleaseComObject($instance)
             }
         }
+    }
+
+    # DTE.Quit is asynchronous. Wait briefly so devenv and its indexing services
+    # can release .vsidx and other files before recursive deletion starts.
+    foreach ($processId in ($closedProcessIds | Sort-Object -Unique)) {
+        Wait-Process -Id $processId -Timeout 15 -ErrorAction SilentlyContinue
     }
 }
 
@@ -262,7 +272,22 @@ function Remove-IntegrationRepository {
 
     Close-IntegrationVisualStudioSessions $fullPath
     Close-IntegrationExplorerWindows $fullPath
-    Remove-Item -LiteralPath $fullPath -Recurse -Force
+
+    # Background Visual Studio indexers can retain .vsidx handles briefly even
+    # after devenv exits. Retry the exact validated target for up to 15 seconds.
+    $lastError = $null
+    for ($attempt = 1; $attempt -le 30; $attempt++) {
+        try {
+            Remove-Item -LiteralPath $fullPath -Recurse -Force -ErrorAction Stop
+            $lastError = $null
+            break
+        }
+        catch {
+            $lastError = $_
+            Start-Sleep -Milliseconds 500
+        }
+    }
+    if ($lastError) { throw $lastError }
     Write-Host "Deleted temporary Integration repository: $fullPath" -ForegroundColor Green
 }
 
