@@ -14,7 +14,7 @@ namespace HELPERS_NS {
 			int y,
 			DWORD windowStyle)
 			: hInstance{ hInstance }
-			, windowSize{ width, height }
+			, windowSize{ static_cast<unsigned int>(width), static_cast<unsigned int>(height) }
 		{
 			WNDCLASSEX wcex;
 			wcex.cbSize = sizeof(WNDCLASSEX);

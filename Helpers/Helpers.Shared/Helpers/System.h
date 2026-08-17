@@ -2,7 +2,9 @@
 #include "common.h"
 #include "Exceptions.h"
 #include "Logger.h"
+#ifdef _WIN32
 #include <comdef.h>
+#endif
 #include <exception>
 #if defined(__cppwinrt) || defined(WINRT_BASE_H)
 #include <winrt/base.h>

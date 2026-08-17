@@ -1,4 +1,5 @@
 #pragma once
+#ifdef _WIN32
 #include "common.h"
 
 #ifndef NOMINMAX
@@ -10,3 +11,4 @@
 #endif
 
 #include <Windows.h>
+#endif

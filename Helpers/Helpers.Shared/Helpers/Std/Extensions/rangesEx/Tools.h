@@ -12,7 +12,7 @@ namespace STD_EXT_NS {
 			//
 			// ░ view_of
 			// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-			// Типовой алиас: вычисляет тип view для произвольного viewable_range TRange.
+			// Type alias that obtains the view type for an arbitrary viewable_range.
 			//
 			template <class TRange>
 			using view_of_t = decltype(::std::ranges::views::all(::std::declval<TRange>()));
@@ -23,13 +23,13 @@ namespace STD_EXT_NS {
 				//
 				// ░ as_view
 				// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-				// Функция-обёртка: превращает любой viewable_range в view.
-				// Поведение 1:1 с std::ranges::views::all, просто более выразительное имя.
+				// Converts any viewable_range into a view.
+				// This is equivalent to std::ranges::views::all, with a more explicit name.
 				// 
-				// std::ranges::all(...) превращает "что угодно viewable" во view:
-				//   - если уже view — вернёт его;
-				//   - если lvalue-контейнер — оборачивает в ref_view;
-				//   - если rvalue-viewable — материализует совместимое view.
+				// std::ranges::views::all converts any viewable object into a view:
+				//   - an existing view is returned as-is;
+				//   - an lvalue container is wrapped in ref_view;
+				//   - an rvalue viewable_range is materialized as a compatible view.
 				//
 				template <class TRange>
 				constexpr auto as_view(TRange&& r) -> decltype(::std::ranges::views::all(::std::forward<TRange>(r))) {

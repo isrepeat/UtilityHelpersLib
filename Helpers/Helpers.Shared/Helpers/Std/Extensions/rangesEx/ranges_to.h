@@ -30,8 +30,8 @@ namespace STD_EXT_NS {
 						container.reserve(::std::ranges::size(range));
 					}
 
-					// универсально для map/set и т.п.
-					// inserter чуть медленнее для vector, зато компилируется везде
+					// Works uniformly for map, set, and similar containers.
+					// inserter is slightly slower for vector, but is portable across containers.
 					::std::ranges::copy(range, ::std::inserter(container, container.end()));
 
 					return container;

@@ -51,7 +51,7 @@ namespace MEDIA_FOUNDATION_NS_ALIAS = MEDIA_FOUNDATION_NS;
 namespace STD_EXT_NS {}
 
 
-
+#ifdef _WIN32
 #include <winapifamily.h>
 
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
@@ -71,7 +71,25 @@ namespace STD_EXT_NS {}
 #endif
 #endif
 #endif
+#else
+#define COMPILE_FOR_DESKTOP 1
+#define COMPILE_FOR_WINRT 0
+#define COMPILE_FOR_CLR 0
+#define COMPILE_FOR_CX 0
 
+using HRESULT = std::int32_t;
+
+constexpr HRESULT S_OK   = 0;
+constexpr HRESULT E_FAIL = static_cast<HRESULT>(0x80004005u);
+
+constexpr bool SUCCEEDED(HRESULT hr) {
+    return hr >= 0;
+}
+
+constexpr bool FAILED(HRESULT hr) {
+    return hr < 0;
+}
+#endif
 
 #if COMPILE_FOR_WINRT
 #include <collection.h>
