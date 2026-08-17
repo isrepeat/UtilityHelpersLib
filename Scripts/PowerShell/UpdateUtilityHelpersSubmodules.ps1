@@ -21,6 +21,10 @@ param(
     [string]$ProjectOverrides = $null,
     [string]$SubmodulePath = "UtilityHelpersLib",
     [string]$CommitMessage = "Update UtilityHelpersLib submodule",
+
+    [ValidatePattern('^[A-Za-z0-9._-]+$')]
+    [string]$SubmoduleName = "UtilityHelpersLib",
+
     [Parameter(Mandatory = $true)][string]$IntegrationDirectory
 )
 
@@ -104,6 +108,26 @@ function Convert-ToSlug {
 function Normalize-RemoteUrl {
     param([string]$Url)
     (($Url.Trim() -replace '\\', '/') -replace '\.git$', '').ToLowerInvariant()
+}
+
+# Remove only the explicitly configured Integration directory. The leaf-name and
+# filesystem-root checks protect against an accidentally broad recursive delete.
+function Remove-IntegrationRepository {
+    param(
+        [string]$Path,
+        [string]$ExpectedSubmoduleName
+    )
+
+    $directorySeparators = [char[]]@('\', '/')
+    $fullPath = [IO.Path]::GetFullPath($Path).TrimEnd($directorySeparators)
+    $rootPath = [IO.Path]::GetPathRoot($fullPath).TrimEnd($directorySeparators)
+    $expectedLeaf = "Integration-$ExpectedSubmoduleName"
+    if (-not $fullPath -or $fullPath -eq $rootPath -or (Split-Path $fullPath -Leaf) -ine $expectedLeaf) {
+        Stop-WithError "Refusing to recursively delete unsafe Integration path: '$fullPath'"
+    }
+
+    Remove-Item -LiteralPath $fullPath -Recurse -Force
+    Write-Host "Deleted temporary Integration repository: $fullPath" -ForegroundColor Green
 }
 
 # Locate exact repository roots at ScanRoot and one directory level below it.
@@ -219,6 +243,37 @@ function Test-GitOperationInProgress {
     $false
 }
 
+# Keep the named local submodule branch synchronized for IDE users even though
+# the actual submodule checkout remains detached. Only a safe fast-forward is
+# allowed; a branch containing unique local commits is never overwritten.
+function Update-LocalTrackingBranch {
+    param(
+        [string]$Repository,
+        [string]$Branch,
+        [string]$TargetCommit
+    )
+
+    $localRef = "refs/heads/$Branch"
+    $exists = Invoke-Git $Repository @('show-ref', '--verify', '--quiet', $localRef) -AllowFailure
+    if ($exists.ExitCode -eq 0) {
+        $localCommit = (Invoke-Git $Repository @('rev-parse', $localRef)).Output[0].ToString().Trim()
+        if ($localCommit -ne $TargetCommit) {
+            $isFastForward = Invoke-Git $Repository @('merge-base', '--is-ancestor', $localCommit, $TargetCommit) -AllowFailure
+            if ($isFastForward.ExitCode -ne 0) {
+                Write-Host "  WARN  Local submodule branch '$Branch' has commits outside origin/$Branch and was not moved." -ForegroundColor Yellow
+                return
+            }
+            Invoke-Git $Repository @('branch', '--force', $Branch, $TargetCommit) | Out-Null
+        }
+    }
+    else {
+        Invoke-Git $Repository @('branch', $Branch, $TargetCommit) | Out-Null
+    }
+
+    # Configure the same upstream that Visual Studio displays for Fetch/Pull/Push.
+    Invoke-Git $Repository @('branch', '--set-upstream-to', "origin/$Branch", $Branch) | Out-Null
+}
+
 # The manual gate remains open until the checked-out Integration commit is clean,
 # has no unfinished Git operation, and exactly matches the published remote branch.
 function Wait-ForPublishedIntegration {
@@ -269,6 +324,17 @@ function Wait-ForPublishedIntegration {
 
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) { Stop-WithError 'Git was not found in PATH.' }
 
+$requestedIntegrationPath = [IO.Path]::GetFullPath($IntegrationDirectory)
+if (Test-Path -LiteralPath $requestedIntegrationPath) {
+    Write-Host "Existing Integration repository found:" -ForegroundColor Yellow
+    Write-Host "    $requestedIntegrationPath" -ForegroundColor White
+    $deleteExisting = (Read-Host 'Delete it and start a new operation? [y/N]').Trim().ToUpperInvariant()
+    if ($deleteExisting -ne 'Y') {
+        Stop-WithError 'A new operation cannot start while the Integration directory exists.'
+    }
+    Remove-IntegrationRepository $requestedIntegrationPath $SubmoduleName
+}
+
 $overrides = if ($ProjectOverrides -and $ProjectOverrides.Trim()) { @(Parse-ProjectSpecs $ProjectOverrides) } else { @() }
 $projects = @(Find-Projects $overrides)
 $dirtyProjects = @()
@@ -315,7 +381,7 @@ if ($dirtyProjects.Count -gt 0) {
 
     $targetBranch = $dirtyProjects[0].SubmoduleBranch
     $operationId = Get-Date -Format 'yyyyMMdd-HHmmss'
-    $integrationPath = [IO.Path]::GetFullPath($IntegrationDirectory)
+    $integrationPath = $requestedIntegrationPath
     if (Test-Path -LiteralPath $integrationPath) {
         Stop-WithError "Integration directory already exists: '$integrationPath'. Finish/recover it or remove it explicitly first."
     }
@@ -333,7 +399,13 @@ if ($dirtyProjects.Count -gt 0) {
     $parent = Split-Path $integrationPath -Parent
     Invoke-Git $parent @('clone', '--no-checkout', $dirtyProjects[0].RemoteUrl, $integrationPath) | Out-Null
     Invoke-Git $integrationPath @('fetch', 'origin', $targetBranch) | Out-Null
-    Invoke-Git $integrationPath @('switch', '--create', 'integration', 'FETCH_HEAD') | Out-Null
+
+    # Use the same local and remote branch name and configure tracking. Visual
+    # Studio can then push with its regular Push button directly to origin/Last
+    # instead of publishing an accidental origin/integration branch.
+    Invoke-Git $integrationPath @(
+        'switch', '--create', $targetBranch, '--track', "origin/$targetBranch"
+    ) | Out-Null
     foreach ($project in $dirtyProjects) {
         $candidateRef = "refs/heads/candidate/$($project.Slug)"
         Invoke-Git $integrationPath @('fetch', $project.SubmoduleDirectory, "$($project.BackupRef):$candidateRef") | Out-Null
@@ -356,6 +428,7 @@ Write-Info 'Updating all submodules and parent-project gitlinks...'
 foreach ($project in $projects) {
     Invoke-Git $project.SubmoduleDirectory @('fetch', '--prune', 'origin', $project.SubmoduleBranch) | Out-Null
     $target = (Invoke-Git $project.SubmoduleDirectory @('rev-parse', 'FETCH_HEAD^{commit}')).Output[0].ToString().Trim()
+    Update-LocalTrackingBranch $project.SubmoduleDirectory $project.SubmoduleBranch $target
 
     if ($project.WasDirty) {
         # Non-ignored untracked files are recoverable from the snapshot. Ignored
@@ -380,6 +453,18 @@ foreach ($project in $projects) {
 Write-Host ""
 Write-Host '[UtilityHelpers updater] Completed. Parent-project commits were not pushed or merged.' -ForegroundColor Green
 if ($integrationPath) {
-    Write-Host "[UtilityHelpers updater] Integration preserved at: $integrationPath" -ForegroundColor Green
+    Write-Host "[UtilityHelpers updater] Integration available at: $integrationPath" -ForegroundColor Green
     Write-Host '[UtilityHelpers updater] Recovery branches were preserved in source submodules.' -ForegroundColor Green
+
+    Write-Host ""
+    $deleteCompleted = (Read-Host 'Delete the temporary Integration repository? [Y/n]').Trim().ToUpperInvariant()
+    if (-not $deleteCompleted -or $deleteCompleted -eq 'Y') {
+        try {
+            Remove-IntegrationRepository $integrationPath $SubmoduleName
+        }
+        catch {
+            Write-Host "WARN: Could not delete Integration: $($_.Exception.Message)" -ForegroundColor Yellow
+            Write-Host "It can be removed manually later: $integrationPath" -ForegroundColor Yellow
+        }
+    }
 }

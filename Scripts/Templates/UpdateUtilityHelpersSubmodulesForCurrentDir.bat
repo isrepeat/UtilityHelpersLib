@@ -15,6 +15,7 @@ REM Integration HEAD. Only then are parent projects updated.
 REM ============================================================================
 
 REM Defaults used by most projects.
+SET "SUBMODULE_NAME=UtilityHelpersLib"
 SET "PROJECT_BRANCH=Last"
 SET "SUBMODULE_BRANCH=Last"
 SET "SCAN_DEPTH=1"
@@ -30,8 +31,9 @@ REM Exact overrides: path^|project branch^|UtilityHelpersLib branch
 REM Separate multiple entries with a semicolon. Paths may contain spaces.
 SET "PROJECT_OVERRIDES=%~dp0Cpp|Last|Last"
 
-REM Integration is created beside the copied wrapper and preserved after completion.
-SET "INTEGRATION_DIR=%~dp0Integration"
+REM Integration is created beside the wrapper as Integration-SUBMODULE_NAME. The
+REM engine offers to remove a stale copy and the completed temporary clone.
+SET "INTEGRATION_DIR=%~dp0Integration-%SUBMODULE_NAME%"
 
 IF NOT EXIST "%CORE_SCRIPT%" (
     ECHO [UtilityHelpers updater] ERROR: PowerShell engine not found:
@@ -51,6 +53,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%CORE_SCRIPT%" ^
     -ScanProjectBranch "%PROJECT_BRANCH%" ^
     -ScanSubmoduleBranch "%SUBMODULE_BRANCH%" ^
     -ProjectOverrides "%PROJECT_OVERRIDES%" ^
+    -SubmoduleName "%SUBMODULE_NAME%" ^
     -IntegrationDirectory "%INTEGRATION_DIR%" ^
     %*
 SET "RESULT=%ERRORLEVEL%"
