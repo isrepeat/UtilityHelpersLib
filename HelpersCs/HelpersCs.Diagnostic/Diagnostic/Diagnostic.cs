@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using System.Runtime.CompilerServices;
+using System.Diagnostics;
 
 
 namespace Helpers {
@@ -34,6 +35,7 @@ namespace Helpers {
 
         private const int MemberNameWidth = 64;
 
+        [Conditional("DEBUG")]
         public void LogDebug(
             string logMessage,
             string caller = "",
@@ -68,6 +70,7 @@ namespace Helpers {
         }
 
 
+        [Conditional("DEBUG")]
         public void LogWarning(
             string logMessage,
             string caller = "",
@@ -102,6 +105,7 @@ namespace Helpers {
         }
 
 
+        [Conditional("DEBUG")]
         public void LogError(
             string logMessage,
             string caller = "",
@@ -137,6 +141,7 @@ namespace Helpers {
 
 
 
+        [Conditional("DEBUG")]
         public void LogParam(
             string logMessage,
             string caller = "",
@@ -168,6 +173,9 @@ namespace Helpers {
             [CallerMemberName] string memberName = "",
             [CallerLineNumber] int lineNumber = 0) {
 
+#if !DEBUG
+            return Releaser.Noop;
+#else
             // Определяем имя класса через StackTrace
             var stackFrame = new System.Diagnostics.StackTrace(1, false).GetFrame(0);
             var method = stackFrame.GetMethod();
@@ -194,13 +202,19 @@ namespace Helpers {
             System.Diagnostics.Debug.WriteLine(logLine);
 
             return new Releaser(logMessage, callerInfo);
+#endif
         }
 
         public class Releaser : IDisposable {
+            internal static readonly Releaser Noop = new Releaser();
             public string logMessage = "";
             public CallerInfo callerInfo;
 
             private bool _disposed = false;
+
+            private Releaser() {
+                _disposed = true;
+            }
 
             public Releaser(string logMessage, CallerInfo callerInfo) {
                 this.logMessage = logMessage;
