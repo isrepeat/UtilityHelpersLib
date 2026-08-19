@@ -242,6 +242,7 @@ namespace Helpers.Collections {
         private readonly HashSet<(TGroup Group, TItem Item)> _selectedItems = new();
         private List<(TGroup Group, TItem Item)> _flatItems = new();
         private (TGroup Group, TItem Item)? _anchor = null;
+        private ModifierKeys? _selectionModifiersOverride;
 
         private readonly List<(TGroup Group, TItem Item, bool IsSelected)> _pendingSelectionNotifications = new();
         private readonly List<Enums.SelectionState> _pendingSelectionStateNotificationValues = new();
@@ -261,6 +262,18 @@ namespace Helpers.Collections {
             };
 
             this.OnGroupStructureChanged();
+        }
+
+        public void SetSelection(TItem item, bool isSelected, ModifierKeys modifiers) {
+            // Позволяет клавиатурным сценариям повторить семантику Ctrl/Shift,
+            // не подменяя глобальное состояние клавиатуры и не дублируя selection-логику.
+            _selectionModifiersOverride = modifiers;
+            try {
+                item.IsSelected = isSelected;
+            }
+            finally {
+                _selectionModifiersOverride = null;
+            }
         }
 
         //
@@ -353,8 +366,9 @@ namespace Helpers.Collections {
         }
 
         private Enums.SelectionAction HandleSelection(TGroup group, TItem item, Enums.SelectionAction requestedAction) {
-            bool isShift = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
-            bool isCtrl = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+            var modifiers = _selectionModifiersOverride ?? Keyboard.Modifiers;
+            bool isShift = (modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
+            bool isCtrl = (modifiers & ModifierKeys.Control) == ModifierKeys.Control;
 
             // Inverted action means do nothing.
             var doNothing = requestedAction == Enums.SelectionAction.Select
