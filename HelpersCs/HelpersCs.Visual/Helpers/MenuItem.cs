@@ -55,8 +55,17 @@ namespace Helpers {
             get => _command;
             set {
                 if (_command != value) {
+                    if (_command != null) {
+                        _command.CanExecuteChanged -= this.OnCommandCanExecuteChanged;
+                    }
+
                     _command = value;
+                    if (_command != null) {
+                        _command.CanExecuteChanged += this.OnCommandCanExecuteChanged;
+                    }
+
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(this.IsEnabled));
                 }
             }
         }
@@ -68,8 +77,17 @@ namespace Helpers {
                 if (_commandParameterContext != value) {
                     _commandParameterContext = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(this.IsEnabled));
                 }
             }
+        }
+
+        // Визуальный MenuItem намеренно не получает Command напрямую: MenuControl выполняет
+        // команду только после закрытия Popup. Поэтому доступность пункта синхронизируем отдельно.
+        public bool IsEnabled => _command?.CanExecute(_commandParameterContext) == true;
+
+        private void OnCommandCanExecuteChanged(object sender, EventArgs e) {
+            OnPropertyChanged(nameof(this.IsEnabled));
         }
     }
 
