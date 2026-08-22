@@ -25,11 +25,46 @@ namespace Helpers {
             Select,
             Unselect
         }
+
+        public enum ShiftSelectionAnchorPolicy {
+            // Все последующие SHIFT-диапазоны продолжаются от исходной точки.
+            KeepInitialAnchor,
+            // Конец последнего SHIFT-диапазона становится началом следующего.
+            MoveToLatestRangeEndpoint
+        }
     }
 }
 
 
 namespace Helpers.Collections {
+    // Явный результат поиска anchor без nullable TItem: generic TItem может быть как ссылочным,
+    // так и значимым типом, поэтому TItem? нельзя использовать в общем контракте provider.
+    public readonly struct SelectionAnchorResult<TItem> {
+        public bool HasValue { get; }
+        private readonly TItem _item;
+
+        private SelectionAnchorResult(bool hasValue, TItem item) {
+            this.HasValue = hasValue;
+            _item = item;
+        }
+
+        public static SelectionAnchorResult<TItem> None => new SelectionAnchorResult<TItem>(false, default!);
+
+        public static SelectionAnchorResult<TItem> FromItem(TItem item) {
+            if (item is null) {
+                throw new ArgumentNullException(nameof(item));
+            }
+
+            return new SelectionAnchorResult<TItem>(true, item);
+        }
+
+        public bool TryGetItem(out TItem item) {
+            item = _item;
+            return this.HasValue;
+        }
+    }
+
+
     public interface ISelectableItem {
         bool IsSelected { get; set; }
         void SetSelectedDirectly(bool value);
@@ -237,6 +272,12 @@ namespace Helpers.Collections {
             get => _selectedItems.ToList();
         }
 
+        public Enums.ShiftSelectionAnchorPolicy ShiftSelectionAnchorPolicy { get; set; } = Enums.ShiftSelectionAnchorPolicy.KeepInitialAnchor;
+
+        // Позволяет владельцу перед каждой диапазонной операцией привязать SHIFT-якорь
+        // к внешнему состоянию, например к активному VS-фрейму.
+        public Func<SelectionAnchorResult<TItem>>? ShiftSelectionAnchorProvider { get; set; }
+
         // Internal:
         private readonly GroupSelectionBinding<TGroup, TItem> _groupSelectionBinding;
         private readonly HashSet<(TGroup Group, TItem Item)> _selectedItems = new();
@@ -379,6 +420,15 @@ namespace Helpers.Collections {
                 return doNothing;
             }
 
+            if (isShift) {
+                // Внешний anchor разрешается перед каждой операцией: Ctrl/Space и другие действия
+                // между двумя SHIFT-выделениями не должны незаметно изменить начало диапазона.
+                var anchorResult = this.ShiftSelectionAnchorProvider?.Invoke() ?? SelectionAnchorResult<TItem>.None;
+                if (anchorResult.TryGetItem(out var providedAnchor) && _groupSelectionBinding.TryGetGroup(providedAnchor, out var anchorGroup)) {
+                    _anchor = (anchorGroup, providedAnchor);
+                }
+            }
+
             var resultAction = requestedAction;
 
             if (requestedAction == Enums.SelectionAction.Select) {
@@ -451,7 +501,10 @@ namespace Helpers.Collections {
                 }
             }
 
-            _anchor = from;
+            // Политика определяет, останется ли исходная точка стабильной после построения диапазона.
+            _anchor = this.ShiftSelectionAnchorPolicy == Enums.ShiftSelectionAnchorPolicy.KeepInitialAnchor
+                ? from
+                : to;
         }
 
         private void ClearAllSelection() {
