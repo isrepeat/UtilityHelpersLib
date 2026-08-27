@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- NOTE: $(TargetPlatformIdentifier) for Desktop / WinUI == Windows.
+             Do not try use it with PropertyGroup, reab about props, items evaluations.
+  -->
+  <PropertyGroup>
+    <NugetName>CrashHandling</NugetName>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- [Helpers] Detect platform -->
+    <CapturedPlatform Condition="'$(Platform)' == 'Win32'">x86</CapturedPlatform>
+    <CapturedPlatform Condition="'$(Platform)' != 'Win32'">$(Platform)</CapturedPlatform>
+
+    <!-- [Helpers] Detect necessary configuration if $(Configuration) does not match exactly Debug or Release -->
+    <RegExCaptureDebugConfiguration>^\w*?([Dd]ebug)\w*$</RegExCaptureDebugConfiguration>
+    <RegExCaptureReleaseConfiguration>^\w*?([Rr]elease)\w*$</RegExCaptureReleaseConfiguration>
+    <CapturedConfiguration Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(Configuration), '$(RegExCaptureDebugConfiguration)'))">Debug</CapturedConfiguration>
+    <CapturedConfiguration Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(Configuration), '$(RegExCaptureReleaseConfiguration)'))">Release</CapturedConfiguration>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <CrashHandlingLibrary>
+      $(MSBuildThisFileDirectory)..\..\runtimes\win10-$(CapturedPlatform)\native\$(CapturedConfiguration)\$(NugetName).Desktop.lib
+    </CrashHandlingLibrary>
+
+    <CrashHandlingIncludes>
+      $(MSBuildThisFileDirectory)include
+    </CrashHandlingIncludes>
+
+    <PublicIncludeDirectories>
+      $(CrashHandlingIncludes);
+      $(PublicIncludeDirectories);
+    </PublicIncludeDirectories>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup Condition="'$(TargetPlatformIdentifier)' == 'Windows'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>
+        $(CrashHandlingIncludes);
+        %(AdditionalIncludeDirectories);
+      </AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>
+        %(PreprocessorDefinitions);
+        CRASH_HANDLING_NUGET;
+      </PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>
+        $(CrashHandlingLibrary);
+        %(AdditionalDependencies);
+      </AdditionalDependencies>
+    </Link>
+    <Lib>
+      <AdditionalDependencies>
+        $(CrashHandlingLibrary);
+        %(AdditionalDependencies);
+      </AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+
+  <!-- Implementations dlls -->
+  <!-- NOTE: .NET 5.0+ (WinUI) does not support .winmd references. -->
+  <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'Windows'">
+    <NugetRuntimes Include="$(MSBuildThisFileDirectory)..\..\runtimes\win10-$(CapturedPlatform)\native\$(CapturedConfiguration)\**\*.dll" />
+    <NugetRuntimes Include="$(MSBuildThisFileDirectory)..\..\runtimes\win10-$(CapturedPlatform)\native\$(CapturedConfiguration)\**\*.exe" />
+  </ItemGroup>
+  
+  <!-- For UWP use only Release or Debug configuration -->
+  <PropertyGroup>
+    <ConfigurationUWP>Release</ConfigurationUWP>
+  </PropertyGroup>
+  
+  <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'UAP'">
+    <Reference Include="$(NugetName).Cx">
+      <HintPath>$(MSBuildThisFileDirectory)..\..\lib\uap10.0\$(NugetName).Cx.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+    </Reference>
+    <NugetRuntimes Include="$(MSBuildThisFileDirectory)..\..\runtimes\win10-$(CapturedPlatform)\native\$(ConfigurationUWP)\**\*.dll" />
+    <NugetRuntimes Include="$(MSBuildThisFileDirectory)..\..\runtimes\win10-$(CapturedPlatform)\native\$(ConfigurationUWP)\**\*.exe" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ContentWithTargetPath Include="@(NugetRuntimes)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </ContentWithTargetPath>
+  </ItemGroup>
+
+  <Target Name="__NugetInfoTask" BeforeTargets="Build">
+    <Message Text="==== [$(NugetName) nuget] Nuget info:" Importance="High" />
+    <Message Text="==== [$(NugetName) nuget] ConfigurationUWP = $(ConfigurationUWP)" Importance="High" />
+    <Message Text="==== [$(NugetName) nuget] CapturedPlatform = $(CapturedPlatform)" Importance="High" />
+    <Message Text="==== [$(NugetName) nuget] CapturedConfiguration = $(CapturedConfiguration)" Importance="High" />
+    <Message Text="==== [$(NugetName) nuget] TargetPlatformIdentifier = $(TargetPlatformIdentifier)" Importance="High" />
+    <Message Text="==== [$(NugetName) nuget] NugetRuntimes = %(NugetRuntimes.Identity)" Importance="High" />
+  </Target>
+</Project>

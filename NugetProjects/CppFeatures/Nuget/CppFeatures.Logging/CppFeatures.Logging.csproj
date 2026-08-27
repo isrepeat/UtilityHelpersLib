@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>CppFeatures.Logging</AssemblyName>
+    <RootNamespace>CppFeatures.Logging</RootNamespace>
+    <Platform>AnyCPU</Platform>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <!-- Этот проект всегда управляемый AnyCPU: путь не должен наследовать x64 от упаковочного проекта. -->
+    <OutDir>$(__NugetBuildDirRoot)\Build\$(Configuration)\AnyCPU\$(MSBuildProjectName)\</OutDir>
+    <IntDir>$(__NugetBuildDirRoot)\Intermediate\$(Configuration)\AnyCPU\$(MSBuildProjectName)\</IntDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+  </ItemGroup>
+</Project>

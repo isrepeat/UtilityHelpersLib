@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Этот файл помещается только в build/net472. В нём нет правил UWP,
+       C++/CX и WinUI: .NET Framework использует managed-адаптер и C ABI. -->
+  <PropertyGroup>
+    <NugetName>CppFeatures</NugetName>
+    <CppFeaturesTargetsDirectory>$(MSBuildThisFileDirectory)</CppFeaturesTargetsDirectory>
+
+    <RegExCaptureDebugConfiguration>^\w*?([Dd]ebug)\w*$</RegExCaptureDebugConfiguration>
+    <RegExCaptureReleaseConfiguration>^\w*?([Rr]elease)\w*$</RegExCaptureReleaseConfiguration>
+    <CapturedConfiguration Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(Configuration), '$(RegExCaptureDebugConfiguration)'))">Debug</CapturedConfiguration>
+    <CapturedConfiguration Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(Configuration), '$(RegExCaptureReleaseConfiguration)'))">Release</CapturedConfiguration>
+
+    <!-- C#-адаптер вызывает C ABI. AnyCPU использует x64, пока пакет не
+         предоставляет отдельный выбор архитектуры во время запуска. -->
+    <CppFeaturesNetFrameworkPlatform Condition="'$(PlatformTarget)' == 'x86'">x86</CppFeaturesNetFrameworkPlatform>
+    <CppFeaturesNetFrameworkPlatform Condition="'$(PlatformTarget)' != 'x86'">x64</CppFeaturesNetFrameworkPlatform>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Debug-проект использует Debug-адаптер, Release-проект — Release-адаптер. -->
+    <Reference Include="CppFeatures.Logging">
+      <HintPath>$(CppFeaturesTargetsDirectory)$(CapturedConfiguration)\CppFeatures.Logging.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+
+    <!-- Единственная нативная зависимость C#-адаптера. -->
+    <NugetRuntimes Include="$(CppFeaturesTargetsDirectory)..\..\runtimes\win10-$(CppFeaturesNetFrameworkPlatform)\native\$(CapturedConfiguration)\CppFeatures.Desktop.dll" />
+    <ContentWithTargetPath Include="@(NugetRuntimes)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>%(Filename)%(Extension)</TargetPath>
+    </ContentWithTargetPath>
+  </ItemGroup>
+
+  <Target Name="__CopyCppFeaturesNetFrameworkLoggingSymbols"
+          BeforeTargets="AfterBuild">
+    <!-- Копируем PDB выбранного адаптера для отладки потребляющего проекта. -->
+    <Copy SourceFiles="$(CppFeaturesTargetsDirectory)$(CapturedConfiguration)\CppFeatures.Logging.pdb"
+          DestinationFolder="$(OutDir)"
+          SkipUnchangedFiles="true"
+          Condition="Exists('$(CppFeaturesTargetsDirectory)$(CapturedConfiguration)\CppFeatures.Logging.pdb')" />
+  </Target>
+
+  <Target Name="__NugetInfoTask" BeforeTargets="Build">
+    <Message Text="==== [$(NugetName) nuget] CapturedConfiguration = $(CapturedConfiguration)" Importance="High" />
+    <Message Text="==== [$(NugetName) nuget] CppFeaturesNetFrameworkPlatform = $(CppFeaturesNetFrameworkPlatform)" Importance="High" />
+    <Message Text="==== [$(NugetName) nuget] NugetRuntimes = %(NugetRuntimes.Identity)" Importance="High" />
+  </Target>
+</Project>

@@ -1,0 +1,8 @@
+namespace CrashHandling.WinRt
+{
+    [default_interface]
+    runtimeclass Components
+    {
+        Components();
+    }
+}

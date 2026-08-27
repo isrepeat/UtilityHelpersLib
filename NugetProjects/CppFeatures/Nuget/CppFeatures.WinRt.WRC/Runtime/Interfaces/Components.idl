@@ -1,0 +1,8 @@
+namespace CppFeatures.WinRt
+{
+    [default_interface]
+    runtimeclass Components
+    {
+        Components();
+    }
+}

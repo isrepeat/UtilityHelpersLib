@@ -1,0 +1,42 @@
+<Project>
+  <!-- Находим и импортируем настройки корня UtilityHelpersLib.
+       Сравнение нормализованных путей предотвращает повторный импорт текущего файла. -->
+  <PropertyGroup>
+    <_ParentDirectoryBuildProps>$([MSBuild]::GetPathOfFileAbove('Directory.Build.props','$(MSBuildThisFileDirectory)..\'))</_ParentDirectoryBuildProps>
+    <_ParentDirectoryBuildPropsNorm Condition="'$(_ParentDirectoryBuildProps)'!=''">$([System.IO.Path]::GetFullPath('$(_ParentDirectoryBuildProps)'))</_ParentDirectoryBuildPropsNorm>
+    <_CurrentDirectoryBuildPropsNorm>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileFullPath)'))</_CurrentDirectoryBuildPropsNorm>
+  </PropertyGroup>
+
+  <Import Project="$(_ParentDirectoryBuildProps)"
+          Condition="'$(_ParentDirectoryBuildPropsNorm)'!='' and '$(_ParentDirectoryBuildPropsNorm)'!='$(_CurrentDirectoryBuildPropsNorm)'" />
+
+  <!-- Общие свойства NuGet-проектов.
+       Пакеты сохраняются в единый локальный feed, а промежуточные и итоговые
+       артефакты нативных проектов изолированы в !NUGET_TMP. -->
+  <PropertyGroup>
+    <!-- Отключаем добавление имени проекта к OutDir: оно уже входит в путь ниже. -->
+    <GenerateProjectSpecificOutputFolder>false</GenerateProjectSpecificOutputFolder>
+    <!-- Корневой каталог UtilityHelpersLib и исходники Helpers, включаемые в пакет. -->
+    <__UtilityHelpersLibDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\'))</__UtilityHelpersLibDir>
+    <__UtilityHelpersLib_HelpersSourcesDir>$(__UtilityHelpersLibDir)Helpers\Helpers.Shared\Helpers</__UtilityHelpersLib_HelpersSourcesDir>
+    <!-- Общий локальный NuGet feed для пакетов, собираемых этим решением. -->
+    <__LocalNugetFeedDir>$(__UtilityHelpersLibDir)NugetFeed\</__LocalNugetFeedDir>
+    <PackageOutputPath Condition="'$(PackageOutputPath)'==''">$(__LocalNugetFeedDir)</PackageOutputPath>
+    <!-- Временная структура и результаты упаковки не смешиваются с обычной сборкой решения. -->
+    <__NugetBuildDirRoot>$(MSBuildThisFileDirectory)!NUGET_TMP</__NugetBuildDirRoot>
+    <__NugetStructureDir>$(MSBuildProjectDirectory)\..\MakeNuget\Nuget</__NugetStructureDir>
+    <OutDir>$(__NugetBuildDirRoot)\Build\$(Configuration)\$(Platform)\$(MSBuildProjectName)\</OutDir>
+    <IntDir>$(__NugetBuildDirRoot)\Intermediate\$(Configuration)\$(Platform)\$(MSBuildProjectName)\</IntDir>
+  </PropertyGroup>
+
+  <!-- Проект может дополнить общие свойства одноимённым файлом .props. -->
+  <Import Project="$(MSBuildProjectDirectory)\$(MSBuildProjectName).props"
+          Condition="Exists('$(MSBuildProjectDirectory)\$(MSBuildProjectName).props')" />
+
+  <!-- Одноимённый .props отображается в Solution Explorer как часть проекта. -->
+  <ItemGroup>
+    <None Remove="$(MSBuildProjectDirectory)\$(MSBuildProjectName).props" />
+    <None Include="$(MSBuildProjectDirectory)\$(MSBuildProjectName).props"
+          Condition="Exists('$(MSBuildProjectDirectory)\$(MSBuildProjectName).props')" />
+  </ItemGroup>
+</Project>

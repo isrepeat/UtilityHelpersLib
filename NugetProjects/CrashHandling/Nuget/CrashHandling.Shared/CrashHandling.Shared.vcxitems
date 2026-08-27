@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <ItemsProjectGuid>{72F3A3B3-0794-42E3-BCED-52CFA32AB65E}</ItemsProjectGuid>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectCapability Include="SourceItemsFromImports" />
+  </ItemGroup>
+  <!-- ================================ Custom targets ================================ -->
+  <Import Project="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).targets" Condition="Exists('$(MSBuildThisFileDirectory)$(MSBuildThisFileName).targets')" />
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).targets" Condition="Exists('$(MSBuildThisFileDirectory)$(MSBuildThisFileName).targets')" />
+  </ItemGroup>
+  <!-- ================================================================================ -->
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)CrashHandling.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Internal\MiniDumpMessages.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)RootHeader.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Internal\CrashHandling.cpp" />
+  </ItemGroup>
+</Project>

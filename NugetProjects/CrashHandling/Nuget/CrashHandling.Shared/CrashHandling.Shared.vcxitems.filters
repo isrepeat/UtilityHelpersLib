@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Sources">
+      <UniqueIdentifier>{79c61ab9-b130-4283-8b91-51e5035d4d75}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sources\Internal">
+      <UniqueIdentifier>{ab476e8c-5d93-425c-8996-868385193d67}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)RootHeader.h">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Internal\MiniDumpMessages.h">
+      <Filter>Sources\Internal</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)CrashHandling.h">
+      <Filter>Sources</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).targets" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Internal\CrashHandling.cpp">
+      <Filter>Sources\Internal</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

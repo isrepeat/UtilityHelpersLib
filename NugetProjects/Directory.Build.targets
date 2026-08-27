@@ -1,0 +1,16 @@
+<Project>
+  <!-- Подключаем targets корня UtilityHelpersLib после определения свойств.
+       Сравнение нормализованных путей исключает зацикливание импорта. -->
+  <PropertyGroup>
+    <_ParentDirectoryBuildTargets>$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets','$(MSBuildThisFileDirectory)..\'))</_ParentDirectoryBuildTargets>
+    <_ParentDirectoryBuildTargetsNorm Condition="'$(_ParentDirectoryBuildTargets)'!=''">$([System.IO.Path]::GetFullPath('$(_ParentDirectoryBuildTargets)'))</_ParentDirectoryBuildTargetsNorm>
+    <_CurrentDirectoryBuildTargetsNorm>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileFullPath)'))</_CurrentDirectoryBuildTargetsNorm>
+  </PropertyGroup>
+
+  <Import Project="$(_ParentDirectoryBuildTargets)"
+          Condition="'$(_ParentDirectoryBuildTargetsNorm)'!='' and '$(_ParentDirectoryBuildTargetsNorm)'!='$(_CurrentDirectoryBuildTargetsNorm)'" />
+
+  <!-- Одноимённый PROJECT.targets импортируется корневым Directory.Build.targets.
+       Повторный импорт здесь приводит к MSB4011, поэтому этот файл передаёт
+       только общие targets от корня UtilityHelpersLib. -->
+</Project>

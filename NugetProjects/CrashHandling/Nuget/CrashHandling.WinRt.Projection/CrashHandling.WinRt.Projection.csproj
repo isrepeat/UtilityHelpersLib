@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0-windows10.0.19041.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- Set Platform to AnyCPU to allow consumption of the projection assembly from any architecture. -->
+    <Platform>AnyCPU</Platform>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <NugetName>CrashHandling</NugetName>
+    <CsWinRTIncludes>$(NugetName)</CsWinRTIncludes>
+    <CsWinRTGeneratedFilesDir>$(OutDir)</CsWinRTGeneratedFilesDir>
+    
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <__NugetStructureDir>$(MSBuildProjectDirectory)\Nuget</__NugetStructureDir>
+    <NuspecFile>$(__NugetStructureDir)\$(NugetName).nuspec</NuspecFile>
+    <OutputPath>$(__NugetStructureDir)</OutputPath>
+
+    <!-- Always do build even if project is up-to-date -->
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <!-- Microsoft.Windows.CsWinRT stable version = 2.0.8 -->
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.0.8" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\CrashHandling.WinRt.WRC\CrashHandling.WinRt.WRC.vcxproj" />
+  </ItemGroup>
+
+  <!-- Ensure that neccessary pacakges restored and "obj" have neccessary generated files. -->
+  <Target Name="EnsureNugetRestoreBeforeResolveRefs" DependsOnTargets="Restore" BeforeTargets="BeforeResolveReferences" />
+</Project>

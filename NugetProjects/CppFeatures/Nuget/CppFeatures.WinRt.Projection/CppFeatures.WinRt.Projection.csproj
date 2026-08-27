@@ -1,0 +1,47 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0-windows10.0.19041.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- Set Platform to AnyCPU to allow consumption of the projection assembly from any architecture. -->
+    <Platform>AnyCPU</Platform>
+    <!-- Имя нативной платформы Visual Studio для ProjectReference: x64 или
+         Win32. Его можно переопределить через /p при x86-сборке. -->
+    <CppFeaturesNativePlatform Condition="'$(CppFeaturesNativePlatform)' == ''">x64</CppFeaturesNativePlatform>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <NugetName>CppFeatures</NugetName>
+    <CsWinRTIncludes>$(NugetName)</CsWinRTIncludes>
+    <CsWinRTGeneratedFilesDir>$(OutDir)</CsWinRTGeneratedFilesDir>
+    <!-- Generate against the installed SDK while retaining the net6/19041 consumer TFM. -->
+    <CsWinRTWindowsMetadata>10.0.26100.0</CsWinRTWindowsMetadata>
+    
+    <!-- Скрипт сначала собирает Debug, затем Release. Упаковываем только во
+         втором проходе, когда в !NUGET_TMP уже готовы обе конфигурации. -->
+    <GeneratePackageOnBuild Condition="'$(Configuration)' == 'Release'">true</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild Condition="'$(Configuration)' != 'Release'">false</GeneratePackageOnBuild>
+    <__NugetStructureDir>$(MSBuildProjectDirectory)\Nuget</__NugetStructureDir>
+    <NuspecFile>$(__NugetStructureDir)\$(NugetName).nuspec</NuspecFile>
+    <OutputPath>$(__NugetStructureDir)</OutputPath>
+
+    <!-- Always do build even if project is up-to-date -->
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <!-- Microsoft.Windows.CsWinRT stable version = 2.0.8 -->
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.0.8" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\CppFeatures.WinRt.WRC\CppFeatures.WinRt.WRC.vcxproj">
+      <!-- Управляемая проекция остаётся AnyCPU, а WinRT-метаданные создаёт
+           нативная цепочка. Значение x64 или Win32 задаётся в targets. -->
+      <SetPlatform>Platform=$(CppFeaturesNativePlatform)</SetPlatform>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!-- Ensure that neccessary pacakges restored and "obj" have neccessary generated files. -->
+  <Target Name="EnsureNugetRestoreBeforeResolveRefs" DependsOnTargets="Restore" BeforeTargets="BeforeResolveReferences" />
+</Project>
