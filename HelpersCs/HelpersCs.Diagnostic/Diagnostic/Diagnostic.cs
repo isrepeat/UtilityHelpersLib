@@ -27,7 +27,7 @@ namespace Helpers {
 
     public class Logger {
         public bool IsLoggingEnabled { get; set; } = true;
-        public void EnableFileLogging(string logFilePath) { }
+        public void EnableFileLogging(string logFilePath, bool appendNewSession = false) { }
         public void LogDebug(string logMessage, string caller = "", [CallerFilePath] string filePath = "", [CallerMemberName] string memberName = "", [CallerLineNumber] int lineNumber = 0) { }
         public void LogWarning(string logMessage, string caller = "", [CallerFilePath] string filePath = "", [CallerMemberName] string memberName = "", [CallerLineNumber] int lineNumber = 0) { }
         public void LogError(string logMessage, string caller = "", [CallerFilePath] string filePath = "", [CallerMemberName] string memberName = "", [CallerLineNumber] int lineNumber = 0) { }
@@ -76,12 +76,15 @@ namespace Helpers {
             set => _isLoggingEnabled = value;
         }
 
-        public void EnableFileLogging(string logFilePath) {
+        public void EnableFileLogging(string logFilePath, bool appendNewSession = false) {
             if (string.IsNullOrWhiteSpace(logFilePath)) {
                 throw new ArgumentException("Путь к файлу журнала не задан.", nameof(logFilePath));
             }
 
-            CppFeatures.Logging.Log.Init(logFilePath, CppFeatures.Logging.InitFlags.Truncate);
+            var initializationFlags = appendNewSession
+                ? CppFeatures.Logging.InitFlags.AppendNewSessionMsg
+                : CppFeatures.Logging.InitFlags.Truncate;
+            CppFeatures.Logging.Log.Init(logFilePath, initializationFlags);
         }
 
         [Conditional("DEBUG")]
