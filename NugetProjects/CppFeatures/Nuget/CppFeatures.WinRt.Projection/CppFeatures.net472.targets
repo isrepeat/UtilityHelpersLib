@@ -24,12 +24,16 @@
       <Private>true</Private>
     </Reference>
 
-    <!-- Единственная нативная зависимость C#-адаптера. -->
+    <!-- Единственная нативная зависимость C#-адаптера. Content вместо
+         ContentWithTargetPath нужен VSIX-проектам: VSSDK включает в контейнер
+         только Content с метаданными IncludeInVSIX. -->
     <NugetRuntimes Include="$(CppFeaturesTargetsDirectory)..\..\runtimes\win10-$(CppFeaturesNetFrameworkPlatform)\native\$(CapturedConfiguration)\CppFeatures.Desktop.dll" />
-    <ContentWithTargetPath Include="@(NugetRuntimes)">
+    <Content Include="@(NugetRuntimes)">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <TargetPath>%(Filename)%(Extension)</TargetPath>
-    </ContentWithTargetPath>
+      <Link>%(Filename)%(Extension)</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath></VSIXSubPath>
+    </Content>
   </ItemGroup>
 
   <Target Name="__CopyCppFeaturesNetFrameworkLoggingSymbols"
