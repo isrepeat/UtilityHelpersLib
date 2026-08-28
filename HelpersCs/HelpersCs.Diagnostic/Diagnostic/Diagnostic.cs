@@ -26,6 +26,7 @@ namespace Helpers {
     }
 
     public class Logger {
+        public bool IsLoggingEnabled { get; set; } = true;
         public void EnableFileLogging(string logFilePath) { }
         public void LogDebug(string logMessage, string caller = "", [CallerFilePath] string filePath = "", [CallerMemberName] string memberName = "", [CallerLineNumber] int lineNumber = 0) { }
         public void LogWarning(string logMessage, string caller = "", [CallerFilePath] string filePath = "", [CallerMemberName] string memberName = "", [CallerLineNumber] int lineNumber = 0) { }
@@ -68,6 +69,12 @@ namespace Helpers {
     // Сохраняет прежний API Helpers.Diagnostic, направляя записи в NuGet CppFeatures.
     public class Logger {
         private const string LogParamPrefix = "  * ";
+        private volatile bool _isLoggingEnabled = true;
+
+        public bool IsLoggingEnabled {
+            get => _isLoggingEnabled;
+            set => _isLoggingEnabled = value;
+        }
 
         public void EnableFileLogging(string logFilePath) {
             if (string.IsNullOrWhiteSpace(logFilePath)) {
@@ -85,6 +92,10 @@ namespace Helpers {
             [CallerMemberName] string memberName = "",
             [CallerLineNumber] int lineNumber = 0
         ) {
+            if (!this.IsLoggingEnabled) {
+                return;
+            }
+
             CppFeatures.Logging.Log.Debug(FormatMessage(logMessage, caller), filePath, memberName, lineNumber);
         }
 
@@ -96,6 +107,10 @@ namespace Helpers {
             [CallerMemberName] string memberName = "",
             [CallerLineNumber] int lineNumber = 0
         ) {
+            if (!this.IsLoggingEnabled) {
+                return;
+            }
+
             CppFeatures.Logging.Log.Warning(FormatMessage(logMessage, caller), filePath, memberName, lineNumber);
         }
 
@@ -107,6 +122,10 @@ namespace Helpers {
             [CallerMemberName] string memberName = "",
             [CallerLineNumber] int lineNumber = 0
         ) {
+            if (!this.IsLoggingEnabled) {
+                return;
+            }
+
             CppFeatures.Logging.Log.Error(FormatMessage(logMessage, caller), filePath, memberName, lineNumber);
         }
 
@@ -118,6 +137,10 @@ namespace Helpers {
             [CallerMemberName] string memberName = "",
             [CallerLineNumber] int lineNumber = 0
         ) {
+            if (!this.IsLoggingEnabled) {
+                return;
+            }
+
             CppFeatures.Logging.Log.Debug(FormatMessage(LogParamPrefix + logMessage, caller), filePath, memberName, lineNumber);
         }
 
@@ -129,6 +152,10 @@ namespace Helpers {
             [CallerLineNumber] int lineNumber = 0
         ) {
 #if DEBUG
+            if (!this.IsLoggingEnabled) {
+                return Releaser.Noop;
+            }
+
             var callerInfo = new CallerInfo(filePath, caller, memberName, lineNumber);
             CppFeatures.Logging.Log.Debug(FormatMessage(logMessage + " enter", caller), filePath, memberName, lineNumber);
             return new Releaser(logMessage, callerInfo);
