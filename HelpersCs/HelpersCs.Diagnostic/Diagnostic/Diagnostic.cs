@@ -42,7 +42,6 @@ namespace Helpers {
 }
 #else
 using System;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Helpers {
@@ -87,7 +86,6 @@ namespace Helpers {
             CppFeatures.Logging.Log.Init(logFilePath, initializationFlags);
         }
 
-        [Conditional("DEBUG")]
         public void LogDebug(
             string logMessage,
             string caller = "",
@@ -102,7 +100,6 @@ namespace Helpers {
             CppFeatures.Logging.Log.Debug(FormatMessage(logMessage, caller), filePath, memberName, lineNumber);
         }
 
-        [Conditional("DEBUG")]
         public void LogWarning(
             string logMessage,
             string caller = "",
@@ -117,7 +114,6 @@ namespace Helpers {
             CppFeatures.Logging.Log.Warning(FormatMessage(logMessage, caller), filePath, memberName, lineNumber);
         }
 
-        [Conditional("DEBUG")]
         public void LogError(
             string logMessage,
             string caller = "",
@@ -132,7 +128,6 @@ namespace Helpers {
             CppFeatures.Logging.Log.Error(FormatMessage(logMessage, caller), filePath, memberName, lineNumber);
         }
 
-        [Conditional("DEBUG")]
         public void LogParam(
             string logMessage,
             string caller = "",
