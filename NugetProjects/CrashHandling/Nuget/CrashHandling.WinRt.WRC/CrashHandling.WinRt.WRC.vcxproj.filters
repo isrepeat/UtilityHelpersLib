@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Generated Files">
+      <UniqueIdentifier>{926ab91d-31b4-48c3-b9a4-e681349f27f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Runtime">
+      <UniqueIdentifier>{5bfca445-c627-4e76-b7e3-b0f90befffd3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Runtime\Common">
+      <UniqueIdentifier>{a6097b59-e7e4-4e1a-bdd2-3e02a982d832}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Runtime\Implementation">
+      <UniqueIdentifier>{e36068d2-75ea-4736-a1ae-f45efd9dff7c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Runtime\Interfaces">
+      <UniqueIdentifier>{4eb310d8-9b2f-47d9-81bc-033cc6d36141}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="Runtime\Implementation\Components.cpp">
+      <Filter>Runtime\Implementation</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated Files\module.g.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="Runtime\Common\Conversion.h">
+      <Filter>Runtime\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Runtime\Implementation\Components.h">
+      <Filter>Runtime\Implementation</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="Runtime\Interfaces\Components.idl">
+      <Filter>Runtime\Interfaces</Filter>
+    </Midl>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="CrashHandling_WinRt_WRC.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="readme.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Обычный native C++ Desktop-потребитель пакета. -->
+  <PropertyGroup>
+    <NugetName>CppFeatures</NugetName>
+    <CapturedPlatform Condition="'$(Platform)' == 'Win32'">x86</CapturedPlatform>
+    <CapturedPlatform Condition="'$(Platform)' != 'Win32'">$(Platform)</CapturedPlatform>
+    <RegExCaptureDebugConfiguration>^\w*?([Dd]ebug)\w*$</RegExCaptureDebugConfiguration>
+    <RegExCaptureReleaseConfiguration>^\w*?([Rr]elease)\w*$</RegExCaptureReleaseConfiguration>
+    <CapturedConfiguration Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(Configuration), '$(RegExCaptureDebugConfiguration)'))">Debug</CapturedConfiguration>
+    <CapturedConfiguration Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(Configuration), '$(RegExCaptureReleaseConfiguration)'))">Release</CapturedConfiguration>
+    <CppFeaturesLibrary>$(MSBuildThisFileDirectory)..\..\runtimes\win10-$(CapturedPlatform)\native\$(CapturedConfiguration)\$(NugetName).Desktop.lib</CppFeaturesLibrary>
+    <CppFeaturesIncludes>$(MSBuildThisFileDirectory)include</CppFeaturesIncludes>
+    <PublicIncludeDirectories>$(CppFeaturesIncludes);$(PublicIncludeDirectories)</PublicIncludeDirectories>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(CppFeaturesIncludes);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);CPPFEATURES_NUGET;NUGET_HELPERS_NS=$(NugetName)Helpers;</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>$(CppFeaturesLibrary);%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Lib>
+      <AdditionalDependencies>$(CppFeaturesLibrary);%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+
+  <!-- Сохраняем нынешнее поведение desktop-пакета; набор DLL сузим отдельно
+       после проверки цепочки зависимостей native-клиента. -->
+  <ItemGroup>
+    <NugetRuntimes Include="$(MSBuildThisFileDirectory)..\..\runtimes\win10-$(CapturedPlatform)\native\$(CapturedConfiguration)\**\*.dll" />
+    <ContentWithTargetPath Include="@(NugetRuntimes)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </ContentWithTargetPath>
+  </ItemGroup>
+</Project>

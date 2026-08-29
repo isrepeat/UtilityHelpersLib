@@ -8,6 +8,8 @@ namespace Helpers {
     /// </summary>
     public class AdornerWithChild<T> : System.Windows.Documents.Adorner where T : UIElement {
         private readonly T _child;
+        private readonly FrameworkElement? _adornedFrameworkElement;
+        private bool _isChildAttached;
         /// <summary>
         /// Получает UIElement, который был добавлен в качестве оверлея.
         /// </summary>
@@ -21,17 +23,19 @@ namespace Helpers {
         public AdornerWithChild(UIElement adornedElement, T childElement) : base(adornedElement) {
             _child = childElement;
             this.AddVisualChild(_child);
+            _isChildAttached = true;
 
             // Обновляем позиционирование при изменении размера
             if (adornedElement is FrameworkElement fe) {
-                fe.SizeChanged += (_, _) => this.InvalidateMeasure();
+                _adornedFrameworkElement = fe;
+                _adornedFrameworkElement.SizeChanged += this.OnAdornedElementSizeChanged;
             }
         }
 
         /// <summary>
         /// Указывает количество визуальных дочерних элементов у адорнера. В нашем случае — всегда один.
         /// </summary>
-        protected override int VisualChildrenCount => 1;
+        protected override int VisualChildrenCount => _isChildAttached ? 1 : 0;
 
         /// <summary>
         /// Возвращает визуальный дочерний элемент по индексу. Используется системой WPF при отрисовке.
@@ -39,7 +43,30 @@ namespace Helpers {
         /// <param name="index">Индекс визуального потомка (всегда 0, так как потомок один).</param>
         /// <returns>Дочерний UIElement, наложенный поверх.</returns>
         protected override Visual GetVisualChild(int index) {
+            if (!_isChildAttached || index != 0) {
+                throw new System.ArgumentOutOfRangeException(nameof(index));
+            }
+
             return _child;
+        }
+
+        /// <summary>
+        /// Отсоединяет дочерний элемент, чтобы его можно было добавить в другой Adorner.
+        /// </summary>
+        public void DetachChild() {
+            if (!_isChildAttached) {
+                return;
+            }
+
+            this.RemoveVisualChild(_child);
+            _isChildAttached = false;
+            if (_adornedFrameworkElement != null) {
+                _adornedFrameworkElement.SizeChanged -= this.OnAdornedElementSizeChanged;
+            }
+        }
+
+        private void OnAdornedElementSizeChanged(object sender, SizeChangedEventArgs e) {
+            this.InvalidateMeasure();
         }
 
         /// <summary>
@@ -105,10 +132,23 @@ namespace Helpers {
             }
 
             foreach (var adorner in adorners) {
-                if (adorner is AdornerWithChild<T>) {
+                if (adorner is AdornerWithChild<T> adornerWithChild) {
                     layer.Remove(adorner);
+                    adornerWithChild.DetachChild();
                 }
             }
+        }
+
+        /// <summary>
+        /// Удаляет конкретный Adorner и освобождает его дочерний элемент.
+        /// </summary>
+        public static void RemoveAdorner<T>(UIElement target, AdornerWithChild<T> adorner) where T : UIElement {
+            var layer = System.Windows.Documents.AdornerLayer.GetAdornerLayer(target);
+            if (layer != null) {
+                layer.Remove(adorner);
+            }
+
+            adorner.DetachChild();
         }
     }
 
@@ -156,7 +196,7 @@ namespace Helpers {
 
             // Добавление в слой наложений
             _adorner = AdornerService.AddAdorner(target, overlay);
-            this.IsAttached = true;
+            this.IsAttached = _adorner != null;
         }
 
         /// <summary>
@@ -189,10 +229,16 @@ namespace Helpers {
             if (_targetRef.TryGetTarget(out var target)) {
                 target.SizeChanged -= OnTargetSizeChanged;
                 target.Unloaded -= OnTargetUnloaded;
-                AdornerService.RemoveAdorners<T>(target);
+                if (_adorner != null) {
+                    AdornerService.RemoveAdorner(target, _adorner);
+                }
+            }
+            else {
+                _adorner?.DetachChild();
             }
 
             _adorner = null;
+            this.IsAttached = false;
         }
 
         /// <summary>

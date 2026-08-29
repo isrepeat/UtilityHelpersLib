@@ -1,16 +1,15 @@
-﻿using System;
-using System.Linq;
-using System.Text;
+#if NETSTANDARD2_0
+using System;
 using System.Runtime.CompilerServices;
 
-
 namespace Helpers {
+    // Анализатор собирается под netstandard2.0 и не загружает desktop-адаптер.
+    // Ему достаточно совместимого API без фактической записи журнала.
     public class Diagnostic {
         private static readonly Diagnostic _instance = new Diagnostic();
         public static Diagnostic Instance => _instance;
-        public static Logger Logger { get; set; } = new Logger();
+        public static Logger Logger { get; } = new Logger();
     }
-
 
     public struct CallerInfo {
         public string FilePath { get; }
@@ -26,208 +25,178 @@ namespace Helpers {
         }
     }
 
+    public class Logger {
+        public bool IsLoggingEnabled { get; set; } = true;
+        public void EnableFileLogging(string logFilePath, bool appendNewSession = false) { }
+        public void LogDebug(string logMessage, string caller = "", [CallerFilePath] string filePath = "", [CallerMemberName] string memberName = "", [CallerLineNumber] int lineNumber = 0) { }
+        public void LogWarning(string logMessage, string caller = "", [CallerFilePath] string filePath = "", [CallerMemberName] string memberName = "", [CallerLineNumber] int lineNumber = 0) { }
+        public void LogError(string logMessage, string caller = "", [CallerFilePath] string filePath = "", [CallerMemberName] string memberName = "", [CallerLineNumber] int lineNumber = 0) { }
+        public void LogParam(string logMessage, string caller = "", [CallerFilePath] string filePath = "", [CallerMemberName] string memberName = "", [CallerLineNumber] int lineNumber = 0) { }
+        public Releaser LogFunctionScope(string logMessage, string caller = "", [CallerFilePath] string filePath = "", [CallerMemberName] string memberName = "", [CallerLineNumber] int lineNumber = 0) => Releaser.Noop;
 
+        public sealed class Releaser : IDisposable {
+            internal static readonly Releaser Noop = new Releaser();
+            public void Dispose() { }
+        }
+    }
+}
+#else
+using System;
+using System.Runtime.CompilerServices;
+
+namespace Helpers {
+    public class Diagnostic {
+        private static readonly Diagnostic _instance = new Diagnostic();
+        public static Diagnostic Instance => _instance;
+        public static Logger Logger { get; } = new Logger();
+    }
+
+    public struct CallerInfo {
+        public string FilePath { get; }
+        public string CallerName { get; }
+        public string MemberName { get; }
+        public int LineNumber { get; }
+
+        public CallerInfo(string filePath, string callerName, string memberName, int lineNumber) {
+            FilePath = filePath;
+            CallerName = callerName;
+            MemberName = memberName;
+            LineNumber = lineNumber;
+        }
+    }
+
+    // Сохраняет прежний API Helpers.Diagnostic, направляя записи в NuGet CppFeatures.
     public class Logger {
         private const string LogParamPrefix = "  * ";
-        private const string LogErrorPrefix = "ERROR: ";
-        private const string LogWarningPrefix = "WARNING: ";
+        private volatile bool _isLoggingEnabled = true;
 
-        private const int MemberNameWidth = 64;
+        public bool IsLoggingEnabled {
+            get => _isLoggingEnabled;
+            set => _isLoggingEnabled = value;
+        }
+
+        public void EnableFileLogging(string logFilePath, bool appendNewSession = false) {
+            if (string.IsNullOrWhiteSpace(logFilePath)) {
+                throw new ArgumentException("Путь к файлу журнала не задан.", nameof(logFilePath));
+            }
+
+            var initializationFlags = appendNewSession
+                ? CppFeatures.Logging.InitFlags.AppendNewSessionMsg
+                : CppFeatures.Logging.InitFlags.Truncate;
+            CppFeatures.Logging.Log.Init(logFilePath, initializationFlags);
+        }
 
         public void LogDebug(
             string logMessage,
             string caller = "",
             [CallerFilePath] string filePath = "",
             [CallerMemberName] string memberName = "",
-            [CallerLineNumber] int lineNumber = 0) {
-
-            // Определяем имя класса через StackTrace
-            var stackFrame = new System.Diagnostics.StackTrace(1, false).GetFrame(0);
-            var method = stackFrame.GetMethod();
-            var callerTypeName = method?.DeclaringType?.Name ?? "";
-
-            // Заменяем memberName на полное имя <TypeName>.<MemberName>
-            memberName = !string.IsNullOrEmpty(callerTypeName)
-                ? $"{callerTypeName}.{memberName}"
-                : memberName;
-
-            var callerInfo = new CallerInfo(filePath, caller, memberName, lineNumber);
-            string memberFormatted = $"{callerInfo.MemberName}()".PadRight(Logger.MemberNameWidth);
-
-            string logLine;
-            if (!string.IsNullOrEmpty(callerInfo.CallerName)) {
-                logLine = $"[{DateTime.Now:HH:mm:ss:fff}] {memberFormatted}: {logMessage} [{callerInfo.CallerName}]";
-                //CppFeatures.Cx.Logger.LogDebug($"{logMessage} [{callerInfo.CallerName}]", callerInfo.FilePath, callerInfo.MemberName, callerInfo.LineNumber);
-            }
-            else {
-                logLine = $"[{DateTime.Now:HH:mm:ss:fff}] {memberFormatted}: {logMessage}";
-                //CppFeatures.Cx.Logger.LogDebug($"{logMessage}", callerInfo.FilePath, callerInfo.MemberName, callerInfo.LineNumber);
+            [CallerLineNumber] int lineNumber = 0
+        ) {
+            if (!this.IsLoggingEnabled) {
+                return;
             }
 
-            System.Diagnostics.Debug.WriteLine(logLine);
+            CppFeatures.Logging.Log.Debug(FormatMessage(logMessage, caller), filePath, memberName, lineNumber);
         }
-
 
         public void LogWarning(
             string logMessage,
             string caller = "",
             [CallerFilePath] string filePath = "",
             [CallerMemberName] string memberName = "",
-            [CallerLineNumber] int lineNumber = 0) {
-
-            // Определяем имя класса через StackTrace
-            var stackFrame = new System.Diagnostics.StackTrace(1, false).GetFrame(0);
-            var method = stackFrame.GetMethod();
-            var callerTypeName = method?.DeclaringType?.Name ?? "";
-
-            // Заменяем memberName на полное имя <TypeName>.<MemberName>
-            memberName = !string.IsNullOrEmpty(callerTypeName)
-                ? $"{callerTypeName}.{memberName}"
-                : memberName;
-
-            var callerInfo = new CallerInfo(filePath, caller, memberName, lineNumber);
-            string memberFormatted = $"{callerInfo.MemberName}()".PadRight(Logger.MemberNameWidth);
-
-            string logLine;
-            if (!string.IsNullOrEmpty(callerInfo.CallerName)) {
-                logLine = $"[{DateTime.Now:HH:mm:ss:fff}] {memberFormatted}: {Logger.LogWarningPrefix}{logMessage} [{callerInfo.CallerName}]";
-                //CppFeatures.Cx.Logger.LogDebug($"{logWarningPrefix}{logMessage} [{callerInfo.CallerName}]", callerInfo.FilePath, callerInfo.MemberName, callerInfo.LineNumber);
-            }
-            else {
-                logLine = $"[{DateTime.Now:HH:mm:ss:fff}] {memberFormatted}: {Logger.LogWarningPrefix}{logMessage}";
-                //CppFeatures.Cx.Logger.LogDebug($"{logWarningPrefix}{logMessage}", callerInfo.FilePath, callerInfo.MemberName, callerInfo.LineNumber);
+            [CallerLineNumber] int lineNumber = 0
+        ) {
+            if (!this.IsLoggingEnabled) {
+                return;
             }
 
-            System.Diagnostics.Debug.WriteLine(logLine);
+            CppFeatures.Logging.Log.Warning(FormatMessage(logMessage, caller), filePath, memberName, lineNumber);
         }
-
 
         public void LogError(
             string logMessage,
             string caller = "",
             [CallerFilePath] string filePath = "",
             [CallerMemberName] string memberName = "",
-            [CallerLineNumber] int lineNumber = 0) {
-
-            // Определяем имя класса через StackTrace
-            var stackFrame = new System.Diagnostics.StackTrace(1, false).GetFrame(0);
-            var method = stackFrame.GetMethod();
-            var callerTypeName = method?.DeclaringType?.Name ?? "";
-
-            // Заменяем memberName на полное имя <TypeName>.<MemberName>
-            memberName = !string.IsNullOrEmpty(callerTypeName)
-                ? $"{callerTypeName}.{memberName}"
-                : memberName;
-
-            var callerInfo = new CallerInfo(filePath, caller, memberName, lineNumber);
-            string memberFormatted = $"{callerInfo.MemberName}()".PadRight(Logger.MemberNameWidth);
-
-            string logLine;
-            if (!string.IsNullOrEmpty(callerInfo.CallerName)) {
-                logLine = $"[{DateTime.Now:HH:mm:ss:fff}] {memberFormatted}: {Logger.LogErrorPrefix}{logMessage} [{callerInfo.CallerName}]";
-                //CppFeatures.Cx.Logger.LogDebug($"{logErrorPrefix}{logMessage} [{callerInfo.CallerName}]", callerInfo.FilePath, callerInfo.MemberName, callerInfo.LineNumber);
-            }
-            else {
-                logLine = $"[{DateTime.Now:HH:mm:ss:fff}] {memberFormatted}: {Logger.LogErrorPrefix}{logMessage}";
-                //CppFeatures.Cx.Logger.LogDebug($"{logErrorPrefix}{logMessage}", callerInfo.FilePath, callerInfo.MemberName, callerInfo.LineNumber);
+            [CallerLineNumber] int lineNumber = 0
+        ) {
+            if (!this.IsLoggingEnabled) {
+                return;
             }
 
-            System.Diagnostics.Debug.WriteLine(logLine);
+            CppFeatures.Logging.Log.Error(FormatMessage(logMessage, caller), filePath, memberName, lineNumber);
         }
-
-
 
         public void LogParam(
             string logMessage,
             string caller = "",
             [CallerFilePath] string filePath = "",
             [CallerMemberName] string memberName = "",
-            [CallerLineNumber] int lineNumber = 0) {
-
-            var callerInfo = new CallerInfo(filePath, caller, memberName, lineNumber);
-            string memberFormatted = $"".PadRight(Logger.MemberNameWidth);
-
-            string logLine;
-            if (!string.IsNullOrEmpty(callerInfo.CallerName)) {
-                logLine = $"[{DateTime.Now:HH:mm:ss:fff}] {memberFormatted}  {Logger.LogParamPrefix}{logMessage} [{callerInfo.CallerName}]";
-                //CppFeatures.Cx.Logger.LogDebug($"{logParamPrefix}{logMessage} [{callerInfo.CallerName}]", callerInfo.FilePath, callerInfo.MemberName, callerInfo.LineNumber);
-            }
-            else {
-                logLine = $"[{DateTime.Now:HH:mm:ss:fff}] {memberFormatted}  {Logger.LogParamPrefix}{logMessage}";
-                //CppFeatures.Cx.Logger.LogDebug($"{logParamPrefix}{logMessage}", callerInfo.FilePath, callerInfo.MemberName, callerInfo.LineNumber);
+            [CallerLineNumber] int lineNumber = 0
+        ) {
+            if (!this.IsLoggingEnabled) {
+                return;
             }
 
-            System.Diagnostics.Debug.WriteLine(logLine);
+            CppFeatures.Logging.Log.Debug(FormatMessage(LogParamPrefix + logMessage, caller), filePath, memberName, lineNumber);
         }
-
 
         public Releaser LogFunctionScope(
             string logMessage,
             string caller = "",
             [CallerFilePath] string filePath = "",
             [CallerMemberName] string memberName = "",
-            [CallerLineNumber] int lineNumber = 0) {
-
-            // Определяем имя класса через StackTrace
-            var stackFrame = new System.Diagnostics.StackTrace(1, false).GetFrame(0);
-            var method = stackFrame.GetMethod();
-            var callerTypeName = method?.DeclaringType?.Name ?? "";
-
-            // Заменяем memberName на полное имя <TypeName>.<MemberName>
-            memberName = !string.IsNullOrEmpty(callerTypeName)
-                ? $"{callerTypeName}.{memberName}"
-                : memberName;
+            [CallerLineNumber] int lineNumber = 0
+        ) {
+#if DEBUG
+            if (!this.IsLoggingEnabled) {
+                return Releaser.Noop;
+            }
 
             var callerInfo = new CallerInfo(filePath, caller, memberName, lineNumber);
-            string memberFormatted = $"{callerInfo.MemberName}()".PadRight(Logger.MemberNameWidth);
-
-            string logLine;
-            if (!string.IsNullOrEmpty(callerInfo.CallerName)) {
-                logLine = $"[{DateTime.Now:HH:mm:ss:fff}] {memberFormatted}: {logMessage} enter [{callerInfo.CallerName}]";
-                //CppFeatures.Cx.Logger.LogDebug($"{logMessage} enter [{callerInfo.CallerName}]", callerInfo.FilePath, callerInfo.MemberName, callerInfo.LineNumber);
-            }
-            else {
-                logLine = $"[{DateTime.Now:HH:mm:ss:fff}] {memberFormatted}: {logMessage} enter";
-                //CppFeatures.Cx.Logger.LogDebug($"{logMessage} enter", callerInfo.FilePath, callerInfo.MemberName, callerInfo.LineNumber);
-            }
-
-            System.Diagnostics.Debug.WriteLine(logLine);
-
+            CppFeatures.Logging.Log.Debug(FormatMessage(logMessage + " enter", caller), filePath, memberName, lineNumber);
             return new Releaser(logMessage, callerInfo);
+#else
+            return Releaser.Noop;
+#endif
+        }
+
+        private static string FormatMessage(string logMessage, string caller) {
+            return string.IsNullOrEmpty(caller) ? logMessage : $"{logMessage} [{caller}]";
         }
 
         public class Releaser : IDisposable {
-            public string logMessage = "";
-            public CallerInfo callerInfo;
+            internal static readonly Releaser Noop = new Releaser();
 
-            private bool _disposed = false;
+            private readonly string _logMessage = "";
+            private readonly CallerInfo _callerInfo;
+            private bool _disposed;
 
-            public Releaser(string logMessage, CallerInfo callerInfo) {
-                this.logMessage = logMessage;
-                this.callerInfo = callerInfo;
+            private Releaser() {
+                _disposed = true;
+            }
+
+            internal Releaser(string logMessage, CallerInfo callerInfo) {
+                _logMessage = logMessage;
+                _callerInfo = callerInfo;
             }
 
             public void Dispose() {
                 if (_disposed) {
                     return;
                 }
-                
-                string memberFormatted = $"{callerInfo.MemberName}()".PadRight(Logger.MemberNameWidth);
 
-                string logLine;
-                if (!string.IsNullOrEmpty(callerInfo.CallerName)) {
-                    logLine = $"[{DateTime.Now:HH:mm:ss:fff}] {memberFormatted}: {this.logMessage} exit [{this.callerInfo.CallerName}]";
-                    //CppFeatures.Cx.Logger.LogDebug($"{logMessage} exit [{callerInfo.CallerName}]", callerInfo.FilePath, callerInfo.MemberName, callerInfo.LineNumber);
-                }
-                else {
-                    logLine = $"[{DateTime.Now:HH:mm:ss:fff}] {memberFormatted}: {this.logMessage} exit";
-                    //CppFeatures.Cx.Logger.LogDebug($"{logMessage} exit", callerInfo.FilePath, callerInfo.MemberName, callerInfo.LineNumber);
-                }
+                CppFeatures.Logging.Log.Debug(
+                    FormatMessage(_logMessage + " exit", _callerInfo.CallerName),
+                    _callerInfo.FilePath,
+                    _callerInfo.MemberName,
+                    _callerInfo.LineNumber
+                );
 
-                System.Diagnostics.Debug.WriteLine(logLine);
-                
                 _disposed = true;
             }
         }
     }
 }
+#endif

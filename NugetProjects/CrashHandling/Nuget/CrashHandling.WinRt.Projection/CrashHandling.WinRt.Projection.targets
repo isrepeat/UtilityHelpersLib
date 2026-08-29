@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- External imports:
+       * [Directory.Build.props]
+         - $(__NugetBuildDirRoot)
+         - $(__NugetStructureDir)
+         - $(__UtilityHelpersLib_HelpersSourcesDir)
+  -->
+  <Target Name="__MakeNugetStructureTask" BeforeTargets="GenerateNuspec">
+    <PropertyGroup>
+			<!-- [Helpers] Detect necessary configuration if $(Configuration) does not match exactly Debug or Release -->
+			<RegExCaptureDebugConfiguration>^\w*?([Dd]ebug)\w*$</RegExCaptureDebugConfiguration>
+			<RegExCaptureReleaseConfiguration>^\w*?([Rr]elease)\w*$</RegExCaptureReleaseConfiguration>
+			<CapturedConfiguration Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(Configuration), '$(RegExCaptureDebugConfiguration)'))">Debug</CapturedConfiguration>
+			<CapturedConfiguration Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(Configuration), '$(RegExCaptureReleaseConfiguration)'))">Release</CapturedConfiguration>
+
+			<NugetConfiguration>$(CapturedConfiguration)</NugetConfiguration>
+
+
+			<!-- Projects names (for Cx, WinRt it is rootnamespace): -->
+			<!-- TODO: add openssl dlls to x86 build -->
+			<ThirdPartyDir>$(SolutionDir)\3rdParty</ThirdPartyDir>
+			<ThirdParty__Dbghelp>dbghelp</ThirdParty__Dbghelp>
+			<ThirdParty__OpenSsl>openssl</ThirdParty__OpenSsl>
+			<Project__Helpers>Helpers</Project__Helpers>
+      <Project__CrashHandling>CrashHandling</Project__CrashHandling>
+      <Project__MinidumpWriter>MinidumpWriter</Project__MinidumpWriter>
+      <Project__CrashHandling_WinRt_Projection>$(ProjectName)</Project__CrashHandling_WinRt_Projection>
+    </PropertyGroup>
+
+    <!-- Print main props -->
+    <TMessage Project="$(NugetName) nuget" Text="__NugetBuildDirRoot = $(__NugetBuildDirRoot)" />
+    <TMessage Project="$(NugetName) nuget" Text="__NugetStructureDir = $(__NugetStructureDir)" />
+    <TMessage Project="$(NugetName) nuget" Text="NugetConfiguration = $(NugetConfiguration)" />
+    <TNewLine />
+
+    <TMessage Project="$(NugetName) nuget" Text="Clean previous build ..." />
+    <TNewLine />
+    <RemoveDir Directories="$(__NugetStructureDir)" />
+
+    <!-- 
+      Nuget structure.
+      Build next projects:
+        - CrashHandling.Cx.WRC (depend on CrashHandling.Desktop)
+    -->
+    <ItemGroup>
+      <!-- Architecture-neutral assemblies.
+           NOTE: .winmd is shared for different platforms (if windows runtime component is built as c++) 
+      -->
+      <NugetProjectionDll Include="$(__NugetBuildDirRoot)\Build\$(NugetConfiguration)\AnyCPU\$(Project__CrashHandling_WinRt_Projection)\$(Project__CrashHandling_WinRt_Projection).dll" />
+      <NugetWinmd Include="$(__NugetBuildDirRoot)\Build\$(NugetConfiguration)\x64\$(Project__CrashHandling).Cx.WRC\$(Project__CrashHandling).Cx.winmd" />
+      
+      <!-- Architecture-specific implementation DLLs should be copied into RID-relative folders. -->
+      <!-- 3rdParty -->
+      <NugetRuntimes Include="$(ThirdPartyDir)\$(ThirdParty__Dbghelp)\**\*.dll" />
+      <NugetRuntimes Include="$(ThirdPartyDir)\$(ThirdParty__OpenSsl)\**\*.dll" />
+
+			<!-- Dekstop -->
+      <NugetRuntimes Include="$(__NugetBuildDirRoot)\Build\**\$(Project__CrashHandling).Desktop\$(Project__CrashHandling).Desktop.lib" />
+      <NugetRuntimes Include="$(__NugetBuildDirRoot)\Build\**\$(Project__CrashHandling).Desktop\$(Project__CrashHandling).Desktop.dll" />
+      <NugetRuntimes Include="$(__NugetBuildDirRoot)\Build\**\$(Project__MinidumpWriter)\$(Project__MinidumpWriter).exe" />
+      <NugetRuntimes Include="$(__NugetBuildDirRoot)\Build\**\$(Project__MinidumpWriter)\**\*.dll" />
+
+      <!-- Cx.WRC -->
+      <!-- Don't forget set "Windows Desktop Compatible" to "Yes" for all C++/Cx (Universal Window) projects. -->
+      <NugetRuntimes Include="$(__NugetBuildDirRoot)\Build\**\$(Project__CrashHandling).Cx.WRC\$(Project__CrashHandling).Cx.pri" />
+      <NugetRuntimes Include="$(__NugetBuildDirRoot)\Build\**\$(Project__CrashHandling).Cx.WRC\$(Project__CrashHandling).Cx.dll" />
+
+      <!-- WinRt.WRC -->
+      <NugetRuntimes Include="$(__NugetBuildDirRoot)\Build\**\$(Project__CrashHandling).WinRt.WRC\$(Project__CrashHandling).WinRt.WRC.pri" />
+      <NugetRuntimes Include="$(__NugetBuildDirRoot)\Build\**\$(Project__CrashHandling).WinRt.WRC\$(Project__CrashHandling).WinRt.WRC.dll" />
+
+      <!-- Resources (TODO: rewrite this workaroud) -->
+      <NugetRuntimes Include="$(__NugetBuildDirRoot)\Build\**\$(Project__CrashHandling).Cx.WRC\$(Project__Helpers)_UWP\**\*.*" />
+
+      <NugetHelpersIncludes Include="$(__UtilityHelpersLib_HelpersSourcesDir)\common.h" />
+      <NugetHelpersIncludes Include="$(__UtilityHelpersLib_HelpersSourcesDir)\HWindows.h" />
+      <NugetHelpersIncludes Include="$(__UtilityHelpersLib_HelpersSourcesDir)\Callback.hpp" />
+      <NugetHelpersIncludes Include="$(__UtilityHelpersLib_HelpersSourcesDir)\TokenContext.hpp" />
+      <NugetHelpersIncludes Include="$(__UtilityHelpersLib_HelpersSourcesDir)\BoostIsSupported.h" />
+      <NugetHelpersIncludes Include="$(__UtilityHelpersLib_HelpersSourcesDir)\Preprocessor.h" />
+
+      <NugetIncludes Include="$(ProjectDir)..\$(NugetName).Shared\*.hpp" />
+      <NugetIncludes Include="$(ProjectDir)..\$(NugetName).Shared\*.h" />
+
+      <NugetTargets Include="$(ProjectDir)\$(NugetName).targets" />
+      <NugetNuspec Include="$(ProjectDir)\$(NugetName).nuspec" />
+    </ItemGroup>
+
+    <!-- Print nuget structure original items -->
+    <TMessage Project="$(NugetName) nuget" Text="NugetProjectionDll = %(NugetProjectionDll.Identity)" />
+    <TMessage Project="$(NugetName) nuget" Text="NugetWinmd = %(NugetWinmd.Identity)" />
+    <TMessage Project="$(NugetName) nuget" Text="NugetRuntimes = %(NugetRuntimes.Identity)" />
+    <TMessage Project="$(NugetName) nuget" Text="ThirdPartyRuntimes = %(ThirdPartyRuntimes.Identity)" />
+    <TMessage Project="$(NugetName) nuget" Text="NugetHelpersIncludes = %(NugetHelpersIncludes.Identity)" />
+    <TMessage Project="$(NugetName) nuget" Text="NugetIncludes = %(NugetIncludes.Identity)" />
+    <TMessage Project="$(NugetName) nuget" Text="NugetTargets = %(NugetTargets.Identity)" />
+    <TMessage Project="$(NugetName) nuget" Text="NugetNuspec = %(NugetNuspec.Identity)" />
+    <TNewLine />
+		
+		<!-- Correct item group filepathes -->
+    <TCaptureConfigurationPlatformForRecursiveDir
+      inFiles="@(NugetRuntimes)"
+      inUsedConfiguration="any"
+      inUsedPlatform="any"
+      inMakeRecursiveDirNugetRuntimes="true"
+      inConfigurationIsOptional="true"
+      inNonConfiguratedItemsBehaviour="PlaceInUsedConfiguration">
+      <Output TaskParameter="outResult" ItemName="NugetRuntimesWithMetadata" />
+    </TCaptureConfigurationPlatformForRecursiveDir>
+    
+    <!-- Print final items -->
+    <TMessage Project="$(NugetName) nuget" Text="NugetRuntimesWithMetadata = [...\NugetStructure]\%(NugetRuntimesWithMetadata.__RecursiveDirNugetRuntimes)%(Filename)%(Extension) [%(__Platform) | %(__Configuration)]" />
+    <TNewLine />
+
+    <!-- Copying -->
+    <TMessage Project="$(NugetName) nuget" Text="Copy projection dll ..." />
+    <Copy SourceFiles="@(NugetProjectionDll)" DestinationFolder="$(__NugetStructureDir)\lib\$(TargetFramework)\" SkipUnchangedFiles="true" />
+    
+    <TMessage Project="$(NugetName) nuget" Text="Copy winmd ..." />
+    <Copy SourceFiles="@(NugetWinmd)" DestinationFolder="$(__NugetStructureDir)\lib\uap10.0\" SkipUnchangedFiles="true" />
+
+    <TMessage Project="$(NugetName) nuget" Text="Copy runtimes ..." />
+    <Copy SourceFiles="@(NugetRuntimesWithMetadata)" DestinationFolder="$(__NugetStructureDir)\runtimes\%(__RecursiveDirNugetRuntimes)" SkipUnchangedFiles="true" />
+
+    <TMessage Project="$(NugetName) nuget" Text="Copy includes, targets, props, nuspec ..." />
+    <Copy SourceFiles="@(NugetHelpersIncludes)" DestinationFolder="$(__NugetStructureDir)\build\native\include\$(NugetName)\Helpers\%(RecursiveDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(NugetIncludes)" DestinationFolder="$(__NugetStructureDir)\build\native\include\$(NugetName)\%(RecursiveDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(NugetTargets)" DestinationFolder="$(__NugetStructureDir)\build\native\" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(NugetTargets)" DestinationFolder="$(__NugetStructureDir)\build\uap10.0\" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(NugetTargets)" DestinationFolder="$(__NugetStructureDir)\build\$(TargetFramework)\" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(NugetNuspec)" DestinationFolder="$(__NugetStructureDir)\" SkipUnchangedFiles="true" />
+
+    <!-- Remove nuget package from default location -->
+    <TMessage Project="$(NugetName) nuget" Text="remove '$(NugetName)' package ..." />
+    <RemoveDir Directories="C:\$(HOMEPATH)\.nuget\packages\$(NugetName)" />
+  </Target>
+</Project>

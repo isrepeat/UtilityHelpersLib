@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Внешние импорты и предоставляемые ими свойства:
+       * [Directory.Build.props]
+         - $(__NugetBuildDirRoot)
+         - $(__NugetStructureDir)
+         - $(__UtilityHelpersLib_HelpersSourcesDir)
+       * [Directory.Build.props]
+         - $(__UtilityHelpersLib_HelpersSourcesDir)
+  -->
+  <!-- CsWinRT получает транзитивные WinMD-ссылки из AnyCPU-проекта.
+       Подменяем путь к метаданным C++/CX на путь для архитектуры, под которую
+       собрана нативная цепочка зависимостей проекции. -->
+  <Target Name="__NormalizeCppFeaturesCsWinRTInputs"
+          AfterTargets="CsWinRTRemoveWinMDReferences"
+          BeforeTargets="CsWinRTGenerateProjection">
+    <ItemGroup>
+      <CsWinRTInputs Remove="@(CsWinRTInputs)"
+                     Condition="'%(Filename)%(Extension)' == 'CppFeatures.Cx.winmd'" />
+      <CsWinRTInputs Include="$(__NugetBuildDirRoot)\Build\$(Configuration)\$(CppFeaturesNativePlatform)\CppFeatures.Cx.WRC\CppFeatures.Cx.winmd" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="__MakeNugetStructureTask" BeforeTargets="GenerateNuspec">
+    <PropertyGroup>
+      <!-- Определяем базовую конфигурацию, даже если имя $(Configuration)
+           содержит дополнительные префиксы или суффиксы. -->
+      <RegExCaptureDebugConfiguration>^\w*?([Dd]ebug)\w*$</RegExCaptureDebugConfiguration>
+      <RegExCaptureReleaseConfiguration>^\w*?([Rr]elease)\w*$</RegExCaptureReleaseConfiguration>
+      <CapturedConfiguration Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(Configuration), '$(RegExCaptureDebugConfiguration)'))">Debug</CapturedConfiguration>
+      <CapturedConfiguration Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(Configuration), '$(RegExCaptureReleaseConfiguration)'))">Release</CapturedConfiguration>
+
+      <NugetConfiguration>$(CapturedConfiguration)</NugetConfiguration>
+
+      <!-- Архитектура нативной цепочки, используемой текущей AnyCPU-проекцией.
+           Это именно имя платформы Visual Studio: x64 или Win32 (не x86).
+           Win32 позднее преобразуется в NuGet RID win10-x86.
+
+           При отдельной x86-сборке передайте:
+           /p:CppFeaturesNativePlatform=Win32
+           Без этого параметра сохраняется обычная x64-сборка. -->
+      <CppFeaturesNativePlatform Condition="'$(CppFeaturesNativePlatform)' == ''">x64</CppFeaturesNativePlatform>
+
+      <!-- Имена проектов; для C++/CX и C++/WinRT совпадают с RootNamespace. -->
+      <Project__Helpers>Helpers</Project__Helpers>
+      <Project__CppFeatures>CppFeatures</Project__CppFeatures>
+      <Project__CppFeatures_WinRt_Projection>$(ProjectName)</Project__CppFeatures_WinRt_Projection>
+
+      <!-- Явный список вариантов, которые разрешено включать в пакет.
+           Каждый элемент записывается как Configuration\RID-architecture, а элементы
+           разделяются точкой с запятой. Благодаря allow-list упаковщик не
+           подхватывает устаревшие артефакты других платформ из !NUGET_TMP.
+
+           Свойство можно переопределить при запуске MSBuild, например:
+           /p:CppFeaturesNugetBuildVariants="Release\x64"
+
+           Для нескольких вариантов:
+           /p:CppFeaturesNugetBuildVariants="Debug\x64;Release\x64"
+
+           Для 32-битной архитектуры здесь используется x86, поскольку это
+           уже имя архитектуры NuGet RID, а не имя платформы Visual Studio. -->
+      <CppFeaturesNugetBuildVariants Condition="'$(CppFeaturesNugetBuildVariants)' == ''">Debug\x64;Release\x64</CppFeaturesNugetBuildVariants>
+    </PropertyGroup>
+
+    <!-- Выводим основные свойства упаковки в лог. -->
+    <TMessage Project="$(NugetName) nuget" Text="__NugetBuildDirRoot = $(__NugetBuildDirRoot)" />
+    <TMessage Project="$(NugetName) nuget" Text="__NugetStructureDir = $(__NugetStructureDir)" />
+    <TMessage Project="$(NugetName) nuget" Text="NugetConfiguration = $(NugetConfiguration)" />
+    <TNewLine />
+
+    <!-- C#-адаптер нужен только потребителям net472 и не является зависимостью
+         WinRT-проекции. В пакет кладём Debug и Release варианты, чтобы
+         отладка потребляющего проекта находила соответствующий PDB. -->
+    <MSBuild Projects="$(MSBuildThisFileDirectory)..\CppFeatures.Logging\CppFeatures.Logging.csproj"
+             Targets="Build"
+             Properties="Configuration=Debug;Platform=AnyCPU" />
+    <MSBuild Projects="$(MSBuildThisFileDirectory)..\CppFeatures.Logging\CppFeatures.Logging.csproj"
+             Targets="Build"
+             Properties="Configuration=$(NugetConfiguration);Platform=AnyCPU;CppFeaturesNativePlatform=$(CppFeaturesNativePlatform)" />
+
+    <TMessage Project="$(NugetName) nuget" Text="Clean previous build ..." />
+    <TNewLine />
+    <RemoveDir Directories="$(__NugetStructureDir)" />
+
+    <!-- Формируем перечень файлов для структуры NuGet. -->
+    <ItemGroup>
+      <!-- Преобразуем строковое свойство CppFeaturesNugetBuildVariants в
+           MSBuild item-коллекцию. Один NugetBuildVariant соответствует одному
+           разрешённому варианту Configuration\RID-architecture, например
+           Debug\x64. После разбора путей runtime-файлов эта коллекция служит
+           allow-list: всё, чего в ней нет, удаляется перед копированием. -->
+      <NugetBuildVariant Include="$(CppFeaturesNugetBuildVariants)" />
+      <NugetBuildVariant>
+        <BuildVariant>%(Identity)</BuildVariant>
+      </NugetBuildVariant>
+
+      <!-- Независимые от архитектуры сборки.
+           WinMD, созданный C++ Windows Runtime Component, общий для платформ. -->
+      <NugetProjectionDll Include="$(__NugetBuildDirRoot)\Build\$(NugetConfiguration)\AnyCPU\$(Project__CppFeatures_WinRt_Projection)\$(Project__CppFeatures_WinRt_Projection).dll" />
+      <NugetWinmd Include="$(__NugetBuildDirRoot)\Build\$(NugetConfiguration)\$(CppFeaturesNativePlatform)\$(Project__CppFeatures).Cx.WRC\$(Project__CppFeatures).Cx.winmd" />
+      <NugetLoggingAssets Include="$(__NugetBuildDirRoot)\Build\Debug\AnyCPU\CppFeatures.Logging\CppFeatures.Logging.dll">
+        <Configuration>Debug</Configuration>
+      </NugetLoggingAssets>
+      <NugetLoggingAssets Include="$(__NugetBuildDirRoot)\Build\Debug\AnyCPU\CppFeatures.Logging\CppFeatures.Logging.pdb"
+                         Condition="Exists('$(__NugetBuildDirRoot)\Build\Debug\AnyCPU\CppFeatures.Logging\CppFeatures.Logging.pdb')">
+        <Configuration>Debug</Configuration>
+      </NugetLoggingAssets>
+      <NugetLoggingAssets Include="$(__NugetBuildDirRoot)\Build\Release\AnyCPU\CppFeatures.Logging\CppFeatures.Logging.dll">
+        <Configuration>Release</Configuration>
+      </NugetLoggingAssets>
+      <NugetLoggingAssets Include="$(__NugetBuildDirRoot)\Build\Release\AnyCPU\CppFeatures.Logging\CppFeatures.Logging.pdb"
+                         Condition="Exists('$(__NugetBuildDirRoot)\Build\Release\AnyCPU\CppFeatures.Logging\CppFeatures.Logging.pdb')">
+        <Configuration>Release</Configuration>
+      </NugetLoggingAssets>
+      
+      <!-- Зависимые от архитектуры DLL копируются в каталоги соответствующих RID. -->
+      <!-- Сторонние зависимости. -->
+      <!-- ... -->
+
+      <!-- Desktop-реализация.
+           Рекурсивный wildcard должен находиться перед каталогом проекта:
+           совпавшая с ** часть Debug\x64 (или Release\Win32) попадает в
+           RecursiveDir. По этим метаданным ниже вычисляются Configuration и
+           RID. После вычисления лишние варианты отбрасываются allow-list. -->
+      <NugetRuntimes Include="$(__NugetBuildDirRoot)\Build\**\$(Project__CppFeatures).Desktop\$(Project__CppFeatures).Desktop.lib" />
+      <NugetRuntimes Include="$(__NugetBuildDirRoot)\Build\**\$(Project__CppFeatures).Desktop\$(Project__CppFeatures).Desktop.dll" />
+
+      <!-- C++/CX Windows Runtime Component.
+           Для всех C++/CX UWP-проектов необходимо включить свойство
+           "Windows Desktop Compatible". -->
+      <NugetRuntimes Include="$(__NugetBuildDirRoot)\Build\**\$(Project__CppFeatures).Cx.WRC\$(Project__CppFeatures).Cx.pri" />
+      <NugetRuntimes Include="$(__NugetBuildDirRoot)\Build\**\$(Project__CppFeatures).Cx.WRC\$(Project__CppFeatures).Cx.dll" />
+
+      <!-- C++/WinRT Windows Runtime Component. -->
+      <NugetRuntimes Include="$(__NugetBuildDirRoot)\Build\**\$(Project__CppFeatures).WinRt.WRC\$(Project__CppFeatures).WinRt.WRC.pri" />
+      <NugetRuntimes Include="$(__NugetBuildDirRoot)\Build\**\$(Project__CppFeatures).WinRt.WRC\$(Project__CppFeatures).WinRt.WRC.dll" />
+
+      <!-- Resources (TODO: rewrite this workaroud) -->
+      <!--<NugetRuntimes Include="$(__NugetBuildDirRoot)\Build\**\$(Project__CppFeatures).Cx.WRC\$(Project__Helpers)_UWP\**\*.*" />-->
+
+      <NugetHelpersIncludes Include="$(__UtilityHelpersLib_HelpersSourcesDir)\common.h" />
+      <NugetHelpersIncludes Include="$(__UtilityHelpersLib_HelpersSourcesDir)\HWindows.h" />
+      <NugetHelpersIncludes Include="$(__UtilityHelpersLib_HelpersSourcesDir)\BoostIsSupported.h" />
+      <NugetHelpersIncludes Include="$(__UtilityHelpersLib_HelpersSourcesDir)\Preprocessor.h" />
+
+      <NugetIncludes Include="$(ProjectDir)..\$(NugetName).Shared\*.hpp" />
+      <NugetIncludes Include="$(ProjectDir)..\$(NugetName).Shared\*.h" />
+      <NugetCxIncludes Include="$(ProjectDir)..\$(NugetName).Cx.WRC\WinApi.h" />
+
+      <NugetNativeTargets Include="$(ProjectDir)\$(NugetName).native.targets" />
+      <NugetNet472Targets Include="$(ProjectDir)\$(NugetName).net472.targets" />
+      <NugetUwpTargets Include="$(ProjectDir)\$(NugetName).uwp.targets" />
+      <NugetWinUiTargets Include="$(ProjectDir)\$(NugetName).winui.targets" />
+      <NugetNuspec Include="$(ProjectDir)\$(NugetName).nuspec" />
+      <NugetReadme Include="$(ProjectDir)..\..\README.md" />
+    </ItemGroup>
+
+    <!-- Выводим исходные списки файлов структуры NuGet. -->
+    <TMessage Project="$(NugetName) nuget" Text="NugetProjectionDll = %(NugetProjectionDll.Identity)" />
+    <TMessage Project="$(NugetName) nuget" Text="NugetWinmd = %(NugetWinmd.Identity)" />
+    <TMessage Project="$(NugetName) nuget" Text="NugetRuntimes = %(NugetRuntimes.Identity)" />
+    <TMessage Project="$(NugetName) nuget" Text="NugetHelpersIncludes = %(NugetHelpersIncludes.Identity)" />
+    <TMessage Project="$(NugetName) nuget" Text="NugetIncludes = %(NugetIncludes.Identity)" />
+    <TMessage Project="$(NugetName) nuget" Text="NugetCxIncludes = %(NugetCxIncludes.Identity)" />
+    <TMessage Project="$(NugetName) nuget" Text="NugetNativeTargets = %(NugetNativeTargets.Identity)" />
+    <TMessage Project="$(NugetName) nuget" Text="NugetNet472Targets = %(NugetNet472Targets.Identity)" />
+    <TMessage Project="$(NugetName) nuget" Text="NugetUwpTargets = %(NugetUwpTargets.Identity)" />
+    <TMessage Project="$(NugetName) nuget" Text="NugetWinUiTargets = %(NugetWinUiTargets.Identity)" />
+    <TMessage Project="$(NugetName) nuget" Text="NugetNuspec = %(NugetNuspec.Identity)" />
+    <TNewLine />
+
+
+    <!-- Извлекаем конфигурацию и платформу из путей runtime-файлов и строим
+         относительный путь внутри runtimes/<RID>/native/<Configuration>. -->
+    <TCaptureConfigurationPlatformForRecursiveDir
+      inFiles="@(NugetRuntimes)"
+      inUsedConfiguration="any"
+      inUsedPlatform="any"
+      inMakeRecursiveDirNugetRuntimes="true"
+      inConfigurationIsOptional="true"
+      inNonConfiguratedItemsBehaviour="PlaceInUsedConfiguration">
+      <Output TaskParameter="outResult" ItemName="NugetRuntimesWithMetadata" />
+    </TCaptureConfigurationPlatformForRecursiveDir>
+
+    <!-- TCaptureConfigurationPlatformForRecursiveDir преобразует Win32 в x86.
+         Записываем вычисленную пару в метаданные BuildVariant. Затем создаём
+         временный список кандидатов на исключение и удаляем из него элементы,
+         совпавшие с allow-list NugetBuildVariant. Оставшиеся кандидаты удаляем
+         из итогового списка runtime-файлов.
+
+         MatchOnMetadata выполняет штатное item-сопоставление MSBuild и не
+         зависит от раскрытия item-коллекций внутри строковых property-функций. -->
+    <ItemGroup>
+      <NugetRuntimesWithMetadata>
+        <BuildVariant>%(__Configuration)\%(__Platform)</BuildVariant>
+      </NugetRuntimesWithMetadata>
+
+      <_CppFeaturesExcludedRuntime Include="@(NugetRuntimesWithMetadata)" />
+      <_CppFeaturesExcludedRuntime Remove="@(NugetBuildVariant)"
+        MatchOnMetadata="BuildVariant"
+        MatchOnMetadataOptions="PathLike" />
+
+      <NugetRuntimesWithMetadata Remove="@(_CppFeaturesExcludedRuntime)" />
+    </ItemGroup>
+
+    <!-- Выводим итоговые runtime-файлы вместе с вычисленными метаданными. -->
+    <TMessage Project="$(NugetName) nuget" Text="NugetRuntimesWithMetadata = [...\NugetStructure]\%(NugetRuntimesWithMetadata.__RecursiveDirNugetRuntimes)%(Filename)%(Extension) [%(__Platform) | %(__Configuration)]" />
+    <TNewLine />
+
+    <!-- Копируем управляемую проекцию. -->
+    <TMessage Project="$(NugetName) nuget" Text="Copy projection dll ..." />
+    <Copy SourceFiles="@(NugetProjectionDll)" DestinationFolder="$(__NugetStructureDir)\lib\$(TargetFramework)\" SkipUnchangedFiles="true" />
+    
+    <!-- Копируем Windows Metadata для UWP. -->
+    <TMessage Project="$(NugetName) nuget" Text="Copy winmd ..." />
+    <Copy SourceFiles="@(NugetWinmd)" DestinationFolder="$(__NugetStructureDir)\lib\uap10.0\" SkipUnchangedFiles="true" />
+    <!-- net472 использует C#-адаптер из build/net472 и C ABI Desktop DLL.
+         Класть C++/CX WinMD в lib/net472 нельзя: NuGet считает её обычной
+         managed-ссылкой и копирует в output потребляющего проекта. -->
+    <Copy SourceFiles="@(NugetLoggingAssets)" DestinationFolder="$(__NugetStructureDir)\build\net472\%(NugetLoggingAssets.Configuration)\" SkipUnchangedFiles="true" />
+
+    <!-- Копируем нативные реализации по RID и конфигурациям. -->
+    <TMessage Project="$(NugetName) nuget" Text="Copy runtimes ..." />
+    <Copy SourceFiles="@(NugetRuntimesWithMetadata)" DestinationFolder="$(__NugetStructureDir)\runtimes\%(__RecursiveDirNugetRuntimes)" SkipUnchangedFiles="true" />
+
+    <!-- Копируем публичные заголовки и файлы интеграции NuGet/MSBuild. -->
+    <TMessage Project="$(NugetName) nuget" Text="Copy includes, targets, props, nuspec ..." />
+    <Copy SourceFiles="@(NugetHelpersIncludes)" DestinationFolder="$(__NugetStructureDir)\build\native\include\$(NugetName)\Helpers\%(RecursiveDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(NugetIncludes)" DestinationFolder="$(__NugetStructureDir)\build\native\include\$(NugetName)\%(RecursiveDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(NugetCxIncludes)" DestinationFolder="$(__NugetStructureDir)\build\native\include\$(NugetName)\Cx\" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(NugetNativeTargets)" DestinationFiles="$(__NugetStructureDir)\build\native\$(NugetName).targets" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(NugetUwpTargets)" DestinationFiles="$(__NugetStructureDir)\build\uap10.0\$(NugetName).targets" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(NugetNet472Targets)" DestinationFiles="$(__NugetStructureDir)\build\net472\$(NugetName).targets" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(NugetWinUiTargets)" DestinationFiles="$(__NugetStructureDir)\build\$(TargetFramework)\$(NugetName).targets" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(NugetNuspec)" DestinationFolder="$(__NugetStructureDir)\" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(NugetReadme)" DestinationFolder="$(__NugetStructureDir)\" SkipUnchangedFiles="true" />
+
+    <!-- Удаляем пакет из глобального NuGet-кэша, чтобы локальные тестовые
+         проекты не продолжали использовать предыдущую версию с тем же номером. -->
+    <TMessage Project="$(NugetName) nuget" Text="remove '$(NugetName)' package ..." />
+    <RemoveDir Directories="C:\$(HOMEPATH)\.nuget\packages\$(NugetName)" />
+  </Target>
+</Project>

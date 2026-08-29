@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Sources">
+      <UniqueIdentifier>{c708c9ef-d9fe-4045-b66b-ae0ec0a01188}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Channel.h">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="NamespacesAliases.h">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger.h">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="Helpers.h">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="WinApi.h">
+      <Filter>Sources</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Channel.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="Logger.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="WinApi.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

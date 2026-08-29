@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Define macros -->
+  <ItemDefinitionGroup Condition="'$(ConfigurationType)'=='DynamicLibrary'">
+    <ClCompile>
+      <PreprocessorDefinitions>
+        <!--DISABLE_ERROR_LOGGING;
+        DISABLE_COMMON_LOGGING;
+        DISABLE_VERBOSE_LOGGING;
+        DISABLE_CLASS_FULLNAME_LOGGING;-->
+        %(PreprocessorDefinitions)
+      </PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+</Project>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- WinUI/.NET-потребитель использует managed WinRT-проекцию из lib/.
+       Runtime DLL пока сохраняются в полном составе, как в прежнем общем targets. -->
+  <PropertyGroup>
+    <NugetName>CppFeatures</NugetName>
+    <CapturedPlatform Condition="'$(Platform)' == 'Win32'">x86</CapturedPlatform>
+    <CapturedPlatform Condition="'$(Platform)' != 'Win32'">$(Platform)</CapturedPlatform>
+    <RegExCaptureDebugConfiguration>^\w*?([Dd]ebug)\w*$</RegExCaptureDebugConfiguration>
+    <RegExCaptureReleaseConfiguration>^\w*?([Rr]elease)\w*$</RegExCaptureReleaseConfiguration>
+    <CapturedConfiguration Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(Configuration), '$(RegExCaptureDebugConfiguration)'))">Debug</CapturedConfiguration>
+    <CapturedConfiguration Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(Configuration), '$(RegExCaptureReleaseConfiguration)'))">Release</CapturedConfiguration>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <NugetRuntimes Include="$(MSBuildThisFileDirectory)..\..\runtimes\win10-$(CapturedPlatform)\native\$(CapturedConfiguration)\**\*.dll" />
+    <ContentWithTargetPath Include="@(NugetRuntimes)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </ContentWithTargetPath>
+  </ItemGroup>
+</Project>
