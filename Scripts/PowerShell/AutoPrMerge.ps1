@@ -37,6 +37,29 @@ function Test-RemoteBranch {
     return $LASTEXITCODE -eq 0
 }
 
+function New-DefaultPullRequestTitle {
+    param(
+        [Parameter(Mandatory)] [string]$BaseBranch,
+        [Parameter(Mandatory)] [string]$HeadBranch
+    )
+
+    # Compare the source changes since its common ancestor with the target:
+    # this matches the set of files a Pull Request shows to its reviewer.
+    $changedFiles = @(git diff --name-only "origin/$BaseBranch...origin/$HeadBranch")
+    if ($LASTEXITCODE -ne 0) {
+        ExitWithError "Failed to get the list of changed files for the Pull Request title."
+    }
+
+    if ($changedFiles.Count -lt 5) {
+        if ($changedFiles.Count -eq 0) {
+            return "No file changes"
+        }
+        return "Changed: $($changedFiles -join ', ')"
+    }
+
+    return "Changed files: $($changedFiles.Count)"
+}
+
 # The .bat launcher may be located in the repository or next to the submodule.
 if ($BatDir) {
     $BatDir = $BatDir.Trim().Trim('"')
@@ -96,7 +119,7 @@ try {
         $Base = Read-Host "Enter Target Branch (base)"
     }
     if ([string]::IsNullOrWhiteSpace($Title)) {
-        $Title = Read-Host "Enter Pull Request Title"
+        $Title = Read-Host "Enter Pull Request Title (empty = automatic)"
     }
     if ($null -eq $NewBranch) {
         $NewBranch = Read-Host "Enter branch to recreate from target HEAD (empty = source branch)"
@@ -115,9 +138,6 @@ try {
     }
     if ($Head -ieq $Base) {
         ExitWithError "Head and Base must be different branches."
-    }
-    if ([string]::IsNullOrWhiteSpace($Title)) {
-        ExitWithError "PR title is required."
     }
 
     # Recreating a branch requires switching the checkout. Do not risk local
@@ -186,6 +206,11 @@ try {
     }
 
     if ($commitsToMerge -gt 0) {
+        if ([string]::IsNullOrWhiteSpace($Title)) {
+            $Title = New-DefaultPullRequestTitle -BaseBranch $Base -HeadBranch $Head
+            m::Message "Automatic Pull Request title: $Title"
+        }
+
         # A repeated run must reuse a Pull Request that is already open.
         $prNumber = (& $gh pr list `
             --state open `
