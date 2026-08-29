@@ -23,6 +23,12 @@ SET "SUBMODULE_INTEGRATION_BRANCH=Last"
 SET "SUBMODULE_UPDATE_BRANCH=master"
 SET "SCAN_DEPTH=1"
 
+REM Optional semicolon-separated repository roots outside SCAN_DEPTH. These
+REM paths supplement the normal scan; use PROJECT_OVERRIDES below only when
+REM one of them needs non-default branch names.
+REM Example: SET "ADDITIONAL_PROJECT_PATHS=C:\WORK\Projects\Group\Tool;C:\WORK\Archive\LegacyApp"
+SET "ADDITIONAL_PROJECT_PATHS="
+
 REM The scan starts beside this copied .bat, not in the console's current folder.
 SET "SCAN_ROOT=%~dp0."
 
@@ -57,6 +63,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%CORE_SCRIPT%" ^
     -ScanProjectBranch "%PROJECT_BRANCH%" ^
     -ScanSubmoduleIntegrationBranch "%SUBMODULE_INTEGRATION_BRANCH%" ^
     -ScanSubmoduleUpdateBranch "%SUBMODULE_UPDATE_BRANCH%" ^
+    -AdditionalProjectPaths "%ADDITIONAL_PROJECT_PATHS%" ^
     -ProjectOverrides "%PROJECT_OVERRIDES%" ^
     -SubmoduleName "%SUBMODULE_NAME%" ^
     -IntegrationSolutionFile "%INTEGRATION_SOLUTION_FILE%" ^
