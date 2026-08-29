@@ -20,6 +20,7 @@ param(
     [string]$ScanSubmoduleIntegrationBranch = "Last",
 
     [string]$ScanSubmoduleUpdateBranch = "master",
+    [string]$AdditionalProjectPaths = $null,
     [string]$ProjectOverrides = $null,
     [string]$SubmodulePath = "UtilityHelpersLib",
     [string]$CommitMessage = "Update UtilityHelpersLib submodule",
@@ -101,6 +102,15 @@ function Parse-ProjectSpecs {
         }
     }
     $result
+}
+
+function Parse-ProjectPaths {
+    param([string]$Value)
+
+    if (-not $Value -or -not $Value.Trim()) { return @() }
+    @($Value -split ';' |
+        ForEach-Object { $_.Trim().Trim('"') } |
+        Where-Object { $_ })
 }
 
 function Convert-ToSlug {
@@ -311,7 +321,10 @@ function Remove-IntegrationRepository {
 
 # Locate exact repository roots at ScanRoot and one directory level below it.
 function Find-Projects {
-    param([object[]]$Overrides)
+    param(
+        [object[]]$Overrides,
+        [string[]]$AdditionalPaths
+    )
 
     try { $resolvedRoot = (Resolve-Path -LiteralPath $ScanRoot).Path }
     catch { Stop-WithError "Scan root does not exist: '$ScanRoot'" }
@@ -320,6 +333,15 @@ function Find-Projects {
     if ($ScanDepth -eq 1) {
         $candidates += @(Get-ChildItem -LiteralPath $resolvedRoot -Directory -Force | Select-Object -ExpandProperty FullName)
     }
+
+    # Wrapper-defined paths make it possible to include selected repositories
+    # below the normal scan depth (or outside ScanRoot) without broad recursive
+    # discovery. Normalize and de-duplicate them before validating candidates.
+    foreach ($additionalPath in $AdditionalPaths) {
+        try { $candidates += (Resolve-Path -LiteralPath $additionalPath -ErrorAction Stop).Path }
+        catch { Stop-WithError "Additional project path does not exist: '$additionalPath'" }
+    }
+    $candidates = @($candidates | Sort-Object -Unique)
 
     $projects = @()
     foreach ($candidate in $candidates) {
@@ -448,7 +470,12 @@ function Update-LocalTrackingBranch {
             # this worktree. Detaching at the current commit is safe: it does
             # not modify files or discard local changes, and the caller later
             # checks out the published target explicitly.
-            $checkedOutBranch = (Invoke-Git $Repository @('branch', '--show-current')).Output[0].ToString().Trim()
+            $checkedOut = Invoke-Git $Repository @('branch', '--show-current')
+            $checkedOutBranch = if ($checkedOut.Output.Count -gt 0) {
+                $checkedOut.Output[0].ToString().Trim()
+            } else {
+                ''
+            }
             if ($checkedOutBranch -ceq $Branch) {
                 Invoke-Git $Repository @('switch', '--detach') | Out-Null
             }
@@ -656,7 +683,8 @@ if (Test-Path -LiteralPath $requestedIntegrationPath) {
 }
 
 $overrides = if ($ProjectOverrides -and $ProjectOverrides.Trim()) { @(Parse-ProjectSpecs $ProjectOverrides) } else { @() }
-$projects = @(Find-Projects $overrides)
+$additionalPaths = @(Parse-ProjectPaths $AdditionalProjectPaths)
+$projects = @(Find-Projects -Overrides $overrides -AdditionalPaths $additionalPaths)
 $dirtyProjects = @()
 
 Write-Info "Preflight: validating $($projects.Count) project(s)..."
