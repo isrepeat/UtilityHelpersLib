@@ -115,18 +115,36 @@ function Normalize-RemoteUrl {
     (($Url.Trim() -replace '\\', '/') -replace '\.git$', '').ToLowerInvariant()
 }
 
-# Open the Integration directory and select its configured solution file so it
-# can be launched directly from Explorer. Fall back to the directory if absent.
+# Open a deliberately empty Visual Studio solution inside the temporary
+# Integration clone. The real repository solution can be large and unrelated
+# to manually choosing candidate commits; a blank solution keeps Git tooling
+# available without loading projects from the clone.
 function Open-IntegrationRepository {
     param([string]$Path)
 
-    $solutionPath = Join-Path $Path $IntegrationSolutionFile
-    if (Test-Path -LiteralPath $solutionPath -PathType Leaf) {
-        Start-Process explorer.exe -ArgumentList "/select,`"$solutionPath`""
+    $solutionFileName = '.integration-workspace.sln'
+    $solutionPath = Join-Path $Path $solutionFileName
+    if (-not (Test-Path -LiteralPath $solutionPath -PathType Leaf)) {
+        @"
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.0.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Global
+EndGlobal
+"@ | Set-Content -LiteralPath $solutionPath -Encoding utf8
+
+        # The workspace is generated locally for this temporary repository.
+        # Keep it out of `git status`, otherwise the manual R gate would see
+        # the integration worktree as dirty.
+        $excludePath = (Invoke-Git $Path @('rev-parse', '--git-path', 'info/exclude')).Output[0].ToString().Trim()
+        if (-not [IO.Path]::IsPathRooted($excludePath)) { $excludePath = Join-Path $Path $excludePath }
+        $excludeEntries = if (Test-Path -LiteralPath $excludePath) { @(Get-Content -LiteralPath $excludePath) } else { @() }
+        if ($excludeEntries -notcontains $solutionFileName) {
+            Add-Content -LiteralPath $excludePath -Value $solutionFileName
+        }
     }
-    else {
-        Start-Process explorer.exe -ArgumentList "`"$Path`""
-    }
+    Start-Process -FilePath $solutionPath
 }
 
 # Close only Explorer windows currently showing the Integration directory. This
@@ -424,6 +442,15 @@ function Update-LocalTrackingBranch {
             if ($isFastForward.ExitCode -ne 0) {
                 Write-Host "  WARN  Local submodule branch '$Branch' has commits outside origin/$Branch and was not moved." -ForegroundColor Yellow
                 return
+            }
+
+            # Git refuses `branch --force` when the branch is checked out by
+            # this worktree. Detaching at the current commit is safe: it does
+            # not modify files or discard local changes, and the caller later
+            # checks out the published target explicitly.
+            $checkedOutBranch = (Invoke-Git $Repository @('branch', '--show-current')).Output[0].ToString().Trim()
+            if ($checkedOutBranch -ceq $Branch) {
+                Invoke-Git $Repository @('switch', '--detach') | Out-Null
             }
             Invoke-Git $Repository @('branch', '--force', $Branch, $TargetCommit) | Out-Null
         }
