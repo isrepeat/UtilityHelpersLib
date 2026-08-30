@@ -8,3 +8,4 @@ endif()
 
 # Каждый сторонний компонент сам описывает CMake-таргеты рядом с исходниками.
 add_subdirectory(3rdParty/Spdlog/Spdlog.Shared)
+add_subdirectory(NugetProjects/XamlRuntime/Nuget/XamlRuntime)
