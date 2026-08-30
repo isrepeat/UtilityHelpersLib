@@ -88,6 +88,15 @@ namespace utility_helpers::android {
     void flushLogging() {
         if (logger) logger->flush();
     }
+
+    FunctionScope::FunctionScope(spdlog::source_loc sourceLocation, std::string functionName)
+        : sourceLocation_(sourceLocation), functionName_(std::move(functionName)) {
+        log().log(sourceLocation_, spdlog::level::debug, ">> {}", functionName_);
+    }
+
+    FunctionScope::~FunctionScope() {
+        log().log(sourceLocation_, spdlog::level::debug, "<< {}", functionName_);
+    }
 } // namespace utility_helpers::android
 
 #endif // defined(__ANDROID__)

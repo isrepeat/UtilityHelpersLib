@@ -5,6 +5,7 @@
 #include <spdlog/logger.h>
 
 #include <cstddef>
+#include <string>
 #include <string_view>
 
 namespace utility_helpers::android {
@@ -45,6 +46,20 @@ namespace utility_helpers::android {
 
     // Принудительно сбрасывает буферы перед экспортом файла в Kotlin.
     void flushLogging();
+
+    // RAII-логгер области: пишет вход при создании и выход при разрушении.
+    class FunctionScope final {
+    public:
+        FunctionScope(spdlog::source_loc sourceLocation, std::string functionName);
+        ~FunctionScope();
+
+        FunctionScope(const FunctionScope&) = delete;
+        FunctionScope& operator=(const FunctionScope&) = delete;
+
+    private:
+        spdlog::source_loc sourceLocation_;
+        std::string functionName_;
+    };
 } // namespace utility_helpers::android
 
 // Передаём координаты вызова в spdlog, чтобы Logcat и файл содержали место
@@ -60,5 +75,17 @@ namespace utility_helpers::android {
 #define LOG_INFO(...) LOG(info, __VA_ARGS__)
 #define LOG_WARNING(...) LOG(warn, __VA_ARGS__)
 #define LOG_ERROR(...) LOG(err, __VA_ARGS__)
+
+#define UTILITY_HELPERS_ANDROID_LOG_CONCAT_INNER(left, right) left##right
+#define UTILITY_HELPERS_ANDROID_LOG_CONCAT(left, right) \
+    UTILITY_HELPERS_ANDROID_LOG_CONCAT_INNER(left, right)
+
+// Аналог LOG_FUNCTION_SCOPE из Windows LogHelpers: сообщение формируется один
+// раз, а деструктор FunctionScope гарантированно логирует выход при return.
+#define LOG_FUNCTION_SCOPE(...) \
+    ::utility_helpers::android::FunctionScope \
+        UTILITY_HELPERS_ANDROID_LOG_CONCAT(functionScopeLog_, __COUNTER__)( \
+            spdlog::source_loc{__FILE__, __LINE__, SPDLOG_FUNCTION}, \
+            fmt::format(__VA_ARGS__))
 
 #endif // defined(__ANDROID__)
