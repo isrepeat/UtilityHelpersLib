@@ -67,6 +67,12 @@
     <Filter Include="_Common">
       <UniqueIdentifier>{940beac5-5d53-481c-8aad-d053e47f93ab}</UniqueIdentifier>
     </Filter>
+    <Filter Include="platform">
+      <UniqueIdentifier>{d5fef15b-d362-42af-8eef-a2b4d505b9ca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="platform\Android">
+      <UniqueIdentifier>{1682d5bd-4280-4161-96f8-9f17c18cf8a1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Gate.cpp">
@@ -733,6 +739,14 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Text.h">
       <Filter>_Sources</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\platform\Android\Logging.cpp">
+      <Filter>platform\Android</Filter>
+    </ClCompile>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\platform\Android\Logging.h">
+      <Filter>platform\Android</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

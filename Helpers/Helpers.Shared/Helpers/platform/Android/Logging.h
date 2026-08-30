@@ -1,5 +1,7 @@
 #pragma once
 
+#if defined(__ANDROID__)
+
 #include <spdlog/logger.h>
 
 #include <cstddef>
@@ -44,3 +46,19 @@ namespace utility_helpers::android {
     // Принудительно сбрасывает буферы перед экспортом файла в Kotlin.
     void flushLogging();
 } // namespace utility_helpers::android
+
+// Передаём координаты вызова в spdlog, чтобы Logcat и файл содержали место
+// возникновения сообщения, а не строку внутри реализации логгера.
+#define LOG(logLevel, ...) \
+    ::utility_helpers::android::log().log( \
+        spdlog::source_loc{__FILE__, __LINE__, SPDLOG_FUNCTION}, \
+        spdlog::level::level_enum::logLevel, \
+        __VA_ARGS__)
+
+#define LOG_TRACE(...) LOG(trace, __VA_ARGS__)
+#define LOG_DEBUG(...) LOG(debug, __VA_ARGS__)
+#define LOG_INFO(...) LOG(info, __VA_ARGS__)
+#define LOG_WARNING(...) LOG(warn, __VA_ARGS__)
+#define LOG_ERROR(...) LOG(err, __VA_ARGS__)
+
+#endif // defined(__ANDROID__)

@@ -1,4 +1,6 @@
-#include "AndroidLogging.h"
+#if defined(__ANDROID__)
+
+#include "Logging.h"
 
 #include <spdlog/sinks/android_sink.h>
 #include <spdlog/sinks/rotating_file_sink.h>
@@ -87,3 +89,5 @@ namespace utility_helpers::android {
         if (logger) logger->flush();
     }
 } // namespace utility_helpers::android
+
+#endif // defined(__ANDROID__)

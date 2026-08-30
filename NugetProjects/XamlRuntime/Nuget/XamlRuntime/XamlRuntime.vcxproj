@@ -21,8 +21,8 @@
         </ClCompile>
     </ItemDefinitionGroup>
     <ItemGroup>
-        <ClCompile Include="XamlRuntime.Shared\xaml_runtime\XamlLayout.cpp" />
-        <ClInclude Include="XamlRuntime.Shared\xaml_runtime\XamlLayout.h" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\XamlLayout.cpp" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\XamlLayout.h" />
         <None Include="CMakeLists.txt" />
     </ItemGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

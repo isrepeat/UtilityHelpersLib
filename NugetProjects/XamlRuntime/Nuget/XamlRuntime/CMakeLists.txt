@@ -1,13 +1,13 @@
 # Platform-specific static library delivered by the XamlRuntime package.
 add_library(utility_helpers_xaml_runtime STATIC
-    XamlRuntime.Shared/xaml_runtime/XamlLayout.cpp
-    XamlRuntime.Shared/xaml_runtime/XamlLayout.h
+    XamlRuntime.Shared/XamlRuntime/XamlLayout.cpp
+    XamlRuntime.Shared/XamlRuntime/XamlLayout.h
 )
 add_library(utility_helpers::xaml_runtime ALIAS utility_helpers_xaml_runtime)
 
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/XamlRuntime.Shared" FILES
-    XamlRuntime.Shared/xaml_runtime/XamlLayout.cpp
-    XamlRuntime.Shared/xaml_runtime/XamlLayout.h
+    XamlRuntime.Shared/XamlRuntime/XamlLayout.cpp
+    XamlRuntime.Shared/XamlRuntime/XamlLayout.h
 )
 
 target_include_directories(utility_helpers_xaml_runtime PUBLIC
