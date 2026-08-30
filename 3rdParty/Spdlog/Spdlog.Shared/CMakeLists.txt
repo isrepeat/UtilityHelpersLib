@@ -9,10 +9,26 @@ target_include_directories(utility_helpers_spdlog INTERFACE
 # Android-обёртка намеренно живёт рядом со spdlog: её единственная задача —
 # настроить android_sink и дать приложению небольшой независимый API.
 if (ANDROID)
+    # Заголовки не компилируются сами, но явное добавление в target выводит их
+    # в CMake Targets View Visual Studio. CONFIGURE_DEPENDS подхватит новые
+    # кастомные headers после Generate без ручного редактирования этого списка.
+    file(GLOB_RECURSE utility_helpers_android_logging_headers CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/platform/Android/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/platform/Android/*.hh"
+        "${CMAKE_CURRENT_SOURCE_DIR}/platform/Android/*.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/platform/Android/*.hxx"
+        "${CMAKE_CURRENT_SOURCE_DIR}/platform/Android/*.inl"
+    )
+
     add_library(utility_helpers_android_logging STATIC
         platform/Android/AndroidLogging.cpp
+        ${utility_helpers_android_logging_headers}
     )
     add_library(utility_helpers::android_logging ALIAS utility_helpers_android_logging)
+    source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
+        platform/Android/AndroidLogging.cpp
+        ${utility_helpers_android_logging_headers}
+    )
 
     # Путь нужен для #include <platform/Android/AndroidLogging.h> у потребителя.
     target_include_directories(utility_helpers_android_logging PUBLIC
