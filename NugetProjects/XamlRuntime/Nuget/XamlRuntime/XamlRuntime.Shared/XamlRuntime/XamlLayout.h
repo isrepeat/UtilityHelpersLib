@@ -40,26 +40,26 @@ namespace mobileclock::ui {
     public:
         explicit Element(ElementType type) : type_(type) {}
 
-        ElementType type() const { return type_; }
-        const std::string& id() const { return id_; }
-        const std::string& text() const { return text_; }
-        float fontSize() const { return fontSize_; }
-        Color foreground() const { return foreground_; }
-        Orientation orientation() const { return orientation_; }
-        float spacing() const { return spacing_; }
-        Size desiredSize() const { return desiredSize_; }
-        Rect bounds() const { return bounds_; }
-        const std::vector<std::unique_ptr<Element>>& children() const { return children_; }
+        ElementType Type() const { return type_; }
+        const std::string& Id() const { return id_; }
+        const std::string& Text() const { return text_; }
+        float FontSize() const { return fontSize_; }
+        Color Foreground() const { return foreground_; }
+        Orientation OrientationValue() const { return orientation_; }
+        float Spacing() const { return spacing_; }
+        Size DesiredSize() const { return desiredSize_; }
+        Rect Bounds() const { return bounds_; }
+        const std::vector<std::unique_ptr<Element>>& Children() const { return children_; }
 
-        void setId(std::string value) { id_ = std::move(value); }
-        void setText(std::string value) { text_ = std::move(value); }
-        void setFontSize(float value) { fontSize_ = value; }
-        void setForeground(Color value) { foreground_ = value; }
-        void setOrientation(Orientation value) { orientation_ = value; }
-        void setSpacing(float value) { spacing_ = value; }
-        void addChild(std::unique_ptr<Element> child) { children_.push_back(std::move(child)); }
-        void setDesiredSize(Size value) { desiredSize_ = value; }
-        void setBounds(Rect value) { bounds_ = value; }
+        void SetId(std::string value) { id_ = std::move(value); }
+        void SetText(std::string value) { text_ = std::move(value); }
+        void SetFontSize(float value) { fontSize_ = value; }
+        void SetForeground(Color value) { foreground_ = value; }
+        void SetOrientation(Orientation value) { orientation_ = value; }
+        void SetSpacing(float value) { spacing_ = value; }
+        void AddChild(std::unique_ptr<Element> child) { children_.push_back(std::move(child)); }
+        void SetDesiredSize(Size value) { desiredSize_ = value; }
+        void SetBounds(Rect value) { bounds_ = value; }
 
     private:
         ElementType type_;
@@ -74,6 +74,5 @@ namespace mobileclock::ui {
         std::vector<std::unique_ptr<Element>> children_;
     };
 
-    std::unique_ptr<Element> createMainPage();
     void layout(Element& root, Size availableSize);
 }

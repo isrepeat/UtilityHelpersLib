@@ -7,23 +7,23 @@ namespace mobileclock::ui {
         Size measure(Element& element) {
             // Первый проход вычисляет требуемый размер снизу вверх. Точная
             // метрика шрифта появится позже; пока ширина текста оценивается.
-            if (element.type() == ElementType::textBlock || element.type() == ElementType::button) {
+            if (element.Type() == ElementType::textBlock || element.Type() == ElementType::button) {
                 Size result{
-                    std::max(1.0f, static_cast<float>(element.text().size()) * element.fontSize() * 0.55f),
-                    element.fontSize() * 1.25f,
+                    std::max(1.0f, static_cast<float>(element.Text().size()) * element.FontSize() * 0.55f),
+                    element.FontSize() * 1.25f,
                 };
-                if (element.type() == ElementType::button) {
+                if (element.Type() == ElementType::button) {
                     result.width += 48.0f;
                     result.height += 24.0f;
                 }
-                element.setDesiredSize(result);
+                element.SetDesiredSize(result);
                 return result;
             }
 
             Size result{};
-            for (const auto& child : element.children()) {
+            for (const auto& child : element.Children()) {
                 const Size childSize = measure(*child);
-                if (element.orientation() == Orientation::vertical) {
+                if (element.OrientationValue() == Orientation::vertical) {
                     result.width = std::max(result.width, childSize.width);
                     result.height += childSize.height;
                 } else {
@@ -31,34 +31,34 @@ namespace mobileclock::ui {
                     result.height = std::max(result.height, childSize.height);
                 }
             }
-            if (!element.children().empty()) {
+            if (!element.Children().empty()) {
                 // Spacing существует только между соседями, а не после
                 // последнего дочернего элемента.
-                result.height += element.orientation() == Orientation::vertical
-                    ? element.spacing() * static_cast<float>(element.children().size() - 1)
+                result.height += element.OrientationValue() == Orientation::vertical
+                    ? element.Spacing() * static_cast<float>(element.Children().size() - 1)
                     : 0.0f;
-                result.width += element.orientation() == Orientation::horizontal
-                    ? element.spacing() * static_cast<float>(element.children().size() - 1)
+                result.width += element.OrientationValue() == Orientation::horizontal
+                    ? element.Spacing() * static_cast<float>(element.Children().size() - 1)
                     : 0.0f;
             }
-            element.setDesiredSize(result);
+            element.SetDesiredSize(result);
             return result;
         }
 
         void arrange(Element& element, Rect bounds) {
             // Второй проход выдаёт каждому элементу конечный прямоугольник
             // сверху вниз. StackPanel центрирует детей по поперечной оси.
-            element.setBounds(bounds);
-            float cursor = element.orientation() == Orientation::vertical ? bounds.y : bounds.x;
-            for (const auto& child : element.children()) {
-                const Size size = child->desiredSize();
+            element.SetBounds(bounds);
+            float cursor = element.OrientationValue() == Orientation::vertical ? bounds.y : bounds.x;
+            for (const auto& child : element.Children()) {
+                const Size size = child->DesiredSize();
                 Rect childBounds;
-                if (element.orientation() == Orientation::vertical) {
+                if (element.OrientationValue() == Orientation::vertical) {
                     childBounds = {bounds.x + (bounds.width - size.width) / 2.0f, cursor, size.width, size.height};
-                    cursor += size.height + element.spacing();
+                    cursor += size.height + element.Spacing();
                 } else {
                     childBounds = {cursor, bounds.y + (bounds.height - size.height) / 2.0f, size.width, size.height};
-                    cursor += size.width + element.spacing();
+                    cursor += size.width + element.Spacing();
                 }
                 arrange(*child, childBounds);
             }
