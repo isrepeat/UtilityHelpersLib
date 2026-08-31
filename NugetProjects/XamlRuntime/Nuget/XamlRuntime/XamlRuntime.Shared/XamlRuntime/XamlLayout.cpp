@@ -1,5 +1,6 @@
 #include "XamlRuntime/XamlLayout.h"
 #include <algorithm>
+#include <sstream>
 
 namespace xaml::_details {
     float horizontal(const attr::Thickness& thickness) {
@@ -37,6 +38,10 @@ namespace xaml::_details {
     }
 
     Size measure(Element& element) {
+        if (element.VisibilityValue() == attr::Visibility::collapsed) {
+            element.SetDesiredSize({});
+            return {};
+        }
         // Первый проход вычисляет требуемый размер снизу вверх. Точная
         // метрика шрифта появится позже; пока ширина текста оценивается.
         if (element.Type() == ElementType::textBlock || element.Type() == ElementType::button) {
@@ -66,7 +71,10 @@ namespace xaml::_details {
         Size result{};
         for (const auto& child : element.Children()) {
             const Size childSize = measure(*child);
-            if (element.OrientationValue() == attr::Orientation::vertical) {
+            if (element.Type() == ElementType::grid) {
+                result.width = std::max(result.width, childSize.width);
+                result.height = std::max(result.height, childSize.height);
+            } else if (element.OrientationValue() == attr::Orientation::vertical) {
                 result.width = std::max(result.width, childSize.width);
                 result.height += childSize.height;
             } else {
@@ -77,6 +85,68 @@ namespace xaml::_details {
         result = withCommonSize(element, result);
         element.SetDesiredSize(result);
         return result;
+    }
+
+    float alignedOffset(attr::Alignment alignment, float available, float desired) {
+        if (alignment == attr::Alignment::right || alignment == attr::Alignment::bottom) {
+            return available - desired;
+        }
+        if (alignment == attr::Alignment::center) {
+            return (available - desired) / 2.0f;
+        }
+        return 0.0f;
+    }
+
+    float alignedSize(attr::Alignment alignment, float available, float desired) {
+        return alignment == attr::Alignment::stretch ? available : desired;
+    }
+
+    std::vector<std::string> tracks(const std::string& definitions) {
+        std::vector<std::string> result;
+        std::istringstream input(definitions);
+        std::string track;
+        while (std::getline(input, track, ',')) {
+            result.push_back(track);
+        }
+        if (result.empty()) {
+            result.push_back("*");
+        }
+        return result;
+    }
+
+    std::vector<float> trackSizes(
+        const std::vector<std::string>& definitions,
+        float available,
+        const Element& grid,
+        bool columns) {
+        std::vector<float> sizes(definitions.size());
+        float used = 0.0f;
+        size_t starCount = 0;
+        for (size_t index = 0; index < definitions.size(); ++index) {
+            const std::string& definition = definitions[index];
+            if (definition == "*") {
+                ++starCount;
+            } else if (!definition.empty() && definition.back() == '%') {
+                sizes[index] = available * std::stof(definition.substr(0, definition.size() - 1)) / 100.0f;
+                used += sizes[index];
+            } else if (definition == "Auto") {
+                for (const auto& child : grid.Children()) {
+                    const int track = columns ? child->GridColumn() : child->GridRow();
+                    if (track == static_cast<int>(index)) {
+                        sizes[index] = std::max(sizes[index], columns
+                            ? child->DesiredSize().width : child->DesiredSize().height);
+                    }
+                }
+                used += sizes[index];
+            }
+        }
+        const float starSize = starCount == 0 ? 0.0f : std::max(0.0f, available - used) / starCount;
+        for (size_t index = 0; index < definitions.size(); ++index) {
+            if (definitions[index] == "*") {
+                sizes[index] = starSize;
+            }
+        }
+        return sizes;
     }
 
     void arrange(Element& element, Rect bounds) {
@@ -95,12 +165,38 @@ namespace xaml::_details {
             for (const auto& child : element.Children()) {
                 const Size childSize = child->DesiredSize();
                 arrange(*child, {
-                    contentBounds.x + (contentBounds.width - childSize.width) / 2.0f,
-                    child->VerticalAlignmentValue() == attr::Alignment::top
-                        ? contentBounds.y
-                        : contentBounds.y + (contentBounds.height - childSize.height) / 2.0f,
-                    childSize.width,
-                    childSize.height,
+                    contentBounds.x + alignedOffset(
+                        child->HorizontalAlignmentValue(), contentBounds.width, childSize.width),
+                    contentBounds.y + alignedOffset(
+                        child->VerticalAlignmentValue(), contentBounds.height, childSize.height),
+                    alignedSize(child->HorizontalAlignmentValue(), contentBounds.width, childSize.width),
+                    alignedSize(child->VerticalAlignmentValue(), contentBounds.height, childSize.height),
+                });
+            }
+            return;
+        }
+        if (element.Type() == ElementType::grid) {
+            const std::vector<std::string> columns = tracks(element.Columns());
+            const std::vector<std::string> rows = tracks(element.Rows());
+            const std::vector<float> columnSizes = trackSizes(columns, contentBounds.width, element, true);
+            const std::vector<float> rowSizes = trackSizes(rows, contentBounds.height, element, false);
+            for (const auto& child : element.Children()) {
+                const size_t column = std::min(static_cast<size_t>(std::max(0, child->GridColumn())), columns.size() - 1);
+                const size_t row = std::min(static_cast<size_t>(std::max(0, child->GridRow())), rows.size() - 1);
+                float x = contentBounds.x;
+                for (size_t index = 0; index < column; ++index) {
+                    x += columnSizes[index];
+                }
+                float y = contentBounds.y;
+                for (size_t index = 0; index < row; ++index) {
+                    y += rowSizes[index];
+                }
+                const Size childSize = child->DesiredSize();
+                arrange(*child, {
+                    x + alignedOffset(child->HorizontalAlignmentValue(), columnSizes[column], childSize.width),
+                    y + alignedOffset(child->VerticalAlignmentValue(), rowSizes[row], childSize.height),
+                    alignedSize(child->HorizontalAlignmentValue(), columnSizes[column], childSize.width),
+                    alignedSize(child->VerticalAlignmentValue(), rowSizes[row], childSize.height),
                 });
             }
             return;
@@ -110,10 +206,10 @@ namespace xaml::_details {
             const Size size = child->DesiredSize();
             Rect childBounds;
             if (element.OrientationValue() == attr::Orientation::vertical) {
-                childBounds = {contentBounds.x + (contentBounds.width - size.width) / 2.0f, cursor, size.width, size.height};
+                childBounds = {contentBounds.x + alignedOffset(child->HorizontalAlignmentValue(), contentBounds.width, size.width), cursor, alignedSize(child->HorizontalAlignmentValue(), contentBounds.width, size.width), size.height};
                 cursor += size.height;
             } else {
-                childBounds = {cursor, contentBounds.y + (contentBounds.height - size.height) / 2.0f, size.width, size.height};
+                childBounds = {cursor, contentBounds.y + alignedOffset(child->VerticalAlignmentValue(), contentBounds.height, size.height), size.width, alignedSize(child->VerticalAlignmentValue(), contentBounds.height, size.height)};
                 cursor += size.width;
             }
             arrange(*child, childBounds);
@@ -170,6 +266,30 @@ namespace xaml {
         this->fontWeight = std::move(value);
     }
 
+    const std::string& Element::Source() const {
+        return this->source;
+    }
+
+    void Element::SetSource(std::string value) {
+        this->source = std::move(value);
+    }
+
+    attr::Color Element::Tint() const {
+        return this->tint;
+    }
+
+    void Element::SetTint(attr::Color value) {
+        this->tint = value;
+    }
+
+    const std::string& Element::Command() const {
+        return this->command;
+    }
+
+    void Element::SetCommand(std::string value) {
+        this->command = std::move(value);
+    }
+
     attr::Color Element::Foreground() const {
         return this->foreground;
     }
@@ -192,6 +312,46 @@ namespace xaml {
 
     void Element::SetVerticalAlignment(attr::Alignment value) {
         this->verticalAlignment = value;
+    }
+
+    attr::Alignment Element::HorizontalAlignmentValue() const {
+        return this->horizontalAlignment;
+    }
+
+    void Element::SetHorizontalAlignment(attr::Alignment value) {
+        this->horizontalAlignment = value;
+    }
+
+    int Element::GridRow() const {
+        return this->gridRow;
+    }
+
+    void Element::SetGridRow(int value) {
+        this->gridRow = value;
+    }
+
+    int Element::GridColumn() const {
+        return this->gridColumn;
+    }
+
+    void Element::SetGridColumn(int value) {
+        this->gridColumn = value;
+    }
+
+    const std::string& Element::Rows() const {
+        return this->rows;
+    }
+
+    void Element::SetRows(std::string value) {
+        this->rows = std::move(value);
+    }
+
+    const std::string& Element::Columns() const {
+        return this->columns;
+    }
+
+    void Element::SetColumns(std::string value) {
+        this->columns = std::move(value);
     }
 
     attr::Color Element::Background() const {
@@ -264,6 +424,30 @@ namespace xaml {
 
     void Element::SetIsOn(bool value) {
         this->isOn = value;
+    }
+
+    attr::Visibility Element::VisibilityValue() const {
+        return this->visibility;
+    }
+
+    void Element::SetVisibility(attr::Visibility value) {
+        this->visibility = value;
+    }
+
+    bool Element::IsEnabled() const {
+        return this->isEnabled;
+    }
+
+    void Element::SetIsEnabled(bool value) {
+        this->isEnabled = value;
+    }
+
+    float Element::Opacity() const {
+        return this->opacity;
+    }
+
+    void Element::SetOpacity(float value) {
+        this->opacity = value;
     }
 
     Size Element::DesiredSize() const {

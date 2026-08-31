@@ -14,17 +14,33 @@ namespace xaml {
         button,
         border,
         toggleSwitch,
+        grid,
+        scrollViewer,
+        image,
+        svgImage,
+        iconButton,
+        listView,
     };
 
     namespace attr {
         enum class Alignment {
+            stretch,
+            left,
+            right,
             center,
             top,
+            bottom,
         };
 
         enum class Orientation {
             horizontal,
             vertical,
+        };
+
+        enum class Visibility {
+            collapsed,
+            hidden,
+            visible,
         };
 
         struct Color {
@@ -75,6 +91,15 @@ namespace xaml {
         const std::string& FontWeight() const;
         void SetFontWeight(std::string value);
 
+        const std::string& Source() const;
+        void SetSource(std::string value);
+
+        attr::Color Tint() const;
+        void SetTint(attr::Color value);
+
+        const std::string& Command() const;
+        void SetCommand(std::string value);
+
         attr::Color Foreground() const;
         void SetForeground(attr::Color value);
 
@@ -83,6 +108,21 @@ namespace xaml {
 
         attr::Alignment VerticalAlignmentValue() const;
         void SetVerticalAlignment(attr::Alignment value);
+
+        attr::Alignment HorizontalAlignmentValue() const;
+        void SetHorizontalAlignment(attr::Alignment value);
+
+        int GridRow() const;
+        void SetGridRow(int value);
+
+        int GridColumn() const;
+        void SetGridColumn(int value);
+
+        const std::string& Rows() const;
+        void SetRows(std::string value);
+
+        const std::string& Columns() const;
+        void SetColumns(std::string value);
 
         attr::Color Background() const;
         void SetBackground(attr::Color value);
@@ -111,6 +151,15 @@ namespace xaml {
         bool IsOn() const;
         void SetIsOn(bool value);
 
+        attr::Visibility VisibilityValue() const;
+        void SetVisibility(attr::Visibility value);
+
+        bool IsEnabled() const;
+        void SetIsEnabled(bool value);
+
+        float Opacity() const;
+        void SetOpacity(float value);
+
         Size DesiredSize() const;
         void SetDesiredSize(Size value);
 
@@ -128,9 +177,17 @@ namespace xaml {
         float fontSize = 16.0f;
         std::string fontFamily;
         std::string fontWeight;
+        std::string source;
+        attr::Color tint{1.0f, 1.0f, 1.0f, 1.0f};
+        std::string command;
         attr::Color foreground{};
         attr::Orientation orientation = attr::Orientation::vertical;
         attr::Alignment verticalAlignment = attr::Alignment::center;
+        attr::Alignment horizontalAlignment = attr::Alignment::center;
+        int gridRow = 0;
+        int gridColumn = 0;
+        std::string rows;
+        std::string columns;
         attr::Color background{0.0f, 0.0f, 0.0f, 0.0f};
         attr::Color borderColor{0.0f, 0.0f, 0.0f, 0.0f};
         attr::Thickness margin{};
@@ -140,6 +197,9 @@ namespace xaml {
         float width = 0.0f;
         float height = 0.0f;
         bool isOn = false;
+        attr::Visibility visibility = attr::Visibility::visible;
+        bool isEnabled = true;
+        float opacity = 1.0f;
         Size desiredSize{};
         Rect bounds{};
         std::vector<std::unique_ptr<Element>> children;

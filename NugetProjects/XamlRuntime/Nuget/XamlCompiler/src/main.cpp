@@ -95,7 +95,7 @@ namespace {
             const std::regex tagPattern(R"(<\s*([^>]+)>)");
             const std::regex attributePattern(
                 R"attr(([A-Za-z][A-Za-z0-9]*)\s*=\s*"([^"]*)")attr");
-            const std::regex namePattern(R"(^\s*([A-Za-z][A-Za-z0-9]*))");
+            const std::regex namePattern(R"(^\s*([A-Za-z][A-Za-z0-9.]*))");
             std::vector<Element> stack;
             Element root;
             bool hasRoot = false;
@@ -175,6 +175,24 @@ namespace {
             if (element.name == "ToggleSwitch") {
                 return "toggleSwitch";
             }
+            if (element.name == "Grid") {
+                return "grid";
+            }
+            if (element.name == "ScrollViewer") {
+                return "scrollViewer";
+            }
+            if (element.name == "Image") {
+                return "image";
+            }
+            if (element.name == "SvgImage") {
+                return "svgImage";
+            }
+            if (element.name == "IconButton") {
+                return "iconButton";
+            }
+            if (element.name == "ListView") {
+                return "listView";
+            }
             throw std::runtime_error("Unsupported XAML element <" + element.name + ">");
         }
 
@@ -202,10 +220,20 @@ namespace {
         }
 
         std::string ColorLiteral(const std::string& name, const std::string& value) {
-            if (value.size() != 7 || value.front() != '#') {
-                throw std::runtime_error(name + " must use #RRGGBB");
+            const std::map<std::string, std::string> namedColors{
+                {"black", "#000000"},
+                {"blue", "#0000FF"},
+                {"gray", "#808080"},
+                {"green", "#008000"},
+                {"red", "#FF0000"},
+                {"white", "#FFFFFF"},
+            };
+            const auto namedColor = namedColors.find(value);
+            const std::string normalized = namedColor == namedColors.end() ? value : namedColor->second;
+            if (normalized.size() != 7 || normalized.front() != '#') {
+                throw std::runtime_error(name + " must use #RRGGBB or a supported color name");
             }
-            const unsigned long color = std::stoul(value.substr(1), nullptr, 16);
+            const unsigned long color = std::stoul(normalized.substr(1), nullptr, 16);
             return "attr::Color{" + std::to_string((color >> 16) & 0xff) + ".0f / 255.0f, "
                 + std::to_string((color >> 8) & 0xff) + ".0f / 255.0f, "
                 + std::to_string(color & 0xff) + ".0f / 255.0f, 1.0f}";
@@ -231,6 +259,16 @@ namespace {
             return true;
         }
 
+        bool TryGetBindingSource(const std::string& value, std::string& sourceProperty) {
+            const std::regex bindingPattern(R"(^\{Binding\s+([A-Za-z][A-Za-z0-9]*)\s*\}$)");
+            std::smatch match;
+            if (!std::regex_match(value, match, bindingPattern)) {
+                return false;
+            }
+            sourceProperty = match[1].str();
+            return true;
+        }
+
         void EmitProperty(
             const Element& element,
             const std::string& variable,
@@ -238,9 +276,27 @@ namespace {
             const std::string& value,
             std::ostringstream& output,
             const std::string& elementVariable,
-            std::vector<Binding>& bindings) {
+            std::vector<Binding>& bindings,
+            const std::string& templateItem) {
             // Атрибуты переводятся в явные вызовы setter'ов. Поэтому итоговый код
             // не разбирает строки в рантайме и остаётся обычным C++.
+            if (name == "itemsSource" && element.name == "ListView") {
+                return;
+            }
+            std::string templateProperty;
+            if (!templateItem.empty() && this->TryGetBindingSource(value, templateProperty)) {
+                if (name == "text") {
+                    output << "            " << variable << "->SetText(" << templateItem
+                        << "." << templateProperty << "());\n";
+                    return;
+                }
+                if (name == "isOn") {
+                    output << "            " << variable << "->SetIsOn(" << templateItem
+                        << "." << templateProperty << "());\n";
+                    return;
+                }
+                throw std::runtime_error("Unsupported ItemTemplate binding target: " + name);
+            }
             if (this->TryEmitBinding(elementVariable, name, value, bindings)) {
                 return;
             }
@@ -254,11 +310,37 @@ namespace {
                 output << "            " << variable << "->SetFontFamily(\"" << this->EscapeCpp(value) << "\");\n";
             } else if (name == "fontWeight") {
                 output << "            " << variable << "->SetFontWeight(\"" << this->EscapeCpp(value) << "\");\n";
+            } else if (name == "source") {
+                output << "            " << variable << "->SetSource(\"" << this->EscapeCpp(value) << "\");\n";
+            } else if (name == "command") {
+                output << "            " << variable << "->SetCommand(\"" << this->EscapeCpp(value) << "\");\n";
+            } else if (name == "gridRow" || name == "gridColumn") {
+                output << "            " << variable << "->Set" << (name == "gridRow" ? "GridRow" : "GridColumn")
+                    << "(" << std::stoi(value) << ");\n";
+            } else if (name == "opacity") {
+                output << "            " << variable << "->SetOpacity(" << this->FloatLiteral(value) << ");\n";
+            } else if (name == "visibility") {
+                const std::string visibility = value == "Collapsed" ? "collapsed"
+                    : value == "Hidden" ? "hidden"
+                    : (value == "Vissible" || value == "Visible") ? "visible" : "";
+                if (visibility.empty()) {
+                    throw std::runtime_error("Visibility must be Collapsed, Hidden or Vissible");
+                }
+                output << "            " << variable << "->SetVisibility(attr::Visibility::"
+                    << visibility << ");\n";
+            } else if (name == "isEnabled") {
+                if (value != "True" && value != "False") {
+                    throw std::runtime_error("IsEnabled must be True or False");
+                }
+                output << "            " << variable << "->SetIsEnabled(" << (value == "True" ? "true" : "false") << ");\n";
             } else if (name == "margin" || name == "padding") {
                 output << "            " << variable << "->Set" << (name == "margin" ? "Margin" : "Padding")
                     << "(" << this->ThicknessLiteral(value) << ");\n";
-            } else if (name == "border" || name == "borderThickness") {
+            } else if (name == "borderThickness") {
                 output << "            " << variable << "->SetBorderThickness(" << this->ThicknessLiteral(value) << ");\n";
+            } else if (name == "borderBrush") {
+                output << "            " << variable << "->SetBorderColor("
+                    << this->ColorLiteral(name, value) << ");\n";
             } else if (name == "cornerRadius") {
                 output << "            " << variable << "->SetCornerRadius(" << this->FloatLiteral(value) << ");\n";
             } else if (name == "width") {
@@ -281,14 +363,29 @@ namespace {
             } else if (name == "verticalAlignment") {
                 if (value == "Top") {
                     output << "            " << variable << "->SetVerticalAlignment(attr::Alignment::top);\n";
+                } else if (value == "Bottom") {
+                    output << "            " << variable << "->SetVerticalAlignment(attr::Alignment::bottom);\n";
+                } else if (value == "Stretch") {
+                    output << "            " << variable << "->SetVerticalAlignment(attr::Alignment::stretch);\n";
                 } else if (value != "Center") {
-                    throw std::runtime_error("VerticalAlignment must be Top or Center");
+                    throw std::runtime_error("VerticalAlignment must be Top, Center, Bottom or Stretch");
                 }
-            } else if (name == "foreground" || name == "background" || name == "borderColor") {
+            } else if (name == "horizontalAlignment") {
+                const std::string alignment = value == "Left" ? "left"
+                    : value == "Right" ? "right" : value == "Center" ? "center"
+                    : value == "Stretch" ? "stretch" : "";
+                if (alignment.empty()) {
+                    throw std::runtime_error("HorizontalAlignment must be Left, Center, Right or Stretch");
+                }
+                output << "            " << variable << "->SetHorizontalAlignment(attr::Alignment::"
+                    << alignment << ");\n";
+            } else if (name == "foreground" || name == "background") {
                 const std::string setter = name == "foreground" ? "Foreground"
-                    : name == "background" ? "Background" : "BorderColor";
+                    : "Background";
                 output << "            " << variable << "->Set" << setter << "(" << this->ColorLiteral(name, value) << ");\n";
-            } else if (name != "horizontalAlignment") {
+            } else if (name == "tint") {
+                output << "            " << variable << "->SetTint(" << this->ColorLiteral(name, value) << ");\n";
+            } else {
                 throw std::runtime_error(
                     "Unsupported attribute " + name + " on <" + element.name + ">");
             }
@@ -308,7 +405,8 @@ namespace {
         std::string EmitElement(
             const Element& element,
             std::ostringstream& output,
-            std::map<std::string, size_t>& elementCounts) {
+            std::map<std::string, size_t>& elementCounts,
+            const std::string& templateItem = "") {
             // Сначала объявляем дочерние unique_ptr, затем передаём их родителю.
             // Это повторяет ownership-структуру исходной XAML-разметки.
             const std::string variable = this->ElementVariableName(element, elementCounts);
@@ -316,15 +414,103 @@ namespace {
             output << "            auto " << variable << " = std::make_unique<Element>(ElementType::"
                 << this->ElementTypeName(element) << ");\n";
             for (const auto& [name, value] : element.attributes) {
-                this->EmitProperty(element, variable, name, value, output, variable, bindings);
+                this->EmitProperty(element, variable, name, value, output, variable, bindings, templateItem);
+            }
+            if (element.name == "Grid") {
+                this->EmitGridDefinitions(element, variable, output);
             }
             this->EmitBindings(bindings, output);
+            if (element.name == "ListView") {
+                this->EmitListViewItems(element, variable, output, elementCounts);
+                return variable;
+            }
             for (size_t childIndex = 0; childIndex < element.children.size(); ++childIndex) {
+                if (element.children[childIndex].name == "columnDefinitions"
+                    || element.children[childIndex].name == "rowDefinitions") {
+                    continue;
+                }
                 const std::string childVariable = this->EmitElement(
-                    element.children[childIndex], output, elementCounts);
+                    element.children[childIndex], output, elementCounts, templateItem);
                 output << "            " << variable << "->AddChild(std::move(" << childVariable << "));\n";
             }
             return variable;
+        }
+
+        void EmitListViewItems(
+            const Element& listView,
+            const std::string& variable,
+            std::ostringstream& output,
+            std::map<std::string, size_t>& elementCounts) {
+            const auto source = std::find_if(
+                listView.attributes.begin(),
+                listView.attributes.end(),
+                [](const auto& attribute) { return attribute.first == "itemsSource"; });
+            if (source == listView.attributes.end()) {
+                throw std::runtime_error("<ListView> requires itemsSource");
+            }
+            std::string sourceProperty;
+            if (!this->TryGetBindingSource(source->second, sourceProperty)) {
+                throw std::runtime_error("ListView itemsSource must use {Binding Property}");
+            }
+            const auto templateElement = std::find_if(
+                listView.children.begin(),
+                listView.children.end(),
+                [](const Element& child) { return child.name == "ListView.ItemTemplate"; });
+            if (templateElement == listView.children.end()
+                || templateElement->children.size() != 1
+                || templateElement->children.front().name != "DataTemplate"
+                || templateElement->children.front().children.size() != 1) {
+                throw std::runtime_error("<ListView.ItemTemplate> requires one <DataTemplate> with one root element");
+            }
+            const Element& templateRoot = templateElement->children.front().children.front();
+            output << "            for (const auto& item : viewModel." << sourceProperty << "()) {\n";
+            const std::string itemVariable = this->EmitElement(
+                templateRoot,
+                output,
+                elementCounts,
+                "item");
+            output << "            " << variable << "->AddChild(std::move(" << itemVariable << "));\n";
+            output << "            }\n";
+        }
+
+        void EmitGridDefinitions(
+            const Element& grid,
+            const std::string& variable,
+            std::ostringstream& output) {
+            const auto emitDefinitions = [this, &grid, &variable, &output](
+                const std::string& collectionName,
+                const std::string& definitionName,
+                const std::string& valueName,
+                const std::string& setterName) {
+                for (const Element& collection : grid.children) {
+                    if (collection.name != collectionName) {
+                        continue;
+                    }
+                    std::ostringstream values;
+                    for (size_t index = 0; index < collection.children.size(); ++index) {
+                        const Element& definition = collection.children[index];
+                        if (definition.name != definitionName) {
+                            throw std::runtime_error("Only <" + definitionName + "> is allowed inside <"
+                                + collectionName + ">");
+                        }
+                        const auto value = std::find_if(
+                            definition.attributes.begin(), definition.attributes.end(),
+                            [&valueName](const auto& attribute) { return attribute.first == valueName; });
+                        if (value == definition.attributes.end()) {
+                            throw std::runtime_error("<" + definitionName + "> requires " + valueName);
+                        }
+                        if (index != 0) {
+                            values << ',';
+                        }
+                        values << value->second;
+                    }
+                    output << "            " << variable << "->Set" << setterName << "(\""
+                        << this->EscapeCpp(values.str()) << "\");\n";
+                    return;
+                }
+            };
+            emitDefinitions("columnDefinitions", "columnDefinition", "width", "Columns");
+            emitDefinitions("rowDefinitions", "rowDefinition", "height", "Rows");
         }
 
         std::string PropertyEnumName(const std::string& propertyName) {
