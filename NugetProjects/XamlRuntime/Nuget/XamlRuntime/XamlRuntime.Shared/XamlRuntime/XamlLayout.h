@@ -1,11 +1,12 @@
 #pragma once
 
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-namespace mobileclock::ui {
+namespace xaml {
     enum class ElementType {
         page,
         stackPanel,
@@ -19,17 +20,6 @@ namespace mobileclock::ui {
         enum class Alignment {
             center,
             top,
-        };
-
-        enum class BindingMode {
-            oneWay,
-            twoWay,
-        };
-
-        struct Binding {
-            std::string property;
-            std::string path;
-            BindingMode mode = BindingMode::oneWay;
         };
 
         enum class Orientation {
@@ -121,9 +111,6 @@ namespace mobileclock::ui {
         bool IsOn() const;
         void SetIsOn(bool value);
 
-        const std::vector<attr::Binding>& Bindings() const;
-        void AddBinding(attr::Binding value);
-
         Size DesiredSize() const;
         void SetDesiredSize(Size value);
 
@@ -153,11 +140,14 @@ namespace mobileclock::ui {
         float width = 0.0f;
         float height = 0.0f;
         bool isOn = false;
-        std::vector<attr::Binding> bindings;
         Size desiredSize{};
         Rect bounds{};
         std::vector<std::unique_ptr<Element>> children;
     };
+
+    // Проходит от root по индексам дочерних элементов из path: {1, 1} означает
+    // root.Children()[1]->Children()[1]. Пустой путь возвращает сам root.
+    Element& ElementAt(Element& root, std::initializer_list<size_t> path);
 
     void layout(Element& root, Size availableSize);
 }

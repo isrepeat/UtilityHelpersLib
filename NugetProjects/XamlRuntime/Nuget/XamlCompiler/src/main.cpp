@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <regex>
 #include <sstream>
 #include <stdexcept>
@@ -16,6 +17,13 @@ namespace {
         std::vector<std::pair<std::string, std::string>> attributes;
         std::vector<Element> children;
         size_t offset = 0;
+    };
+
+    struct Binding {
+        std::string elementVariable;
+        std::string property;
+        std::string sourceProperty;
+        std::string mode;
     };
 
     class XamlCompiler {
@@ -203,19 +211,23 @@ namespace {
                 + std::to_string(color & 0xff) + ".0f / 255.0f, 1.0f}";
         }
 
-        bool TryEmitBinding(const std::string& variable, const std::string& name,
-            const std::string& value, std::ostringstream& output) {
+        bool TryEmitBinding(
+            const std::string& elementVariable,
+            const std::string& name,
+            const std::string& value,
+            std::vector<Binding>& bindings) {
             const std::regex bindingPattern(
                 R"(^\{Binding\s+([A-Za-z][A-Za-z0-9]*)(?:\s*,\s*Mode\s*=\s*(OneWay|TwoWay))?\s*\}$)");
             std::smatch match;
             if (!std::regex_match(value, match, bindingPattern)) {
                 return false;
             }
-            const std::string mode = match[2].matched && match[2].str() == "TwoWay"
-                ? "twoWay" : "oneWay";
-            output << "        " << variable << "->AddBinding(attr::Binding{\""
-                << this->EscapeCpp(name) << "\", \"" << this->EscapeCpp(match[1].str())
-                << "\", attr::BindingMode::" << mode << "});\n";
+            bindings.push_back({
+                elementVariable,
+                name,
+                match[1].str(),
+                match[2].matched && match[2].str() == "TwoWay" ? "twoWay" : "oneWay",
+            });
             return true;
         }
 
@@ -224,76 +236,177 @@ namespace {
             const std::string& variable,
             const std::string& name,
             const std::string& value,
-            std::ostringstream& output) {
+            std::ostringstream& output,
+            const std::string& elementVariable,
+            std::vector<Binding>& bindings) {
             // Атрибуты переводятся в явные вызовы setter'ов. Поэтому итоговый код
             // не разбирает строки в рантайме и остаётся обычным C++.
-            if (this->TryEmitBinding(variable, name, value, output)) {
+            if (this->TryEmitBinding(elementVariable, name, value, bindings)) {
                 return;
             }
             if (name == "id") {
-                output << "        " << variable << "->SetId(\"" << this->EscapeCpp(value) << "\");\n";
+                output << "            " << variable << "->SetId(\"" << this->EscapeCpp(value) << "\");\n";
             } else if (name == "text") {
-                output << "        " << variable << "->SetText(\"" << this->EscapeCpp(value) << "\");\n";
+                output << "            " << variable << "->SetText(\"" << this->EscapeCpp(value) << "\");\n";
             } else if (name == "fontSize") {
-                output << "        " << variable << "->SetFontSize(" << this->FloatLiteral(value) << ");\n";
+                output << "            " << variable << "->SetFontSize(" << this->FloatLiteral(value) << ");\n";
             } else if (name == "fontFamily") {
-                output << "        " << variable << "->SetFontFamily(\"" << this->EscapeCpp(value) << "\");\n";
+                output << "            " << variable << "->SetFontFamily(\"" << this->EscapeCpp(value) << "\");\n";
             } else if (name == "fontWeight") {
-                output << "        " << variable << "->SetFontWeight(\"" << this->EscapeCpp(value) << "\");\n";
+                output << "            " << variable << "->SetFontWeight(\"" << this->EscapeCpp(value) << "\");\n";
             } else if (name == "margin" || name == "padding") {
-                output << "        " << variable << "->Set" << (name == "margin" ? "Margin" : "Padding")
+                output << "            " << variable << "->Set" << (name == "margin" ? "Margin" : "Padding")
                     << "(" << this->ThicknessLiteral(value) << ");\n";
             } else if (name == "border" || name == "borderThickness") {
-                output << "        " << variable << "->SetBorderThickness(" << this->ThicknessLiteral(value) << ");\n";
+                output << "            " << variable << "->SetBorderThickness(" << this->ThicknessLiteral(value) << ");\n";
             } else if (name == "cornerRadius") {
-                output << "        " << variable << "->SetCornerRadius(" << this->FloatLiteral(value) << ");\n";
+                output << "            " << variable << "->SetCornerRadius(" << this->FloatLiteral(value) << ");\n";
             } else if (name == "width") {
-                output << "        " << variable << "->SetWidth(" << this->FloatLiteral(value) << ");\n";
+                output << "            " << variable << "->SetWidth(" << this->FloatLiteral(value) << ");\n";
             } else if (name == "height") {
-                output << "        " << variable << "->SetHeight(" << this->FloatLiteral(value) << ");\n";
+                output << "            " << variable << "->SetHeight(" << this->FloatLiteral(value) << ");\n";
             } else if (name == "isOn") {
                 if (value != "True" && value != "False") {
                     throw std::runtime_error("IsOn must be True or False");
                 }
-                output << "        " << variable << "->SetIsOn(" << (value == "True" ? "true" : "false") << ");\n";
+                output << "            " << variable << "->SetIsOn(" << (value == "True" ? "true" : "false") << ");\n";
             } else if (name == "orientation") {
                 const std::string orientation = value == "Horizontal" ? "horizontal"
                     : value == "Vertical" ? "vertical" : "";
                 if (orientation.empty()) {
                     throw std::runtime_error("Orientation must be Horizontal or Vertical");
                 }
-                output << "        " << variable << "->SetOrientation(attr::Orientation::"
+                output << "            " << variable << "->SetOrientation(attr::Orientation::"
                     << orientation << ");\n";
             } else if (name == "verticalAlignment") {
                 if (value == "Top") {
-                    output << "        " << variable << "->SetVerticalAlignment(attr::Alignment::top);\n";
+                    output << "            " << variable << "->SetVerticalAlignment(attr::Alignment::top);\n";
                 } else if (value != "Center") {
                     throw std::runtime_error("VerticalAlignment must be Top or Center");
                 }
             } else if (name == "foreground" || name == "background" || name == "borderColor") {
                 const std::string setter = name == "foreground" ? "Foreground"
                     : name == "background" ? "Background" : "BorderColor";
-                output << "        " << variable << "->Set" << setter << "(" << this->ColorLiteral(name, value) << ");\n";
+                output << "            " << variable << "->Set" << setter << "(" << this->ColorLiteral(name, value) << ");\n";
             } else if (name != "horizontalAlignment") {
                 throw std::runtime_error(
                     "Unsupported attribute " + name + " on <" + element.name + ">");
             }
         }
 
-        std::string EmitElement(const Element& element, std::ostringstream& output, size_t& index) {
+        std::string ElementVariableName(
+            const Element& element,
+            std::map<std::string, size_t>& elementCounts) {
+            std::string result = element.name;
+            result.front() = static_cast<char>(result.front() - 'A' + 'a');
+            if (element.name == "Page") {
+                return result;
+            }
+            return result + std::to_string(++elementCounts[element.name]);
+        }
+
+        std::string EmitElement(
+            const Element& element,
+            std::ostringstream& output,
+            std::map<std::string, size_t>& elementCounts) {
             // Сначала объявляем дочерние unique_ptr, затем передаём их родителю.
             // Это повторяет ownership-структуру исходной XAML-разметки.
-            const std::string variable = "element" + std::to_string(index++);
-            output << "        auto " << variable << " = std::make_unique<Element>(ElementType::"
+            const std::string variable = this->ElementVariableName(element, elementCounts);
+            std::vector<Binding> bindings;
+            output << "            auto " << variable << " = std::make_unique<Element>(ElementType::"
                 << this->ElementTypeName(element) << ");\n";
             for (const auto& [name, value] : element.attributes) {
-                this->EmitProperty(element, variable, name, value, output);
+                this->EmitProperty(element, variable, name, value, output, variable, bindings);
             }
-            for (const Element& child : element.children) {
-                const std::string childVariable = this->EmitElement(child, output, index);
-                output << "        " << variable << "->AddChild(std::move(" << childVariable << "));\n";
+            this->EmitBindings(bindings, output);
+            for (size_t childIndex = 0; childIndex < element.children.size(); ++childIndex) {
+                const std::string childVariable = this->EmitElement(
+                    element.children[childIndex], output, elementCounts);
+                output << "            " << variable << "->AddChild(std::move(" << childVariable << "));\n";
             }
             return variable;
+        }
+
+        std::string PropertyEnumName(const std::string& propertyName) {
+            std::string result = propertyName;
+            result.front() = static_cast<char>(result.front() - 'A' + 'a');
+            return result;
+        }
+
+        void EmitBindingCall(
+            const std::string& method,
+            const std::vector<std::string>& arguments,
+            std::ostringstream& output) {
+            std::ostringstream singleLine;
+            singleLine << "bindings." << method << "(";
+            for (size_t index = 0; index < arguments.size(); ++index) {
+                if (index != 0) {
+                    singleLine << ", ";
+                }
+                singleLine << arguments[index];
+            }
+            singleLine << ");";
+            if (12 + singleLine.str().size() <= 130) {
+                output << "            " << singleLine.str() << "\n";
+                return;
+            }
+            output << "            bindings." << method << "(\n";
+            for (size_t index = 0; index < arguments.size(); ++index) {
+                output << "                " << arguments[index];
+                output << (index + 1 == arguments.size() ? "\n" : ",\n");
+            }
+            output << "            );\n";
+        }
+
+        void EmitBindings(const std::vector<Binding>& bindings, std::ostringstream& output) {
+            for (const Binding& binding : bindings) {
+                const std::string element = "*" + binding.elementVariable;
+                const std::string property = "TViewModel::Property::"
+                    + this->PropertyEnumName(binding.sourceProperty);
+                if (binding.property == "text") {
+                    if (binding.mode == "twoWay") {
+                        this->EmitBindingCall("AddTwoWay", {
+                            element,
+                            "viewModel",
+                            "&TViewModel::" + binding.sourceProperty,
+                            "&TViewModel::Set" + binding.sourceProperty,
+                            "&Element::Text",
+                            "&Element::SetText",
+                            property,
+                        }, output);
+                    } else {
+                        this->EmitBindingCall("AddOneWay", {
+                            element,
+                            "viewModel",
+                            "&TViewModel::" + binding.sourceProperty,
+                            "&Element::SetText",
+                            property,
+                        }, output);
+                    }
+                } else if (binding.property == "isOn") {
+                    if (binding.mode == "twoWay") {
+                        this->EmitBindingCall("AddTwoWay", {
+                            element,
+                            "viewModel",
+                            "&TViewModel::" + binding.sourceProperty,
+                            "&TViewModel::Set" + binding.sourceProperty,
+                            "&Element::IsOn",
+                            "&Element::SetIsOn",
+                            property,
+                        }, output);
+                    } else {
+                        this->EmitBindingCall("AddOneWay", {
+                            element,
+                            "viewModel",
+                            "&TViewModel::" + binding.sourceProperty,
+                            "&Element::SetIsOn",
+                            property,
+                        }, output);
+                    }
+                } else {
+                    throw std::runtime_error("Unsupported binding target: " + binding.property);
+                }
+            }
         }
 
     };
@@ -312,24 +425,23 @@ namespace {
         std::ostringstream header;
         header << "// Generated by XamlCompiler. Do not edit.\n"
             << "#pragma once\n\n"
+            << "#include \"XamlRuntime/Binding.h\"\n"
             << "#include \"XamlRuntime/XamlLayout.h\"\n\n"
-            << "namespace mobileclock::ui::generated {\n"
+            << "namespace xaml::generated {\n"
             << "    class " << pageName << " final {\n"
             << "    public:\n"
-            << "        static std::unique_ptr<Element> Create();\n"
+            << "        template <typename TViewModel>\n"
+            << "        static std::unique_ptr<Element> Create(TViewModel& viewModel, BindingScope& bindings) {\n";
+        std::map<std::string, size_t> elementCounts;
+        const std::string rootVariable = this->EmitElement(root, header, elementCounts);
+        header << "            return " << rootVariable << ";\n"
+            << "        }\n"
             << "    };\n"
             << "}";
 
         std::ostringstream output;
         output << "// Generated by XamlCompiler. Do not edit.\n"
-            << "#include \"" << headerPath.filename().string() << "\"\n\n"
-            << "namespace mobileclock::ui::generated {\n"
-            << "    std::unique_ptr<Element> " << pageName << "::Create() {\n";
-        size_t index = 0;
-        const std::string rootVariable = this->EmitElement(root, output, index);
-        output << "        return " << rootVariable << ";\n"
-            << "    }\n"
-            << "}";
+            << "#include \"" << headerPath.filename().string() << "\"";
         std::filesystem::create_directories(outputPath.parent_path());
         std::ofstream headerFile(headerPath, std::ios::binary | std::ios::trunc);
         if (!headerFile) {

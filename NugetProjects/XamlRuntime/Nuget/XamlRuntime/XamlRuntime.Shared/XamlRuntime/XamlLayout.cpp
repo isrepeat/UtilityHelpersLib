@@ -1,7 +1,7 @@
 #include "XamlRuntime/XamlLayout.h"
 #include <algorithm>
 
-namespace mobileclock::ui::_details {
+namespace xaml::_details {
     float horizontal(const attr::Thickness& thickness) {
         return thickness.left + thickness.right;
     }
@@ -121,7 +121,7 @@ namespace mobileclock::ui::_details {
     }
 }
 
-namespace mobileclock::ui {
+namespace xaml {
     Element::Element(ElementType type)
         : type(type) {
     }
@@ -266,14 +266,6 @@ namespace mobileclock::ui {
         this->isOn = value;
     }
 
-    const std::vector<attr::Binding>& Element::Bindings() const {
-        return this->bindings;
-    }
-
-    void Element::AddBinding(attr::Binding value) {
-        this->bindings.push_back(std::move(value));
-    }
-
     Size Element::DesiredSize() const {
         return this->desiredSize;
     }
@@ -300,6 +292,14 @@ namespace mobileclock::ui {
 
     void Element::AddChild(std::unique_ptr<Element> child) {
         this->children.push_back(std::move(child));
+    }
+
+    Element& ElementAt(Element& root, std::initializer_list<size_t> path) {
+        Element* element = &root;
+        for (const size_t childIndex : path) {
+            element = element->Children().at(childIndex).get();
+        }
+        return *element;
     }
 
     void layout(Element& root, Size availableSize) {
