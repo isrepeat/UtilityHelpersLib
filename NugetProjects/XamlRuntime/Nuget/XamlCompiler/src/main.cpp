@@ -203,6 +203,22 @@ namespace {
                 + std::to_string(color & 0xff) + ".0f / 255.0f, 1.0f}";
         }
 
+        bool TryEmitBinding(const std::string& variable, const std::string& name,
+            const std::string& value, std::ostringstream& output) {
+            const std::regex bindingPattern(
+                R"(^\{Binding\s+([A-Za-z][A-Za-z0-9]*)(?:\s*,\s*Mode\s*=\s*(OneWay|TwoWay))?\s*\}$)");
+            std::smatch match;
+            if (!std::regex_match(value, match, bindingPattern)) {
+                return false;
+            }
+            const std::string mode = match[2].matched && match[2].str() == "TwoWay"
+                ? "twoWay" : "oneWay";
+            output << "        " << variable << "->AddBinding(attr::Binding{\""
+                << this->EscapeCpp(name) << "\", \"" << this->EscapeCpp(match[1].str())
+                << "\", attr::BindingMode::" << mode << "});\n";
+            return true;
+        }
+
         void EmitProperty(
             const Element& element,
             const std::string& variable,
@@ -211,6 +227,9 @@ namespace {
             std::ostringstream& output) {
             // Атрибуты переводятся в явные вызовы setter'ов. Поэтому итоговый код
             // не разбирает строки в рантайме и остаётся обычным C++.
+            if (this->TryEmitBinding(variable, name, value, output)) {
+                return;
+            }
             if (name == "id") {
                 output << "        " << variable << "->SetId(\"" << this->EscapeCpp(value) << "\");\n";
             } else if (name == "text") {
@@ -245,11 +264,17 @@ namespace {
                 }
                 output << "        " << variable << "->SetOrientation(attr::Orientation::"
                     << orientation << ");\n";
+            } else if (name == "verticalAlignment") {
+                if (value == "Top") {
+                    output << "        " << variable << "->SetVerticalAlignment(attr::Alignment::top);\n";
+                } else if (value != "Center") {
+                    throw std::runtime_error("VerticalAlignment must be Top or Center");
+                }
             } else if (name == "foreground" || name == "background" || name == "borderColor") {
                 const std::string setter = name == "foreground" ? "Foreground"
                     : name == "background" ? "Background" : "BorderColor";
                 output << "        " << variable << "->Set" << setter << "(" << this->ColorLiteral(name, value) << ");\n";
-            } else if (name != "horizontalAlignment" && name != "verticalAlignment") {
+            } else if (name != "horizontalAlignment") {
                 throw std::runtime_error(
                     "Unsupported attribute " + name + " on <" + element.name + ">");
             }

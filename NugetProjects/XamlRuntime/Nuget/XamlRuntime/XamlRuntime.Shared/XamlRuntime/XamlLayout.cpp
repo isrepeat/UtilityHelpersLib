@@ -96,7 +96,9 @@ namespace mobileclock::ui::_details {
                 const Size childSize = child->DesiredSize();
                 arrange(*child, {
                     contentBounds.x + (contentBounds.width - childSize.width) / 2.0f,
-                    contentBounds.y + (contentBounds.height - childSize.height) / 2.0f,
+                    child->VerticalAlignmentValue() == attr::Alignment::top
+                        ? contentBounds.y
+                        : contentBounds.y + (contentBounds.height - childSize.height) / 2.0f,
                     childSize.width,
                     childSize.height,
                 });
@@ -184,6 +186,14 @@ namespace mobileclock::ui {
         this->orientation = value;
     }
 
+    attr::Alignment Element::VerticalAlignmentValue() const {
+        return this->verticalAlignment;
+    }
+
+    void Element::SetVerticalAlignment(attr::Alignment value) {
+        this->verticalAlignment = value;
+    }
+
     attr::Color Element::Background() const {
         return this->background;
     }
@@ -256,6 +266,14 @@ namespace mobileclock::ui {
         this->isOn = value;
     }
 
+    const std::vector<attr::Binding>& Element::Bindings() const {
+        return this->bindings;
+    }
+
+    void Element::AddBinding(attr::Binding value) {
+        this->bindings.push_back(std::move(value));
+    }
+
     Size Element::DesiredSize() const {
         return this->desiredSize;
     }
@@ -273,6 +291,10 @@ namespace mobileclock::ui {
     }
 
     const std::vector<std::unique_ptr<Element>>& Element::Children() const {
+        return this->children;
+    }
+
+    std::vector<std::unique_ptr<Element>>& Element::Children() {
         return this->children;
     }
 

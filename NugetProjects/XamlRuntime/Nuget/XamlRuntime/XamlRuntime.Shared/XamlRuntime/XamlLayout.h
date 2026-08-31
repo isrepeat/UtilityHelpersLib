@@ -16,6 +16,22 @@ namespace mobileclock::ui {
     };
 
     namespace attr {
+        enum class Alignment {
+            center,
+            top,
+        };
+
+        enum class BindingMode {
+            oneWay,
+            twoWay,
+        };
+
+        struct Binding {
+            std::string property;
+            std::string path;
+            BindingMode mode = BindingMode::oneWay;
+        };
+
         enum class Orientation {
             horizontal,
             vertical,
@@ -75,6 +91,9 @@ namespace mobileclock::ui {
         attr::Orientation OrientationValue() const;
         void SetOrientation(attr::Orientation value);
 
+        attr::Alignment VerticalAlignmentValue() const;
+        void SetVerticalAlignment(attr::Alignment value);
+
         attr::Color Background() const;
         void SetBackground(attr::Color value);
 
@@ -102,6 +121,9 @@ namespace mobileclock::ui {
         bool IsOn() const;
         void SetIsOn(bool value);
 
+        const std::vector<attr::Binding>& Bindings() const;
+        void AddBinding(attr::Binding value);
+
         Size DesiredSize() const;
         void SetDesiredSize(Size value);
 
@@ -109,6 +131,7 @@ namespace mobileclock::ui {
         void SetBounds(Rect value);
 
         const std::vector<std::unique_ptr<Element>>& Children() const;
+        std::vector<std::unique_ptr<Element>>& Children();
         void AddChild(std::unique_ptr<Element> child);
 
     private:
@@ -120,6 +143,7 @@ namespace mobileclock::ui {
         std::string fontWeight;
         attr::Color foreground{};
         attr::Orientation orientation = attr::Orientation::vertical;
+        attr::Alignment verticalAlignment = attr::Alignment::center;
         attr::Color background{0.0f, 0.0f, 0.0f, 0.0f};
         attr::Color borderColor{0.0f, 0.0f, 0.0f, 0.0f};
         attr::Thickness margin{};
@@ -129,6 +153,7 @@ namespace mobileclock::ui {
         float width = 0.0f;
         float height = 0.0f;
         bool isOn = false;
+        std::vector<attr::Binding> bindings;
         Size desiredSize{};
         Rect bounds{};
         std::vector<std::unique_ptr<Element>> children;
