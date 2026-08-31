@@ -18,207 +18,265 @@ namespace {
         size_t offset = 0;
     };
 
-    std::string readFile(const std::filesystem::path& path) {
-        std::ifstream input(path, std::ios::binary);
-        if (!input) {
-            throw std::runtime_error("Cannot read " + path.string());
-        }
-        return {
-            std::istreambuf_iterator<char>(input),
-            std::istreambuf_iterator<char>(),
-        };
-    }
+    class XamlCompiler {
+    public:
+        void Compile(const std::filesystem::path& input, const std::filesystem::path& outputPath);
 
-    std::string escapeCpp(const std::string& value) {
-        std::string result;
-        for (const char character : value) {
-            if (character == '\\' || character == '"') {
-                result += '\\';
+    private:
+        std::string ReadFile(const std::filesystem::path& path) {
+            std::ifstream input(path, std::ios::binary);
+            if (!input) {
+                throw std::runtime_error("Cannot read " + path.string());
             }
-            result += character;
+            return {
+                std::istreambuf_iterator<char>(input),
+                std::istreambuf_iterator<char>(),
+            };
         }
-        return result;
-    }
 
-    size_t lineNumber(const std::string& source, size_t offset) {
-        return 1 + static_cast<size_t>(
-            std::count(source.begin(), source.begin() + offset, '\n'));
-    }
-
-    [[noreturn]] void fail(
-        const std::filesystem::path& path,
-        const std::string& source,
-        size_t offset,
-        const std::string& message) {
-        throw std::runtime_error(
-            path.string() + ":" + std::to_string(lineNumber(source, offset))
-            + ": " + message);
-    }
-
-    void appendElement(
-        Element element,
-        std::vector<Element>& stack,
-        Element& root,
-        bool& hasRoot,
-        const std::filesystem::path& path,
-        const std::string& source,
-        size_t offset) {
-        // Верхушка stack — родитель текущего закрытого/self-closing элемента.
-        // Пустой stack означает, что element является корнем документа.
-        if (!stack.empty()) {
-            stack.back().children.push_back(std::move(element));
-            return;
-        }
-        if (hasRoot) {
-            fail(path, source, offset, "only one root element is allowed");
-        }
-        root = std::move(element);
-        hasRoot = true;
-    }
-
-    Element parse(const std::filesystem::path& path, const std::string& source) {
-        // Это намеренно небольшой XAML-диалект, а не универсальный XML-парсер:
-        // он принимает только теги/атрибуты, которые способен выразить runtime.
-        const std::regex tagPattern(R"(<\s*([^>]+)>)");
-        const std::regex attributePattern(
-            R"attr(([A-Za-z][A-Za-z0-9]*)\s*=\s*"([^"]*)")attr");
-        const std::regex namePattern(R"(^\s*([A-Za-z][A-Za-z0-9]*))");
-        std::vector<Element> stack;
-        Element root;
-        bool hasRoot = false;
-        std::sregex_iterator end;
-
-        for (std::sregex_iterator tag(source.begin(), source.end(), tagPattern);
-            tag != end;
-            ++tag) {
-            const auto& match = *tag;
-            const size_t offset = static_cast<size_t>(match.position());
-            const std::string content = match[1].str();
-            if (content.rfind("!--", 0) == 0 || content.rfind("?", 0) == 0) {
-                continue;
-            }
-
-            const bool closing = !content.empty() && content.front() == '/';
-            const bool selfClosing = !closing && !content.empty()
-                && content.back() == '/';
-            if (closing) {
-                // Закрывающий тег завершает элемент и присоединяет его к
-                // родителю. Так стек сохраняет вложенность без рекурсии.
-                const std::string name = std::regex_replace(
-                    content.substr(1), std::regex(R"(\s+)"), "");
-                if (stack.empty() || stack.back().name != name) {
-                    fail(path, source, offset, "unexpected closing tag </" + name + ">");
+        std::string EscapeCpp(const std::string& value) {
+            std::string result;
+            for (const char character : value) {
+                if (character == '\\' || character == '"') {
+                    result += '\\';
                 }
-                Element element = std::move(stack.back());
-                stack.pop_back();
-                appendElement(std::move(element), stack, root, hasRoot, path, source, offset);
-                continue;
+                result += character;
             }
-
-            std::smatch nameMatch;
-            std::regex_search(content, nameMatch, namePattern);
-            if (nameMatch.empty()) {
-                fail(path, source, offset, "element name is required");
-            }
-            Element element{nameMatch[1].str(), {}, {}, offset};
-            for (std::sregex_iterator attribute(
-                content.begin(), content.end(), attributePattern);
-                attribute != end;
-                ++attribute) {
-                element.attributes.emplace_back((*attribute)[1].str(), (*attribute)[2].str());
-            }
-            if (selfClosing) {
-                appendElement(std::move(element), stack, root, hasRoot, path, source, offset);
-            } else {
-                stack.push_back(std::move(element));
-            }
+            return result;
         }
 
-        if (!stack.empty()) {
-            fail(path, source, stack.back().offset, "element is not closed");
+        size_t LineNumber(const std::string& source, size_t offset) {
+            return 1 + static_cast<size_t>(
+                std::count(source.begin(), source.begin() + offset, '\n'));
         }
-        if (!hasRoot) {
-            fail(path, source, 0, "root element is required");
-        }
-        return root;
-    }
 
-    std::string elementType(const Element& element) {
-        if (element.name == "StackPanel") {
-            return "stackPanel";
+        [[noreturn]] void Fail(
+            const std::filesystem::path& path,
+            const std::string& source,
+            size_t offset,
+            const std::string& message) {
+            throw std::runtime_error(
+                path.string() + ":" + std::to_string(this->LineNumber(source, offset))
+                + ": " + message);
         }
-        if (element.name == "TextBlock") {
-            return "textBlock";
-        }
-        if (element.name == "Button") {
-            return "button";
-        }
-        throw std::runtime_error("Unsupported XAML element <" + element.name + ">");
-    }
 
-    std::string floatLiteral(const std::string& value) {
-        return std::to_string(std::stof(value)) + "f";
-    }
-
-    void emitProperty(
-        const Element& element,
-        const std::string& variable,
-        const std::string& name,
-        const std::string& value,
-        std::ostringstream& output) {
-        // Атрибуты переводятся в явные вызовы setter'ов. Поэтому итоговый код
-        // не разбирает строки в рантайме и остаётся обычным C++.
-        if (name == "Id") {
-            output << "        " << variable << "->SetId(\"" << escapeCpp(value) << "\");\n";
-        } else if (name == "Text") {
-            output << "        " << variable << "->SetText(\"" << escapeCpp(value) << "\");\n";
-        } else if (name == "FontSize") {
-            output << "        " << variable << "->SetFontSize(" << floatLiteral(value) << ");\n";
-        } else if (name == "Spacing") {
-            output << "        " << variable << "->SetSpacing(" << floatLiteral(value) << ");\n";
-        } else if (name == "Orientation") {
-            const std::string orientation = value == "Horizontal" ? "horizontal"
-                : value == "Vertical" ? "vertical" : "";
-            if (orientation.empty()) {
-                throw std::runtime_error("Orientation must be Horizontal or Vertical");
+        void AppendElement(
+            Element element,
+            std::vector<Element>& stack,
+            Element& root,
+            bool& hasRoot,
+            const std::filesystem::path& path,
+            const std::string& source,
+            size_t offset) {
+            // Верхушка stack — родитель текущего закрытого/self-closing элемента.
+            // Пустой stack означает, что element является корнем документа.
+            if (!stack.empty()) {
+                stack.back().children.push_back(std::move(element));
+                return;
             }
-            output << "        " << variable << "->SetOrientation(Orientation::"
-                << orientation << ");\n";
-        } else if (name == "Foreground") {
+            if (hasRoot) {
+                this->Fail(path, source, offset, "only one root element is allowed");
+            }
+            root = std::move(element);
+            hasRoot = true;
+        }
+
+        Element Parse(const std::filesystem::path& path, const std::string& source) {
+            // Это намеренно небольшой XAML-диалект, а не универсальный XML-парсер:
+            // он принимает только теги/атрибуты, которые способен выразить runtime.
+            const std::regex tagPattern(R"(<\s*([^>]+)>)");
+            const std::regex attributePattern(
+                R"attr(([A-Za-z][A-Za-z0-9]*)\s*=\s*"([^"]*)")attr");
+            const std::regex namePattern(R"(^\s*([A-Za-z][A-Za-z0-9]*))");
+            std::vector<Element> stack;
+            Element root;
+            bool hasRoot = false;
+            std::sregex_iterator end;
+
+            for (std::sregex_iterator tag(source.begin(), source.end(), tagPattern);
+                tag != end;
+                ++tag) {
+                const auto& match = *tag;
+                const size_t offset = static_cast<size_t>(match.position());
+                const std::string content = match[1].str();
+                if (content.rfind("!--", 0) == 0 || content.rfind("?", 0) == 0) {
+                    continue;
+                }
+
+                const bool closing = !content.empty() && content.front() == '/';
+                const bool selfClosing = !closing && !content.empty()
+                    && content.back() == '/';
+                if (closing) {
+                    // Закрывающий тег завершает элемент и присоединяет его к
+                    // родителю. Так стек сохраняет вложенность без рекурсии.
+                    const std::string name = std::regex_replace(
+                        content.substr(1), std::regex(R"(\s+)"), "");
+                    if (stack.empty() || stack.back().name != name) {
+                        this->Fail(path, source, offset, "unexpected closing tag </" + name + ">");
+                    }
+                    Element element = std::move(stack.back());
+                    stack.pop_back();
+                    this->AppendElement(std::move(element), stack, root, hasRoot, path, source, offset);
+                    continue;
+                }
+
+                std::smatch nameMatch;
+                std::regex_search(content, nameMatch, namePattern);
+                if (nameMatch.empty()) {
+                    this->Fail(path, source, offset, "element name is required");
+                }
+                Element element{nameMatch[1].str(), {}, {}, offset};
+                for (std::sregex_iterator attribute(
+                    content.begin(), content.end(), attributePattern);
+                    attribute != end;
+                    ++attribute) {
+                    element.attributes.emplace_back((*attribute)[1].str(), (*attribute)[2].str());
+                }
+                if (selfClosing) {
+                    this->AppendElement(std::move(element), stack, root, hasRoot, path, source, offset);
+                } else {
+                    stack.push_back(std::move(element));
+                }
+            }
+
+            if (!stack.empty()) {
+                this->Fail(path, source, stack.back().offset, "element is not closed");
+            }
+            if (!hasRoot) {
+                this->Fail(path, source, 0, "root element is required");
+            }
+            return root;
+        }
+
+        std::string ElementTypeName(const Element& element) {
+            if (element.name == "Page") {
+                return "page";
+            }
+            if (element.name == "StackPanel") {
+                return "stackPanel";
+            }
+            if (element.name == "TextBlock") {
+                return "textBlock";
+            }
+            if (element.name == "Button") {
+                return "button";
+            }
+            if (element.name == "Border") {
+                return "border";
+            }
+            if (element.name == "ToggleSwitch") {
+                return "toggleSwitch";
+            }
+            throw std::runtime_error("Unsupported XAML element <" + element.name + ">");
+        }
+
+        std::string FloatLiteral(const std::string& value) {
+            return std::to_string(std::stof(value)) + "f";
+        }
+
+        std::string ThicknessLiteral(const std::string& value) {
+            std::string normalized = value;
+            std::replace(normalized.begin(), normalized.end(), ',', ' ');
+            std::istringstream input(normalized);
+            std::vector<float> values;
+            float component = 0.0f;
+            while (input >> component) {
+                values.push_back(component);
+            }
+            if (values.size() == 1) {
+                values = {values[0], values[0], values[0], values[0]};
+            }
+            if (values.size() != 4) {
+                throw std::runtime_error("Thickness must contain one or four values: left right top bottom");
+            }
+            return "attr::Thickness{" + std::to_string(values[0]) + "f, " + std::to_string(values[1])
+                + "f, " + std::to_string(values[2]) + "f, " + std::to_string(values[3]) + "f}";
+        }
+
+        std::string ColorLiteral(const std::string& name, const std::string& value) {
             if (value.size() != 7 || value.front() != '#') {
-                throw std::runtime_error("Foreground must use #RRGGBB");
+                throw std::runtime_error(name + " must use #RRGGBB");
             }
             const unsigned long color = std::stoul(value.substr(1), nullptr, 16);
-            output << "        " << variable << "->SetForeground(Color{"
-                << ((color >> 16) & 0xff) << ".0f / 255.0f, "
-                << ((color >> 8) & 0xff) << ".0f / 255.0f, "
-                << (color & 0xff) << ".0f / 255.0f, 1.0f});\n";
-        } else if (name != "HorizontalAlignment" && name != "VerticalAlignment") {
-            throw std::runtime_error(
-                "Unsupported attribute " + name + " on <" + element.name + ">");
+            return "attr::Color{" + std::to_string((color >> 16) & 0xff) + ".0f / 255.0f, "
+                + std::to_string((color >> 8) & 0xff) + ".0f / 255.0f, "
+                + std::to_string(color & 0xff) + ".0f / 255.0f, 1.0f}";
         }
-    }
 
-    std::string emitElement(const Element& element, std::ostringstream& output, size_t& index) {
-        // Сначала объявляем дочерние unique_ptr, затем передаём их родителю.
-        // Это повторяет ownership-структуру исходной XAML-разметки.
-        const std::string variable = "element" + std::to_string(index++);
-        output << "        auto " << variable << " = std::make_unique<Element>(ElementType::"
-            << elementType(element) << ");\n";
-        for (const auto& [name, value] : element.attributes) {
-            emitProperty(element, variable, name, value, output);
+        void EmitProperty(
+            const Element& element,
+            const std::string& variable,
+            const std::string& name,
+            const std::string& value,
+            std::ostringstream& output) {
+            // Атрибуты переводятся в явные вызовы setter'ов. Поэтому итоговый код
+            // не разбирает строки в рантайме и остаётся обычным C++.
+            if (name == "id") {
+                output << "        " << variable << "->SetId(\"" << this->EscapeCpp(value) << "\");\n";
+            } else if (name == "text") {
+                output << "        " << variable << "->SetText(\"" << this->EscapeCpp(value) << "\");\n";
+            } else if (name == "fontSize") {
+                output << "        " << variable << "->SetFontSize(" << this->FloatLiteral(value) << ");\n";
+            } else if (name == "fontFamily") {
+                output << "        " << variable << "->SetFontFamily(\"" << this->EscapeCpp(value) << "\");\n";
+            } else if (name == "fontWeight") {
+                output << "        " << variable << "->SetFontWeight(\"" << this->EscapeCpp(value) << "\");\n";
+            } else if (name == "margin" || name == "padding") {
+                output << "        " << variable << "->Set" << (name == "margin" ? "Margin" : "Padding")
+                    << "(" << this->ThicknessLiteral(value) << ");\n";
+            } else if (name == "border" || name == "borderThickness") {
+                output << "        " << variable << "->SetBorderThickness(" << this->ThicknessLiteral(value) << ");\n";
+            } else if (name == "cornerRadius") {
+                output << "        " << variable << "->SetCornerRadius(" << this->FloatLiteral(value) << ");\n";
+            } else if (name == "width") {
+                output << "        " << variable << "->SetWidth(" << this->FloatLiteral(value) << ");\n";
+            } else if (name == "height") {
+                output << "        " << variable << "->SetHeight(" << this->FloatLiteral(value) << ");\n";
+            } else if (name == "isOn") {
+                if (value != "True" && value != "False") {
+                    throw std::runtime_error("IsOn must be True or False");
+                }
+                output << "        " << variable << "->SetIsOn(" << (value == "True" ? "true" : "false") << ");\n";
+            } else if (name == "orientation") {
+                const std::string orientation = value == "Horizontal" ? "horizontal"
+                    : value == "Vertical" ? "vertical" : "";
+                if (orientation.empty()) {
+                    throw std::runtime_error("Orientation must be Horizontal or Vertical");
+                }
+                output << "        " << variable << "->SetOrientation(attr::Orientation::"
+                    << orientation << ");\n";
+            } else if (name == "foreground" || name == "background" || name == "borderColor") {
+                const std::string setter = name == "foreground" ? "Foreground"
+                    : name == "background" ? "Background" : "BorderColor";
+                output << "        " << variable << "->Set" << setter << "(" << this->ColorLiteral(name, value) << ");\n";
+            } else if (name != "horizontalAlignment" && name != "verticalAlignment") {
+                throw std::runtime_error(
+                    "Unsupported attribute " + name + " on <" + element.name + ">");
+            }
         }
-        for (const Element& child : element.children) {
-            const std::string childVariable = emitElement(child, output, index);
-            output << "        " << variable << "->AddChild(std::move(" << childVariable << "));\n";
-        }
-        return variable;
-    }
 
-    void compile(const std::filesystem::path& input, const std::filesystem::path& outputPath) {
+        std::string EmitElement(const Element& element, std::ostringstream& output, size_t& index) {
+            // Сначала объявляем дочерние unique_ptr, затем передаём их родителю.
+            // Это повторяет ownership-структуру исходной XAML-разметки.
+            const std::string variable = "element" + std::to_string(index++);
+            output << "        auto " << variable << " = std::make_unique<Element>(ElementType::"
+                << this->ElementTypeName(element) << ");\n";
+            for (const auto& [name, value] : element.attributes) {
+                this->EmitProperty(element, variable, name, value, output);
+            }
+            for (const Element& child : element.children) {
+                const std::string childVariable = this->EmitElement(child, output, index);
+                output << "        " << variable << "->AddChild(std::move(" << childVariable << "));\n";
+            }
+            return variable;
+        }
+
+    };
+
+    void XamlCompiler::Compile(const std::filesystem::path& input, const std::filesystem::path& outputPath) {
         // Каждая XAML-страница получает собственный тип. Контроллеры работают
         // с MainPage::Create(), а не с неявной свободной функцией.
-        const Element root = parse(input, readFile(input));
+        const Element root = this->Parse(input, this->ReadFile(input));
         const std::string pageName = input.stem().string();
         if (!std::regex_match(pageName, std::regex(R"([A-Za-z][A-Za-z0-9]*)"))) {
             throw std::runtime_error("XAML filename must be a valid C++ type name");
@@ -243,7 +301,7 @@ namespace {
             << "namespace mobileclock::ui::generated {\n"
             << "    std::unique_ptr<Element> " << pageName << "::Create() {\n";
         size_t index = 0;
-        const std::string rootVariable = emitElement(root, output, index);
+        const std::string rootVariable = this->EmitElement(root, output, index);
         output << "        return " << rootVariable << ";\n"
             << "    }\n"
             << "}";
@@ -267,7 +325,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     try {
-        compile(argv[1], argv[2]);
+        XamlCompiler compiler;
+        compiler.Compile(argv[1], argv[2]);
         return 0;
     } catch (const std::exception& error) {
         std::cerr << "XamlCompiler: " << error.what() << '\n';

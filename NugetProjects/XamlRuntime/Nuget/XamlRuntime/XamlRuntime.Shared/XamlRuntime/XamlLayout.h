@@ -7,22 +7,34 @@
 
 namespace mobileclock::ui {
     enum class ElementType {
+        page,
         stackPanel,
         textBlock,
         button,
+        border,
+        toggleSwitch,
     };
 
-    enum class Orientation {
-        horizontal,
-        vertical,
-    };
+    namespace attr {
+        enum class Orientation {
+            horizontal,
+            vertical,
+        };
 
-    struct Color {
-        float red = 1.0f;
-        float green = 1.0f;
-        float blue = 1.0f;
-        float alpha = 1.0f;
-    };
+        struct Color {
+            float red = 1.0f;
+            float green = 1.0f;
+            float blue = 1.0f;
+            float alpha = 1.0f;
+        };
+
+        struct Thickness {
+            float left = 0.0f;
+            float right = 0.0f;
+            float top = 0.0f;
+            float bottom = 0.0f;
+        };
+    }
 
     struct Size {
         float width = 0.0f;
@@ -38,40 +50,88 @@ namespace mobileclock::ui {
 
     class Element {
     public:
-        explicit Element(ElementType type) : type_(type) {}
+        explicit Element(ElementType type);
 
-        ElementType Type() const { return type_; }
-        const std::string& Id() const { return id_; }
-        const std::string& Text() const { return text_; }
-        float FontSize() const { return fontSize_; }
-        Color Foreground() const { return foreground_; }
-        Orientation OrientationValue() const { return orientation_; }
-        float Spacing() const { return spacing_; }
-        Size DesiredSize() const { return desiredSize_; }
-        Rect Bounds() const { return bounds_; }
-        const std::vector<std::unique_ptr<Element>>& Children() const { return children_; }
+        ElementType Type() const;
 
-        void SetId(std::string value) { id_ = std::move(value); }
-        void SetText(std::string value) { text_ = std::move(value); }
-        void SetFontSize(float value) { fontSize_ = value; }
-        void SetForeground(Color value) { foreground_ = value; }
-        void SetOrientation(Orientation value) { orientation_ = value; }
-        void SetSpacing(float value) { spacing_ = value; }
-        void AddChild(std::unique_ptr<Element> child) { children_.push_back(std::move(child)); }
-        void SetDesiredSize(Size value) { desiredSize_ = value; }
-        void SetBounds(Rect value) { bounds_ = value; }
+        const std::string& Id() const;
+        void SetId(std::string value);
+
+        const std::string& Text() const;
+        void SetText(std::string value);
+
+        float FontSize() const;
+        void SetFontSize(float value);
+
+        const std::string& FontFamily() const;
+        void SetFontFamily(std::string value);
+
+        const std::string& FontWeight() const;
+        void SetFontWeight(std::string value);
+
+        attr::Color Foreground() const;
+        void SetForeground(attr::Color value);
+
+        attr::Orientation OrientationValue() const;
+        void SetOrientation(attr::Orientation value);
+
+        attr::Color Background() const;
+        void SetBackground(attr::Color value);
+
+        attr::Color BorderColor() const;
+        void SetBorderColor(attr::Color value);
+
+        attr::Thickness Margin() const;
+        void SetMargin(attr::Thickness value);
+
+        attr::Thickness Padding() const;
+        void SetPadding(attr::Thickness value);
+
+        attr::Thickness BorderThickness() const;
+        void SetBorderThickness(attr::Thickness value);
+
+        float CornerRadius() const;
+        void SetCornerRadius(float value);
+
+        float Width() const;
+        void SetWidth(float value);
+
+        float Height() const;
+        void SetHeight(float value);
+
+        bool IsOn() const;
+        void SetIsOn(bool value);
+
+        Size DesiredSize() const;
+        void SetDesiredSize(Size value);
+
+        Rect Bounds() const;
+        void SetBounds(Rect value);
+
+        const std::vector<std::unique_ptr<Element>>& Children() const;
+        void AddChild(std::unique_ptr<Element> child);
 
     private:
-        ElementType type_;
-        std::string id_;
-        std::string text_;
-        float fontSize_ = 16.0f;
-        Color foreground_{};
-        Orientation orientation_ = Orientation::vertical;
-        float spacing_ = 0.0f;
-        Size desiredSize_{};
-        Rect bounds_{};
-        std::vector<std::unique_ptr<Element>> children_;
+        ElementType type;
+        std::string id;
+        std::string text;
+        float fontSize = 16.0f;
+        std::string fontFamily;
+        std::string fontWeight;
+        attr::Color foreground{};
+        attr::Orientation orientation = attr::Orientation::vertical;
+        attr::Color background{0.0f, 0.0f, 0.0f, 0.0f};
+        attr::Color borderColor{0.0f, 0.0f, 0.0f, 0.0f};
+        attr::Thickness margin{};
+        attr::Thickness padding{};
+        attr::Thickness borderThickness{};
+        float cornerRadius = 0.0f;
+        float width = 0.0f;
+        float height = 0.0f;
+        bool isOn = false;
+        Size desiredSize{};
+        Rect bounds{};
+        std::vector<std::unique_ptr<Element>> children;
     };
 
     void layout(Element& root, Size availableSize);
