@@ -1,0 +1,10 @@
+# .NET/WPF build artifacts
+bin/
+obj/
+
+# NativeBridge build artifacts
+NativeBridge/bin/
+NativeBridge/obj/
+
+# UtilityHelpersLib Visual Studio build artifacts
+!VS_TMP/
