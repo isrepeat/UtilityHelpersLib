@@ -166,6 +166,9 @@ namespace xaml {
         Rect Bounds() const;
         void SetBounds(Rect value);
 
+        Rect ClipBounds() const;
+        void SetClipBounds(Rect value);
+
         const std::vector<std::unique_ptr<Element>>& Children() const;
         std::vector<std::unique_ptr<Element>>& Children();
         void AddChild(std::unique_ptr<Element> child);
@@ -202,6 +205,7 @@ namespace xaml {
         float opacity = 1.0f;
         Size desiredSize{};
         Rect bounds{};
+        Rect clipBounds{};
         std::vector<std::unique_ptr<Element>> children;
     };
 

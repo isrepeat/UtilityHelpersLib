@@ -1,8 +1,19 @@
 #include "XamlRuntime/XamlLayout.h"
+
 #include <algorithm>
 #include <sstream>
 
 namespace xaml::_details {
+    size_t utf8Length(const std::string& text) {
+        size_t result = 0;
+        for (const unsigned char character : text) {
+            if ((character & 0xC0) != 0x80) {
+                ++result;
+            }
+        }
+        return result;
+    }
+
     float horizontal(const attr::Thickness& thickness) {
         return thickness.left + thickness.right;
     }
@@ -17,6 +28,19 @@ namespace xaml::_details {
             bounds.y + thickness.top,
             std::max(0.0f, bounds.width - horizontal(thickness)),
             std::max(0.0f, bounds.height - vertical(thickness)),
+        };
+    }
+
+    Rect intersect(Rect first, Rect second) {
+        const float left = std::max(first.x, second.x);
+        const float top = std::max(first.y, second.y);
+        const float right = std::min(first.x + first.width, second.x + second.width);
+        const float bottom = std::min(first.y + first.height, second.y + second.height);
+        return {
+            left,
+            top,
+            std::max(0.0f, right - left),
+            std::max(0.0f, bottom - top),
         };
     }
 
@@ -46,7 +70,7 @@ namespace xaml::_details {
         // метрика шрифта появится позже; пока ширина текста оценивается.
         if (element.Type() == ElementType::textBlock || element.Type() == ElementType::button) {
             Size result{
-                std::max(1.0f, static_cast<float>(element.Text().size()) * element.FontSize() * 0.55f),
+                std::max(1.0f, static_cast<float>(utf8Length(element.Text())) * element.FontSize() * 0.55f),
                 element.FontSize() * 1.25f,
             };
             if (element.Type() == ElementType::button) {
@@ -149,11 +173,12 @@ namespace xaml::_details {
         return sizes;
     }
 
-    void arrange(Element& element, Rect bounds) {
+    void arrange(Element& element, Rect bounds, Rect parentClipBounds) {
         // Второй проход выдаёт каждому элементу конечный прямоугольник
         // сверху вниз. StackPanel центрирует детей по поперечной оси.
         const Rect elementBounds = inset(bounds, element.Margin());
         element.SetBounds(elementBounds);
+        element.SetClipBounds(intersect(elementBounds, parentClipBounds));
         const attr::Thickness paddingAndBorder{
             element.Padding().left + element.BorderThickness().left,
             element.Padding().right + element.BorderThickness().right,
@@ -171,7 +196,7 @@ namespace xaml::_details {
                         child->VerticalAlignmentValue(), contentBounds.height, childSize.height),
                     alignedSize(child->HorizontalAlignmentValue(), contentBounds.width, childSize.width),
                     alignedSize(child->VerticalAlignmentValue(), contentBounds.height, childSize.height),
-                });
+                }, element.ClipBounds());
             }
             return;
         }
@@ -197,7 +222,7 @@ namespace xaml::_details {
                     y + alignedOffset(child->VerticalAlignmentValue(), rowSizes[row], childSize.height),
                     alignedSize(child->HorizontalAlignmentValue(), columnSizes[column], childSize.width),
                     alignedSize(child->VerticalAlignmentValue(), rowSizes[row], childSize.height),
-                });
+                }, element.ClipBounds());
             }
             return;
         }
@@ -212,7 +237,7 @@ namespace xaml::_details {
                 childBounds = {cursor, contentBounds.y + alignedOffset(child->VerticalAlignmentValue(), contentBounds.height, size.height), size.width, alignedSize(child->VerticalAlignmentValue(), contentBounds.height, size.height)};
                 cursor += size.width;
             }
-            arrange(*child, childBounds);
+            arrange(*child, childBounds, element.ClipBounds());
         }
     }
 }
@@ -466,6 +491,14 @@ namespace xaml {
         this->bounds = value;
     }
 
+    Rect Element::ClipBounds() const {
+        return this->clipBounds;
+    }
+
+    void Element::SetClipBounds(Rect value) {
+        this->clipBounds = value;
+    }
+
     const std::vector<std::unique_ptr<Element>>& Element::Children() const {
         return this->children;
     }
@@ -491,14 +524,18 @@ namespace xaml {
         // контейнеры, не меняя контракт визуального дерева.
         const Size desired = _details::measure(root);
         if (root.Type() == ElementType::page) {
-            _details::arrange(root, {0.0f, 0.0f, availableSize.width, availableSize.height});
+            _details::arrange(
+                root,
+                {0.0f, 0.0f, availableSize.width, availableSize.height},
+                {0.0f, 0.0f, availableSize.width, availableSize.height});
             return;
         }
-        _details::arrange(root, {
+        const Rect rootBounds{
             (availableSize.width - desired.width) / 2.0f,
             (availableSize.height - desired.height) / 2.0f,
             desired.width,
             desired.height,
-        });
+        };
+        _details::arrange(root, rootBounds, rootBounds);
     }
 }

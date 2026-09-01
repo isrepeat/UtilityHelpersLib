@@ -230,13 +230,15 @@ namespace {
             };
             const auto namedColor = namedColors.find(value);
             const std::string normalized = namedColor == namedColors.end() ? value : namedColor->second;
-            if (normalized.size() != 7 || normalized.front() != '#') {
-                throw std::runtime_error(name + " must use #RRGGBB or a supported color name");
+            if ((normalized.size() != 7 && normalized.size() != 9) || normalized.front() != '#') {
+                throw std::runtime_error(name + " must use #RRGGBB, #AARRGGBB or a supported color name");
             }
             const unsigned long color = std::stoul(normalized.substr(1), nullptr, 16);
+            const unsigned long alpha = normalized.size() == 9 ? (color >> 24) & 0xff : 0xff;
             return "attr::Color{" + std::to_string((color >> 16) & 0xff) + ".0f / 255.0f, "
                 + std::to_string((color >> 8) & 0xff) + ".0f / 255.0f, "
-                + std::to_string(color & 0xff) + ".0f / 255.0f, 1.0f}";
+                + std::to_string(color & 0xff) + ".0f / 255.0f, "
+                + std::to_string(alpha) + ".0f / 255.0f}";
         }
 
         bool TryEmitBinding(

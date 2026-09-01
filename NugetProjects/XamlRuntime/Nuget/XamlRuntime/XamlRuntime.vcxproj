@@ -21,7 +21,15 @@
         </ClCompile>
     </ItemDefinitionGroup>
     <ItemGroup>
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\Binding.cpp" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\ElementBuilder.cpp" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\Input.cpp" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\RenderEngine.cpp" />
         <ClCompile Include="XamlRuntime.Shared\XamlRuntime\XamlLayout.cpp" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\Binding.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\ElementBuilder.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\Input.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RenderEngine.h" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\XamlLayout.h" />
         <None Include="CMakeLists.txt" />
     </ItemGroup>
