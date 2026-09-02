@@ -43,7 +43,7 @@ namespace xaml::bridge {
         Implementation& operator=(const Implementation&) = delete;
 
         void Render(
-            const Element& root,
+            Element& root,
             unsigned char* destination,
             int destinationStride);
 
@@ -138,7 +138,7 @@ namespace xaml::bridge {
     }
 
     void AngleRenderSurface::Implementation::Render(
-        const Element& root,
+        Element& root,
         unsigned char* destination,
         int destinationStride) {
         if (destination == nullptr || destinationStride < this->width * 4) {
@@ -192,7 +192,7 @@ namespace xaml::bridge {
     // API
     //
     void AngleRenderSurface::Render(
-        const Element& root,
+        Element& root,
         unsigned char* destination,
         int destinationStride) {
         this->implementation->Render(root, destination, destinationStride);

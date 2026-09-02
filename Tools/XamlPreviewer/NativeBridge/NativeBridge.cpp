@@ -175,7 +175,7 @@ int xr_render(
             throw std::invalid_argument("root is required");
         }
         xaml::bridge::RecordingBackend backend;
-        xaml::Render(*reinterpret_cast<const xaml::Element*>(root), backend);
+        xaml::Render(*reinterpret_cast<xaml::Element*>(const_cast<xr_element*>(root)), backend);
         const auto& commands = backend.Commands();
         if (destination != nullptr && capacity > 0) {
             const size_t count = std::min(commands.size(), static_cast<size_t>(capacity));
@@ -206,7 +206,7 @@ int xr_render_angle(
 
         xaml::bridge::AngleRenderSurface surface(width, height, fontPath);
         surface.Render(
-            *reinterpret_cast<const xaml::Element*>(root),
+            *reinterpret_cast<xaml::Element*>(const_cast<xr_element*>(root)),
             destination,
             destinationStride);
         return 1;

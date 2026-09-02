@@ -358,13 +358,16 @@ namespace es_renderer {
         constexpr float pi = 3.14159265358979323846f;
         // Радиус ограничивается половиной каждой стороны: иначе дуги углов
         // пересекаются на очень узких прямоугольниках.
-        const float radius = std::min({
-            cornerRadius,
-            bounds.width / 2.0f,
-            bounds.height / 2.0f,
-        });
+        const float maximumRadius = std::max(
+            0.0f,
+            std::min(bounds.width / 2.0f, bounds.height / 2.0f));
+        const float radius = std::clamp(cornerRadius, 0.0f, maximumRadius);
+        const float borderThickness = std::clamp(thickness, 0.0f, maximumRadius);
+        if (outline && borderThickness <= 0.0f) {
+            return;
+        }
         std::vector<float> vertices;
-        vertices.reserve((outline ? 32 : 34) * 2);
+        vertices.reserve((outline ? 66 : 34) * 2);
         // Для заливки центр вместе с обходом границы образует triangle fan;
         // для контура требуются только точки по периметру.
         if (!outline) {
@@ -382,6 +385,25 @@ namespace es_renderer {
             {bounds.x + radius, bounds.y + bounds.height - radius},
             {bounds.x + radius, bounds.y + radius},
         };
+        const float innerRadius = std::max(0.0f, radius - borderThickness);
+        const float innerCenters[][2] = {
+            {
+                bounds.x + bounds.width - borderThickness - innerRadius,
+                bounds.y + borderThickness + innerRadius,
+            },
+            {
+                bounds.x + bounds.width - borderThickness - innerRadius,
+                bounds.y + bounds.height - borderThickness - innerRadius,
+            },
+            {
+                bounds.x + borderThickness + innerRadius,
+                bounds.y + bounds.height - borderThickness - innerRadius,
+            },
+            {
+                bounds.x + borderThickness + innerRadius,
+                bounds.y + borderThickness + innerRadius,
+            },
+        };
         for (int corner = 0; corner < 4; ++corner) {
             const float startAngle = -pi / 2.0f + static_cast<float>(corner) * pi / 2.0f;
             for (int segment = 0; segment < segmentsPerCorner; ++segment) {
@@ -391,9 +413,22 @@ namespace es_renderer {
                     vertices,
                     centers[corner][0] + std::cos(angle) * radius,
                     centers[corner][1] + std::sin(angle) * radius);
+                if (outline) {
+                    this->AppendPosition(
+                        vertices,
+                        innerCenters[corner][0] + std::cos(angle) * innerRadius,
+                        innerCenters[corner][1] + std::sin(angle) * innerRadius);
+                }
             }
         }
-        if (!outline) {
+        if (outline) {
+            this->AppendPosition(vertices, centers[0][0], bounds.y);
+            this->AppendPosition(
+                vertices,
+                innerCenters[0][0],
+                bounds.y + borderThickness);
+        }
+        else {
             this->AppendPosition(
                 vertices,
                 bounds.x + bounds.width - radius,
@@ -416,8 +451,7 @@ namespace es_renderer {
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), nullptr);
         if (outline) {
-            glLineWidth(thickness);
-            glDrawArrays(GL_LINE_LOOP, 0, static_cast<GLsizei>(vertices.size() / 2));
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, static_cast<GLsizei>(vertices.size() / 2));
         }
         else {
             glDrawArrays(GL_TRIANGLE_FAN, 0, static_cast<GLsizei>(vertices.size() / 2));

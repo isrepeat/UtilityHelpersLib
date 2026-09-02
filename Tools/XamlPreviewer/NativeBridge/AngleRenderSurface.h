@@ -18,7 +18,7 @@ namespace xaml::bridge {
         AngleRenderSurface& operator=(const AngleRenderSurface&) = delete;
 
         void Render(
-            const Element& root,
+            Element& root,
             unsigned char* destination,
             int destinationStride);
 

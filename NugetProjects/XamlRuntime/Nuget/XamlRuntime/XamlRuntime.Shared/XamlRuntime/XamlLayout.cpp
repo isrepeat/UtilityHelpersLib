@@ -264,7 +264,11 @@ namespace xaml {
     }
 
     void Element::SetText(std::string value) {
+        if (this->text == value) {
+            return;
+        }
         this->text = std::move(value);
+        this->InvalidateLayout();
     }
 
     float Element::FontSize() const {
@@ -508,7 +512,16 @@ namespace xaml {
     }
 
     void Element::AddChild(std::unique_ptr<Element> child) {
+        child->parent = this;
         this->children.push_back(std::move(child));
+        this->InvalidateLayout();
+    }
+
+    void Element::InvalidateLayout() {
+        this->layoutInvalid = true;
+        if (this->parent != nullptr) {
+            this->parent->InvalidateLayout();
+        }
     }
 
     Element& ElementAt(Element& root, std::initializer_list<size_t> path) {
@@ -528,6 +541,8 @@ namespace xaml {
                 root,
                 {0.0f, 0.0f, availableSize.width, availableSize.height},
                 {0.0f, 0.0f, availableSize.width, availableSize.height});
+            root.availableSize = availableSize;
+            root.layoutInvalid = false;
             return;
         }
         const Rect rootBounds{
@@ -537,5 +552,7 @@ namespace xaml {
             desired.height,
         };
         _details::arrange(root, rootBounds, rootBounds);
+        root.availableSize = availableSize;
+        root.layoutInvalid = false;
     }
 }

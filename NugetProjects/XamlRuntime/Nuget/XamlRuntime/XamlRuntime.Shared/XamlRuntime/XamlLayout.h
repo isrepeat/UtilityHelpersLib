@@ -7,6 +7,8 @@
 #include <vector>
 
 namespace xaml {
+    class IRenderBackend;
+
     enum class ElementType {
         page,
         stackPanel,
@@ -174,6 +176,12 @@ namespace xaml {
         void AddChild(std::unique_ptr<Element> child);
 
     private:
+        void InvalidateLayout();
+
+        friend void layout(Element& root, Size availableSize);
+        friend void Render(Element& root, IRenderBackend& backend);
+
+    private:
         ElementType type;
         std::string id;
         std::string text;
@@ -206,6 +214,9 @@ namespace xaml {
         Size desiredSize{};
         Rect bounds{};
         Rect clipBounds{};
+        Element* parent = nullptr;
+        Size availableSize{};
+        bool layoutInvalid = true;
         std::vector<std::unique_ptr<Element>> children;
     };
 

@@ -129,7 +129,10 @@ namespace xaml::_details {
 }
 
 namespace xaml {
-    void Render(const Element& root, IRenderBackend& backend) {
+    void Render(Element& root, IRenderBackend& backend) {
+        if (root.layoutInvalid) {
+            layout(root, root.availableSize);
+        }
         _details::RenderElement(root, backend);
     }
 }

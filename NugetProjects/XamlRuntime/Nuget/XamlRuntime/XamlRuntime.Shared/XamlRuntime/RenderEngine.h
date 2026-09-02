@@ -33,5 +33,5 @@ namespace xaml {
             attr::Color tint) = 0;
     };
 
-    void Render(const Element& root, IRenderBackend& backend);
+    void Render(Element& root, IRenderBackend& backend);
 }
