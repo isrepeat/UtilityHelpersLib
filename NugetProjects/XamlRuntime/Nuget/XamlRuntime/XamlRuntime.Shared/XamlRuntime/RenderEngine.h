@@ -26,7 +26,8 @@ namespace xaml {
             std::string_view text,
             attr::Color color,
             float fontSize,
-            std::string_view fontWeight) = 0;
+            std::string_view fontWeight,
+            attr::Alignment horizontalAlignment) = 0;
         virtual void DrawImage(
             const Rect& bounds,
             std::string_view source,

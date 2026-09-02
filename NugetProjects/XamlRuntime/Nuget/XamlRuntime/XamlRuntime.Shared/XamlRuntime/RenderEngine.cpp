@@ -22,30 +22,7 @@ namespace xaml::_details {
     }
 
     void RenderSvgImage(const Element& element, IRenderBackend& backend) {
-        const Rect bounds = element.Bounds();
-        const attr::Color tint = element.Tint();
-        if (element.Source() == "Icons/add.svg") {
-            const float thickness = std::max(2.0f, bounds.width * 0.12f);
-            backend.DrawRoundedRect(
-                {bounds.x, bounds.y + (bounds.height - thickness) / 2.0f, bounds.width, thickness},
-                tint,
-                thickness / 2.0f);
-            backend.DrawRoundedRect(
-                {bounds.x + (bounds.width - thickness) / 2.0f, bounds.y, thickness, bounds.height},
-                tint,
-                thickness / 2.0f);
-            return;
-        }
-        if (element.Source() == "Icons/settings.svg") {
-            const float centerX = bounds.x + bounds.width / 2.0f;
-            const float centerY = bounds.y + bounds.height / 2.0f;
-            backend.DrawRoundedRect(bounds, tint, bounds.width / 2.0f);
-            const float hole = bounds.width * 0.34f;
-            backend.DrawRoundedRect(
-                {centerX - hole / 2.0f, centerY - hole / 2.0f, hole, hole},
-                {0.16f, 0.164f, 0.137f, 1.0f},
-                hole / 2.0f);
-        }
+        backend.DrawImage(element.Bounds(), element.Source(), element.Tint());
     }
 
     void RenderChrome(const Element& element, IRenderBackend& backend) {
@@ -103,7 +80,8 @@ namespace xaml::_details {
                 element.Text(),
                 element.Foreground(),
                 element.FontSize(),
-                element.FontWeight());
+                element.FontWeight(),
+                element.HorizontalAlignmentValue());
         } else if (element.Type() == ElementType::button
             || element.Type() == ElementType::iconButton) {
             backend.DrawOutline(element.Bounds(), element.Foreground());
@@ -112,7 +90,8 @@ namespace xaml::_details {
                 element.Text(),
                 element.Foreground(),
                 element.FontSize(),
-                element.FontWeight());
+                element.FontWeight(),
+                element.HorizontalAlignmentValue());
         } else if (element.Type() == ElementType::toggleSwitch) {
             RenderToggleSwitch(element, backend);
         } else if (element.Type() == ElementType::image) {
