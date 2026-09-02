@@ -1,4 +1,3 @@
-# Platform-specific static library delivered by the XamlRuntime package.
 add_library(utility_helpers_xaml_runtime STATIC
     XamlRuntime.Shared/XamlRuntime/Binding.cpp
     XamlRuntime.Shared/XamlRuntime/Binding.h
@@ -25,7 +24,6 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/XamlRuntime.Shared" FILES
     XamlRuntime.Shared/XamlRuntime/XamlLayout.cpp
     XamlRuntime.Shared/XamlRuntime/XamlLayout.h
 )
-
 target_include_directories(utility_helpers_xaml_runtime PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/XamlRuntime.Shared>"
 )

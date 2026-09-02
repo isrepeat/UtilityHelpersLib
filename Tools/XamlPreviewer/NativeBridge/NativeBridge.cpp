@@ -197,8 +197,6 @@ int xr_render_angle(
     int destinationStride,
     int destinationCapacity) {
     try {
-        // Сначала записываем универсальные команды XamlRuntime, затем выполняем
-        // их offscreen через EGL/ANGLE и возвращаем готовый BGRA-кадр в C#.
         xaml::bridge::lastError.clear();
         if (root == nullptr || fontPath == nullptr || destination == nullptr
             || width <= 0 || height <= 0 || destinationStride < width * 4
@@ -206,12 +204,9 @@ int xr_render_angle(
             throw std::invalid_argument("Invalid ANGLE render arguments");
         }
 
-        xaml::bridge::RecordingBackend backend;
-        xaml::Render(*reinterpret_cast<const xaml::Element*>(root), backend);
         xaml::bridge::AngleRenderSurface surface(width, height, fontPath);
         surface.Render(
-            backend.Commands().data(),
-            static_cast<int>(backend.Commands().size()),
+            *reinterpret_cast<const xaml::Element*>(root),
             destination,
             destinationStride);
         return 1;

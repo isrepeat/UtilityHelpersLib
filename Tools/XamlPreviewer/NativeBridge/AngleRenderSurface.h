@@ -1,9 +1,11 @@
 #pragma once
 
-#include "NativeBridge.h"
-
 #include <memory>
 #include <string_view>
+
+namespace xaml {
+    class Element;
+}
 
 namespace xaml::bridge {
     // Изолирует EGL pbuffer и OpenGL ES ресурсы от C ABI native bridge.
@@ -16,8 +18,7 @@ namespace xaml::bridge {
         AngleRenderSurface& operator=(const AngleRenderSurface&) = delete;
 
         void Render(
-            const xr_command* commands,
-            int commandCount,
+            const Element& root,
             unsigned char* destination,
             int destinationStride);
 
