@@ -21,12 +21,14 @@
         </ClCompile>
     </ItemDefinitionGroup>
     <ItemGroup>
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\Animation.cpp" />
         <ClCompile Include="XamlRuntime.Shared\XamlRuntime\Binding.cpp" />
         <ClCompile Include="XamlRuntime.Shared\XamlRuntime\ElementBuilder.cpp" />
         <ClCompile Include="XamlRuntime.Shared\XamlRuntime\XamlAttribute.cpp" />
         <ClCompile Include="XamlRuntime.Shared\XamlRuntime\Input.cpp" />
         <ClCompile Include="XamlRuntime.Shared\XamlRuntime\RenderEngine.cpp" />
         <ClCompile Include="XamlRuntime.Shared\XamlRuntime\XamlLayout.cpp" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\Animation.h" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\Binding.h" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\ElementBuilder.h" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\XamlAttribute.h" />

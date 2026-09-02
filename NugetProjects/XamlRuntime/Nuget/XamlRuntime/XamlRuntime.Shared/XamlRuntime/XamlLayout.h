@@ -162,6 +162,12 @@ namespace xaml {
         float Opacity() const;
         void SetOpacity(float value);
 
+        float RenderOffsetX() const;
+        void SetRenderOffsetX(float value);
+
+        float ToggleProgress() const;
+        void SetToggleProgress(float value);
+
         Size DesiredSize() const;
         void SetDesiredSize(Size value);
 
@@ -211,6 +217,8 @@ namespace xaml {
         attr::Visibility visibility = attr::Visibility::visible;
         bool isEnabled = true;
         float opacity = 1.0f;
+        float renderOffsetX = 0.0f;
+        float toggleProgress = -1.0f;
         Size desiredSize{};
         Rect bounds{};
         Rect clipBounds{};

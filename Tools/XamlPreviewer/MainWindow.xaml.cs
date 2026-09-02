@@ -10,11 +10,13 @@ namespace XamlPreviewer;
 
 public partial class MainWindow : Window {
     private readonly DispatcherTimer renderTimer;
+    private readonly DispatcherTimer animationTimer;
     private readonly DispatcherTimer externalRefreshTimer;
     private readonly MarkupEditorController markupEditorController;
     private FileSystemWatcher? markupWatcher;
     private FileSystemWatcher? scenariosWatcher;
     private FileSystemWatcher? settingsWatcher;
+    private PreviewSession? previewSession;
     private PreviewerSettings settings = null!;
     private string? markupPath;
     private bool updatingEditors;
@@ -36,6 +38,10 @@ public partial class MainWindow : Window {
             Interval = TimeSpan.FromMilliseconds(250)
         };
         this.renderTimer.Tick += this.RenderTimerTick;
+        this.animationTimer = new DispatcherTimer {
+            Interval = TimeSpan.FromMilliseconds(16)
+        };
+        this.animationTimer.Tick += this.AnimationTimerTick;
         this.externalRefreshTimer = new DispatcherTimer {
             Interval = TimeSpan.FromMilliseconds(200)
         };
@@ -177,10 +183,12 @@ public partial class MainWindow : Window {
             var data = scenarioName is not null && scenarios.TryGetProperty(scenarioName, out var selected)
                 ? selected
                 : scenarios;
-            this.DeviceSurface.Child = PreviewRenderer.Render(
-                this.markupEditorController.Text,
-                data,
-                this.settings.ResourcesDirectory);
+            var root = PreviewRenderer.CreateRoot(this.markupEditorController.Text, data);
+            var session = new PreviewSession(root, this.settings.ResourcesDirectory);
+            session.AnimationStarted += this.PreviewSessionAnimationStarted;
+            this.previewSession?.Dispose();
+            this.previewSession = session;
+            this.DeviceSurface.Child = session.Surface;
             this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
             this.StatusText.Text = $"Предпросмотр обновлён · {DateTime.Now:HH:mm:ss}";
         }
@@ -188,6 +196,16 @@ public partial class MainWindow : Window {
             this.StatusText.Foreground = PreviewRenderer.ParseBrush("#FF8A80");
             this.StatusText.Text = exception.Message;
         }
+    }
+
+    private void AnimationTimerTick(object? sender, EventArgs eventArgs) {
+        if (this.previewSession is null || !this.previewSession.Update()) {
+            this.animationTimer.Stop();
+        }
+    }
+
+    private void PreviewSessionAnimationStarted(object? sender, EventArgs eventArgs) {
+        this.animationTimer.Start();
     }
 
     private void LoadMarkup(string path) {
@@ -348,6 +366,8 @@ public partial class MainWindow : Window {
 
     private void WindowClosing(object? sender, System.ComponentModel.CancelEventArgs eventArgs) {
         this.SaveSettings();
+        this.animationTimer.Stop();
+        this.previewSession?.Dispose();
         this.markupWatcher?.Dispose();
         this.scenariosWatcher?.Dispose();
         this.settingsWatcher?.Dispose();

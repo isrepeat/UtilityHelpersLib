@@ -1,11 +1,14 @@
 #include "NativeBridge.h"
 #include "AngleRenderSurface.h"
 
+#include <XamlRuntime/Animation.h>
 #include <XamlRuntime/ElementBuilder.h>
+#include <XamlRuntime/Input.h>
 #include <XamlRuntime/RenderEngine.h>
 #include <XamlRuntime/XamlLayout.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cstring>
 #include <memory>
 #include <stdexcept>
@@ -99,6 +102,26 @@ namespace xaml::bridge {
     thread_local std::string lastError;
 }
 
+struct xr_animation_controller {
+    xaml::AnimationController value;
+};
+
+struct xr_angle_surface {
+    explicit xr_angle_surface(
+        int width,
+        int height,
+        const char* fontPath,
+        const char* resourceRoot)
+        : width(width)
+        , height(height)
+        , value(width, height, fontPath, resourceRoot) {
+    }
+
+    int width;
+    int height;
+    xaml::bridge::AngleRenderSurface value;
+};
+
 const char* xr_last_error(void) {
     return xaml::bridge::lastError.c_str();
 }
@@ -159,6 +182,119 @@ int xr_layout(xr_element* root, float width, float height) {
             throw std::invalid_argument("root is required");
         }
         xaml::layout(*reinterpret_cast<xaml::Element*>(root), {width, height});
+        return 1;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return 0;
+    }
+}
+
+xr_element* xr_hit_test(xr_element* root, float x, float y) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (root == nullptr) {
+            throw std::invalid_argument("root is required");
+        }
+        return reinterpret_cast<xr_element*>(xaml::HitTest(
+            *reinterpret_cast<xaml::Element*>(root), x, y));
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return nullptr;
+    }
+}
+
+int xr_handle_tap(xr_element* element, xr_animation_controller* animations) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (element == nullptr || animations == nullptr) {
+            throw std::invalid_argument("element and animations are required");
+        }
+        xaml::Element& target = *reinterpret_cast<xaml::Element*>(element);
+        const bool wasOn = target.IsOn();
+        if (!xaml::HandleTap(target)) {
+            return 0;
+        }
+        if (target.Type() == xaml::ElementType::toggleSwitch) {
+            animations->value.Animate(
+                target,
+                xaml::AnimatedProperty::toggleProgress,
+                wasOn ? 1.0f : 0.0f,
+                wasOn ? 0.0f : 1.0f,
+                std::chrono::milliseconds(120));
+        }
+        return 1;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return 0;
+    }
+}
+
+xr_animation_controller* xr_create_animation_controller(void) {
+    try {
+        xaml::bridge::lastError.clear();
+        return new xr_animation_controller();
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return nullptr;
+    }
+}
+
+void xr_destroy_animation_controller(xr_animation_controller* animations) {
+    delete animations;
+}
+
+int xr_update_animations(xr_animation_controller* animations) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (animations == nullptr) {
+            throw std::invalid_argument("animations are required");
+        }
+        animations->value.Update();
+        return animations->value.IsAnimating() ? 1 : 0;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return -1;
+    }
+}
+
+xr_angle_surface* xr_create_angle_surface(
+    int width,
+    int height,
+    const char* fontPath,
+    const char* resourceRoot) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (fontPath == nullptr || resourceRoot == nullptr) {
+            throw std::invalid_argument("fontPath and resourceRoot are required");
+        }
+        return new xr_angle_surface(width, height, fontPath, resourceRoot);
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return nullptr;
+    }
+}
+
+void xr_destroy_angle_surface(xr_angle_surface* surface) {
+    delete surface;
+}
+
+int xr_render_angle_surface(
+    xr_angle_surface* surface,
+    const xr_element* root,
+    unsigned char* destination,
+    int destinationStride,
+    int destinationCapacity) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (surface == nullptr || root == nullptr || destination == nullptr
+            || destinationStride < surface->width * 4
+            || destinationCapacity / destinationStride < surface->height) {
+            throw std::invalid_argument("Invalid persistent ANGLE render arguments");
+        }
+        surface->value.Render(
+            *reinterpret_cast<xaml::Element*>(const_cast<xr_element*>(root)),
+            destination,
+            destinationStride);
         return 1;
     } catch (const std::exception& error) {
         xaml::bridge::lastError = error.what();

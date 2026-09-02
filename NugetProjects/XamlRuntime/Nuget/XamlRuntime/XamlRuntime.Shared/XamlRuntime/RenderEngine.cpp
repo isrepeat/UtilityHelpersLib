@@ -3,21 +3,48 @@
 #include <algorithm>
 
 namespace xaml::_details {
-    void RenderToggleSwitch(const Element& element, IRenderBackend& backend) {
-        const Rect bounds = element.Bounds();
-        const bool isOn = element.IsOn();
+    Rect Translate(Rect bounds, float offsetX) {
+        bounds.x += offsetX;
+        return bounds;
+    }
+
+    attr::Color WithOpacity(attr::Color color, float opacity) {
+        color.alpha *= opacity;
+        return color;
+    }
+
+    attr::Color InterpolateColor(attr::Color from, attr::Color to, float progress) {
+        return {
+            from.red + (to.red - from.red) * progress,
+            from.green + (to.green - from.green) * progress,
+            from.blue + (to.blue - from.blue) * progress,
+            from.alpha + (to.alpha - from.alpha) * progress,
+        };
+    }
+
+    void RenderToggleSwitch(
+        const Element& element,
+        IRenderBackend& backend,
+        Rect bounds,
+        float opacity) {
+        const float targetProgress = element.IsOn() ? 1.0f : 0.0f;
+        const float progress = element.ToggleProgress() < 0.0f
+            ? targetProgress : element.ToggleProgress();
         backend.DrawRoundedRect(
             bounds,
-            isOn ? element.Background() : element.BorderColor(),
+            WithOpacity(
+                InterpolateColor(element.BorderColor(), element.Background(), progress),
+                opacity),
             bounds.height / 2.0f);
         const float inset = 4.0f;
         const float thumbSize = std::max(0.0f, bounds.height - inset * 2.0f);
-        const float thumbX = isOn
-            ? bounds.x + bounds.width - inset - thumbSize
-            : bounds.x + inset;
+        const float thumbX = bounds.x + inset
+            + (bounds.width - inset * 2.0f - thumbSize) * progress;
         backend.DrawRoundedRect(
             {thumbX, bounds.y + inset, thumbSize, thumbSize},
-            isOn ? element.Foreground() : element.Tint(),
+            WithOpacity(
+                InterpolateColor(element.Tint(), element.Foreground(), progress),
+                opacity),
             thumbSize / 2.0f);
     }
 
@@ -25,7 +52,11 @@ namespace xaml::_details {
         backend.DrawImage(element.Bounds(), element.Source(), element.Tint());
     }
 
-    void RenderChrome(const Element& element, IRenderBackend& backend) {
+    void RenderChrome(
+        const Element& element,
+        IRenderBackend& backend,
+        Rect bounds,
+        float opacity) {
         if (element.Type() == ElementType::toggleSwitch) {
             return;
         }
@@ -39,22 +70,24 @@ namespace xaml::_details {
         });
         if (thickness <= 0.0f) {
             backend.DrawRoundedRect(
-                element.Bounds(),
-                element.Background(),
+                bounds,
+                WithOpacity(element.Background(), opacity),
                 element.CornerRadius());
             return;
         }
         if (element.Background().alpha <= 0.0f) {
             backend.DrawRoundedRectOutline(
-                element.Bounds(),
-                element.BorderColor(),
+                bounds,
+                WithOpacity(element.BorderColor(), opacity),
                 element.CornerRadius(),
                 thickness);
             return;
         }
 
-        const Rect bounds = element.Bounds();
-        backend.DrawRoundedRect(bounds, element.BorderColor(), element.CornerRadius());
+        backend.DrawRoundedRect(
+            bounds,
+            WithOpacity(element.BorderColor(), opacity),
+            element.CornerRadius());
         const Rect innerBounds{
             bounds.x + borderThickness.left,
             bounds.y + borderThickness.top,
@@ -63,45 +96,52 @@ namespace xaml::_details {
         };
         backend.DrawRoundedRect(
             innerBounds,
-            element.Background(),
+            WithOpacity(element.Background(), opacity),
             std::max(0.0f, element.CornerRadius() - thickness));
     }
 
-    void RenderElement(const Element& element, IRenderBackend& backend) {
+    void RenderElement(
+        const Element& element,
+        IRenderBackend& backend,
+        float inheritedOffsetX,
+        float inheritedOpacity) {
         if (element.VisibilityValue() != attr::Visibility::visible) {
             return;
         }
 
-        backend.BeginClip(element.ClipBounds());
-        RenderChrome(element, backend);
+        const float offsetX = inheritedOffsetX + element.RenderOffsetX();
+        const float opacity = inheritedOpacity * element.Opacity();
+        const Rect bounds = Translate(element.Bounds(), offsetX);
+        backend.BeginClip(Translate(element.ClipBounds(), offsetX));
+        RenderChrome(element, backend, bounds, opacity);
         if (element.Type() == ElementType::textBlock) {
             backend.DrawText(
-                element.Bounds(),
+                bounds,
                 element.Text(),
-                element.Foreground(),
+                WithOpacity(element.Foreground(), opacity),
                 element.FontSize(),
                 element.FontWeight(),
                 element.HorizontalAlignmentValue());
         } else if (element.Type() == ElementType::button
             || element.Type() == ElementType::iconButton) {
-            backend.DrawOutline(element.Bounds(), element.Foreground());
+            backend.DrawOutline(bounds, WithOpacity(element.Foreground(), opacity));
             backend.DrawText(
-                element.Bounds(),
+                bounds,
                 element.Text(),
-                element.Foreground(),
+                WithOpacity(element.Foreground(), opacity),
                 element.FontSize(),
                 element.FontWeight(),
                 element.HorizontalAlignmentValue());
         } else if (element.Type() == ElementType::toggleSwitch) {
-            RenderToggleSwitch(element, backend);
+            RenderToggleSwitch(element, backend, bounds, opacity);
         } else if (element.Type() == ElementType::image) {
-            backend.DrawImage(element.Bounds(), element.Source(), element.Tint());
+            backend.DrawImage(bounds, element.Source(), WithOpacity(element.Tint(), opacity));
         } else if (element.Type() == ElementType::svgImage) {
-            RenderSvgImage(element, backend);
+            backend.DrawImage(bounds, element.Source(), WithOpacity(element.Tint(), opacity));
         }
 
         for (const auto& child : element.Children()) {
-            RenderElement(*child, backend);
+            RenderElement(*child, backend, offsetX, opacity);
         }
         backend.EndClip();
     }
@@ -112,6 +152,6 @@ namespace xaml {
         if (root.layoutInvalid) {
             layout(root, root.availableSize);
         }
-        _details::RenderElement(root, backend);
+        _details::RenderElement(root, backend, 0.0f, 1.0f);
     }
 }

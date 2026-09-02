@@ -1,6 +1,8 @@
 add_library(utility_helpers_xaml_runtime STATIC
     XamlRuntime.Shared/XamlRuntime/Binding.cpp
     XamlRuntime.Shared/XamlRuntime/Binding.h
+    XamlRuntime.Shared/XamlRuntime/Animation.cpp
+    XamlRuntime.Shared/XamlRuntime/Animation.h
     XamlRuntime.Shared/XamlRuntime/ElementBuilder.cpp
     XamlRuntime.Shared/XamlRuntime/ElementBuilder.h
     XamlRuntime.Shared/XamlRuntime/Input.cpp
@@ -15,6 +17,8 @@ add_library(utility_helpers::xaml_runtime ALIAS utility_helpers_xaml_runtime)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/XamlRuntime.Shared" FILES
     XamlRuntime.Shared/XamlRuntime/Binding.cpp
     XamlRuntime.Shared/XamlRuntime/Binding.h
+    XamlRuntime.Shared/XamlRuntime/Animation.cpp
+    XamlRuntime.Shared/XamlRuntime/Animation.h
     XamlRuntime.Shared/XamlRuntime/ElementBuilder.cpp
     XamlRuntime.Shared/XamlRuntime/ElementBuilder.h
     XamlRuntime.Shared/XamlRuntime/Input.cpp

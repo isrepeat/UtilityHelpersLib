@@ -29,6 +29,8 @@
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
     <PropertyGroup>
         <TargetName>XamlRuntime.NativeBridge</TargetName>
+        <OutDir>$(SolutionDir)!VS_TMP\Build\$(Configuration)\$(Platform)\$(ProjectName)\</OutDir>
+        <IntDir>$(SolutionDir)!VS_TMP\Intermediate\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
     </PropertyGroup>
     <ItemDefinitionGroup>
         <ClCompile>

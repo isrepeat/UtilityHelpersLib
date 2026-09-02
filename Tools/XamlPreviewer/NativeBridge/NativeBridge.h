@@ -11,6 +11,8 @@ extern "C" {
 #endif
 
 typedef struct xr_element xr_element;
+typedef struct xr_animation_controller xr_animation_controller;
+typedef struct xr_angle_surface xr_angle_surface;
 
 typedef struct xr_rect {
     float x;
@@ -54,6 +56,26 @@ XAML_RUNTIME_BRIDGE_API int xr_set_attribute(
     const char* name,
     const char* value);
 XAML_RUNTIME_BRIDGE_API int xr_layout(xr_element* root, float width, float height);
+XAML_RUNTIME_BRIDGE_API xr_element* xr_hit_test(xr_element* root, float x, float y);
+XAML_RUNTIME_BRIDGE_API int xr_handle_tap(
+    xr_element* element,
+    xr_animation_controller* animations);
+XAML_RUNTIME_BRIDGE_API xr_animation_controller* xr_create_animation_controller(void);
+XAML_RUNTIME_BRIDGE_API void xr_destroy_animation_controller(
+    xr_animation_controller* animations);
+XAML_RUNTIME_BRIDGE_API int xr_update_animations(xr_animation_controller* animations);
+XAML_RUNTIME_BRIDGE_API xr_angle_surface* xr_create_angle_surface(
+    int width,
+    int height,
+    const char* fontPath,
+    const char* resourceRoot);
+XAML_RUNTIME_BRIDGE_API void xr_destroy_angle_surface(xr_angle_surface* surface);
+XAML_RUNTIME_BRIDGE_API int xr_render_angle_surface(
+    xr_angle_surface* surface,
+    const xr_element* root,
+    unsigned char* destination,
+    int destinationStride,
+    int destinationCapacity);
 XAML_RUNTIME_BRIDGE_API int xr_render(
     const xr_element* root,
     xr_command* destination,

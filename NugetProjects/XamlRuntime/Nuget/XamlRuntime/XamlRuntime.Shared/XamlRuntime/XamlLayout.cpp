@@ -479,6 +479,22 @@ namespace xaml {
         this->opacity = value;
     }
 
+    float Element::RenderOffsetX() const {
+        return this->renderOffsetX;
+    }
+
+    void Element::SetRenderOffsetX(float value) {
+        this->renderOffsetX = value;
+    }
+
+    float Element::ToggleProgress() const {
+        return this->toggleProgress;
+    }
+
+    void Element::SetToggleProgress(float value) {
+        this->toggleProgress = value;
+    }
+
     Size Element::DesiredSize() const {
         return this->desiredSize;
     }

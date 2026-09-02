@@ -87,6 +87,39 @@ internal static class NativeRuntime {
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_layout")]
     public static extern int xr_layout(IntPtr root, float width, float height);
 
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_hit_test")]
+    public static extern IntPtr xr_hit_test(IntPtr root, float x, float y);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_handle_tap")]
+    public static extern int xr_handle_tap(IntPtr element, IntPtr animations);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_create_animation_controller")]
+    public static extern IntPtr xr_create_animation_controller();
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_destroy_animation_controller")]
+    public static extern void xr_destroy_animation_controller(IntPtr animations);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_update_animations")]
+    public static extern int xr_update_animations(IntPtr animations);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_create_angle_surface")]
+    public static extern IntPtr xr_create_angle_surface(
+        int width,
+        int height,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string fontPath,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string resourceRoot);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_destroy_angle_surface")]
+    public static extern void xr_destroy_angle_surface(IntPtr surface);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_render_angle_surface")]
+    public static extern int xr_render_angle_surface(
+        IntPtr surface,
+        IntPtr root,
+        [Out] byte[] pixels,
+        int stride,
+        int capacity);
+
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_render")]
     public static extern int xr_render(IntPtr root, [Out] NativeCommand[]? commands, int capacity);
 
