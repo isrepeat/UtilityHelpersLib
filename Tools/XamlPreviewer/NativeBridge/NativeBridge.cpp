@@ -116,13 +116,21 @@ void xr_destroy_element(xr_element* element) {
 }
 
 int xr_add_child(xr_element* parent, xr_element* child) {
-    if (parent == nullptr || child == nullptr) {
-        xaml::bridge::lastError = "parent and child are required";
+    try {
+        xaml::bridge::lastError.clear();
+        if (parent == nullptr || child == nullptr) {
+            throw std::invalid_argument("parent and child are required");
+        }
+        xaml::ValidateChild(
+            *reinterpret_cast<const xaml::Element*>(parent),
+            *reinterpret_cast<const xaml::Element*>(child));
+        reinterpret_cast<xaml::Element*>(parent)->AddChild(
+            std::unique_ptr<xaml::Element>(reinterpret_cast<xaml::Element*>(child)));
+        return 1;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
         return 0;
     }
-    reinterpret_cast<xaml::Element*>(parent)->AddChild(
-        std::unique_ptr<xaml::Element>(reinterpret_cast<xaml::Element*>(child)));
-    return 1;
 }
 
 int xr_set_attribute(

@@ -8,11 +8,13 @@ using System.Xml.Linq;
 
 namespace XamlPreviewer;
 
-internal static partial class PreviewRenderer {
+internal static class PreviewRenderer {
     public static FrameworkElement Render(string markup, JsonElement data, string? markupPath) {
-        var rootNode = XDocument.Parse(markup, LoadOptions.SetLineInfo).Root
+        var document = XDocument.Parse(markup, LoadOptions.SetLineInfo);
+        MarkupValidator.Validate(document);
+        var rootNode = document.Root
             ?? throw new InvalidDataException("Разметка не содержит корневого элемента.");
-        var root = Build(rootNode, data);
+        var root = PreviewRenderer.Build(rootNode, data);
         try {
             NativeRuntime.Ensure(NativeRuntime.xr_layout(root, 720, 1280) != 0);
             return new NativeRenderSurface(root, markupPath);
@@ -35,21 +37,17 @@ internal static partial class PreviewRenderer {
 
         try {
             foreach (var attribute in node.Attributes()) {
-                if (attribute.Name.LocalName == "itemsSource") {
-                    continue;
-                }
-
-                var value = Resolve(attribute.Value, data);
-                SetAttribute(element, attribute.Name.LocalName, value);
+                var value = PreviewRenderer.Resolve(attribute.Value, data);
+                PreviewRenderer.SetAttribute(element, attribute.Name.LocalName, value);
             }
 
-            ApplyDefinitions(element, node);
+            PreviewRenderer.ApplyDefinitions(element, node);
             if (node.Name.LocalName == "ListView") {
-                BuildListViewItems(element, node, data);
+                PreviewRenderer.BuildListViewItems(element, node, data);
             }
             else {
-                foreach (var childNode in node.Elements().Where(IsVisualElement)) {
-                    AddChild(element, Build(childNode, data));
+                foreach (var childNode in node.Elements().Where(PreviewRenderer.IsVisualElement)) {
+                    PreviewRenderer.AddChild(element, PreviewRenderer.Build(childNode, data));
                 }
             }
 
@@ -62,7 +60,7 @@ internal static partial class PreviewRenderer {
     }
 
     private static void BuildListViewItems(IntPtr listView, XElement node, JsonElement data) {
-        var source = ResolveElement(Attribute(node, "itemsSource"), data);
+        var source = PreviewRenderer.ResolveElement(PreviewRenderer.Attribute(node, "itemsSource"), data);
         var template = node.Elements()
             .FirstOrDefault(element => element.Name.LocalName == "ListView.ItemTemplate")?
             .Elements()
@@ -74,21 +72,21 @@ internal static partial class PreviewRenderer {
         }
 
         foreach (var item in items.EnumerateArray()) {
-            AddChild(listView, Build(template, item));
+            PreviewRenderer.AddChild(listView, PreviewRenderer.Build(template, item));
         }
     }
 
     private static void ApplyDefinitions(IntPtr element, XElement node) {
         var columns = node.Elements().FirstOrDefault(child => child.Name.LocalName == "columnDefinitions");
         if (columns is not null) {
-            SetAttribute(element, "columns", string.Join(",", columns.Elements().Select(
-                definition => Attribute(definition, "width") ?? "*")));
+            PreviewRenderer.SetAttribute(element, "columns", string.Join(",", columns.Elements().Select(
+                definition => PreviewRenderer.Attribute(definition, "width") ?? "*")));
         }
 
         var rows = node.Elements().FirstOrDefault(child => child.Name.LocalName == "rowDefinitions");
         if (rows is not null) {
-            SetAttribute(element, "rows", string.Join(",", rows.Elements().Select(
-                definition => Attribute(definition, "height") ?? "*")));
+            PreviewRenderer.SetAttribute(element, "rows", string.Join(",", rows.Elements().Select(
+                definition => PreviewRenderer.Attribute(definition, "height") ?? "*")));
         }
     }
 
@@ -106,7 +104,7 @@ internal static partial class PreviewRenderer {
     }
 
     private static string Resolve(string value, JsonElement data) {
-        var resolved = ResolveElement(value, data);
+        var resolved = PreviewRenderer.ResolveElement(value, data);
         return resolved switch {
             null => string.Empty,
             bool boolean => boolean ? "True" : "False",
@@ -191,10 +189,10 @@ internal sealed class NativeRenderSurface : FrameworkElement {
             command.Bounds.Width,
             command.Bounds.Height);
         var brush = new SolidColorBrush(Color.FromArgb(
-            ToByte(command.Color.Alpha),
-            ToByte(command.Color.Red),
-            ToByte(command.Color.Green),
-            ToByte(command.Color.Blue)));
+            NativeRenderSurface.ToByte(command.Color.Alpha),
+            NativeRenderSurface.ToByte(command.Color.Red),
+            NativeRenderSurface.ToByte(command.Color.Green),
+            NativeRenderSurface.ToByte(command.Color.Blue)));
         if (type == NativeCommandType.BeginClip) {
             drawingContext.PushClip(new RectangleGeometry(bounds));
         }
@@ -229,7 +227,7 @@ internal sealed class NativeRenderSurface : FrameworkElement {
         Rect bounds,
         Brush brush) {
         var typeface = new Typeface(
-            NativeFont(this.markupPath),
+            NativeRenderSurface.NativeFont(this.markupPath),
             FontStyles.Normal,
             command.GetAuxiliary() is "Bold" or "SemiBold" ? FontWeights.Bold : FontWeights.Normal,
             FontStretches.Normal);

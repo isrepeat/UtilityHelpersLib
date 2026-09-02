@@ -28,8 +28,6 @@
     </PropertyGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
     <PropertyGroup>
-        <OutDir>$(SolutionDir)!VS_TMP\Build\$(Configuration)\AnyCPU\XamlPreviewer\</OutDir>
-        <IntDir>$(SolutionDir)!VS_TMP\Intermediate\$(Configuration)\x64\XamlRuntime.NativeBridge\</IntDir>
         <TargetName>XamlRuntime.NativeBridge</TargetName>
     </PropertyGroup>
     <ItemDefinitionGroup>

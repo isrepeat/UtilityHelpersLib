@@ -1,12 +1,150 @@
 #include "XamlRuntime/ElementBuilder.h"
+#include "XamlRuntime/XamlAttribute.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 namespace xaml::_details {
+    uint32_t AttributeGroups(ElementType type) {
+        const uint32_t common = static_cast<uint32_t>(XamlAttributeGroup::identity)
+            | static_cast<uint32_t>(XamlAttributeGroup::layout)
+            | static_cast<uint32_t>(XamlAttributeGroup::size)
+            | static_cast<uint32_t>(XamlAttributeGroup::gridPosition);
+        switch (type) {
+        case ElementType::page:
+            return common
+                | static_cast<uint32_t>(XamlAttributeGroup::background)
+                | static_cast<uint32_t>(XamlAttributeGroup::border)
+                | static_cast<uint32_t>(XamlAttributeGroup::padding);
+        case ElementType::stackPanel:
+            return common
+                | static_cast<uint32_t>(XamlAttributeGroup::background)
+                | static_cast<uint32_t>(XamlAttributeGroup::border)
+                | static_cast<uint32_t>(XamlAttributeGroup::padding)
+                | static_cast<uint32_t>(XamlAttributeGroup::orientation);
+        case ElementType::textBlock:
+            return common
+                | static_cast<uint32_t>(XamlAttributeGroup::text);
+        case ElementType::button:
+            return common
+                | static_cast<uint32_t>(XamlAttributeGroup::background)
+                | static_cast<uint32_t>(XamlAttributeGroup::border)
+                | static_cast<uint32_t>(XamlAttributeGroup::padding)
+                | static_cast<uint32_t>(XamlAttributeGroup::cornerRadius)
+                | static_cast<uint32_t>(XamlAttributeGroup::text)
+                | static_cast<uint32_t>(XamlAttributeGroup::command);
+        case ElementType::border:
+            return common
+                | static_cast<uint32_t>(XamlAttributeGroup::background)
+                | static_cast<uint32_t>(XamlAttributeGroup::border)
+                | static_cast<uint32_t>(XamlAttributeGroup::padding)
+                | static_cast<uint32_t>(XamlAttributeGroup::cornerRadius);
+        case ElementType::toggleSwitch:
+            return common
+                | static_cast<uint32_t>(XamlAttributeGroup::background)
+                | static_cast<uint32_t>(XamlAttributeGroup::border)
+                | static_cast<uint32_t>(XamlAttributeGroup::text)
+                | static_cast<uint32_t>(XamlAttributeGroup::tint)
+                | static_cast<uint32_t>(XamlAttributeGroup::toggle);
+        case ElementType::grid:
+            return common
+                | static_cast<uint32_t>(XamlAttributeGroup::background)
+                | static_cast<uint32_t>(XamlAttributeGroup::border)
+                | static_cast<uint32_t>(XamlAttributeGroup::padding)
+                | static_cast<uint32_t>(XamlAttributeGroup::gridDefinitions);
+        case ElementType::scrollViewer:
+            return common
+                | static_cast<uint32_t>(XamlAttributeGroup::background)
+                | static_cast<uint32_t>(XamlAttributeGroup::border)
+                | static_cast<uint32_t>(XamlAttributeGroup::padding);
+        case ElementType::image:
+        case ElementType::svgImage:
+            return common
+                | static_cast<uint32_t>(XamlAttributeGroup::source)
+                | static_cast<uint32_t>(XamlAttributeGroup::tint);
+        case ElementType::iconButton:
+            return common
+                | static_cast<uint32_t>(XamlAttributeGroup::background)
+                | static_cast<uint32_t>(XamlAttributeGroup::border)
+                | static_cast<uint32_t>(XamlAttributeGroup::padding)
+                | static_cast<uint32_t>(XamlAttributeGroup::cornerRadius)
+                | static_cast<uint32_t>(XamlAttributeGroup::source)
+                | static_cast<uint32_t>(XamlAttributeGroup::tint)
+                | static_cast<uint32_t>(XamlAttributeGroup::command);
+        case ElementType::listView:
+            return common
+                | static_cast<uint32_t>(XamlAttributeGroup::background)
+                | static_cast<uint32_t>(XamlAttributeGroup::border)
+                | static_cast<uint32_t>(XamlAttributeGroup::padding)
+                | static_cast<uint32_t>(XamlAttributeGroup::itemsSource);
+        }
+
+        return 0;
+    }
+
+    bool IsAttributeSupported(ElementType type, XamlAttribute attribute) {
+        const uint32_t supportedGroups = AttributeGroups(type);
+        const uint32_t attributeGroup = static_cast<uint32_t>(XamlAttributeGroupOf(attribute));
+        return (supportedGroups & attributeGroup) != 0;
+    }
+
+    bool IsChildSupported(ElementType parent, ElementType child) {
+        switch (parent) {
+        case ElementType::page:
+        case ElementType::stackPanel:
+        case ElementType::grid:
+        case ElementType::listView:
+            return child != ElementType::page;
+        case ElementType::border:
+        case ElementType::scrollViewer:
+            return child != ElementType::page;
+        case ElementType::button:
+        case ElementType::iconButton:
+        case ElementType::textBlock:
+        case ElementType::toggleSwitch:
+        case ElementType::image:
+        case ElementType::svgImage:
+            return false;
+        }
+
+        return false;
+    }
+
+    std::string ElementTypeName(ElementType type) {
+        switch (type) {
+        case ElementType::page:
+            return "Page";
+        case ElementType::stackPanel:
+            return "StackPanel";
+        case ElementType::textBlock:
+            return "TextBlock";
+        case ElementType::button:
+            return "Button";
+        case ElementType::border:
+            return "Border";
+        case ElementType::toggleSwitch:
+            return "ToggleSwitch";
+        case ElementType::grid:
+            return "Grid";
+        case ElementType::scrollViewer:
+            return "ScrollViewer";
+        case ElementType::image:
+            return "Image";
+        case ElementType::svgImage:
+            return "SvgImage";
+        case ElementType::iconButton:
+            return "IconButton";
+        case ElementType::listView:
+            return "ListView";
+        }
+
+        return "unknown";
+    }
+
     attr::Color ParseColor(std::string_view value) {
         std::string normalized(value);
         if (normalized == "black") {
@@ -128,72 +266,121 @@ namespace xaml {
     }
 
     void SetAttribute(Element& element, std::string_view name, std::string_view value) {
-        if (name == "id") {
+        const std::optional<XamlAttribute> attribute = ParseXamlAttribute(name);
+        if (!attribute.has_value()) {
+            throw std::invalid_argument("unsupported XAML attribute '" + std::string(name) + "'");
+        }
+        if (!_details::IsAttributeSupported(element.Type(), attribute.value())) {
+            throw std::invalid_argument(
+                "attribute '" + std::string(XamlAttributeName(attribute.value())) + "' is not supported by "
+                + _details::ElementTypeName(element.Type()));
+        }
+        switch (attribute.value()) {
+        case XamlAttribute::id:
             element.SetId(std::string(value));
-        } else if (name == "text") {
+            return;
+        case XamlAttribute::text:
             element.SetText(std::string(value));
-        } else if (name == "fontSize") {
+            return;
+        case XamlAttribute::fontSize:
             element.SetFontSize(std::stof(std::string(value)));
-        } else if (name == "fontFamily") {
+            return;
+        case XamlAttribute::fontFamily:
             element.SetFontFamily(std::string(value));
-        } else if (name == "fontWeight") {
+            return;
+        case XamlAttribute::fontWeight:
             element.SetFontWeight(std::string(value));
-        } else if (name == "source") {
+            return;
+        case XamlAttribute::source:
             element.SetSource(std::string(value));
-        } else if (name == "tint") {
+            return;
+        case XamlAttribute::tint:
             element.SetTint(_details::ParseColor(value));
-        } else if (name == "command") {
+            return;
+        case XamlAttribute::command:
             element.SetCommand(std::string(value));
-        } else if (name == "foreground") {
+            return;
+        case XamlAttribute::foreground:
             element.SetForeground(_details::ParseColor(value));
-        } else if (name == "orientation") {
+            return;
+        case XamlAttribute::orientation:
             if (value != "Horizontal" && value != "Vertical") {
                 throw std::invalid_argument("orientation must be Horizontal or Vertical");
             }
             element.SetOrientation(value == "Horizontal"
                 ? attr::Orientation::horizontal : attr::Orientation::vertical);
-        } else if (name == "verticalAlignment") {
+            return;
+        case XamlAttribute::verticalAlignment:
             element.SetVerticalAlignment(_details::ParseAlignment(value));
-        } else if (name == "horizontalAlignment") {
+            return;
+        case XamlAttribute::horizontalAlignment:
             element.SetHorizontalAlignment(_details::ParseAlignment(value));
-        } else if (name == "gridRow") {
+            return;
+        case XamlAttribute::gridRow:
             element.SetGridRow(std::stoi(std::string(value)));
-        } else if (name == "gridColumn") {
+            return;
+        case XamlAttribute::gridColumn:
             element.SetGridColumn(std::stoi(std::string(value)));
-        } else if (name == "rows") {
+            return;
+        case XamlAttribute::rows:
             element.SetRows(std::string(value));
-        } else if (name == "columns") {
+            return;
+        case XamlAttribute::columns:
             element.SetColumns(std::string(value));
-        } else if (name == "background") {
+            return;
+        case XamlAttribute::background:
             element.SetBackground(_details::ParseColor(value));
-        } else if (name == "borderBrush") {
+            return;
+        case XamlAttribute::borderBrush:
             element.SetBorderColor(_details::ParseColor(value));
-        } else if (name == "margin") {
+            return;
+        case XamlAttribute::margin:
             element.SetMargin(_details::ParseThickness(value));
-        } else if (name == "padding") {
+            return;
+        case XamlAttribute::padding:
             element.SetPadding(_details::ParseThickness(value));
-        } else if (name == "borderThickness") {
+            return;
+        case XamlAttribute::borderThickness:
             element.SetBorderThickness(_details::ParseThickness(value));
-        } else if (name == "cornerRadius") {
+            return;
+        case XamlAttribute::cornerRadius:
             element.SetCornerRadius(std::stof(std::string(value)));
-        } else if (name == "width") {
+            return;
+        case XamlAttribute::width:
             element.SetWidth(std::stof(std::string(value)));
-        } else if (name == "height") {
+            return;
+        case XamlAttribute::height:
             element.SetHeight(std::stof(std::string(value)));
-        } else if (name == "isOn") {
+            return;
+        case XamlAttribute::isOn:
             element.SetIsOn(_details::ParseBool(value));
-        } else if (name == "visibility") {
+            return;
+        case XamlAttribute::visibility:
             if (value != "Collapsed" && value != "Hidden" && value != "Visible") {
                 throw std::invalid_argument("unsupported visibility");
             }
             element.SetVisibility(value == "Collapsed" ? attr::Visibility::collapsed
                 : value == "Hidden" ? attr::Visibility::hidden : attr::Visibility::visible);
-        } else if (name == "isEnabled") {
+            return;
+        case XamlAttribute::isEnabled:
             element.SetIsEnabled(_details::ParseBool(value));
-        } else if (name == "opacity") {
+            return;
+        case XamlAttribute::opacity:
             element.SetOpacity(std::stof(std::string(value)));
-        } else {
-            throw std::invalid_argument("unsupported XAML attribute");
+            return;
+        case XamlAttribute::itemsSource:
+            return;
+        }
+    }
+
+    void ValidateChild(const Element& parent, const Element& child) {
+        if (!_details::IsChildSupported(parent.Type(), child.Type())) {
+            throw std::invalid_argument(
+                _details::ElementTypeName(parent.Type()) + " cannot contain " + _details::ElementTypeName(child.Type()));
+        }
+        if ((parent.Type() == ElementType::border || parent.Type() == ElementType::scrollViewer)
+            && !parent.Children().empty()) {
+            throw std::invalid_argument(_details::ElementTypeName(parent.Type()) + " can contain only one child");
         }
     }
 }

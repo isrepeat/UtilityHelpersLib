@@ -3,17 +3,26 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Threading;
 
 namespace XamlPreviewer;
 
 public partial class MainWindow : Window {
+    private const string MarkupPath = @"C:\WORK\TEST\XamlPreviewer\MainPage.xaml";
+    private const string ScenariosPath = @"C:\WORK\TEST\XamlPreviewer\scenarios.json";
+
     private readonly DispatcherTimer renderTimer;
+    private readonly MarkupEditorController markupEditorController;
     private string? markupPath;
     private bool updatingEditors;
 
     public MainWindow() {
         InitializeComponent();
+        WindowTheme.EnableDarkTitleBar(this);
+        this.markupEditorController = new MarkupEditorController(this.MarkupEditor);
+        this.markupEditorController.MarkupChanged += this.MarkupEditorControllerMarkupChanged;
+        this.SyntaxHighlightingCheckBox.IsChecked = true;
         this.renderTimer = new DispatcherTimer {
             Interval = TimeSpan.FromMilliseconds(250)
         };
@@ -22,16 +31,14 @@ public partial class MainWindow : Window {
     }
 
     private void WindowLoaded(object sender, RoutedEventArgs eventArgs) {
-        var candidate = FindWorkspaceFile("Native", "UI", "MainPage.xaml");
-        if (candidate is not null) {
-            this.LoadMarkup(candidate);
+        if (File.Exists(MarkupPath)) {
+            this.LoadMarkup(MarkupPath);
         }
 
-        var scenarioPath = FindWorkspaceFile("Tools", "XamlPreviewer", "scenarios.json");
         this.updatingEditors = true;
-        this.ScenarioEditor.Text = scenarioPath is null
-            ? "{\n  \"Default\": {}\n}"
-            : File.ReadAllText(scenarioPath);
+        this.ScenarioEditor.Text = File.Exists(ScenariosPath)
+            ? File.ReadAllText(ScenariosPath)
+            : "{\n  \"Default\": {}\n}";
         this.updatingEditors = false;
         this.RefreshScenarioNames();
         this.ScheduleRender();
@@ -51,7 +58,7 @@ public partial class MainWindow : Window {
             return;
         }
 
-        File.WriteAllText(this.markupPath, this.MarkupEditor.Text.TrimEnd());
+        File.WriteAllText(this.markupPath, this.markupEditorController.Text.TrimEnd());
         this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
         this.StatusText.Text = $"Сохранено: {this.markupPath}";
     }
@@ -61,6 +68,14 @@ public partial class MainWindow : Window {
     }
 
     private void EditorTextChanged(object sender, TextChangedEventArgs eventArgs) {
+        if (ReferenceEquals(sender, this.MarkupEditor)) {
+            if (this.markupEditorController.HandleTextChanged()) {
+                this.ScheduleRender();
+            }
+
+            return;
+        }
+
         if (!this.updatingEditors) {
             if (ReferenceEquals(sender, this.ScenarioEditor)) {
                 this.RefreshScenarioNames();
@@ -68,6 +83,18 @@ public partial class MainWindow : Window {
 
             this.ScheduleRender();
         }
+    }
+
+    private void MarkupEditorPreviewKeyDown(object sender, KeyEventArgs eventArgs) {
+        this.markupEditorController.HandlePreviewKeyDown(eventArgs);
+    }
+
+    private void MarkupEditorControllerMarkupChanged(object? sender, EventArgs eventArgs) {
+        this.ScheduleRender();
+    }
+
+    private void SyntaxHighlightingCheckBoxChanged(object sender, RoutedEventArgs eventArgs) {
+        this.markupEditorController.SetSyntaxHighlightingEnabled(this.SyntaxHighlightingCheckBox.IsChecked == true);
     }
 
     private void RenderTimerTick(object? sender, EventArgs eventArgs) {
@@ -79,7 +106,10 @@ public partial class MainWindow : Window {
             var data = scenarioName is not null && scenarios.TryGetProperty(scenarioName, out var selected)
                 ? selected
                 : scenarios;
-            this.DeviceSurface.Child = PreviewRenderer.Render(this.MarkupEditor.Text, data, this.markupPath);
+            this.DeviceSurface.Child = PreviewRenderer.Render(
+                this.markupEditorController.Text,
+                data,
+                this.markupPath);
             this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
             this.StatusText.Text = $"Предпросмотр обновлён · {DateTime.Now:HH:mm:ss}";
         }
@@ -93,7 +123,7 @@ public partial class MainWindow : Window {
         this.markupPath = Path.GetFullPath(path);
         this.FilePathText.Text = this.markupPath;
         this.updatingEditors = true;
-        this.MarkupEditor.Text = File.ReadAllText(this.markupPath);
+        this.markupEditorController.SetText(File.ReadAllText(this.markupPath));
         this.updatingEditors = false;
         this.ScheduleRender();
     }
@@ -117,19 +147,5 @@ public partial class MainWindow : Window {
     private void ScheduleRender() {
         this.renderTimer.Stop();
         this.renderTimer.Start();
-    }
-
-    private static string? FindWorkspaceFile(params string[] segments) {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null) {
-            var candidate = Path.Combine([directory.FullName, .. segments]);
-            if (File.Exists(candidate)) {
-                return candidate;
-            }
-
-            directory = directory.Parent;
-        }
-
-        return null;
     }
 }
