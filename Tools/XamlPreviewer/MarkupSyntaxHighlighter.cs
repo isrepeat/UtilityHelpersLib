@@ -74,18 +74,6 @@ internal static class MarkupSyntaxHighlighter {
             MarkupSyntaxHighlighter.GetTextPointerAtOffset(editor, selectionEnd));
     }
 
-    public static void SetPlainText(RichTextBox editor, string text, int selectionStart, int selectionEnd) {
-        var paragraph = new Paragraph {
-            Margin = new Thickness(0)
-        };
-        paragraph.Inlines.Add(new Run(text) {
-            Foreground = TextBrush
-        });
-        editor.Document.Blocks.Clear();
-        editor.Document.Blocks.Add(paragraph);
-        MarkupSyntaxHighlighter.SetSelection(editor, selectionStart, selectionEnd);
-    }
-
     private static void ApplySyntaxBrush(
         Brush?[] brushes,
         Regex regex,

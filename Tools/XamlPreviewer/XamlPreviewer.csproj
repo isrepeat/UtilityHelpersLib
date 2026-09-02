@@ -8,6 +8,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PlatformTarget>x64</PlatformTarget>
     <NativeBridgeOutputDir>$(SolutionDir)!VS_TMP\Build\$(Configuration)\x64\XamlRuntime.NativeBridge\</NativeBridgeOutputDir>
+    <NativeAngleZlibName>z.dll</NativeAngleZlibName>
   </PropertyGroup>
 
   <Target Name="CopyNativeBridge" AfterTargets="Build">
@@ -20,5 +21,8 @@
           DestinationFolder="$(OutDir)"
           SkipUnchangedFiles="true"
           Condition="Exists('$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.pdb')" />
+    <Copy SourceFiles="$(NativeBridgeOutputDir)libEGL.dll;$(NativeBridgeOutputDir)libGLESv2.dll;$(NativeBridgeOutputDir)$(NativeAngleZlibName)"
+          DestinationFolder="$(OutDir)"
+          SkipUnchangedFiles="true" />
   </Target>
 </Project>

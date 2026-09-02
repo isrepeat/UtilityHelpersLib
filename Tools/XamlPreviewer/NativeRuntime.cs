@@ -90,8 +90,18 @@ internal static class NativeRuntime {
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_render")]
     public static extern int xr_render(IntPtr root, [Out] NativeCommand[]? commands, int capacity);
 
-    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_laerror")]
-    private static extern IntPtr xr_laerror();
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_render_angle")]
+    public static extern int xr_render_angle(
+        IntPtr root,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string fontPath,
+        int width,
+        int height,
+        [Out] byte[] pixels,
+        int stride,
+        int capacity);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_last_error")]
+    private static extern IntPtr xr_last_error();
 
     public static void Ensure(bool result) {
         if (!result) {
@@ -100,6 +110,6 @@ internal static class NativeRuntime {
     }
 
     public static string GetLastError() {
-        return Marshal.PtrToStringUTF8(xr_laerror()) ?? "Unknown XamlRuntime error.";
+        return Marshal.PtrToStringUTF8(NativeRuntime.xr_last_error()) ?? "Unknown XamlRuntime error.";
     }
 }

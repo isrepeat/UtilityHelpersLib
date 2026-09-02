@@ -244,13 +244,6 @@
             <ComboBox x:Name="ScenarioPicker"
                       Width="190"
                       SelectionChanged="ScenarioPickerSelectionChanged" />
-            <CheckBox x:Name="SyntaxHighlightingCheckBox"
-                      Margin="16 0 0 0"
-                      VerticalAlignment="Center"
-                      Checked="SyntaxHighlightingCheckBoxChanged"
-                      Content="Подсветка"
-                      Foreground="#DDDDDD"
-                      Unchecked="SyntaxHighlightingCheckBoxChanged" />
             <TextBlock x:Name="FilePathText"
                        Margin="16 0 0 0"
                        VerticalAlignment="Center"

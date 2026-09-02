@@ -38,9 +38,14 @@
         </ClCompile>
     </ItemDefinitionGroup>
     <ItemGroup>
+        <PackageReference Include="ANGLE.Windows.x64" Version="1.0.0" />
+    </ItemGroup>
+    <ItemGroup>
+        <ClCompile Include="AngleRenderSurface.cpp" />
         <ClCompile Include="NativeBridge.cpp" />
     </ItemGroup>
     <ItemGroup>
+        <ClInclude Include="AngleRenderSurface.h" />
         <ClInclude Include="NativeBridge.h" />
     </ItemGroup>
     <ItemGroup>

@@ -12,7 +12,6 @@ internal sealed class MarkupEditorController {
     private EditorState currentState = new(string.Empty, 0, 0);
     private bool isUpdating;
     private int? navigationColumn;
-    private bool syntaxHighlightingEnabled = true;
 
     public event EventHandler? MarkupChanged;
 
@@ -34,9 +33,7 @@ internal sealed class MarkupEditorController {
 
         this.RecordTextChange();
         this.highlightTimer.Stop();
-        if (this.syntaxHighlightingEnabled) {
-            this.highlightTimer.Start();
-        }
+        this.highlightTimer.Start();
         this.navigationColumn = null;
         return true;
     }
@@ -90,23 +87,6 @@ internal sealed class MarkupEditorController {
         this.undoHistory.Clear();
         this.redoHistory.Clear();
         this.navigationColumn = null;
-    }
-
-    public void SetSyntaxHighlightingEnabled(bool isEnabled) {
-        if (this.syntaxHighlightingEnabled == isEnabled) {
-            return;
-        }
-
-        this.syntaxHighlightingEnabled = isEnabled;
-        this.highlightTimer.Stop();
-        this.isUpdating = true;
-        try {
-            var selection = this.GetSelection();
-            this.SetEditorText(this.currentState.Text, selection.Start, selection.End);
-        }
-        finally {
-            this.isUpdating = false;
-        }
     }
 
     private void InsertNewLine() {
@@ -260,10 +240,6 @@ internal sealed class MarkupEditorController {
 
     private void HighlightTimerTick(object? sender, EventArgs eventArgs) {
         this.highlightTimer.Stop();
-        if (!this.syntaxHighlightingEnabled) {
-            return;
-        }
-
         this.isUpdating = true;
         try {
             MarkupSyntaxHighlighter.Highlight(this.editor);
@@ -305,12 +281,7 @@ internal sealed class MarkupEditorController {
     }
 
     private void SetEditorText(string text, int selectionStart, int selectionEnd) {
-        if (this.syntaxHighlightingEnabled) {
-            MarkupSyntaxHighlighter.SetText(this.editor, text, selectionStart, selectionEnd);
-            return;
-        }
-
-        MarkupSyntaxHighlighter.SetPlainText(this.editor, text, selectionStart, selectionEnd);
+        MarkupSyntaxHighlighter.SetText(this.editor, text, selectionStart, selectionEnd);
     }
 
     private (int Start, int End) GetSelection() {

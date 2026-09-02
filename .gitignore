@@ -337,4 +337,6 @@ ASALocalRun/
 
 
 ## Specific excluded dirs:
+\!VS_TMP/
+NugetProjects/Angle/Nuget/Angle.Windows.x64/\!NUGET_TMP/
 !Scripts/bin/

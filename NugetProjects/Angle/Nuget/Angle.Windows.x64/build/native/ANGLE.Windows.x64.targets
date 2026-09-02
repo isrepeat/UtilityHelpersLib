@@ -1,0 +1,22 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <AngleWindowsX64PackageDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..\'))</AngleWindowsX64PackageDir>
+    <AngleWindowsX64RuntimeDir>$(AngleWindowsX64PackageDir)runtimes\win-x64\native\</AngleWindowsX64RuntimeDir>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(AngleWindowsX64PackageDir)build\native\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(AngleWindowsX64PackageDir)build\native\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libEGL.lib;libGLESv2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <Target Name="CopyAngleWindowsX64Runtime" AfterTargets="Build" Condition="'$(Platform)'=='x64'">
+    <Copy SourceFiles="$(AngleWindowsX64RuntimeDir)libEGL.dll;$(AngleWindowsX64RuntimeDir)libGLESv2.dll;$(AngleWindowsX64RuntimeDir)z.dll"
+          DestinationFolder="$(OutDir)"
+          SkipUnchangedFiles="true" />
+  </Target>
+</Project>

@@ -22,7 +22,6 @@ public partial class MainWindow : Window {
         WindowTheme.EnableDarkTitleBar(this);
         this.markupEditorController = new MarkupEditorController(this.MarkupEditor);
         this.markupEditorController.MarkupChanged += this.MarkupEditorControllerMarkupChanged;
-        this.SyntaxHighlightingCheckBox.IsChecked = true;
         this.renderTimer = new DispatcherTimer {
             Interval = TimeSpan.FromMilliseconds(250)
         };
@@ -93,10 +92,6 @@ public partial class MainWindow : Window {
         this.ScheduleRender();
     }
 
-    private void SyntaxHighlightingCheckBoxChanged(object sender, RoutedEventArgs eventArgs) {
-        this.markupEditorController.SetSyntaxHighlightingEnabled(this.SyntaxHighlightingCheckBox.IsChecked == true);
-    }
-
     private void RenderTimerTick(object? sender, EventArgs eventArgs) {
         this.renderTimer.Stop();
         try {
@@ -108,8 +103,7 @@ public partial class MainWindow : Window {
                 : scenarios;
             this.DeviceSurface.Child = PreviewRenderer.Render(
                 this.markupEditorController.Text,
-                data,
-                this.markupPath);
+                data);
             this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
             this.StatusText.Text = $"Предпросмотр обновлён · {DateTime.Now:HH:mm:ss}";
         }
