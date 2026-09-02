@@ -8,14 +8,14 @@ using System.Xml.Linq;
 namespace XamlPreviewer;
 
 internal static class PreviewRenderer {
-    public static FrameworkElement Render(string markup, JsonElement data) {
+    public static FrameworkElement Render(string markup, JsonElement data, string markupDirectory) {
         var document = XDocument.Parse(markup, LoadOptions.SetLineInfo);
         MarkupValidator.Validate(document);
         var rootNode = document.Root
             ?? throw new InvalidDataException("Разметка не содержит корневого элемента.");
         var root = PreviewRenderer.Build(rootNode, data);
         try {
-            return AnglePreviewRenderer.Render(root);
+            return AnglePreviewRenderer.Render(root, markupDirectory);
         }
         finally {
             NativeRuntime.xr_destroy_element(root);

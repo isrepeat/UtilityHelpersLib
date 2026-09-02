@@ -52,7 +52,8 @@ namespace xaml::bridge {
             std::string_view text,
             attr::Color color,
             float fontSize,
-            std::string_view fontWeight) override {
+            std::string_view fontWeight,
+            attr::Alignment) override {
             xr_command& command = this->Append(xr_command_type_text, bounds, color, fontSize);
             Copy(text, command.text, sizeof(command.text));
             Copy(fontWeight, command.auxiliary, sizeof(command.auxiliary));
@@ -193,6 +194,7 @@ int xr_render_angle(
     const char* fontPath,
     int width,
     int height,
+    const char* resourceRoot,
     unsigned char* destination,
     int destinationStride,
     int destinationCapacity) {
@@ -204,7 +206,7 @@ int xr_render_angle(
             throw std::invalid_argument("Invalid ANGLE render arguments");
         }
 
-        xaml::bridge::AngleRenderSurface surface(width, height, fontPath);
+        xaml::bridge::AngleRenderSurface surface(width, height, fontPath, resourceRoot);
         surface.Render(
             *reinterpret_cast<xaml::Element*>(const_cast<xr_element*>(root)),
             destination,

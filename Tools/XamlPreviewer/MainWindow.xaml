@@ -66,6 +66,52 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style x:Key="EditorModeToggleButtonStyle"
+               TargetType="ToggleButton">
+            <Setter Property="Padding"
+                    Value="12 5" />
+            <Setter Property="Background"
+                    Value="{StaticResource ControlBackgroundBrush}" />
+            <Setter Property="BorderBrush"
+                    Value="{StaticResource ControlBorderBrush}" />
+            <Setter Property="Foreground"
+                    Value="{StaticResource ControlForegroundBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Content="{TemplateBinding Content}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver"
+                                     Value="True">
+                                <Setter TargetName="Border"
+                                        Property="Background"
+                                        Value="#383838" />
+                                <Setter TargetName="Border"
+                                        Property="BorderBrush"
+                                        Value="#707070" />
+                            </Trigger>
+                            <Trigger Property="IsChecked"
+                                     Value="True">
+                                <Setter TargetName="Border"
+                                        Property="Background"
+                                        Value="#5A4D26" />
+                                <Setter TargetName="Border"
+                                        Property="BorderBrush"
+                                        Value="#9D8D4D" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style TargetType="ComboBox">
             <Setter Property="Padding"
                     Value="6 3" />
@@ -227,6 +273,12 @@
         </Grid.RowDefinitions>
         <DockPanel
                    Margin="10">
+            <ToggleButton x:Name="EditorModeToggle"
+                          Style="{StaticResource EditorModeToggleButtonStyle}"
+                          Width="110"
+                          Margin="0 0 8 0"
+                          Click="EditorModeToggleClick"
+                          Content="Сценарии" />
             <Button x:Name="OpenButton"
                     Width="90"
                     Margin="0 0 8 0"
@@ -237,6 +289,14 @@
                     Margin="0 0 16 0"
                     Click="SaveButtonClick"
                     Content="Сохранить" />
+            <TextBlock Margin="0 0 8 0"
+                       VerticalAlignment="Center"
+                       Foreground="#DDDDDD"
+                       Text="Страница:" />
+            <ComboBox x:Name="PagePicker"
+                      Width="180"
+                      Margin="0 0 16 0"
+                      SelectionChanged="PagePickerSelectionChanged" />
             <TextBlock Margin="0 0 8 0"
                        VerticalAlignment="Center"
                        Foreground="#DDDDDD"
@@ -293,7 +353,8 @@
                           Visibility="Collapsed"
                           HorizontalAlignment="Stretch"
                           Background="#444444" />
-            <Grid Grid.Column="4"
+            <Grid x:Name="ScenarioPanel"
+                  Grid.Column="0"
                   Margin="10"
                   Visibility="Collapsed">
                 <Grid.RowDefinitions>

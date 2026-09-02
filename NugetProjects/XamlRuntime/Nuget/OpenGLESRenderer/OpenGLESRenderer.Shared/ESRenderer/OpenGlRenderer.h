@@ -3,16 +3,22 @@
 #include "XamlRuntime/RenderEngine.h"
 
 #include <cstddef>
+#include <functional>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace es_renderer {
     class OpenGlRenderer final : public xaml::IRenderBackend {
     public:
+        using ResourceLoader = std::function<std::vector<unsigned char>(std::string_view)>;
+
         OpenGlRenderer(
             int width,
             int height,
             const unsigned char* fontData,
-            size_t fontSize);
+            size_t fontSize,
+            ResourceLoader resourceLoader);
         ~OpenGlRenderer();
 
         OpenGlRenderer(const OpenGlRenderer&) = delete;
@@ -41,7 +47,8 @@ namespace es_renderer {
             std::string_view text,
             xaml::attr::Color color,
             float fontSize,
-            std::string_view fontWeight) override;
+            std::string_view fontWeight,
+            xaml::attr::Alignment horizontalAlignment) override;
         void DrawImage(
             const xaml::Rect& bounds,
             std::string_view source,

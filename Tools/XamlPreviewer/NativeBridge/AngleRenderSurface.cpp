@@ -36,7 +36,11 @@ namespace xaml::bridge::_details {
 namespace xaml::bridge {
     class AngleRenderSurface::Implementation {
     public:
-        Implementation(int width, int height, std::string_view fontPath);
+        Implementation(
+            int width,
+            int height,
+            std::string_view fontPath,
+            std::string_view resourceRoot);
         ~Implementation();
 
         Implementation(const Implementation&) = delete;
@@ -59,7 +63,8 @@ namespace xaml::bridge {
     AngleRenderSurface::Implementation::Implementation(
         int width,
         int height,
-        std::string_view fontPath)
+        std::string_view fontPath,
+        std::string_view resourceRoot)
         : width(width)
         , height(height) {
         if (width <= 0 || height <= 0) {
@@ -120,7 +125,10 @@ namespace xaml::bridge {
             width,
             height,
             fontData.data(),
-            fontData.size());
+            fontData.size(),
+            [root = std::string(resourceRoot)](std::string_view source) {
+                return _details::ReadFile(root + "/" + std::string(source));
+            });
     }
 
     AngleRenderSurface::Implementation::~Implementation() {
@@ -182,8 +190,9 @@ namespace xaml::bridge {
     AngleRenderSurface::AngleRenderSurface(
         int width,
         int height,
-        std::string_view fontPath)
-        : implementation(std::make_unique<Implementation>(width, height, fontPath)) {
+        std::string_view fontPath,
+        std::string_view resourceRoot)
+        : implementation(std::make_unique<Implementation>(width, height, fontPath, resourceRoot)) {
     }
 
     AngleRenderSurface::~AngleRenderSurface() = default;

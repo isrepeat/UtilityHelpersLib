@@ -96,6 +96,7 @@ internal static class NativeRuntime {
         [MarshalAs(UnmanagedType.LPUTF8Str)] string fontPath,
         int width,
         int height,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string resourceRoot,
         [Out] byte[] pixels,
         int stride,
         int capacity);

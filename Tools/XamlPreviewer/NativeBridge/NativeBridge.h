@@ -63,6 +63,7 @@ XAML_RUNTIME_BRIDGE_API int xr_render_angle(
     const char* fontPath,
     int width,
     int height,
+    const char* resourceRoot,
     unsigned char* destination,
     int destinationStride,
     int destinationCapacity);

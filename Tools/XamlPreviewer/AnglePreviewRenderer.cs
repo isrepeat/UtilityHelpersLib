@@ -6,13 +6,11 @@ using System.Windows.Media.Imaging;
 namespace XamlPreviewer;
 
 internal static class AnglePreviewRenderer {
-    // Размер соответствует базовой области предпросмотра мобильной разметки.
     private const int Width = 720;
     private const int Height = 1280;
-    // Нативный rasterizer строит atlas из того же Roboto, что используется приложением Android.
     private const string FontPath = @"C:\WORK\Android\Projects\MobileClock\app\src\main\assets\Roboto-Regular.ttf";
 
-    public static FrameworkElement Render(IntPtr root) {
+    public static FrameworkElement Render(IntPtr root, string markupDirectory) {
         const int bytesPerPixel = 4;
         NativeRuntime.Ensure(NativeRuntime.xr_layout(
             root,
@@ -25,12 +23,10 @@ internal static class AnglePreviewRenderer {
             AnglePreviewRenderer.FontPath,
             AnglePreviewRenderer.Width,
             AnglePreviewRenderer.Height,
+            markupDirectory,
             pixels,
             stride,
             pixels.Length) != 0);
-
-        // Native bridge возвращает BGRA-буфер. Freeze позволяет безопасно отдать
-        // неизменяемый bitmap элементу WPF без удержания native-ресурсов.
         var bitmap = BitmapSource.Create(
             AnglePreviewRenderer.Width,
             AnglePreviewRenderer.Height,

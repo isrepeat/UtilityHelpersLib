@@ -11,7 +11,11 @@ namespace xaml::bridge {
     // Изолирует EGL pbuffer и OpenGL ES ресурсы от C ABI native bridge.
     class AngleRenderSurface {
     public:
-        AngleRenderSurface(int width, int height, std::string_view fontPath);
+        AngleRenderSurface(
+            int width,
+            int height,
+            std::string_view fontPath,
+            std::string_view resourceRoot);
         ~AngleRenderSurface();
 
         AngleRenderSurface(const AngleRenderSurface&) = delete;

@@ -5,6 +5,11 @@
 
 #include "ESRenderer/OpenGlRenderer.h"
 
+#define NANOSVG_IMPLEMENTATION
+#include "../../ThirdParty/nanosvg.h"
+#define NANOSVGRAST_IMPLEMENTATION
+#include "../../ThirdParty/nanosvgrast.h"
+
 #define STBTT_STATIC
 #define STB_TRUETYPE_IMPLEMENTATION
 #pragma warning(disable: 4505)
@@ -15,6 +20,7 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <unordered_map>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -71,6 +77,24 @@ namespace es_renderer::_details {
         }
     )";
 
+    constexpr char ImageVertexShader[] = R"(#version 300 es
+        layout (location = 0) in vec2 position;
+        layout (location = 1) in vec2 textureCoordinate;
+        out vec2 uv;
+        void main() { uv = textureCoordinate; gl_Position = vec4(position, 0.0, 1.0); }
+    )";
+    constexpr char ImageFragmentShader[] = R"(#version 300 es
+        precision mediump float;
+        in vec2 uv;
+        uniform sampler2D imageTexture;
+        uniform vec4 tint;
+        out vec4 color;
+        void main() {
+            float alpha = texture(imageTexture, uv).a;
+            color = vec4(tint.rgb, tint.a * alpha);
+        }
+    )";
+
     // Команды runtime хранят текст в UTF-8, а stb_truetype ожидает code point.
     // Повреждённая либо неподдерживаемая последовательность заменяется на '?'.
     uint32_t DecodeUtf8(const char*& current, const char* end) {
@@ -110,7 +134,8 @@ namespace es_renderer {
             int width,
             int height,
             const unsigned char* fontData,
-            size_t fontSize);
+            size_t fontSize,
+            ResourceLoader resourceLoader);
         ~Implementation();
 
         Implementation(const Implementation&) = delete;
@@ -131,7 +156,9 @@ namespace es_renderer {
             std::string_view text,
             xaml::attr::Color color,
             float fontSize,
-            std::string_view fontWeight);
+            std::string_view fontWeight,
+            xaml::attr::Alignment horizontalAlignment);
+        void DrawImage(const xaml::Rect& bounds, std::string_view source, xaml::attr::Color tint);
 
     private:
         struct GlyphReference {
@@ -151,14 +178,18 @@ namespace es_renderer {
             float textureY) const;
         void AppendTextQuad(std::vector<float>& vertices, const stbtt_aligned_quad& quad) const;
         GlyphReference GetGlyph(uint32_t codepoint) const;
+        GLuint GetSvgTexture(std::string_view source);
 
     private:
         int width;
         int height;
         GLuint textProgram = 0;
         GLuint solidProgram = 0;
+        GLuint imageProgram = 0;
         GLuint vertexBuffer = 0;
         GLuint fontTexture = 0;
+        ResourceLoader resourceLoader;
+        std::unordered_map<std::string, GLuint> imageTextures;
         stbtt_packedchar asciiGlyphs[_details::AsciiGlyphCount]{};
         stbtt_packedchar cyrillicGlyphs[_details::CyrillicGlyphCount]{};
         stbtt_packedchar settingsGlyph[1]{};
@@ -168,9 +199,11 @@ namespace es_renderer {
         int width,
         int height,
         const unsigned char* fontData,
-        size_t fontSize)
+        size_t fontSize,
+        ResourceLoader resourceLoader)
         : width(width)
-        , height(height) {
+        , height(height)
+        , resourceLoader(std::move(resourceLoader)) {
         if (width <= 0 || height <= 0 || fontData == nullptr || fontSize == 0) {
             throw std::invalid_argument("Invalid OpenGL renderer arguments");
         }
@@ -181,6 +214,7 @@ namespace es_renderer {
         this->solidProgram = this->CreateProgram(
             _details::SolidVertexShader,
             _details::SolidFragmentShader);
+        this->imageProgram = this->CreateProgram(_details::ImageVertexShader, _details::ImageFragmentShader);
         glGenBuffers(1, &this->vertexBuffer);
         this->CreateFontAtlas(fontData);
     }
@@ -188,6 +222,12 @@ namespace es_renderer {
     OpenGlRenderer::Implementation::~Implementation() {
         if (this->fontTexture != 0) {
             glDeleteTextures(1, &this->fontTexture);
+        }
+        for (const auto& [source, texture] : this->imageTextures) {
+            glDeleteTextures(1, &texture);
+        }
+        if (this->imageProgram != 0) {
+            glDeleteProgram(this->imageProgram);
         }
         if (this->vertexBuffer != 0) {
             glDeleteBuffers(1, &this->vertexBuffer);
@@ -463,7 +503,8 @@ namespace es_renderer {
         std::string_view text,
         xaml::attr::Color color,
         float fontSize,
-        std::string_view fontWeight) {
+        std::string_view fontWeight,
+        xaml::attr::Alignment horizontalAlignment) {
         if (text.empty()) {
             return;
         }
@@ -487,8 +528,9 @@ namespace es_renderer {
 
         // Первый проход собрал метрики всей строки. Теперь центрируем её в
         // bounds и вторым проходом формируем по два треугольника на glyph.
-        float cursorX = (
-            bounds.x + (bounds.width - textWidth) * 0.5f) / scale;
+        float cursorX = horizontalAlignment == xaml::attr::Alignment::right
+            ? (bounds.x + bounds.width - textWidth) / scale
+            : (bounds.x + (bounds.width - textWidth) * 0.5f) / scale;
         float cursorY = (
             bounds.y
             + (bounds.height - (maximumY - minimumY)) * 0.5f
@@ -550,6 +592,117 @@ namespace es_renderer {
             4 * sizeof(float),
             reinterpret_cast<void*>(2 * sizeof(float)));
         glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertices.size() / 4));
+    }
+
+    GLuint OpenGlRenderer::Implementation::GetSvgTexture(std::string_view source) {
+        const auto found = this->imageTextures.find(std::string(source));
+        if (found != this->imageTextures.end()) {
+            return found->second;
+        }
+        if (!this->resourceLoader) {
+            return 0;
+        }
+        std::vector<unsigned char> file;
+        try {
+            file = this->resourceLoader(source);
+        } catch (...) {
+            return 0;
+        }
+        if (file.empty()) {
+            return 0;
+        }
+        file.push_back('\0');
+        NSVGimage* image = nsvgParse(reinterpret_cast<char*>(file.data()), "px", 96.0f);
+        if (image == nullptr || image->width <= 0.0f || image->height <= 0.0f) {
+            nsvgDelete(image);
+            return 0;
+        }
+        constexpr int textureSize = 128;
+        std::vector<unsigned char> pixels(textureSize * textureSize * 4, 0);
+        NSVGrasterizer* rasterizer = nsvgCreateRasterizer();
+        if (rasterizer == nullptr) {
+            nsvgDelete(image);
+            return 0;
+        }
+        const float scale = std::min(
+            static_cast<float>(textureSize) / image->width,
+            static_cast<float>(textureSize) / image->height);
+        const float offsetX = (textureSize - image->width * scale) / 2.0f;
+        const float offsetY = (textureSize - image->height * scale) / 2.0f;
+        nsvgRasterize(
+            rasterizer,
+            image,
+            offsetX,
+            offsetY,
+            scale,
+            pixels.data(),
+            textureSize,
+            textureSize,
+            textureSize * 4);
+        nsvgDeleteRasterizer(rasterizer);
+        nsvgDelete(image);
+        GLuint texture = 0;
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGBA,
+            textureSize,
+            textureSize,
+            0,
+            GL_RGBA,
+            GL_UNSIGNED_BYTE,
+            pixels.data());
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        this->imageTextures.emplace(source, texture);
+        return texture;
+    }
+
+    void OpenGlRenderer::Implementation::DrawImage(
+        const xaml::Rect& bounds,
+        std::string_view source,
+        xaml::attr::Color tint) {
+        const GLuint texture = this->GetSvgTexture(source);
+        if (texture == 0) {
+            this->DrawOutline(bounds, tint);
+            this->DrawText(
+                bounds,
+                "SVG",
+                tint,
+                std::max(6.0f, bounds.height * 0.3f),
+                "Bold",
+                xaml::attr::Alignment::center);
+            return;
+        }
+        std::vector<float> vertices;
+        vertices.reserve(24);
+        const float left = bounds.x;
+        const float right = bounds.x + bounds.width;
+        const float top = bounds.y;
+        const float bottom = bounds.y + bounds.height;
+        this->AppendTextVertex(vertices, left, top, 0.0f, 1.0f);
+        this->AppendTextVertex(vertices, right, top, 1.0f, 1.0f);
+        this->AppendTextVertex(vertices, right, bottom, 1.0f, 0.0f);
+        this->AppendTextVertex(vertices, left, top, 0.0f, 1.0f);
+        this->AppendTextVertex(vertices, right, bottom, 1.0f, 0.0f);
+        this->AppendTextVertex(vertices, left, bottom, 0.0f, 0.0f);
+        glUseProgram(this->imageProgram);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glUniform1i(glGetUniformLocation(this->imageProgram, "imageTexture"), 0);
+        glUniform4f(glGetUniformLocation(this->imageProgram, "tint"), tint.red, tint.green, tint.blue, tint.alpha);
+        glBindBuffer(GL_ARRAY_BUFFER, this->vertexBuffer);
+        glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(vertices.size() * sizeof(float)), vertices.data(), GL_DYNAMIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), nullptr);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), reinterpret_cast<void*>(2 * sizeof(float)));
+        glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
     void OpenGlRenderer::Implementation::BeginClip(const xaml::Rect& bounds) const {
@@ -628,12 +781,14 @@ namespace es_renderer {
         int width,
         int height,
         const unsigned char* fontData,
-        size_t fontSize)
+        size_t fontSize,
+        ResourceLoader resourceLoader)
         : implementation(std::make_unique<Implementation>(
             width,
             height,
             fontData,
-            fontSize)) {
+            fontSize,
+            std::move(resourceLoader))) {
     }
 
     OpenGlRenderer::~OpenGlRenderer() = default;
@@ -690,13 +845,21 @@ namespace es_renderer {
         std::string_view text,
         xaml::attr::Color color,
         float fontSize,
-        std::string_view fontWeight) {
-        this->implementation->DrawText(bounds, text, color, fontSize, fontWeight);
+        std::string_view fontWeight,
+        xaml::attr::Alignment horizontalAlignment) {
+        this->implementation->DrawText(
+            bounds,
+            text,
+            color,
+            fontSize,
+            fontWeight,
+            horizontalAlignment);
     }
 
     void OpenGlRenderer::DrawImage(
-        const xaml::Rect&,
-        std::string_view,
-        xaml::attr::Color) {
+        const xaml::Rect& bounds,
+        std::string_view source,
+        xaml::attr::Color tint) {
+        this->implementation->DrawImage(bounds, source, tint);
     }
 }

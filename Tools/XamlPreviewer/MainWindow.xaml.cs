@@ -9,8 +9,9 @@ using System.Windows.Threading;
 namespace XamlPreviewer;
 
 public partial class MainWindow : Window {
-    private const string MarkupPath = @"C:\WORK\TEST\XamlPreviewer\MainPage.xaml";
-    private const string ScenariosPath = @"C:\WORK\TEST\XamlPreviewer\scenarios.json";
+    private const string PreviewDirectory = @"C:\WORK\TEST\XamlPreviewer";
+    private const string MarkupPath = PreviewDirectory + @"\MainPage.xaml";
+    private const string ScenariosPath = PreviewDirectory + @"\scenarios.json";
 
     private readonly DispatcherTimer renderTimer;
     private readonly MarkupEditorController markupEditorController;
@@ -30,6 +31,7 @@ public partial class MainWindow : Window {
     }
 
     private void WindowLoaded(object sender, RoutedEventArgs eventArgs) {
+        this.RefreshPageNames();
         if (File.Exists(MarkupPath)) {
             this.LoadMarkup(MarkupPath);
         }
@@ -53,6 +55,12 @@ public partial class MainWindow : Window {
     }
 
     private void SaveButtonClick(object sender, RoutedEventArgs eventArgs) {
+        if (this.EditorModeToggle.IsChecked == true) {
+            File.WriteAllText(ScenariosPath, this.ScenarioEditor.Text.TrimEnd());
+            this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
+            this.StatusText.Text = $"Сценарии сохранены: {ScenariosPath}";
+            return;
+        }
         if (this.markupPath is null) {
             return;
         }
@@ -64,6 +72,18 @@ public partial class MainWindow : Window {
 
     private void ScenarioPickerSelectionChanged(object sender, SelectionChangedEventArgs eventArgs) {
         this.ScheduleRender();
+    }
+
+    private void EditorModeToggleClick(object sender, RoutedEventArgs eventArgs) {
+        this.UpdateEditorMode();
+    }
+
+    private void PagePickerSelectionChanged(object sender, SelectionChangedEventArgs eventArgs) {
+        if (this.PagePicker.SelectedItem is string pageName) {
+            this.LoadMarkup(Path.Combine(PreviewDirectory, pageName));
+        }
+
+        this.RefreshScenarioNames();
     }
 
     private void EditorTextChanged(object sender, TextChangedEventArgs eventArgs) {
@@ -97,13 +117,18 @@ public partial class MainWindow : Window {
         try {
             using var document = JsonDocument.Parse(this.ScenarioEditor.Text);
             var scenarioName = this.ScenarioPicker.SelectedItem as string;
-            var scenarios = document.RootElement;
+            var pageName = this.PagePicker.SelectedItem as string;
+            var scenarios = pageName is not null
+                && document.RootElement.TryGetProperty(Path.GetFileNameWithoutExtension(pageName), out var selectedPage)
+                ? selectedPage
+                : document.RootElement;
             var data = scenarioName is not null && scenarios.TryGetProperty(scenarioName, out var selected)
                 ? selected
                 : scenarios;
             this.DeviceSurface.Child = PreviewRenderer.Render(
                 this.markupEditorController.Text,
-                data);
+                data,
+                Path.GetDirectoryName(this.markupPath) ?? PreviewDirectory);
             this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
             this.StatusText.Text = $"Предпросмотр обновлён · {DateTime.Now:HH:mm:ss}";
         }
@@ -126,16 +151,42 @@ public partial class MainWindow : Window {
         var previous = this.ScenarioPicker.SelectedItem as string;
         try {
             using var document = JsonDocument.Parse(this.ScenarioEditor.Text);
-            if (document.RootElement.ValueKind != JsonValueKind.Object) {
+            if (document.RootElement.ValueKind != JsonValueKind.Object
+                || this.PagePicker.SelectedItem is not string pageName
+                || !document.RootElement.TryGetProperty(Path.GetFileNameWithoutExtension(pageName), out var scenarios)
+                || scenarios.ValueKind != JsonValueKind.Object) {
                 return;
             }
 
-            var names = document.RootElement.EnumerateObject().Select(property => property.Name).ToArray();
+            var names = scenarios.EnumerateObject().Select(property => property.Name).ToArray();
             this.ScenarioPicker.ItemsSource = names;
             this.ScenarioPicker.SelectedItem = names.Contains(previous) ? previous : names.FirstOrDefault();
         }
         catch (JsonException) {
         }
+    }
+
+    private void RefreshPageNames() {
+        var pages = Directory.Exists(PreviewDirectory)
+            ? Directory.GetFiles(PreviewDirectory, "*.xaml")
+                .Select(Path.GetFileName)
+                .Where(name => name is not null)
+                .Cast<string>()
+                .Order()
+                .ToArray()
+            : [];
+        this.PagePicker.ItemsSource = pages;
+        this.PagePicker.SelectedItem = pages.Contains(Path.GetFileName(MarkupPath))
+            ? Path.GetFileName(MarkupPath)
+            : pages.FirstOrDefault();
+    }
+
+    private void UpdateEditorMode() {
+        var scenariosSelected = this.EditorModeToggle.IsChecked == true;
+        this.MarkupEditor.Visibility = scenariosSelected ? Visibility.Collapsed : Visibility.Visible;
+        this.ScenarioPanel.Visibility = scenariosSelected ? Visibility.Visible : Visibility.Collapsed;
+        this.OpenButton.IsEnabled = !scenariosSelected;
+        this.EditorModeToggle.Content = scenariosSelected ? "XAML" : "Сценарии";
     }
 
     private void ScheduleRender() {
