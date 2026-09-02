@@ -9,14 +9,23 @@ using System.Windows.Threading;
 namespace XamlPreviewer;
 
 public partial class MainWindow : Window {
-    private const string PreviewDirectory = @"C:\WORK\TEST\XamlPreviewer";
-    private const string MarkupPath = PreviewDirectory + @"\MainPage.xaml";
-    private const string ScenariosPath = PreviewDirectory + @"\scenarios.json";
-
     private readonly DispatcherTimer renderTimer;
+    private readonly DispatcherTimer externalRefreshTimer;
     private readonly MarkupEditorController markupEditorController;
+    private FileSystemWatcher? markupWatcher;
+    private FileSystemWatcher? scenariosWatcher;
+    private FileSystemWatcher? settingsWatcher;
+    private PreviewerSettings settings = null!;
     private string? markupPath;
     private bool updatingEditors;
+    private EditorMode editorMode;
+    private EditorMode previousEditorMode = EditorMode.Xaml;
+
+    private enum EditorMode {
+        Xaml,
+        Scenarios,
+        Settings,
+    }
 
     public MainWindow() {
         InitializeComponent();
@@ -27,21 +36,38 @@ public partial class MainWindow : Window {
             Interval = TimeSpan.FromMilliseconds(250)
         };
         this.renderTimer.Tick += this.RenderTimerTick;
+        this.externalRefreshTimer = new DispatcherTimer {
+            Interval = TimeSpan.FromMilliseconds(200)
+        };
+        this.externalRefreshTimer.Tick += this.ExternalRefreshTimerTick;
         this.Loaded += this.WindowLoaded;
+        this.Closing += this.WindowClosing;
     }
 
     private void WindowLoaded(object sender, RoutedEventArgs eventArgs) {
+        this.LoadSettings();
+        this.RestoreWindowState();
+        this.ConfigureWatchers();
         this.RefreshPageNames();
-        if (File.Exists(MarkupPath)) {
-            this.LoadMarkup(MarkupPath);
+        var lastMarkupPath = this.settings.LastMarkupPath;
+        if (lastMarkupPath is not null && File.Exists(lastMarkupPath)) {
+            this.LoadMarkup(lastMarkupPath);
+        } else {
+            var defaultMarkupPath = Path.Combine(this.settings.XamlDirectory, "MainPage.xaml");
+            if (File.Exists(defaultMarkupPath)) {
+                this.LoadMarkup(defaultMarkupPath);
+            }
         }
 
         this.updatingEditors = true;
-        this.ScenarioEditor.Text = File.Exists(ScenariosPath)
-            ? File.ReadAllText(ScenariosPath)
-            : "{\n  \"Default\": {}\n}";
+        this.ScenarioEditor.Text = File.ReadAllText(this.settings.ScenariosPath);
+        this.SettingsEditor.Text = this.settings.ToJson();
         this.updatingEditors = false;
         this.RefreshScenarioNames();
+        if (this.settings.LastScenarioName is not null) {
+            this.ScenarioPicker.SelectedItem = this.settings.LastScenarioName;
+        }
+        this.UpdateEditorMode();
         this.ScheduleRender();
     }
 
@@ -55,10 +81,18 @@ public partial class MainWindow : Window {
     }
 
     private void SaveButtonClick(object sender, RoutedEventArgs eventArgs) {
-        if (this.EditorModeToggle.IsChecked == true) {
-            File.WriteAllText(ScenariosPath, this.ScenarioEditor.Text.TrimEnd());
+        if (this.editorMode == EditorMode.Scenarios) {
+            File.WriteAllText(this.settings.ScenariosPath, this.ScenarioEditor.Text.TrimEnd());
             this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
-            this.StatusText.Text = $"Сценарии сохранены: {ScenariosPath}";
+            this.StatusText.Text = $"Сценарии сохранены: {this.settings.ScenariosPath}";
+            return;
+        }
+        if (this.editorMode == EditorMode.Settings) {
+            this.settings = PreviewerSettings.Parse(this.SettingsEditor.Text, this.settings.FilePath);
+            this.SaveSettings();
+            this.RefreshPageNames();
+            this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
+            this.StatusText.Text = $"Настройки сохранены: {this.settings.FilePath}";
             return;
         }
         if (this.markupPath is null) {
@@ -75,12 +109,30 @@ public partial class MainWindow : Window {
     }
 
     private void EditorModeToggleClick(object sender, RoutedEventArgs eventArgs) {
+        this.SettingsButton.IsChecked = false;
+        this.editorMode = this.EditorModeToggle.IsChecked == true
+            ? EditorMode.Scenarios
+            : EditorMode.Xaml;
+        this.UpdateEditorMode();
+    }
+
+    private void SettingsButtonClick(object sender, RoutedEventArgs eventArgs) {
+        if (this.SettingsButton.IsChecked == true) {
+            this.previousEditorMode = this.editorMode == EditorMode.Settings
+                ? this.previousEditorMode
+                : this.editorMode;
+            this.EditorModeToggle.IsChecked = false;
+            this.editorMode = EditorMode.Settings;
+        } else {
+            this.editorMode = this.previousEditorMode;
+            this.EditorModeToggle.IsChecked = this.editorMode == EditorMode.Scenarios;
+        }
         this.UpdateEditorMode();
     }
 
     private void PagePickerSelectionChanged(object sender, SelectionChangedEventArgs eventArgs) {
         if (this.PagePicker.SelectedItem is string pageName) {
-            this.LoadMarkup(Path.Combine(PreviewDirectory, pageName));
+            this.LoadMarkup(Path.Combine(this.settings.XamlDirectory, pageName));
         }
 
         this.RefreshScenarioNames();
@@ -128,7 +180,7 @@ public partial class MainWindow : Window {
             this.DeviceSurface.Child = PreviewRenderer.Render(
                 this.markupEditorController.Text,
                 data,
-                Path.GetDirectoryName(this.markupPath) ?? PreviewDirectory);
+                this.settings.ResourcesDirectory);
             this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
             this.StatusText.Text = $"Предпросмотр обновлён · {DateTime.Now:HH:mm:ss}";
         }
@@ -140,6 +192,7 @@ public partial class MainWindow : Window {
 
     private void LoadMarkup(string path) {
         this.markupPath = Path.GetFullPath(path);
+        this.ConfigureMarkupWatcher();
         this.FilePathText.Text = this.markupPath;
         this.updatingEditors = true;
         this.markupEditorController.SetText(File.ReadAllText(this.markupPath));
@@ -167,8 +220,8 @@ public partial class MainWindow : Window {
     }
 
     private void RefreshPageNames() {
-        var pages = Directory.Exists(PreviewDirectory)
-            ? Directory.GetFiles(PreviewDirectory, "*.xaml")
+        var pages = Directory.Exists(this.settings.XamlDirectory)
+            ? Directory.GetFiles(this.settings.XamlDirectory, "*.xaml")
                 .Select(Path.GetFileName)
                 .Where(name => name is not null)
                 .Cast<string>()
@@ -176,17 +229,139 @@ public partial class MainWindow : Window {
                 .ToArray()
             : [];
         this.PagePicker.ItemsSource = pages;
-        this.PagePicker.SelectedItem = pages.Contains(Path.GetFileName(MarkupPath))
-            ? Path.GetFileName(MarkupPath)
+        this.PagePicker.SelectedItem = pages.Contains("MainPage.xaml")
+            ? "MainPage.xaml"
             : pages.FirstOrDefault();
     }
 
+    private void LoadSettings() {
+        this.settings = PreviewerSettings.LoadDebug();
+    }
+
+    private void ConfigureWatchers() {
+        this.ConfigureMarkupWatcher();
+        this.scenariosWatcher?.Dispose();
+        this.settingsWatcher?.Dispose();
+        this.scenariosWatcher = this.CreateWatcher(this.settings.ScenariosPath);
+        this.settingsWatcher = this.CreateWatcher(this.settings.FilePath);
+    }
+
+    private void ConfigureMarkupWatcher() {
+        this.markupWatcher?.Dispose();
+        this.markupWatcher = this.markupPath is null ? null : this.CreateWatcher(this.markupPath);
+    }
+
+    private FileSystemWatcher? CreateWatcher(string path) {
+        var directory = Path.GetDirectoryName(path);
+        var fileName = Path.GetFileName(path);
+        if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(fileName) || !Directory.Exists(directory)) {
+            return null;
+        }
+        var watcher = new FileSystemWatcher(directory, fileName) {
+            NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName,
+            EnableRaisingEvents = true
+        };
+        watcher.Changed += this.ExternalFileChanged;
+        watcher.Created += this.ExternalFileChanged;
+        watcher.Renamed += this.ExternalFileRenamed;
+        return watcher;
+    }
+
+    private void ExternalFileChanged(object sender, FileSystemEventArgs eventArgs) {
+        this.Dispatcher.BeginInvoke(this.QueueExternalRefresh);
+    }
+
+    private void ExternalFileRenamed(object sender, RenamedEventArgs eventArgs) {
+        this.Dispatcher.BeginInvoke(this.QueueExternalRefresh);
+    }
+
+    private void QueueExternalRefresh() {
+        this.externalRefreshTimer.Stop();
+        this.externalRefreshTimer.Start();
+    }
+
+    private void ExternalRefreshTimerTick(object? sender, EventArgs eventArgs) {
+        this.externalRefreshTimer.Stop();
+        try {
+            if (this.markupPath is not null && File.Exists(this.markupPath)) {
+                var markup = File.ReadAllText(this.markupPath);
+                if (!string.Equals(markup, this.markupEditorController.Text, StringComparison.Ordinal)) {
+                    this.updatingEditors = true;
+                    this.markupEditorController.SetText(markup);
+                    this.updatingEditors = false;
+                }
+            }
+            if (File.Exists(this.settings.ScenariosPath)) {
+                var scenarios = File.ReadAllText(this.settings.ScenariosPath);
+                if (!string.Equals(scenarios, this.ScenarioEditor.Text, StringComparison.Ordinal)) {
+                    this.updatingEditors = true;
+                    this.ScenarioEditor.Text = scenarios;
+                    this.updatingEditors = false;
+                    this.RefreshScenarioNames();
+                }
+            }
+            if (File.Exists(this.settings.FilePath)) {
+                var settingsJson = File.ReadAllText(this.settings.FilePath);
+                if (!string.Equals(settingsJson, this.SettingsEditor.Text, StringComparison.Ordinal)) {
+                    this.settings = PreviewerSettings.Parse(settingsJson, this.settings.FilePath);
+                    this.updatingEditors = true;
+                    this.SettingsEditor.Text = settingsJson;
+                    this.updatingEditors = false;
+                    this.ConfigureWatchers();
+                    this.RefreshPageNames();
+                }
+            }
+            this.ScheduleRender();
+        }
+        catch (Exception exception) {
+            this.StatusText.Foreground = PreviewRenderer.ParseBrush("#FF8A80");
+            this.StatusText.Text = exception.Message;
+        }
+    }
+
+    private void SaveSettings() {
+        this.settings.LastMarkupPath = this.markupPath;
+        this.settings.LastScenarioName = this.ScenarioPicker.SelectedItem as string;
+        if (this.WindowState == WindowState.Normal) {
+            this.settings.WindowWidth = this.Width;
+            this.settings.WindowHeight = this.Height;
+        }
+        this.settings.IsMaximized = this.WindowState == WindowState.Maximized;
+        this.settings.EditorPaneWidth = this.EditorColumn.ActualWidth;
+        this.settings.Save();
+    }
+
+    private void RestoreWindowState() {
+        if (this.settings.WindowWidth >= this.MinWidth) {
+            this.Width = this.settings.WindowWidth;
+        }
+        if (this.settings.WindowHeight >= this.MinHeight) {
+            this.Height = this.settings.WindowHeight;
+        }
+        if (this.settings.IsMaximized) {
+            this.WindowState = WindowState.Maximized;
+        }
+        if (this.settings.EditorPaneWidth > 0.0) {
+            this.EditorColumn.Width = new GridLength(this.settings.EditorPaneWidth, GridUnitType.Pixel);
+        }
+    }
+
+    private void WindowClosing(object? sender, System.ComponentModel.CancelEventArgs eventArgs) {
+        this.SaveSettings();
+        this.markupWatcher?.Dispose();
+        this.scenariosWatcher?.Dispose();
+        this.settingsWatcher?.Dispose();
+    }
+
     private void UpdateEditorMode() {
-        var scenariosSelected = this.EditorModeToggle.IsChecked == true;
-        this.MarkupEditor.Visibility = scenariosSelected ? Visibility.Collapsed : Visibility.Visible;
-        this.ScenarioPanel.Visibility = scenariosSelected ? Visibility.Visible : Visibility.Collapsed;
-        this.OpenButton.IsEnabled = !scenariosSelected;
-        this.EditorModeToggle.Content = scenariosSelected ? "XAML" : "Сценарии";
+        this.MarkupEditor.Visibility = this.editorMode == EditorMode.Xaml ? Visibility.Visible : Visibility.Collapsed;
+        this.ScenarioPanel.Visibility = this.editorMode == EditorMode.Scenarios ? Visibility.Visible : Visibility.Collapsed;
+        this.SettingsPanel.Visibility = this.editorMode == EditorMode.Settings ? Visibility.Visible : Visibility.Collapsed;
+        this.OpenButton.IsEnabled = this.editorMode == EditorMode.Xaml;
+        this.XamlModeText.Foreground = PreviewRenderer.ParseBrush(
+            this.editorMode == EditorMode.Xaml ? "#D5BD7D" : "#E6E6E6");
+        this.ScenariosModeText.Foreground = PreviewRenderer.ParseBrush(
+            this.editorMode == EditorMode.Scenarios ? "#D5BD7D" : "#E6E6E6");
     }
 
     private void ScheduleRender() {

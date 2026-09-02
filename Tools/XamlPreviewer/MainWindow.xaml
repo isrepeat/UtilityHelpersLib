@@ -112,6 +112,43 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style x:Key="EditorSwitchToggleButtonStyle"
+               TargetType="ToggleButton">
+            <Setter Property="Padding"
+                    Value="12 5" />
+            <Setter Property="Background"
+                    Value="#181818" />
+            <Setter Property="BorderBrush"
+                    Value="{StaticResource ControlBorderBrush}" />
+            <Setter Property="Foreground"
+                    Value="{StaticResource ControlForegroundBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Content="{TemplateBinding Content}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver"
+                                     Value="True">
+                                <Setter TargetName="Border"
+                                        Property="Background"
+                                        Value="#303030" />
+                                <Setter TargetName="Border"
+                                        Property="BorderBrush"
+                                        Value="#707070" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style TargetType="ComboBox">
             <Setter Property="Padding"
                     Value="6 3" />
@@ -274,11 +311,26 @@
         <DockPanel
                    Margin="10">
             <ToggleButton x:Name="EditorModeToggle"
-                          Style="{StaticResource EditorModeToggleButtonStyle}"
-                          Width="110"
+                          Style="{StaticResource EditorSwitchToggleButtonStyle}"
+                          Width="155"
                           Margin="0 0 8 0"
-                          Click="EditorModeToggleClick"
-                          Content="Сценарии" />
+                          Click="EditorModeToggleClick">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock x:Name="XamlModeText"
+                               Text="XAML" />
+                    <TextBlock Margin="8 0"
+                               Foreground="#777777"
+                               Text="/" />
+                    <TextBlock x:Name="ScenariosModeText"
+                               Text="Сценарии" />
+                </StackPanel>
+            </ToggleButton>
+            <ToggleButton x:Name="SettingsButton"
+                          Style="{StaticResource EditorModeToggleButtonStyle}"
+                          Width="100"
+                          Margin="0 0 8 0"
+                          Click="SettingsButtonClick"
+                          Content="Настройки" />
             <Button x:Name="OpenButton"
                     Width="90"
                     Margin="0 0 8 0"
@@ -312,7 +364,8 @@
         </DockPanel>
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1.15*" />
+                <ColumnDefinition x:Name="EditorColumn"
+                                  Width="1.15*" />
                 <ColumnDefinition Width="5" />
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="0" />
@@ -372,6 +425,26 @@
                          FontSize="14"
                          HorizontalScrollBarVisibility="Auto"
                          TextChanged="EditorTextChanged"
+                         VerticalScrollBarVisibility="Auto" />
+            </Grid>
+            <Grid x:Name="SettingsPanel"
+                  Grid.Column="0"
+                  Margin="10"
+                  Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <TextBlock Margin="0 0 0 8"
+                           Foreground="#DDDDDD"
+                           Text="Настройки previewer (JSON)" />
+                <TextBox x:Name="SettingsEditor"
+                         Grid.Row="1"
+                         AcceptsReturn="True"
+                         AcceptsTab="True"
+                         FontFamily="Cascadia Mono, Consolas"
+                         FontSize="14"
+                         HorizontalScrollBarVisibility="Auto"
                          VerticalScrollBarVisibility="Auto" />
             </Grid>
         </Grid>
