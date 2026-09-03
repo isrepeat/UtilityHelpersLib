@@ -4,6 +4,7 @@ using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Search;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -309,6 +310,18 @@ public partial class MainWindow : Window {
     }
 
     private void EditorPreviewKeyDown(object sender, KeyEventArgs eventArgs) {
+        if (ReferenceEquals(sender, this.SettingsEditor)
+            && MainWindow.IsPasteGesture(eventArgs)
+            && Clipboard.ContainsText()) {
+            var pastedText = Clipboard.GetText();
+            var jsonText = MainWindow.EscapeWindowsPathForJson(pastedText);
+            if (!string.Equals(pastedText, jsonText, StringComparison.Ordinal)) {
+                this.SettingsEditor.SelectedText = jsonText;
+                eventArgs.Handled = true;
+                return;
+            }
+        }
+
         if (eventArgs.Key == Key.S && Keyboard.Modifiers == ModifierKeys.Control) {
             this.SaveButtonClick(this, eventArgs);
             eventArgs.Handled = true;
@@ -323,6 +336,44 @@ public partial class MainWindow : Window {
             return;
         }
         this.markupEditorController.HandlePreviewKeyDown(eventArgs);
+    }
+
+    private static bool IsPasteGesture(KeyEventArgs eventArgs) {
+        return eventArgs.Key == Key.V && Keyboard.Modifiers == ModifierKeys.Control
+            || eventArgs.Key == Key.Insert && Keyboard.Modifiers == ModifierKeys.Shift;
+    }
+
+    private static string EscapeWindowsPathForJson(string value) {
+        var candidate = value.Trim();
+        if (candidate.Length >= 2 && candidate[0] == '"' && candidate[^1] == '"') {
+            candidate = candidate[1..^1];
+        }
+        if (!MainWindow.IsWindowsPath(candidate)) {
+            return value;
+        }
+
+        var result = new StringBuilder(value.Length * 2);
+        for (var index = 0; index < value.Length; index++) {
+            var character = value[index];
+            if (character != '\\') {
+                result.Append(character);
+                continue;
+            }
+
+            result.Append("\\\\");
+            if (index + 1 < value.Length && value[index + 1] == '\\') {
+                index++;
+            }
+        }
+        return result.ToString();
+    }
+
+    private static bool IsWindowsPath(string value) {
+        return value.Length >= 3
+            && char.IsAsciiLetter(value[0])
+            && value[1] == ':'
+            && value[2] == '\\'
+            || value.StartsWith("\\\\", StringComparison.Ordinal);
     }
 
     private void RenderTimerTick(object? sender, EventArgs eventArgs) {
