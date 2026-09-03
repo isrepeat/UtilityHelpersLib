@@ -14,6 +14,7 @@
         <VCProjectVersion>18.0</VCProjectVersion>
         <ProjectGuid>{4F503B7D-45FB-4120-A069-6638899C08A8}</ProjectGuid>
         <RootNamespace>XamlRuntimeNativeBridge</RootNamespace>
+        <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
     </PropertyGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -29,8 +30,6 @@
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
     <PropertyGroup>
         <TargetName>XamlRuntime.NativeBridge</TargetName>
-        <OutDir>$(SolutionDir)!VS_TMP\Build\$(Configuration)\$(Platform)\$(ProjectName)\</OutDir>
-        <IntDir>$(SolutionDir)!VS_TMP\Intermediate\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
     </PropertyGroup>
     <ItemDefinitionGroup>
         <ClCompile>

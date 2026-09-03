@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -12,8 +12,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AvalonEdit"
-                      Version="6.3.1.120" />
+    <PackageReference Include="AvalonEdit" Version="6.3.1.120" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- NativeBridge — отдельный C++ проект; его NuGet restore-cache не является
+         частью дерева исходников WPF-приложения. -->
+    <None Remove="NativeBridge\obj\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -23,17 +28,9 @@
   </ItemGroup>
 
   <Target Name="CopyNativeBridge" AfterTargets="Build">
-    <Error Condition="!Exists('$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.dll')"
-           Text="XamlRuntime.NativeBridge.dll was not built: $(NativeBridgeOutputDir)XamlRuntime.NativeBridge.dll" />
-    <Copy SourceFiles="$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.dll"
-          DestinationFolder="$(OutDir)"
-          SkipUnchangedFiles="true" />
-    <Copy SourceFiles="$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.pdb"
-          DestinationFolder="$(OutDir)"
-          SkipUnchangedFiles="true"
-          Condition="Exists('$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.pdb')" />
-    <Copy SourceFiles="$(NativeBridgeOutputDir)libEGL.dll;$(NativeBridgeOutputDir)libGLESv2.dll;$(NativeBridgeOutputDir)$(NativeAngleZlibName)"
-          DestinationFolder="$(OutDir)"
-          SkipUnchangedFiles="true" />
+    <Error Condition="!Exists('$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.dll')" Text="XamlRuntime.NativeBridge.dll was not built: $(NativeBridgeOutputDir)XamlRuntime.NativeBridge.dll" />
+    <Copy SourceFiles="$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.pdb" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.pdb')" />
+    <Copy SourceFiles="$(NativeBridgeOutputDir)libEGL.dll;$(NativeBridgeOutputDir)libGLESv2.dll;$(NativeBridgeOutputDir)$(NativeAngleZlibName)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
   </Target>
 </Project>

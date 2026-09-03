@@ -1,4 +1,6 @@
-#include "XamlRuntime/Input.h"
+#include <Helpers.Logging/Logging.h>
+
+#include "Input.h"
 
 namespace xaml::_details {
     bool Contains(const Rect& bounds, float x, float y) {
@@ -39,10 +41,22 @@ namespace xaml {
     bool HandleTap(Element& element) {
         if (element.Type() == ElementType::toggleSwitch) {
             element.SetIsOn(!element.IsOn());
+            LOG_DEBUG(
+                "XamlRuntime.Input",
+                "Toggle tap: element='{}', isOn={}",
+                element.Id(),
+                element.IsOn());
+            return true;
         }
-        return element.Type() == ElementType::border
+        const bool handled = element.Type() == ElementType::border
             || element.Type() == ElementType::button
-            || element.Type() == ElementType::iconButton
-            || element.Type() == ElementType::toggleSwitch;
+            || element.Type() == ElementType::iconButton;
+        if (handled) {
+            LOG_DEBUG(
+                "XamlRuntime.Input",
+                "Tap: element='{}'",
+                element.Id());
+        }
+        return handled;
     }
 }

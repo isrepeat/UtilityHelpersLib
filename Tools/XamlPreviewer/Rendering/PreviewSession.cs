@@ -30,6 +30,8 @@ internal sealed class PreviewSession : IDisposable {
 
     public FrameworkElement Surface => this.image;
 
+    public ImageSource? Snapshot => this.image.Source;
+
     public event EventHandler? AnimationStarted;
     public event EventHandler<string>? Tapped;
 

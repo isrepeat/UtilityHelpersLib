@@ -1,4 +1,6 @@
-#include "XamlRuntime/XamlLayout.h"
+#include <Helpers.Logging/Logging.h>
+
+#include "XamlLayout.h"
 
 #include <algorithm>
 #include <sstream>
@@ -552,6 +554,17 @@ namespace xaml {
         // Разделение measure/arrange позволяет заменить или расширить layout
         // контейнеры, не меняя контракт визуального дерева.
         const Size desired = _details::measure(root);
+        // Layout вызывается только при invalidation, а не в каждом render frame.
+        // Поэтому запись полезна для диагностики перестроений и не создаёт
+        // постоянной нагрузки в render loop.
+        LOG_DEBUG(
+            "XamlRuntime.Layout",
+            "Layout: root='{}', available={}x{}, desired={}x{}",
+            root.Id(),
+            availableSize.width,
+            availableSize.height,
+            desired.width,
+            desired.height);
         if (root.Type() == ElementType::page) {
             _details::arrange(
                 root,

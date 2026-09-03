@@ -10,6 +10,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 
 namespace XamlPreviewer;
@@ -26,6 +27,7 @@ public partial class MainWindow : Window {
     private readonly DispatcherTimer smoothScrollTimer;
     private readonly MarkupEditorController markupEditorController;
     private readonly XamlCompletionController xamlCompletionController;
+    private readonly Grid previewLayer = new();
     private readonly Dictionary<TextEditor, SmoothScrollState> smoothScrollStates = [];
     private bool updatingPreviewControls;
     private bool settingsPersistenceReady;
@@ -33,8 +35,13 @@ public partial class MainWindow : Window {
     private FileSystemWatcher? scenariosWatcher;
     private FileSystemWatcher? settingsWatcher;
     private PreviewSession? previewSession;
+    private Image? transitioningPageSnapshot;
     private PreviewerSettings settings = null!;
     private string? markupPath;
+    private string? pendingPageTransition;
+    private bool isMarkupDirty;
+    private bool isScenariosDirty;
+    private bool isSettingsDirty;
     private bool updatingEditors;
     private EditorMode editorMode;
     private EditorMode previousEditorMode = EditorMode.Xaml;
@@ -69,6 +76,7 @@ public partial class MainWindow : Window {
 
     public MainWindow() {
         InitializeComponent();
+        this.DeviceSurface.Child = this.previewLayer;
         WindowTheme.EnableDarkTitleBar(this);
         MainWindow.ConfigureEditor(this.MarkupEditor, MarkupSyntaxHighlighter.Create());
         MainWindow.ConfigureEditor(this.ScenarioEditor, MarkupSyntaxHighlighter.CreateJson());
@@ -108,7 +116,12 @@ public partial class MainWindow : Window {
         this.RefreshPageNames();
         var lastMarkupPath = this.settings.LastMarkupPath;
         if (lastMarkupPath is not null && File.Exists(lastMarkupPath)) {
-            this.LoadMarkup(lastMarkupPath);
+            var lastPageName = Path.GetFileName(lastMarkupPath);
+            if (this.PagePicker.Items.Contains(lastPageName)) {
+                this.PagePicker.SelectedItem = lastPageName;
+            } else {
+                this.LoadMarkup(lastMarkupPath);
+            }
         } else {
             var defaultMarkupPath = Path.Combine(this.settings.XamlDirectory, "MainPage.xaml");
             if (File.Exists(defaultMarkupPath)) {
@@ -120,6 +133,9 @@ public partial class MainWindow : Window {
         this.ScenarioEditor.Text = File.ReadAllText(this.settings.ScenariosPath);
         this.SettingsEditor.Text = this.settings.ToJson();
         this.updatingEditors = false;
+        this.isMarkupDirty = false;
+        this.isScenariosDirty = false;
+        this.isSettingsDirty = false;
         this.RefreshScenarioNames();
         if (this.settings.LastScenarioName is not null) {
             this.ScenarioPicker.SelectedItem = this.settings.LastScenarioName;
@@ -127,6 +143,7 @@ public partial class MainWindow : Window {
         this.UpdateEditorMode();
         this.settingsPersistenceReady = true;
         this.PersistSettings();
+        this.UpdateDocumentState();
         this.ScheduleRender();
         if (this.settings.PreviewScale <= 0.0) {
             this.Dispatcher.BeginInvoke(new Action(this.FitPreview));
@@ -145,6 +162,8 @@ public partial class MainWindow : Window {
     private void SaveButtonClick(object sender, RoutedEventArgs eventArgs) {
         if (this.editorMode == EditorMode.Scenarios) {
             File.WriteAllText(this.settings.ScenariosPath, this.ScenarioEditor.Text.TrimEnd());
+            this.isScenariosDirty = false;
+            this.UpdateDocumentState();
             this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
             this.StatusText.Text = $"Сценарии сохранены: {this.settings.ScenariosPath}";
             return;
@@ -156,6 +175,11 @@ public partial class MainWindow : Window {
             this.ApplySettingsToPreviewControls();
             this.SaveSettings();
             this.RefreshPageNames();
+            this.updatingEditors = true;
+            this.SettingsEditor.Text = this.settings.ToJson();
+            this.updatingEditors = false;
+            this.isSettingsDirty = false;
+            this.UpdateDocumentState();
             this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
             this.StatusText.Text = $"Настройки сохранены: {this.settings.FilePath}";
             return;
@@ -165,6 +189,8 @@ public partial class MainWindow : Window {
         }
 
         File.WriteAllText(this.markupPath, this.markupEditorController.Text.TrimEnd());
+        this.isMarkupDirty = false;
+        this.UpdateDocumentState();
         this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
         this.StatusText.Text = $"Сохранено: {this.markupPath}";
     }
@@ -235,7 +261,9 @@ public partial class MainWindow : Window {
                 : this.editorMode;
             this.EditorModeToggle.IsChecked = false;
             this.editorMode = EditorMode.Settings;
-            this.SyncSettingsEditor();
+            if (!this.isSettingsDirty) {
+                this.SyncSettingsEditor();
+            }
         } else {
             this.editorMode = this.previousEditorMode;
             this.EditorModeToggle.IsChecked = this.editorMode == EditorMode.Scenarios;
@@ -249,11 +277,18 @@ public partial class MainWindow : Window {
         }
 
         this.RefreshScenarioNames();
+        // Редактирование XAML намеренно debounce'ится, но navigation уже имеет
+        // готовую цель. Иначе пользователь ждёт 250 мс до начала transition.
+        if (this.pendingPageTransition is not null) {
+            this.RenderTimerTick(this, EventArgs.Empty);
+        }
     }
 
     private void EditorTextChanged(object sender, EventArgs eventArgs) {
         if (ReferenceEquals(sender, this.MarkupEditor)) {
             if (this.markupEditorController.HandleTextChanged()) {
+                this.isMarkupDirty = true;
+                this.UpdateDocumentState();
                 this.ScheduleRender();
             }
 
@@ -262,9 +297,13 @@ public partial class MainWindow : Window {
 
         if (!this.updatingEditors) {
             if (ReferenceEquals(sender, this.ScenarioEditor)) {
+                this.isScenariosDirty = true;
                 this.RefreshScenarioNames();
+            } else if (ReferenceEquals(sender, this.SettingsEditor)) {
+                this.isSettingsDirty = true;
             }
 
+            this.UpdateDocumentState();
             this.ScheduleRender();
         }
     }
@@ -302,8 +341,16 @@ public partial class MainWindow : Window {
             var root = PreviewRenderer.CreateRoot(this.markupEditorController.Text, data);
             var previewSize = this.GetPreviewSize();
             this.animationTimer.Stop();
-            this.previewSession?.Dispose();
+            var previousSession = this.previewSession;
+            var transition = this.pendingPageTransition;
+            this.pendingPageTransition = null;
+            var previousSnapshot = previousSession is not null && transition is not null
+                ? this.CreatePageSnapshot(previousSession)
+                : null;
+            this.CompletePageTransition();
+            previousSession?.Dispose();
             this.previewSession = null;
+            this.previewLayer.Children.Clear();
             PreviewSession session;
             try {
                 session = new PreviewSession(
@@ -319,7 +366,11 @@ public partial class MainWindow : Window {
             session.AnimationStarted += this.PreviewSessionAnimationStarted;
             session.Tapped += this.PreviewSessionTapped;
             this.previewSession = session;
-            this.DeviceSurface.Child = session.Surface;
+            if (previousSnapshot is not null && transition is not null) {
+                this.StartPageTransition(previousSnapshot, session, transition);
+            } else {
+                this.previewLayer.Children.Add(session.Surface);
+            }
             this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
             this.StatusText.Text = $"Предпросмотр обновлён · {DateTime.Now:HH:mm:ss}";
         }
@@ -351,13 +402,77 @@ public partial class MainWindow : Window {
             || !element.TryGetProperty("tap", out var tap)
             || !tap.TryGetProperty("type", out var type)
             || type.GetString() != "navigate"
-            || !tap.TryGetProperty("target", out var target)) {
+            || !tap.TryGetProperty("target", out var target)
+            || !tap.TryGetProperty("transition", out var transition)) {
+            return;
+        }
+        var transitionName = transition.GetString();
+        if (string.IsNullOrWhiteSpace(transitionName)) {
             return;
         }
         var targetPage = target.GetString() + ".xaml";
         if (this.PagePicker.Items.Contains(targetPage)) {
+            // Навигация выражается через тот же PagePicker, что и выбор страницы
+            // пользователем. Его SelectionChanged загрузит XAML целевой страницы.
+            this.pendingPageTransition = transitionName;
             this.PagePicker.SelectedItem = targetPage;
         }
+    }
+
+    private void StartPageTransition(
+        Image previousSnapshot,
+        PreviewSession nextSession,
+        string transition) {
+        this.CompletePageTransition();
+        this.transitioningPageSnapshot = previousSnapshot;
+        this.previewLayer.Children.Add(previousSnapshot);
+        this.previewLayer.Children.Add(nextSession.Surface);
+
+        const int durationMilliseconds = 220;
+        var duration = new Duration(TimeSpan.FromMilliseconds(durationMilliseconds));
+        if (string.Equals(transition, "fade", StringComparison.OrdinalIgnoreCase)) {
+            previousSnapshot.BeginAnimation(
+                OpacityProperty,
+                new DoubleAnimation(1.0, 0.0, duration));
+            var fadeIn = new DoubleAnimation(0.0, 1.0, duration);
+            fadeIn.Completed += this.PageTransitionCompleted;
+            nextSession.Surface.BeginAnimation(OpacityProperty, fadeIn);
+            return;
+        }
+
+        var direction = string.Equals(transition, "slideRight", StringComparison.OrdinalIgnoreCase)
+            ? 1.0
+            : -1.0;
+        var offset = this.GetPreviewSize().Width;
+        previousSnapshot.RenderTransform = new TranslateTransform();
+        nextSession.Surface.RenderTransform = new TranslateTransform(-direction * offset, 0.0);
+        previousSnapshot.RenderTransform.BeginAnimation(
+            TranslateTransform.XProperty,
+            new DoubleAnimation(0.0, direction * offset, duration));
+        var slideIn = new DoubleAnimation(-direction * offset, 0.0, duration);
+        slideIn.Completed += this.PageTransitionCompleted;
+        nextSession.Surface.RenderTransform.BeginAnimation(TranslateTransform.XProperty, slideIn);
+    }
+
+    private void PageTransitionCompleted(object? sender, EventArgs eventArgs) {
+        this.CompletePageTransition();
+    }
+
+    private void CompletePageTransition() {
+        if (this.transitioningPageSnapshot is null) {
+            return;
+        }
+        this.previewLayer.Children.Remove(this.transitioningPageSnapshot);
+        this.transitioningPageSnapshot = null;
+    }
+
+    private Image CreatePageSnapshot(PreviewSession session) {
+        return new Image {
+            Width = this.DeviceSurface.Width,
+            Height = this.DeviceSurface.Height,
+            Source = session.Snapshot,
+            Stretch = Stretch.Fill,
+        };
     }
 
     private void LoadMarkup(string path) {
@@ -367,6 +482,11 @@ public partial class MainWindow : Window {
         this.updatingEditors = true;
         this.markupEditorController.SetText(File.ReadAllText(this.markupPath));
         this.updatingEditors = false;
+        this.isMarkupDirty = false;
+        this.UpdateDocumentState();
+        // PersistSettings записывает previewer.settings.json. Его изменение
+        // асинхронно придёт обратно через settingsWatcher, поэтому refresh ниже
+        // не должен самовольно выбирать MainPage вместо текущей страницы.
         this.PersistSettings();
         this.ScheduleRender();
     }
@@ -391,6 +511,10 @@ public partial class MainWindow : Window {
     }
 
     private void RefreshPageNames() {
+        // RefreshPageNames вызывается и из settingsWatcher после PersistSettings.
+        // Сохраняем выбор, чтобы такой внутренний refresh не отменял навигацию
+        // MainPage -> SettingsPage через несколько сотен миллисекунд после tap.
+        var previous = this.PagePicker.SelectedItem as string;
         var pages = Directory.Exists(this.settings.XamlDirectory)
             ? Directory.GetFiles(this.settings.XamlDirectory, "*.xaml")
                 .Select(Path.GetFileName)
@@ -400,9 +524,11 @@ public partial class MainWindow : Window {
                 .ToArray()
             : [];
         this.PagePicker.ItemsSource = pages;
-        this.PagePicker.SelectedItem = pages.Contains("MainPage.xaml")
-            ? "MainPage.xaml"
-            : pages.FirstOrDefault();
+        this.PagePicker.SelectedItem = pages.Contains(previous)
+            ? previous
+            : pages.Contains("MainPage.xaml")
+                ? "MainPage.xaml"
+                : pages.FirstOrDefault();
     }
 
     private void LoadSettings() {
@@ -460,6 +586,8 @@ public partial class MainWindow : Window {
                     this.updatingEditors = true;
                     this.markupEditorController.SetText(markup);
                     this.updatingEditors = false;
+                    this.isMarkupDirty = false;
+                    this.UpdateDocumentState();
                 }
             }
             if (File.Exists(this.settings.ScenariosPath)) {
@@ -468,6 +596,8 @@ public partial class MainWindow : Window {
                     this.updatingEditors = true;
                     this.ScenarioEditor.Text = scenarios;
                     this.updatingEditors = false;
+                    this.isScenariosDirty = false;
+                    this.UpdateDocumentState();
                     this.RefreshScenarioNames();
                 }
             }
@@ -478,7 +608,11 @@ public partial class MainWindow : Window {
                     this.updatingEditors = true;
                     this.SettingsEditor.Text = settingsJson;
                     this.updatingEditors = false;
+                    this.isSettingsDirty = false;
+                    this.UpdateDocumentState();
                     this.ConfigureWatchers();
+                    // Не сбрасывает PagePicker на MainPage: RefreshPageNames
+                    // восстанавливает страницу, выбранную обработчиком navigation.
                     this.RefreshPageNames();
                     this.ConfigureMouseWheelScrolling();
                     this.ApplyEditorScale();
@@ -503,6 +637,14 @@ public partial class MainWindow : Window {
         this.settings.IsMaximized = this.WindowState == WindowState.Maximized;
         this.settings.EditorPaneWidth = this.EditorColumn.ActualWidth;
         this.settings.Save();
+        // Синхронизируем отображаемый JSON после собственного сохранения.
+        // Тогда settingsWatcher не принимает нашу же запись за внешнее
+        // изменение и не запускает лишний тяжёлый render PreviewSession.
+        if (!this.isSettingsDirty) {
+            this.updatingEditors = true;
+            this.SettingsEditor.Text = this.settings.ToJson();
+            this.updatingEditors = false;
+        }
     }
 
     private void PersistSettings() {
@@ -520,6 +662,12 @@ public partial class MainWindow : Window {
         }
         if (this.settings.IsMaximized) {
             this.WindowState = WindowState.Maximized;
+        } else {
+            // Положение из прошлой сессии не восстанавливаем: окно должно
+            // открываться в центре рабочей области текущего экрана.
+            var workArea = SystemParameters.WorkArea;
+            this.Left = workArea.Left + (workArea.Width - this.Width) / 2.0;
+            this.Top = workArea.Top + (workArea.Height - this.Height) / 2.0;
         }
         if (this.settings.EditorPaneWidth > 0.0) {
             this.EditorColumn.Width = new GridLength(this.settings.EditorPaneWidth, GridUnitType.Pixel);
@@ -529,6 +677,7 @@ public partial class MainWindow : Window {
     private void WindowClosing(object? sender, System.ComponentModel.CancelEventArgs eventArgs) {
         this.animationTimer.Stop();
         this.smoothScrollTimer.Stop();
+        this.CompletePageTransition();
         this.previewSession?.Dispose();
         this.markupWatcher?.Dispose();
         this.scenariosWatcher?.Dispose();
@@ -556,6 +705,19 @@ public partial class MainWindow : Window {
             this.editorMode == EditorMode.Xaml ? "#D5BD7D" : "#E6E6E6");
         this.ScenariosModeText.Foreground = PreviewRenderer.ParseBrush(
             this.editorMode == EditorMode.Scenarios ? "#D5BD7D" : "#E6E6E6");
+        this.UpdateDocumentState();
+    }
+
+    private void UpdateDocumentState() {
+        this.XamlModeText.Text = this.isMarkupDirty ? "XAML *" : "XAML";
+        this.ScenariosModeText.Text = this.isScenariosDirty ? "Сценарии *" : "Сценарии";
+        this.SettingsButton.Content = this.isSettingsDirty ? "Настройки *" : "Настройки";
+        this.SaveButton.IsEnabled = this.editorMode switch {
+            EditorMode.Xaml => this.isMarkupDirty,
+            EditorMode.Scenarios => this.isScenariosDirty,
+            EditorMode.Settings => this.isSettingsDirty,
+            _ => false,
+        };
     }
 
     private void InitializePreviewControls() {
@@ -665,6 +827,8 @@ public partial class MainWindow : Window {
         this.updatingEditors = true;
         this.SettingsEditor.Text = this.settings.ToJson();
         this.updatingEditors = false;
+        this.isSettingsDirty = false;
+        this.UpdateDocumentState();
     }
 
     private static void ConfigureEditor(TextEditor editor, IHighlightingDefinition highlighting) {

@@ -218,6 +218,12 @@ namespace es_renderer {
         this->imageProgram = this->CreateProgram(_details::ImageVertexShader, _details::ImageFragmentShader);
         glGenBuffers(1, &this->vertexBuffer);
         this->CreateFontAtlas(fontData);
+        LOG_INFO(
+            "OpenGlRenderer",
+            "Initialized: viewport={}x{}, fontBytes={}",
+            width,
+            height,
+            fontSize);
     }
 
     OpenGlRenderer::Implementation::~Implementation() {
@@ -262,6 +268,7 @@ namespace es_renderer {
             std::string log(static_cast<size_t>(std::max(1, logLength)), '\0');
             glGetShaderInfoLog(shader, logLength, nullptr, log.data());
             glDeleteShader(shader);
+            LOG_ERROR("OpenGlRenderer", "Shader compilation failed: {}", log);
             throw std::runtime_error("ANGLE shader compilation failed: " + log);
         }
         return shader;
@@ -286,6 +293,7 @@ namespace es_renderer {
             std::string log(static_cast<size_t>(std::max(1, logLength)), '\0');
             glGetProgramInfoLog(program, logLength, nullptr, log.data());
             glDeleteProgram(program);
+            LOG_ERROR("OpenGlRenderer", "Shader program linking failed: {}", log);
             throw std::runtime_error("ANGLE program linking failed: " + log);
         }
         return program;
@@ -351,6 +359,11 @@ namespace es_renderer {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        LOG_DEBUG(
+            "OpenGlRenderer",
+            "Font atlas created: {}x{}",
+            _details::AtlasWidth,
+            _details::AtlasHeight);
     }
 
     void OpenGlRenderer::Implementation::EndClip() const {
@@ -661,6 +674,11 @@ namespace es_renderer {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         this->imageTextures.emplace(source, texture);
+        LOG_DEBUG(
+            "OpenGlRenderer",
+            "SVG texture loaded: source='{}', texture={}",
+            source,
+            texture);
         return texture;
     }
 

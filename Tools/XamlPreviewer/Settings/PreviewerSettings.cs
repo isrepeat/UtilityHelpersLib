@@ -6,14 +6,20 @@ using System.Text.Json.Serialization;
 namespace XamlPreviewer;
 
 internal sealed class PreviewerSettings {
-    private const string DebugPreviewDirectory = @"C:\WORK\TEST\XamlPreviewer";
+    private const string DefaultResourcesDirectory = @"C:\WORK\Android\Projects\MobileClock\Native\Resources";
+    private const string DefaultXamlDirectory = @"C:\WORK\Android\Projects\MobileClock\Native\UI";
     private const string DefaultScenarios = """
         {
           "MainPage": {
             "Будильники": {
               "PackageVersion": "1.4.0",
               "ClockText": "через 6 ч 35 мин",
-              "Alarms": []
+              "Alarms": [
+                { "Time": "05:55", "IsEnabled": true },
+                { "Time": "06:18", "IsEnabled": false },
+                { "Time": "06:30", "IsEnabled": true },
+                { "Time": "06:36", "IsEnabled": false }
+              ]
             }
           },
           "SettingsPage": {
@@ -29,12 +35,12 @@ internal sealed class PreviewerSettings {
         {
           "MainPage": {
             "settingsButton": {
-              "tap": { "type": "navigate", "target": "SettingsPage" }
+              "tap": { "type": "navigate", "target": "SettingsPage", "transition": "slideLeft" }
             }
           },
           "SettingsPage": {
             "backNavigation": {
-              "tap": { "type": "navigate", "target": "MainPage" }
+              "tap": { "type": "navigate", "target": "MainPage", "transition": "slideRight" }
             }
           }
         }
@@ -66,7 +72,6 @@ internal sealed class PreviewerSettings {
 
     public static PreviewerSettings LoadDebug() {
         var settingsPath = Path.Combine(AppContext.BaseDirectory, "previewer.settings.json");
-        Directory.CreateDirectory(DebugPreviewDirectory);
         PreviewerSettings settings;
         if (File.Exists(settingsPath)) {
             settings = JsonSerializer.Deserialize<PreviewerSettings>(File.ReadAllText(settingsPath))
@@ -77,9 +82,7 @@ internal sealed class PreviewerSettings {
             settings.Save();
         }
         if (string.IsNullOrEmpty(settings.InteractionsPath)) {
-            settings.InteractionsPath = Path.Combine(
-                Path.GetDirectoryName(settings.ScenariosPath) ?? DebugPreviewDirectory,
-                "interactions.json");
+            settings.InteractionsPath = Path.Combine(AppContext.BaseDirectory, "interactions.json");
         }
         settings.CreateDefaultScenariosIfMissing();
         settings.CreateDefaultInteractionsIfMissing();
@@ -104,10 +107,10 @@ internal sealed class PreviewerSettings {
     private static PreviewerSettings CreateDefaults(string settingsPath) {
         return new PreviewerSettings {
             FilePath = settingsPath,
-            XamlDirectory = DebugPreviewDirectory,
-            ScenariosPath = Path.Combine(DebugPreviewDirectory, "scenarios.json"),
-            InteractionsPath = Path.Combine(DebugPreviewDirectory, "interactions.json"),
-            ResourcesDirectory = DebugPreviewDirectory,
+            XamlDirectory = DefaultXamlDirectory,
+            ScenariosPath = Path.Combine(AppContext.BaseDirectory, "scenarios.json"),
+            InteractionsPath = Path.Combine(AppContext.BaseDirectory, "interactions.json"),
+            ResourcesDirectory = DefaultResourcesDirectory,
         };
     }
 
