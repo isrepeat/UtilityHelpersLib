@@ -13,14 +13,14 @@ internal sealed class PreviewSession : IDisposable {
     private IntPtr capturedElement;
     private bool isDisposed;
 
-    public PreviewSession(IntPtr root, string markupDirectory) {
+    public PreviewSession(IntPtr root, string markupDirectory, int width, int height) {
         this.root = root;
-        this.renderer = new AnglePreviewRenderer(markupDirectory);
+        this.renderer = new AnglePreviewRenderer(markupDirectory, width, height);
         this.animations = NativeRuntime.xr_create_animation_controller();
         NativeRuntime.Ensure(this.animations != IntPtr.Zero);
         this.image = new Image {
-            Width = AnglePreviewRenderer.Width,
-            Height = AnglePreviewRenderer.Height,
+            Width = this.renderer.Width,
+            Height = this.renderer.Height,
             Stretch = Stretch.Fill
         };
         this.image.MouseLeftButtonDown += this.ImageMouseLeftButtonDown;
@@ -90,11 +90,11 @@ internal sealed class PreviewSession : IDisposable {
     }
 
     private float ScaleX(double value) {
-        return (float)(value / this.image.ActualWidth * AnglePreviewRenderer.Width);
+        return (float)(value / this.image.ActualWidth * this.renderer.Width);
     }
 
     private float ScaleY(double value) {
-        return (float)(value / this.image.ActualHeight * AnglePreviewRenderer.Height);
+        return (float)(value / this.image.ActualHeight * this.renderer.Height);
     }
 
     private void ThrowIfDisposed() {

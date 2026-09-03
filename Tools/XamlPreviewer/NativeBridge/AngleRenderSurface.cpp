@@ -129,6 +129,13 @@ namespace xaml::bridge {
             [root = std::string(resourceRoot)](std::string_view source) {
                 return _details::ReadFile(root + "/" + std::string(source));
             });
+        if (eglMakeCurrent(
+            this->display,
+            EGL_NO_SURFACE,
+            EGL_NO_SURFACE,
+            EGL_NO_CONTEXT) == EGL_FALSE) {
+            throw std::runtime_error("ANGLE could not release the offscreen context");
+        }
     }
 
     AngleRenderSurface::Implementation::~Implementation() {
@@ -184,6 +191,13 @@ namespace xaml::bridge {
                 row[x * 4 + 2] = source[x * 4];
                 row[x * 4 + 3] = source[x * 4 + 3];
             }
+        }
+        if (eglMakeCurrent(
+            this->display,
+            EGL_NO_SURFACE,
+            EGL_NO_SURFACE,
+            EGL_NO_CONTEXT) == EGL_FALSE) {
+            throw std::runtime_error("ANGLE could not release the offscreen context");
         }
     }
 

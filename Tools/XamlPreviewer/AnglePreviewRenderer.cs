@@ -4,17 +4,19 @@ using System.Windows.Media.Imaging;
 namespace XamlPreviewer;
 
 internal sealed class AnglePreviewRenderer : IDisposable {
-    public const int Width = 720;
-    public const int Height = 1280;
-
     private const string FontPath = @"C:\WORK\Android\Projects\MobileClock\app\src\main\assets\Roboto-Regular.ttf";
 
     private IntPtr surface;
 
-    public AnglePreviewRenderer(string markupDirectory) {
+    public int Height { get; }
+    public int Width { get; }
+
+    public AnglePreviewRenderer(string markupDirectory, int width, int height) {
+        this.Width = width;
+        this.Height = height;
         this.surface = NativeRuntime.xr_create_angle_surface(
-            AnglePreviewRenderer.Width,
-            AnglePreviewRenderer.Height,
+            this.Width,
+            this.Height,
             AnglePreviewRenderer.FontPath,
             markupDirectory);
         NativeRuntime.Ensure(this.surface != IntPtr.Zero);
@@ -22,9 +24,9 @@ internal sealed class AnglePreviewRenderer : IDisposable {
 
     public BitmapSource Render(IntPtr root) {
         const int bytesPerPixel = 4;
-        NativeRuntime.Ensure(NativeRuntime.xr_layout(root, AnglePreviewRenderer.Width, AnglePreviewRenderer.Height) != 0);
-        var stride = AnglePreviewRenderer.Width * bytesPerPixel;
-        var pixels = new byte[stride * AnglePreviewRenderer.Height];
+        NativeRuntime.Ensure(NativeRuntime.xr_layout(root, this.Width, this.Height) != 0);
+        var stride = this.Width * bytesPerPixel;
+        var pixels = new byte[stride * this.Height];
         NativeRuntime.Ensure(NativeRuntime.xr_render_angle_surface(
             this.surface,
             root,
@@ -32,8 +34,8 @@ internal sealed class AnglePreviewRenderer : IDisposable {
             stride,
             pixels.Length) != 0);
         var bitmap = BitmapSource.Create(
-            AnglePreviewRenderer.Width,
-            AnglePreviewRenderer.Height,
+            this.Width,
+            this.Height,
             96,
             96,
             PixelFormats.Bgra32,

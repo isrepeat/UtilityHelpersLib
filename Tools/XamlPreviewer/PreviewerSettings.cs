@@ -39,6 +39,12 @@ internal sealed class PreviewerSettings {
     public double WindowHeight { get; set; }
     public bool IsMaximized { get; set; }
     public double EditorPaneWidth { get; set; }
+    public double EditorScale { get; set; } = 1.0;
+    public int MouseWheelLines { get; set; } = 8;
+    public int PreviewWidth { get; set; } = 720;
+    public int PreviewHeight { get; set; } = 1600;
+    public double PreviewScale { get; set; }
+    public bool IsPreviewLandscape { get; set; }
 
     [JsonIgnore]
     public string FilePath { get; private set; } = string.Empty;

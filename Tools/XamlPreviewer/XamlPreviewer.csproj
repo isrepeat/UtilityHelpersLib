@@ -11,6 +11,11 @@
     <NativeAngleZlibName>z.dll</NativeAngleZlibName>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="AvalonEdit"
+                      Version="6.3.1.120" />
+  </ItemGroup>
+
   <Target Name="CopyNativeBridge" AfterTargets="Build">
     <Error Condition="!Exists('$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.dll')"
            Text="XamlRuntime.NativeBridge.dll was not built: $(NativeBridgeOutputDir)XamlRuntime.NativeBridge.dll" />
