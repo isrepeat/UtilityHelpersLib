@@ -32,8 +32,8 @@ namespace es_renderer::_details {
     constexpr int FirstCyrillicGlyph = 0x0400;
     constexpr int CyrillicGlyphCount = 256;
     constexpr int SettingsGlyph = 0x2699;
-    constexpr float AtlasFontSize = 64.0f;
-    constexpr int AtlasWidth = 1024;
+    constexpr float AtlasFontSize = 96.0f;
+    constexpr int AtlasWidth = 2048;
     constexpr int AtlasHeight = 1024;
     constexpr int MaximumTextGlyphs = 256;
 
@@ -134,8 +134,12 @@ namespace es_renderer {
         Implementation(
             int width,
             int height,
-            const unsigned char* fontData,
-            size_t fontSize,
+            const unsigned char* regularFontData,
+            size_t regularFontSize,
+            const unsigned char* boldFontData,
+            size_t boldFontSize,
+            const unsigned char* blackFontData,
+            size_t blackFontSize,
             ResourceLoader resourceLoader);
         ~Implementation();
 
@@ -167,9 +171,16 @@ namespace es_renderer {
             int index = 0;
         };
 
+        struct FontAtlas {
+            GLuint texture = 0;
+            stbtt_packedchar asciiGlyphs[_details::AsciiGlyphCount]{};
+            stbtt_packedchar cyrillicGlyphs[_details::CyrillicGlyphCount]{};
+            stbtt_packedchar settingsGlyph[1]{};
+        };
+
         GLuint CompileShader(GLenum type, const char* source) const;
         GLuint CreateProgram(const char* vertexSource, const char* fragmentSource) const;
-        void CreateFontAtlas(const unsigned char* fontData);
+        void CreateFontAtlas(const unsigned char* fontData, FontAtlas& fontAtlas);
         void AppendPosition(std::vector<float>& vertices, float x, float y) const;
         void AppendTextVertex(
             std::vector<float>& vertices,
@@ -178,7 +189,8 @@ namespace es_renderer {
             float textureX,
             float textureY) const;
         void AppendTextQuad(std::vector<float>& vertices, const stbtt_aligned_quad& quad) const;
-        GlyphReference GetGlyph(uint32_t codepoint) const;
+        const FontAtlas& GetFontAtlas(std::string_view fontWeight) const;
+        GlyphReference GetGlyph(uint32_t codepoint, const FontAtlas& fontAtlas) const;
         GLuint GetSvgTexture(std::string_view source);
 
     private:
@@ -188,24 +200,34 @@ namespace es_renderer {
         GLuint solidProgram = 0;
         GLuint imageProgram = 0;
         GLuint vertexBuffer = 0;
-        GLuint fontTexture = 0;
         ResourceLoader resourceLoader;
         std::unordered_map<std::string, GLuint> imageTextures;
-        stbtt_packedchar asciiGlyphs[_details::AsciiGlyphCount]{};
-        stbtt_packedchar cyrillicGlyphs[_details::CyrillicGlyphCount]{};
-        stbtt_packedchar settingsGlyph[1]{};
+        FontAtlas regularFontAtlas;
+        FontAtlas boldFontAtlas;
+        FontAtlas blackFontAtlas;
     };
 
     OpenGlRenderer::Implementation::Implementation(
         int width,
         int height,
-        const unsigned char* fontData,
-        size_t fontSize,
+        const unsigned char* regularFontData,
+        size_t regularFontSize,
+        const unsigned char* boldFontData,
+        size_t boldFontSize,
+        const unsigned char* blackFontData,
+        size_t blackFontSize,
         ResourceLoader resourceLoader)
         : width(width)
         , height(height)
         , resourceLoader(std::move(resourceLoader)) {
-        if (width <= 0 || height <= 0 || fontData == nullptr || fontSize == 0) {
+        if (width <= 0
+            || height <= 0
+            || regularFontData == nullptr
+            || regularFontSize == 0
+            || boldFontData == nullptr
+            || boldFontSize == 0
+            || blackFontData == nullptr
+            || blackFontSize == 0) {
             throw std::invalid_argument("Invalid OpenGL renderer arguments");
         }
 
@@ -217,18 +239,28 @@ namespace es_renderer {
             _details::SolidFragmentShader);
         this->imageProgram = this->CreateProgram(_details::ImageVertexShader, _details::ImageFragmentShader);
         glGenBuffers(1, &this->vertexBuffer);
-        this->CreateFontAtlas(fontData);
+        this->CreateFontAtlas(regularFontData, this->regularFontAtlas);
+        this->CreateFontAtlas(boldFontData, this->boldFontAtlas);
+        this->CreateFontAtlas(blackFontData, this->blackFontAtlas);
         LOG_INFO(
             "OpenGlRenderer",
-            "Initialized: viewport={}x{}, fontBytes={}",
+            "Initialized: viewport={}x{}, regularFontBytes={}, boldFontBytes={}, blackFontBytes={}",
             width,
             height,
-            fontSize);
+            regularFontSize,
+            boldFontSize,
+            blackFontSize);
     }
 
     OpenGlRenderer::Implementation::~Implementation() {
-        if (this->fontTexture != 0) {
-            glDeleteTextures(1, &this->fontTexture);
+        if (this->regularFontAtlas.texture != 0) {
+            glDeleteTextures(1, &this->regularFontAtlas.texture);
+        }
+        if (this->boldFontAtlas.texture != 0) {
+            glDeleteTextures(1, &this->boldFontAtlas.texture);
+        }
+        if (this->blackFontAtlas.texture != 0) {
+            glDeleteTextures(1, &this->blackFontAtlas.texture);
         }
         for (const auto& [source, texture] : this->imageTextures) {
             glDeleteTextures(1, &texture);
@@ -299,7 +331,9 @@ namespace es_renderer {
         return program;
     }
 
-    void OpenGlRenderer::Implementation::CreateFontAtlas(const unsigned char* fontData) {
+    void OpenGlRenderer::Implementation::CreateFontAtlas(
+        const unsigned char* fontData,
+        FontAtlas& fontAtlas) {
         // Один atlas покрывает ASCII, кириллицу и значок настроек из тестовой разметки.
         std::vector<unsigned char> atlas(_details::AtlasWidth * _details::AtlasHeight, 0);
         stbtt_pack_context packingContext{};
@@ -318,7 +352,7 @@ namespace es_renderer {
             _details::AtlasFontSize,
             _details::FirstAsciiGlyph,
             _details::AsciiGlyphCount,
-            this->asciiGlyphs);
+            fontAtlas.asciiGlyphs);
         const int cyrillicPacked = asciiPacked == 0 ? 0 : stbtt_PackFontRange(
             &packingContext,
             fontData,
@@ -326,7 +360,7 @@ namespace es_renderer {
             _details::AtlasFontSize,
             _details::FirstCyrillicGlyph,
             _details::CyrillicGlyphCount,
-            this->cyrillicGlyphs);
+            fontAtlas.cyrillicGlyphs);
         const int settingsPacked = cyrillicPacked == 0 ? 0 : stbtt_PackFontRange(
             &packingContext,
             fontData,
@@ -334,7 +368,7 @@ namespace es_renderer {
             _details::AtlasFontSize,
             _details::SettingsGlyph,
             1,
-            this->settingsGlyph);
+            fontAtlas.settingsGlyph);
         if (packingStarted != 0) {
             stbtt_PackEnd(&packingContext);
         }
@@ -342,8 +376,8 @@ namespace es_renderer {
             throw std::runtime_error("ANGLE renderer font atlas is too small");
         }
 
-        glGenTextures(1, &this->fontTexture);
-        glBindTexture(GL_TEXTURE_2D, this->fontTexture);
+        glGenTextures(1, &fontAtlas.texture);
+        glBindTexture(GL_TEXTURE_2D, fontAtlas.texture);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         glTexImage2D(
             GL_TEXTURE_2D,
@@ -522,6 +556,7 @@ namespace es_renderer {
         if (text.empty()) {
             return;
         }
+        const FontAtlas& fontAtlas = this->GetFontAtlas(fontWeight);
         // stb_truetype выдаёт метрики для размера atlas; scale переводит их
         // обратно в fontSize, заданный XAML-командой.
         const float scale = fontSize / _details::AtlasFontSize;
@@ -532,7 +567,9 @@ namespace es_renderer {
         const char* current = text.data();
         const char* const end = text.data() + text.size();
         while (current < end && glyphCount < _details::MaximumTextGlyphs) {
-            const GlyphReference reference = this->GetGlyph(_details::DecodeUtf8(current, end));
+            const GlyphReference reference = this->GetGlyph(
+                _details::DecodeUtf8(current, end),
+                fontAtlas);
             const stbtt_packedchar& glyph = reference.glyphs[reference.index];
             textWidth += glyph.xadvance * scale;
             minimumY = std::min(minimumY, glyph.yoff * scale);
@@ -540,22 +577,27 @@ namespace es_renderer {
             ++glyphCount;
         }
 
-        // Первый проход собрал метрики всей строки. Теперь центрируем её в
+        // Первый проход собрал метрики всей строки. Теперь выравниваем её в
         // bounds и вторым проходом формируем по два треугольника на glyph.
-        float cursorX = horizontalAlignment == xaml::attr::Alignment::right
-            ? (bounds.x + bounds.width - textWidth) / scale
-            : (bounds.x + (bounds.width - textWidth) * 0.5f) / scale;
+        float cursorX = bounds.x / scale;
+        if (horizontalAlignment == xaml::attr::Alignment::center) {
+            cursorX = (bounds.x + (bounds.width - textWidth) * 0.5f) / scale;
+        }
+        else if (horizontalAlignment == xaml::attr::Alignment::right) {
+            cursorX = (bounds.x + bounds.width - textWidth) / scale;
+        }
         float cursorY = (
             bounds.y
             + (bounds.height - (maximumY - minimumY)) * 0.5f
             - minimumY) / scale;
         std::vector<float> vertices;
-        vertices.reserve(static_cast<size_t>(glyphCount) * 6 * 4 * 2);
+        vertices.reserve(static_cast<size_t>(glyphCount) * 6 * 4);
         current = text.data();
         int renderedGlyphs = 0;
-        const bool isBold = fontWeight == "Bold" || fontWeight == "SemiBold";
         while (current < end && renderedGlyphs < _details::MaximumTextGlyphs) {
-            const GlyphReference reference = this->GetGlyph(_details::DecodeUtf8(current, end));
+            const GlyphReference reference = this->GetGlyph(
+                _details::DecodeUtf8(current, end),
+                fontAtlas);
             stbtt_aligned_quad quad{};
             stbtt_GetPackedQuad(
                 reference.glyphs,
@@ -571,17 +613,12 @@ namespace es_renderer {
             quad.y0 *= scale;
             quad.y1 *= scale;
             this->AppendTextQuad(vertices, quad);
-            if (isBold) {
-                quad.x0 += 1.0f;
-                quad.x1 += 1.0f;
-                this->AppendTextQuad(vertices, quad);
-            }
             ++renderedGlyphs;
         }
 
         glUseProgram(this->textProgram);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, this->fontTexture);
+        glBindTexture(GL_TEXTURE_2D, fontAtlas.texture);
         glUniform1i(glGetUniformLocation(this->textProgram, "fontAtlas"), 0);
         glUniform4f(
             glGetUniformLocation(this->textProgram, "textColor"),
@@ -774,39 +811,60 @@ namespace es_renderer {
         this->AppendTextVertex(vertices, quad.x0, quad.y1, quad.s0, quad.t1);
     }
 
+    const OpenGlRenderer::Implementation::FontAtlas&
+    OpenGlRenderer::Implementation::GetFontAtlas(std::string_view fontWeight) const {
+        if (fontWeight == "ExtraBold" || fontWeight == "Black") {
+            return this->blackFontAtlas;
+        }
+        if (fontWeight == "SemiBold" || fontWeight == "Bold") {
+            return this->boldFontAtlas;
+        }
+        return this->regularFontAtlas;
+    }
+
     OpenGlRenderer::Implementation::GlyphReference
-    OpenGlRenderer::Implementation::GetGlyph(uint32_t codepoint) const {
+    OpenGlRenderer::Implementation::GetGlyph(
+        uint32_t codepoint,
+        const FontAtlas& fontAtlas) const {
         if (codepoint >= _details::FirstAsciiGlyph
             && codepoint < _details::FirstAsciiGlyph + _details::AsciiGlyphCount) {
             return {
-                this->asciiGlyphs,
+                fontAtlas.asciiGlyphs,
                 static_cast<int>(codepoint) - _details::FirstAsciiGlyph,
             };
         }
         if (codepoint >= _details::FirstCyrillicGlyph
             && codepoint < _details::FirstCyrillicGlyph + _details::CyrillicGlyphCount) {
             return {
-                this->cyrillicGlyphs,
+                fontAtlas.cyrillicGlyphs,
                 static_cast<int>(codepoint) - _details::FirstCyrillicGlyph,
             };
         }
         if (codepoint == _details::SettingsGlyph) {
-            return {this->settingsGlyph, 0};
+            return {fontAtlas.settingsGlyph, 0};
         }
-        return {this->asciiGlyphs, '?' - _details::FirstAsciiGlyph};
+        return {fontAtlas.asciiGlyphs, '?' - _details::FirstAsciiGlyph};
     }
 
     OpenGlRenderer::OpenGlRenderer(
         int width,
         int height,
-        const unsigned char* fontData,
-        size_t fontSize,
+        const unsigned char* regularFontData,
+        size_t regularFontSize,
+        const unsigned char* boldFontData,
+        size_t boldFontSize,
+        const unsigned char* blackFontData,
+        size_t blackFontSize,
         ResourceLoader resourceLoader)
         : implementation(std::make_unique<Implementation>(
             width,
             height,
-            fontData,
-            fontSize,
+            regularFontData,
+            regularFontSize,
+            boldFontData,
+            boldFontSize,
+            blackFontData,
+            blackFontSize,
             std::move(resourceLoader))) {
     }
 

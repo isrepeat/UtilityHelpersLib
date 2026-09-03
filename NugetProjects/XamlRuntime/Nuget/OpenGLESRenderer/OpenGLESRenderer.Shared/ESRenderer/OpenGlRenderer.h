@@ -16,8 +16,12 @@ namespace es_renderer {
         OpenGlRenderer(
             int width,
             int height,
-            const unsigned char* fontData,
-            size_t fontSize,
+            const unsigned char* regularFontData,
+            size_t regularFontSize,
+            const unsigned char* boldFontData,
+            size_t boldFontSize,
+            const unsigned char* blackFontData,
+            size_t blackFontSize,
             ResourceLoader resourceLoader);
         ~OpenGlRenderer();
 

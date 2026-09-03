@@ -582,7 +582,8 @@ public partial class MainWindow : Window {
         try {
             if (this.markupPath is not null && File.Exists(this.markupPath)) {
                 var markup = File.ReadAllText(this.markupPath);
-                if (!string.Equals(markup, this.markupEditorController.Text, StringComparison.Ordinal)) {
+                if (!this.isMarkupDirty
+                    && !string.Equals(markup, this.markupEditorController.Text, StringComparison.Ordinal)) {
                     this.updatingEditors = true;
                     this.markupEditorController.SetText(markup);
                     this.updatingEditors = false;
@@ -592,7 +593,8 @@ public partial class MainWindow : Window {
             }
             if (File.Exists(this.settings.ScenariosPath)) {
                 var scenarios = File.ReadAllText(this.settings.ScenariosPath);
-                if (!string.Equals(scenarios, this.ScenarioEditor.Text, StringComparison.Ordinal)) {
+                if (!this.isScenariosDirty
+                    && !string.Equals(scenarios, this.ScenarioEditor.Text, StringComparison.Ordinal)) {
                     this.updatingEditors = true;
                     this.ScenarioEditor.Text = scenarios;
                     this.updatingEditors = false;
@@ -603,7 +605,8 @@ public partial class MainWindow : Window {
             }
             if (File.Exists(this.settings.FilePath)) {
                 var settingsJson = File.ReadAllText(this.settings.FilePath);
-                if (!string.Equals(settingsJson, this.SettingsEditor.Text, StringComparison.Ordinal)) {
+                if (!this.isSettingsDirty
+                    && !string.Equals(settingsJson, this.SettingsEditor.Text, StringComparison.Ordinal)) {
                     this.settings = PreviewerSettings.Parse(settingsJson, this.settings.FilePath);
                     this.updatingEditors = true;
                     this.SettingsEditor.Text = settingsJson;

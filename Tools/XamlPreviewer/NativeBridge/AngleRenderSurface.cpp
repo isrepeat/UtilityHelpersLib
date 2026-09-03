@@ -7,6 +7,7 @@
 #include "AngleRenderSurface.h"
 
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 #include <stdexcept>
 #include <string>
@@ -120,12 +121,21 @@ namespace xaml::bridge {
                 this->context) == EGL_FALSE) {
             throw std::runtime_error("ANGLE could not create an OpenGL ES 3 context");
         }
-        const std::vector<unsigned char> fontData = _details::ReadFile(fontPath);
+        const std::filesystem::path regularFontPath{std::string(fontPath)};
+        const std::vector<unsigned char> regularFontData = _details::ReadFile(fontPath);
+        const std::vector<unsigned char> boldFontData = _details::ReadFile(
+            (regularFontPath.parent_path() / "Roboto-Bold.ttf").string());
+        const std::vector<unsigned char> blackFontData = _details::ReadFile(
+            (regularFontPath.parent_path() / "Roboto-Black.ttf").string());
         this->renderer = std::make_unique<es_renderer::OpenGlRenderer>(
             width,
             height,
-            fontData.data(),
-            fontData.size(),
+            regularFontData.data(),
+            regularFontData.size(),
+            boldFontData.data(),
+            boldFontData.size(),
+            blackFontData.data(),
+            blackFontData.size(),
             [root = std::string(resourceRoot)](std::string_view source) {
                 return _details::ReadFile(root + "/" + std::string(source));
             });
