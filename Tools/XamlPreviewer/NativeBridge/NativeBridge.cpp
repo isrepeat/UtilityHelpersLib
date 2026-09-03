@@ -203,6 +203,13 @@ xr_element* xr_hit_test(xr_element* root, float x, float y) {
     }
 }
 
+const char* xr_element_id(const xr_element* element) {
+    if (element == nullptr) {
+        return "";
+    }
+    return reinterpret_cast<const xaml::Element*>(element)->Id().c_str();
+}
+
 int xr_handle_tap(xr_element* element, xr_animation_controller* animations) {
     try {
         xaml::bridge::lastError.clear();

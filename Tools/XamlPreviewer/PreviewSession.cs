@@ -31,6 +31,7 @@ internal sealed class PreviewSession : IDisposable {
     public FrameworkElement Surface => this.image;
 
     public event EventHandler? AnimationStarted;
+    public event EventHandler<string>? Tapped;
 
     public bool Update() {
         this.ThrowIfDisposed();
@@ -77,11 +78,13 @@ internal sealed class PreviewSession : IDisposable {
         if (this.capturedElement == IntPtr.Zero) {
             return;
         }
+        var elementId = NativeRuntime.GetElementId(this.capturedElement);
         NativeRuntime.Ensure(NativeRuntime.xr_handle_tap(this.capturedElement, this.animations) != 0);
         this.capturedElement = IntPtr.Zero;
         this.image.ReleaseMouseCapture();
         this.Render();
         this.AnimationStarted?.Invoke(this, EventArgs.Empty);
+        this.Tapped?.Invoke(this, elementId);
         eventArgs.Handled = true;
     }
 

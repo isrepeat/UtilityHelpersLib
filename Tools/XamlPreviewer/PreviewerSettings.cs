@@ -25,6 +25,20 @@ internal sealed class PreviewerSettings {
           }
         }
         """;
+    private const string DefaultInteractions = """
+        {
+          "MainPage": {
+            "settingsButton": {
+              "tap": { "type": "navigate", "target": "SettingsPage" }
+            }
+          },
+          "SettingsPage": {
+            "backNavigation": {
+              "tap": { "type": "navigate", "target": "MainPage" }
+            }
+          }
+        }
+        """;
     private static readonly JsonSerializerOptions JsonOptions = new() {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         WriteIndented = true
@@ -32,6 +46,7 @@ internal sealed class PreviewerSettings {
 
     public required string XamlDirectory { get; init; }
     public required string ScenariosPath { get; init; }
+    public string InteractionsPath { get; set; } = string.Empty;
     public required string ResourcesDirectory { get; init; }
     public string? LastMarkupPath { get; set; }
     public string? LastScenarioName { get; set; }
@@ -61,7 +76,13 @@ internal sealed class PreviewerSettings {
             settings = CreateDefaults(settingsPath);
             settings.Save();
         }
+        if (string.IsNullOrEmpty(settings.InteractionsPath)) {
+            settings.InteractionsPath = Path.Combine(
+                Path.GetDirectoryName(settings.ScenariosPath) ?? DebugPreviewDirectory,
+                "interactions.json");
+        }
         settings.CreateDefaultScenariosIfMissing();
+        settings.CreateDefaultInteractionsIfMissing();
         return settings;
     }
 
@@ -85,6 +106,7 @@ internal sealed class PreviewerSettings {
             FilePath = settingsPath,
             XamlDirectory = DebugPreviewDirectory,
             ScenariosPath = Path.Combine(DebugPreviewDirectory, "scenarios.json"),
+            InteractionsPath = Path.Combine(DebugPreviewDirectory, "interactions.json"),
             ResourcesDirectory = DebugPreviewDirectory,
         };
     }
@@ -98,5 +120,11 @@ internal sealed class PreviewerSettings {
             Directory.CreateDirectory(directory);
         }
         File.WriteAllText(this.ScenariosPath, DefaultScenarios.TrimEnd());
+    }
+
+    private void CreateDefaultInteractionsIfMissing() {
+        if (!File.Exists(this.InteractionsPath)) {
+            File.WriteAllText(this.InteractionsPath, DefaultInteractions.TrimEnd());
+        }
     }
 }

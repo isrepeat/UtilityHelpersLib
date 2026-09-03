@@ -90,6 +90,9 @@ internal static class NativeRuntime {
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_hit_test")]
     public static extern IntPtr xr_hit_test(IntPtr root, float x, float y);
 
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_element_id")]
+    private static extern IntPtr xr_element_id(IntPtr element);
+
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_handle_tap")]
     public static extern int xr_handle_tap(IntPtr element, IntPtr animations);
 
@@ -145,5 +148,9 @@ internal static class NativeRuntime {
 
     public static string GetLastError() {
         return Marshal.PtrToStringUTF8(NativeRuntime.xr_last_error()) ?? "Unknown XamlRuntime error.";
+    }
+
+    public static string GetElementId(IntPtr element) {
+        return Marshal.PtrToStringUTF8(NativeRuntime.xr_element_id(element)) ?? string.Empty;
     }
 }

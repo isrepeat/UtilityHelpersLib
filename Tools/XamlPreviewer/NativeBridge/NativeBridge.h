@@ -57,6 +57,7 @@ XAML_RUNTIME_BRIDGE_API int xr_set_attribute(
     const char* value);
 XAML_RUNTIME_BRIDGE_API int xr_layout(xr_element* root, float width, float height);
 XAML_RUNTIME_BRIDGE_API xr_element* xr_hit_test(xr_element* root, float x, float y);
+XAML_RUNTIME_BRIDGE_API const char* xr_element_id(const xr_element* element);
 XAML_RUNTIME_BRIDGE_API int xr_handle_tap(
     xr_element* element,
     xr_animation_controller* animations);

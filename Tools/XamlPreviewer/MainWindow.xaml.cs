@@ -316,6 +316,7 @@ public partial class MainWindow : Window {
                 throw;
             }
             session.AnimationStarted += this.PreviewSessionAnimationStarted;
+            session.Tapped += this.PreviewSessionTapped;
             this.previewSession = session;
             this.DeviceSurface.Child = session.Surface;
             this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
@@ -335,6 +336,27 @@ public partial class MainWindow : Window {
 
     private void PreviewSessionAnimationStarted(object? sender, EventArgs eventArgs) {
         this.animationTimer.Start();
+    }
+
+    private void PreviewSessionTapped(object? sender, string elementId) {
+        if (string.IsNullOrEmpty(elementId) || this.PagePicker.SelectedItem is not string pageName
+            || !File.Exists(this.settings.InteractionsPath)) {
+            return;
+        }
+        using var document = JsonDocument.Parse(File.ReadAllText(this.settings.InteractionsPath));
+        var page = Path.GetFileNameWithoutExtension(pageName);
+        if (!document.RootElement.TryGetProperty(page, out var actions)
+            || !actions.TryGetProperty(elementId, out var element)
+            || !element.TryGetProperty("tap", out var tap)
+            || !tap.TryGetProperty("type", out var type)
+            || type.GetString() != "navigate"
+            || !tap.TryGetProperty("target", out var target)) {
+            return;
+        }
+        var targetPage = target.GetString() + ".xaml";
+        if (this.PagePicker.Items.Contains(targetPage)) {
+            this.PagePicker.SelectedItem = targetPage;
+        }
     }
 
     private void LoadMarkup(string path) {
