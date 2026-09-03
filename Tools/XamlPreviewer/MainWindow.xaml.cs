@@ -1,7 +1,9 @@
 using Microsoft.Win32;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Highlighting;
+using ICSharpCode.AvalonEdit.Search;
 using System.IO;
+using System.Reflection;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -12,12 +14,18 @@ using System.Windows.Threading;
 
 namespace XamlPreviewer;
 
+/// <summary>
+/// Координирует UI превьювера: режимы AvalonEdit, сохранённое состояние сессии,
+/// наблюдение за внешними файлами и жизненный цикл нативной сессии рендеринга.
+/// Разбор разметки и отрисовка остаются в специализированных классах PreviewRenderer и PreviewSession.
+/// </summary>
 public partial class MainWindow : Window {
     private readonly DispatcherTimer renderTimer;
     private readonly DispatcherTimer animationTimer;
     private readonly DispatcherTimer externalRefreshTimer;
     private readonly DispatcherTimer smoothScrollTimer;
     private readonly MarkupEditorController markupEditorController;
+    private readonly XamlCompletionController xamlCompletionController;
     private readonly Dictionary<TextEditor, SmoothScrollState> smoothScrollStates = [];
     private bool updatingPreviewControls;
     private bool settingsPersistenceReady;
@@ -66,6 +74,7 @@ public partial class MainWindow : Window {
         MainWindow.ConfigureEditor(this.ScenarioEditor, MarkupSyntaxHighlighter.CreateJson());
         MainWindow.ConfigureEditor(this.SettingsEditor, MarkupSyntaxHighlighter.CreateJson());
         this.markupEditorController = new MarkupEditorController(this.MarkupEditor);
+        this.xamlCompletionController = new XamlCompletionController(this.MarkupEditor);
         this.renderTimer = new DispatcherTimer {
             Interval = TimeSpan.FromMilliseconds(250)
         };
@@ -260,6 +269,9 @@ public partial class MainWindow : Window {
     }
 
     private void MarkupEditorPreviewKeyDown(object sender, KeyEventArgs eventArgs) {
+        if (this.xamlCompletionController.HandlePreviewKeyDown(eventArgs)) {
+            return;
+        }
         this.markupEditorController.HandlePreviewKeyDown(eventArgs);
     }
 
@@ -627,6 +639,16 @@ public partial class MainWindow : Window {
         editor.TextArea.Caret.CaretBrush = PreviewRenderer.ParseBrush("#F0D78C");
         editor.TextArea.SelectionBrush = PreviewRenderer.ParseBrush("#5A4D26");
         editor.TextArea.SelectionForeground = PreviewRenderer.ParseBrush("#FFFFFF");
+        var searchPanel = SearchPanel.Install(editor);
+        searchPanel.Background = PreviewRenderer.ParseBrush("#252525");
+        searchPanel.BorderBrush = PreviewRenderer.ParseBrush("#4A4A4A");
+        searchPanel.Foreground = PreviewRenderer.ParseBrush("#E6E6E6");
+        searchPanel.MarkerBrush = PreviewRenderer.ParseBrush("#665A4D26");
+        searchPanel.MarkerPen = new Pen(PreviewRenderer.ParseBrush("#D5BD7D"), 1.0);
+        var messageField = typeof(SearchPanel).GetField("messageView", BindingFlags.Instance | BindingFlags.NonPublic);
+        if (messageField?.GetValue(searchPanel) is ToolTip message) {
+            message.Visibility = Visibility.Collapsed;
+        }
     }
 
     private void ConfigureMouseWheelScrolling() {

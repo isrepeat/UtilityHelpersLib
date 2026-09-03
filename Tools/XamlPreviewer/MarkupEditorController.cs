@@ -105,6 +105,10 @@ internal sealed class MarkupEditorController {
     }
 
     private void MoveLine(int lineDelta) {
+        if (this.TryMoveSelectedLines(lineDelta)) {
+            return;
+        }
+
         var currentLine = this.editor.Document.GetLineByOffset(this.editor.CaretOffset);
         var targetLineNumber = currentLine.LineNumber + lineDelta;
         if (targetLineNumber < 1 || targetLineNumber > this.editor.Document.LineCount) {
@@ -129,6 +133,51 @@ internal sealed class MarkupEditorController {
             : currentLine.Offset + targetText.Length + column;
         this.editor.CaretOffset = newOffset;
         this.editor.SelectionLength = 0;
+    }
+
+    private bool TryMoveSelectedLines(int lineDelta) {
+        if (this.editor.SelectionLength == 0) {
+            return false;
+        }
+
+        var document = this.editor.Document;
+        var selectionStart = this.editor.SelectionStart;
+        var selectionEnd = selectionStart + this.editor.SelectionLength;
+        var firstLine = document.GetLineByOffset(selectionStart);
+        var lastOffset = selectionEnd;
+        if (selectionEnd > selectionStart
+            && selectionEnd == document.GetLineByOffset(selectionEnd).Offset) {
+            --lastOffset;
+        }
+        var lastLine = document.GetLineByOffset(lastOffset);
+        if (firstLine.LineNumber == lastLine.LineNumber) {
+            return false;
+        }
+
+        var targetLineNumber = lineDelta < 0
+            ? firstLine.LineNumber - 1
+            : lastLine.LineNumber + 1;
+        if (targetLineNumber < 1 || targetLineNumber > document.LineCount) {
+            return true;
+        }
+
+        var targetLine = document.GetLineByNumber(targetLineNumber);
+        var blockStart = firstLine.Offset;
+        var blockEnd = lastLine.Offset + lastLine.TotalLength;
+        var blockText = document.GetText(blockStart, blockEnd - blockStart);
+        var targetText = document.GetText(targetLine.Offset, targetLine.TotalLength);
+        var regionStart = Math.Min(blockStart, targetLine.Offset);
+        var regionEnd = Math.Max(blockEnd, targetLine.Offset + targetLine.TotalLength);
+        document.Replace(
+            regionStart,
+            regionEnd - regionStart,
+            lineDelta < 0 ? blockText + targetText : targetText + blockText);
+
+        var newSelectionStart = lineDelta < 0
+            ? regionStart
+            : blockStart + targetText.Length;
+        this.editor.Select(newSelectionStart, blockText.Length);
+        return true;
     }
 
     private string GetIndentation(int offset) {

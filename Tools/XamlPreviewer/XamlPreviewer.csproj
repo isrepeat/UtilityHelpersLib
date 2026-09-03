@@ -16,6 +16,12 @@
                       Version="6.3.1.120" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Resource Include="Resources\Icons\close.svg" />
+    <Resource Include="Resources\Icons\find-next.svg" />
+    <Resource Include="Resources\Icons\find-previous.svg" />
+  </ItemGroup>
+
   <Target Name="CopyNativeBridge" AfterTargets="Build">
     <Error Condition="!Exists('$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.dll')"
            Text="XamlRuntime.NativeBridge.dll was not built: $(NativeBridgeOutputDir)XamlRuntime.NativeBridge.dll" />
