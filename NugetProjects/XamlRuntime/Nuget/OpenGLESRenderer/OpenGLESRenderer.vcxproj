@@ -30,6 +30,12 @@
         <None Include="CMakeLists.txt" />
     </ItemGroup>
     <ItemGroup>
+        <ProjectReference Include="$(ProjectDir)..\..\..\..\Helpers\Helpers.Logging\Helpers.Logging.vcxproj">
+            <Project>{D437B9D5-30FC-41B2-9D3B-6B34E2DECD06}</Project>
+            <SetConfiguration>Configuration=$(Configuration)</SetConfiguration>
+            <SetPlatform>Platform=x64</SetPlatform>
+            <AdditionalProperties>Configuration=$(Configuration);Platform=x64</AdditionalProperties>
+        </ProjectReference>
         <ProjectReference Include="$(ProjectDir)..\XamlRuntime\XamlRuntime.vcxproj">
             <Project>{D5B97C3C-3A64-4A72-A71C-1186767DB3B1}</Project>
             <SetConfiguration>Configuration=$(Configuration)</SetConfiguration>

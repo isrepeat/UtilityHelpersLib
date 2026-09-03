@@ -1,9 +1,10 @@
 #define NOMINMAX
 #include <GLES3/gl3.h>
+#include <Helpers.Logging/Logging.h>
 
 #undef DrawText
 
-#include "ESRenderer/OpenGlRenderer.h"
+#include "OpenGlRenderer.h"
 
 #define NANOSVG_IMPLEMENTATION
 #include "../../ThirdParty/nanosvg.h"
@@ -15,15 +16,15 @@
 #pragma warning(disable: 4505)
 #include "../../ThirdParty/stb_truetype.h"
 
+#include <unordered_map>
 #include <algorithm>
-#include <cmath>
+#include <stdexcept>
 #include <cstdint>
 #include <cstring>
 #include <limits>
-#include <unordered_map>
-#include <stdexcept>
 #include <string>
 #include <vector>
+#include <cmath>
 
 namespace es_renderer::_details {
     constexpr int FirstAsciiGlyph = 32;

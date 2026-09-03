@@ -34,6 +34,37 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
+  <!-- ::::::::::::::::: Public assets project dependencies :::::::::::::::::: -->
+  <!-- ProjectReference в C++ передаёт сборку и линковку .lib, но не публикует
+       include-пути зависимости. Этот target дополняет модель public assets:
+       до запуска ClCompile он запрашивает у каждой referenced-библиотеки
+       GetPublicBuildAssets и применяет возвращённые IncludeDirectory к текущему
+       проекту. Библиотека без такого target пропускается без ошибки. -->
+  <Target Name="_ResolvePublicProjectBuildAssets"
+          BeforeTargets="ClCompile"
+          Condition="'@(ProjectReference)'!=''">
+    <!-- TargetOutputs сохраняют AssetType, заданный библиотекой. -->
+    <MSBuild Projects="@(ProjectReference)"
+             Targets="GetPublicBuildAssets"
+             Properties="Configuration=$(Configuration);Platform=$(Platform)"
+             SkipNonexistentTargets="true">
+      <Output TaskParameter="TargetOutputs" ItemName="_PublicProjectBuildAsset" />
+    </MSBuild>
+
+    <ItemGroup>
+      <!-- Здесь можно добавить обработку других типов public assets:
+           preprocessor definitions, generated headers или link inputs. -->
+      <_PublicProjectIncludeDirectory Include="@(_PublicProjectBuildAsset)"
+                                      Condition="'%(_PublicProjectBuildAsset.AssetType)'=='IncludeDirectory'" />
+      <!-- Update меняет metadata уже существующих файлов компиляции, поэтому
+           пути используются текущим вызовом ClCompile. -->
+      <ClCompile Update="@(ClCompile)"
+                 Condition="'@(_PublicProjectIncludeDirectory)'!=''">
+        <AdditionalIncludeDirectories>@(_PublicProjectIncludeDirectory);%(ClCompile.AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      </ClCompile>
+    </ItemGroup>
+  </Target>
+  <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
   <!-- ::::::::::::::::: Import внешних targets (если есть) :::::::::::::::::: -->
   <Import Project="$(MSBuildThisFileDirectory)\DCT.CppCommon.targets"
           Condition="'$(_IsLocal)'=='True' and

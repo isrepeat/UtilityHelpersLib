@@ -31,6 +31,7 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/XamlRuntime.Shared" FILES
 target_include_directories(utility_helpers_xaml_runtime PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/XamlRuntime.Shared>"
 )
+target_link_libraries(utility_helpers_xaml_runtime PUBLIC utility_helpers::logging)
 set_target_properties(utility_helpers_xaml_runtime PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON

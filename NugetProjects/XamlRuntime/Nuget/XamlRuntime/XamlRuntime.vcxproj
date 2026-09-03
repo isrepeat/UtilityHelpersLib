@@ -37,5 +37,13 @@
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\XamlLayout.h" />
         <None Include="CMakeLists.txt" />
     </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="$(ProjectDir)..\..\..\..\Helpers\Helpers.Logging\Helpers.Logging.vcxproj">
+            <Project>{D437B9D5-30FC-41B2-9D3B-6B34E2DECD06}</Project>
+            <SetConfiguration>Configuration=$(Configuration)</SetConfiguration>
+            <SetPlatform>Platform=x64</SetPlatform>
+            <AdditionalProperties>Configuration=$(Configuration);Platform=x64</AdditionalProperties>
+        </ProjectReference>
+    </ItemGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

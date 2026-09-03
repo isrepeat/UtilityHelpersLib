@@ -98,6 +98,7 @@ public partial class MainWindow : Window {
     }
 
     private void WindowLoaded(object sender, RoutedEventArgs eventArgs) {
+        NativeRuntime.xr_configure_logging(Path.Combine(AppContext.BaseDirectory, "xaml-previewer.log"));
         this.LoadSettings();
         this.ConfigureMouseWheelScrolling();
         this.ApplyEditorScale();

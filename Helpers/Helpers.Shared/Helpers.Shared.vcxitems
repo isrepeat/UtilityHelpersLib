@@ -20,7 +20,6 @@
   </ItemGroup>
   <!-- ================================================================================ -->
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\platform\Android\Logging.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\Action.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\BIOS.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\CancellationToken.cpp" />
@@ -244,7 +243,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\WeakEvent.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Win32\MainWindow.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\Win32\TrayWindow.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\platform\Android\Logging.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultPS.hlsl">

@@ -15,6 +15,7 @@ target_include_directories(utility_helpers_open_gles_renderer PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/OpenGLESRenderer.Shared>"
 )
 target_link_libraries(utility_helpers_open_gles_renderer PUBLIC
+    utility_helpers::logging
     utility_helpers::xaml_runtime
 )
 if (ANDROID)

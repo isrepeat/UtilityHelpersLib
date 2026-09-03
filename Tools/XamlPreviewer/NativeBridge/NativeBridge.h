@@ -48,6 +48,7 @@ typedef struct xr_command {
 } xr_command;
 
 XAML_RUNTIME_BRIDGE_API const char* xr_last_error(void);
+XAML_RUNTIME_BRIDGE_API void xr_configure_logging(const char* filePath);
 XAML_RUNTIME_BRIDGE_API xr_element* xr_create_element(const char* type);
 XAML_RUNTIME_BRIDGE_API void xr_destroy_element(xr_element* element);
 XAML_RUNTIME_BRIDGE_API int xr_add_child(xr_element* parent, xr_element* child);

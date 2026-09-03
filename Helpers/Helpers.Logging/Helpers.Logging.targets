@@ -1,0 +1,20 @@
+<Project>
+    <!-- Контракт public build-assets библиотеки.
+         Directory.Build.targets вызывает GetPublicBuildAssets у каждого
+         ProjectReference. Target возвращает элементы PublicBuildAsset вместо
+         того, чтобы потребитель вручную задавал AdditionalIncludeDirectories. -->
+    <Target Name="GetPublicBuildAssets"
+            Returns="@(PublicBuildAsset)">
+        <ItemGroup>
+            <!-- Путь к публичному заголовку <Helpers.Logging/Logging.h>. -->
+            <PublicBuildAsset Include="$(MSBuildProjectDirectory)">
+                <AssetType>IncludeDirectory</AssetType>
+            </PublicBuildAsset>
+            <!-- Logging.h использует fmt из spdlog в своём публичном API,
+                 поэтому зависимость также должна быть доступна потребителю. -->
+            <PublicBuildAsset Include="$(MSBuildProjectDirectory)\..\..\3rdParty\Spdlog\Spdlog.Shared\Spdlog">
+                <AssetType>IncludeDirectory</AssetType>
+            </PublicBuildAsset>
+        </ItemGroup>
+    </Target>
+</Project>

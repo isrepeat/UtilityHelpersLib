@@ -1,6 +1,7 @@
-#include "XamlRuntime/Animation.h"
+#include <Helpers.Logging/Logging.h>
 
-#include "XamlRuntime/XamlLayout.h"
+#include "Animation.h"
+#include "XamlLayout.h"
 
 #include <algorithm>
 
@@ -48,6 +49,7 @@ namespace xaml {
             easing,
             std::chrono::steady_clock::now(),
         });
+        LOG_DEBUG("XamlRuntime.Animation", "Started animation: {} -> {}, {} ms", from, to, duration.count());
     }
 
     void AnimationController::Update() {
@@ -67,6 +69,7 @@ namespace xaml {
             if (progress < 1.0f) {
                 ++animation;
             } else {
+                LOG_DEBUG("XamlRuntime.Animation", "Completed animation");
                 animation = this->animations.erase(animation);
             }
         }

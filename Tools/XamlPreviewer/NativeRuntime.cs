@@ -69,6 +69,9 @@ internal unsafe struct NativeCommand {
 internal static class NativeRuntime {
     private const string Library = "XamlRuntime.NativeBridge.dll";
 
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_configure_logging")]
+    public static extern void xr_configure_logging([MarshalAs(UnmanagedType.LPUTF8Str)] string filePath);
+
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_create_element")]
     public static extern IntPtr xr_create_element([MarshalAs(UnmanagedType.LPUTF8Str)] string type);
 

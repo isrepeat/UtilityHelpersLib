@@ -742,12 +742,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)Helpers\platform\Android\Logging.cpp">
-      <Filter>platform\Android</Filter>
-    </ClCompile>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Helpers\platform\Android\Logging.h">
-      <Filter>platform\Android</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)Helpers\Dx\Shaders\defaultVS.hlsl">

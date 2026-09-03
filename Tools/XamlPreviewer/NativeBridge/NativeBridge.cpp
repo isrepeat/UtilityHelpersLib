@@ -1,17 +1,20 @@
-#include "NativeBridge.h"
-#include "AngleRenderSurface.h"
+#include <Helpers.Logging/Logging.h>
 
-#include <XamlRuntime/Animation.h>
 #include <XamlRuntime/ElementBuilder.h>
-#include <XamlRuntime/Input.h>
 #include <XamlRuntime/RenderEngine.h>
 #include <XamlRuntime/XamlLayout.h>
+#include <XamlRuntime/Animation.h>
+#include <XamlRuntime/Input.h>
 
+#include "AngleRenderSurface.h"
+#include "NativeBridge.h"
+
+#include <filesystem>
 #include <algorithm>
-#include <chrono>
-#include <cstring>
-#include <memory>
 #include <stdexcept>
+#include <cstring>
+#include <chrono>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -124,6 +127,14 @@ struct xr_angle_surface {
 
 const char* xr_last_error(void) {
     return xaml::bridge::lastError.c_str();
+}
+
+void xr_configure_logging(const char* filePath) {
+    utility_helpers::logging::Configure({
+        filePath == nullptr ? std::filesystem::path{} : std::filesystem::path(filePath),
+    });
+    utility_helpers::logging::Initialize("XamlPreviewer");
+    LOG_INFO("XamlPreviewer.NativeBridge", "Logging initialized");
 }
 
 xr_element* xr_create_element(const char* type) {
