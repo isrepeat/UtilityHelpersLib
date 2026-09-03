@@ -55,11 +55,21 @@ internal sealed class XamlCompletionController {
     }
 
     public bool HandlePreviewKeyDown(KeyEventArgs eventArgs) {
-        if (eventArgs.Key != Key.Enter || this.completionWindow is null) {
+        if (eventArgs.Key == Key.Enter && this.completionWindow is not null) {
+            this.completionWindow.CompletionList.RequestInsertion(eventArgs);
+            eventArgs.Handled = true;
+            return true;
+        }
+
+        if (eventArgs.Key != Key.Space
+            || (Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Shift)) == ModifierKeys.None) {
             return false;
         }
 
-        this.completionWindow.CompletionList.RequestInsertion(eventArgs);
+        if (!this.TryShowExplicitCompletion()) {
+            return false;
+        }
+
         eventArgs.Handled = true;
         return true;
     }
@@ -67,13 +77,12 @@ internal sealed class XamlCompletionController {
     private void TextAreaTextEntered(object? sender, TextCompositionEventArgs eventArgs) {
         if (eventArgs.Text == "<") {
             this.ShowCompletion(XamlCompletionController.ElementNames.Select(
-                name => new XamlCompletionData(name, "Элемент XAML")));
+                name => new XamlCompletionData(name, "Элемент XAML")), this.editor.TextArea.Caret.Offset);
             return;
         }
 
-        if (eventArgs.Text == " " && this.TryGetOpenElementName(out var elementName)) {
-            this.ShowCompletion(XamlCompletionController.GetAttributes(elementName).Select(
-                name => new XamlCompletionData($"{name}=\"\"", "Атрибут XAML", name.Length + 2)));
+        if (eventArgs.Text == " " || eventArgs.Text == "\t") {
+            this.completionWindow?.Close();
             return;
         }
 
@@ -82,7 +91,7 @@ internal sealed class XamlCompletionController {
         }
     }
 
-    private void ShowCompletion(IEnumerable<XamlCompletionData> completionData) {
+    private void ShowCompletion(IEnumerable<XamlCompletionData> completionData, int completionStartOffset) {
         this.completionWindow?.Close();
         var window = new CompletionWindow(this.editor.TextArea) {
             Background = PreviewRenderer.ParseBrush("#252525"),
@@ -94,6 +103,8 @@ internal sealed class XamlCompletionController {
             SizeToContent = SizeToContent.Height,
             Width = 360,
         };
+        window.StartOffset = completionStartOffset;
+        window.EndOffset = this.editor.TextArea.Caret.Offset;
         window.Resources[SystemColors.ActiveBorderBrushKey] = PreviewRenderer.ParseBrush("#4A4A4A");
         window.Resources[SystemColors.InactiveBorderBrushKey] = PreviewRenderer.ParseBrush("#4A4A4A");
         window.Resources[SystemColors.ControlBrushKey] = PreviewRenderer.ParseBrush("#252525");
@@ -107,6 +118,10 @@ internal sealed class XamlCompletionController {
         foreach (var item in completionData) {
             window.CompletionList.CompletionData.Add(item);
         }
+        var typedPrefix = this.editor.Document.GetText(
+            completionStartOffset,
+            this.editor.TextArea.Caret.Offset - completionStartOffset);
+        window.CompletionList.SelectItem(typedPrefix);
         window.Closed += (_, _) => {
             if (ReferenceEquals(this.completionWindow, window)) {
                 this.completionWindow = null;
@@ -195,22 +210,35 @@ internal sealed class XamlCompletionController {
         this.editor.TextArea.Caret.Offset = caretOffset;
     }
 
-    private bool TryGetOpenElementName(out string elementName) {
+    private bool TryShowExplicitCompletion() {
         var caretOffset = this.editor.TextArea.Caret.Offset;
         var text = this.editor.Document.Text;
         var openingStart = text.LastIndexOf('<', Math.Max(0, caretOffset - 1));
         if (openingStart < 0) {
-            elementName = string.Empty;
             return false;
         }
 
         var openingTag = text[openingStart..caretOffset];
         if (openingTag.Contains('>') || openingTag.StartsWith("</", StringComparison.Ordinal)) {
-            elementName = string.Empty;
             return false;
         }
 
-        return this.TryGetElementName(openingTag, out elementName);
+        var tagContent = openingTag[1..];
+        var attributeSeparator = tagContent.LastIndexOfAny([' ', '\t', '\r', '\n']);
+        if (attributeSeparator < 0) {
+            this.ShowCompletion(XamlCompletionController.ElementNames.Select(
+                name => new XamlCompletionData(name, "Элемент XAML")), openingStart + 1);
+            return true;
+        }
+
+        if (!this.TryGetElementName(openingTag, out var elementName)) {
+            return false;
+        }
+
+        var completionStartOffset = openingStart + attributeSeparator + 2;
+        this.ShowCompletion(XamlCompletionController.GetAttributes(elementName).Select(
+            name => new XamlCompletionData($"{name}=\"\"", "Атрибут XAML", name.Length + 2)), completionStartOffset);
+        return true;
     }
 
     private bool TryGetElementName(string tag, out string elementName) {

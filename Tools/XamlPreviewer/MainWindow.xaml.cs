@@ -268,7 +268,17 @@ public partial class MainWindow : Window {
         }
     }
 
-    private void MarkupEditorPreviewKeyDown(object sender, KeyEventArgs eventArgs) {
+    private void EditorPreviewKeyDown(object sender, KeyEventArgs eventArgs) {
+        if (eventArgs.Key == Key.S && Keyboard.Modifiers == ModifierKeys.Control) {
+            this.SaveButtonClick(this, eventArgs);
+            eventArgs.Handled = true;
+            return;
+        }
+
+        if (!ReferenceEquals(sender, this.MarkupEditor)) {
+            return;
+        }
+
         if (this.xamlCompletionController.HandlePreviewKeyDown(eventArgs)) {
             return;
         }

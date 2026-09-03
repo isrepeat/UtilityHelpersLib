@@ -839,7 +839,7 @@
                                    HorizontalScrollBarVisibility="Auto"
                                    ShowLineNumbers="True"
                                    TextChanged="EditorTextChanged"
-                                   PreviewKeyDown="MarkupEditorPreviewKeyDown"
+                                   PreviewKeyDown="EditorPreviewKeyDown"
                                    VerticalScrollBarVisibility="Auto" />
             <GridSplitter Grid.Column="1"
                           HorizontalAlignment="Stretch"
@@ -930,6 +930,7 @@
                                        HorizontalScrollBarVisibility="Auto"
                                        ShowLineNumbers="True"
                                        TextChanged="EditorTextChanged"
+                                       PreviewKeyDown="EditorPreviewKeyDown"
                                        VerticalScrollBarVisibility="Auto" />
             </Grid>
             <Grid x:Name="SettingsPanel"
@@ -950,6 +951,7 @@
                                        HorizontalScrollBarVisibility="Auto"
                                        ShowLineNumbers="True"
                                        TextChanged="EditorTextChanged"
+                                       PreviewKeyDown="EditorPreviewKeyDown"
                                        VerticalScrollBarVisibility="Auto" />
             </Grid>
         </Grid>
