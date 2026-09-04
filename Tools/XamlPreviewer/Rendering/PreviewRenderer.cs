@@ -153,6 +153,7 @@ internal static class PreviewRenderer {
             "toggleProgress" => 2,
             "pressProgress" => 3,
             "waveProgress" => 4,
+            "waveOpacity" => 5,
             _ => throw new InvalidDataException("Unsupported FloatAnimation property."),
         };
     }

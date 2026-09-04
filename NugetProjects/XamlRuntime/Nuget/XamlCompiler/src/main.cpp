@@ -490,7 +490,7 @@ namespace {
                             : track.name == "FloatAnimation" ? attribute("property") : "";
                         if (property != "opacity" && property != "renderOffsetX"
                             && property != "toggleProgress" && property != "pressProgress"
-                            && property != "waveProgress") {
+                            && property != "waveProgress" && property != "waveOpacity") {
                             throw std::runtime_error("Unsupported animation track on <Storyboard>");
                         }
                         const std::string from = attribute("from");

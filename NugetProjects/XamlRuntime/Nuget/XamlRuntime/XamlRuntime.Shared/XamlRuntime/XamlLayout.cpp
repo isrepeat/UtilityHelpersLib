@@ -545,6 +545,14 @@ namespace xaml {
         this->waveProgress = value;
     }
 
+    float Element::WaveOpacity() const {
+        return this->waveOpacity;
+    }
+
+    void Element::SetWaveOpacity(float value) {
+        this->waveOpacity = value;
+    }
+
     float Element::WaveIntensity() const {
         return this->waveIntensity;
     }

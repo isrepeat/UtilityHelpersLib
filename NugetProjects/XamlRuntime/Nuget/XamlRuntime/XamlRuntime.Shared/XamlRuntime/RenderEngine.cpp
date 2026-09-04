@@ -46,11 +46,11 @@ namespace xaml::_details {
         Rect bounds,
         float opacity) {
         const float progress = element.WaveProgress();
-        if (progress <= 0.0f || progress >= 1.0f) {
+        if (progress < 0.0f || element.WaveOpacity() <= 0.0f) {
             return;
         }
 
-        const float fade = std::pow(1.0f - progress, element.WaveFadeExponent());
+        const float fade = std::pow(element.WaveOpacity(), element.WaveFadeExponent());
         const attr::Color color{
             element.Foreground().red,
             element.Foreground().green,
@@ -61,7 +61,7 @@ namespace xaml::_details {
             bounds,
             WithOpacity(color, opacity),
             element.CornerRadius(),
-            progress,
+            std::min(progress, 1.0f),
             element.WaveSpread());
     }
 

@@ -10,6 +10,7 @@ namespace xaml {
         toggleProgress,
         pressProgress,
         waveProgress,
+        waveOpacity,
     };
 
     enum class AnimationTrigger {

@@ -209,7 +209,7 @@ int xr_add_storyboard_track(
     float fadeExponent) {
     try {
         xaml::bridge::lastError.clear();
-        if (element == nullptr || trigger < 0 || trigger > 2 || property < 0 || property > 4
+        if (element == nullptr || trigger < 0 || trigger > 2 || property < 0 || property > 5
             || durationMilliseconds < 0 || easing < 0 || easing > 1
             || intensity < 0.0f || spread <= 0.0f || fadeExponent <= 0.0f) {
             throw std::invalid_argument("invalid storyboard track");

@@ -23,6 +23,8 @@ namespace xaml::_details {
             target.SetToggleProgress(value);
         } else if (property == AnimatedProperty::waveProgress) {
             target.SetWaveProgress(value);
+        } else if (property == AnimatedProperty::waveOpacity) {
+            target.SetWaveOpacity(value);
         } else {
             target.SetPressProgress(value);
         }
@@ -41,6 +43,9 @@ namespace xaml::_details {
         }
         if (property == AnimatedProperty::waveProgress) {
             return target.WaveProgress();
+        }
+        if (property == AnimatedProperty::waveOpacity) {
+            return target.WaveOpacity();
         }
         return target.PressProgress();
     }
