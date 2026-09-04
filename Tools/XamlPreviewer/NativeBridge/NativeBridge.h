@@ -56,10 +56,22 @@ XAML_RUNTIME_BRIDGE_API int xr_set_attribute(
     xr_element* element,
     const char* name,
     const char* value);
+XAML_RUNTIME_BRIDGE_API int xr_supported_attribute_count(const char* elementType);
+XAML_RUNTIME_BRIDGE_API const char* xr_supported_attribute_name(
+    const char* elementType,
+    int index);
+XAML_RUNTIME_BRIDGE_API int xr_supported_element_count(void);
+XAML_RUNTIME_BRIDGE_API const char* xr_supported_element_name(int index);
 XAML_RUNTIME_BRIDGE_API int xr_layout(xr_element* root, float width, float height);
 XAML_RUNTIME_BRIDGE_API xr_element* xr_hit_test(xr_element* root, float x, float y);
 XAML_RUNTIME_BRIDGE_API const char* xr_element_id(const xr_element* element);
 XAML_RUNTIME_BRIDGE_API int xr_handle_tap(
+    xr_element* element,
+    xr_animation_controller* animations);
+XAML_RUNTIME_BRIDGE_API int xr_handle_pointer_down(
+    xr_element* element,
+    xr_animation_controller* animations);
+XAML_RUNTIME_BRIDGE_API int xr_handle_pointer_up(
     xr_element* element,
     xr_animation_controller* animations);
 XAML_RUNTIME_BRIDGE_API xr_animation_controller* xr_create_animation_controller(void);

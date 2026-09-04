@@ -87,6 +87,21 @@ internal static class NativeRuntime {
         [MarshalAs(UnmanagedType.LPUTF8Str)] string name,
         [MarshalAs(UnmanagedType.LPUTF8Str)] string value);
 
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_supported_attribute_count")]
+    public static extern int xr_supported_attribute_count(
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string elementType);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_supported_attribute_name")]
+    private static extern IntPtr xr_supported_attribute_name(
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string elementType,
+        int index);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_supported_element_count")]
+    public static extern int xr_supported_element_count();
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_supported_element_name")]
+    private static extern IntPtr xr_supported_element_name(int index);
+
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_layout")]
     public static extern int xr_layout(IntPtr root, float width, float height);
 
@@ -98,6 +113,12 @@ internal static class NativeRuntime {
 
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_handle_tap")]
     public static extern int xr_handle_tap(IntPtr element, IntPtr animations);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_handle_pointer_down")]
+    public static extern int xr_handle_pointer_down(IntPtr element, IntPtr animations);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_handle_pointer_up")]
+    public static extern int xr_handle_pointer_up(IntPtr element, IntPtr animations);
 
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_create_animation_controller")]
     public static extern IntPtr xr_create_animation_controller();
@@ -155,5 +176,13 @@ internal static class NativeRuntime {
 
     public static string GetElementId(IntPtr element) {
         return Marshal.PtrToStringUTF8(NativeRuntime.xr_element_id(element)) ?? string.Empty;
+    }
+
+    public static string GetSupportedAttributeName(string elementType, int index) {
+        return Marshal.PtrToStringUTF8(NativeRuntime.xr_supported_attribute_name(elementType, index)) ?? string.Empty;
+    }
+
+    public static string GetSupportedElementName(int index) {
+        return Marshal.PtrToStringUTF8(NativeRuntime.xr_supported_element_name(index)) ?? string.Empty;
     }
 }

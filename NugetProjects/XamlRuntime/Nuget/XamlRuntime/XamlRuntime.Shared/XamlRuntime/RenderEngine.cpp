@@ -22,6 +22,24 @@ namespace xaml::_details {
         };
     }
 
+    Rect ScaleAroundCenter(Rect bounds, float scale) {
+        const float width = bounds.width * scale;
+        const float height = bounds.height * scale;
+        return {
+            bounds.x + (bounds.width - width) / 2.0f,
+            bounds.y + (bounds.height - height) / 2.0f,
+            width,
+            height,
+        };
+    }
+
+    attr::Color ButtonColor(
+        const Element& element,
+        attr::Color inactive,
+        attr::Color active) {
+        return element.IsOn() && active.alpha > 0.0f ? active : inactive;
+    }
+
     void RenderToggleSwitch(
         const Element& element,
         IRenderBackend& backend,
@@ -61,6 +79,12 @@ namespace xaml::_details {
             return;
         }
 
+        const attr::Color background = element.Type() == ElementType::button
+            ? ButtonColor(element, element.Background(), element.ActiveBackground())
+            : element.Background();
+        const attr::Color borderColor = element.Type() == ElementType::button
+            ? ButtonColor(element, element.BorderColor(), element.ActiveBorderColor())
+            : element.BorderColor();
         const attr::Thickness borderThickness = element.BorderThickness();
         const float thickness = std::max({
             borderThickness.left,
@@ -71,14 +95,14 @@ namespace xaml::_details {
         if (thickness <= 0.0f) {
             backend.DrawRoundedRect(
                 bounds,
-                WithOpacity(element.Background(), opacity),
+                WithOpacity(background, opacity),
                 element.CornerRadius());
             return;
         }
-        if (element.Background().alpha <= 0.0f) {
+        if (background.alpha <= 0.0f) {
             backend.DrawRoundedRectOutline(
                 bounds,
-                WithOpacity(element.BorderColor(), opacity),
+                WithOpacity(borderColor, opacity),
                 element.CornerRadius(),
                 thickness);
             return;
@@ -86,7 +110,7 @@ namespace xaml::_details {
 
         backend.DrawRoundedRect(
             bounds,
-            WithOpacity(element.BorderColor(), opacity),
+            WithOpacity(borderColor, opacity),
             element.CornerRadius());
         const Rect innerBounds{
             bounds.x + borderThickness.left,
@@ -96,7 +120,7 @@ namespace xaml::_details {
         };
         backend.DrawRoundedRect(
             innerBounds,
-            WithOpacity(element.Background(), opacity),
+            WithOpacity(background, opacity),
             std::max(0.0f, element.CornerRadius() - thickness));
     }
 
@@ -111,7 +135,10 @@ namespace xaml::_details {
 
         const float offsetX = inheritedOffsetX + element.RenderOffsetX();
         const float opacity = inheritedOpacity * element.Opacity();
-        const Rect bounds = Translate(element.Bounds(), offsetX);
+        Rect bounds = Translate(element.Bounds(), offsetX);
+        if (element.Type() == ElementType::button) {
+            bounds = ScaleAroundCenter(bounds, 1.0f - element.PressProgress() * 0.06f);
+        }
         backend.BeginClip(Translate(element.ClipBounds(), offsetX));
         RenderChrome(element, backend, bounds, opacity);
         if (element.Type() == ElementType::textBlock) {
@@ -124,11 +151,14 @@ namespace xaml::_details {
                 element.HorizontalAlignmentValue());
         } else if (element.Type() == ElementType::button
             || element.Type() == ElementType::iconButton) {
-            backend.DrawOutline(bounds, WithOpacity(element.Foreground(), opacity));
+            const attr::Color foreground = element.Type() == ElementType::button
+                ? ButtonColor(element, element.Foreground(), element.ActiveForeground())
+                : element.Foreground();
+            backend.DrawOutline(bounds, WithOpacity(foreground, opacity));
             backend.DrawText(
                 bounds,
                 element.Text(),
-                WithOpacity(element.Foreground(), opacity),
+                WithOpacity(foreground, opacity),
                 element.FontSize(),
                 element.FontWeight(),
                 element.HorizontalAlignmentValue());

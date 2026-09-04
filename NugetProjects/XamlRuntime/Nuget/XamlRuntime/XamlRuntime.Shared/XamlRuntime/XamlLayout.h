@@ -129,8 +129,17 @@ namespace xaml {
         attr::Color Background() const;
         void SetBackground(attr::Color value);
 
+        attr::Color ActiveBackground() const;
+        void SetActiveBackground(attr::Color value);
+
         attr::Color BorderColor() const;
         void SetBorderColor(attr::Color value);
+
+        attr::Color ActiveBorderColor() const;
+        void SetActiveBorderColor(attr::Color value);
+
+        attr::Color ActiveForeground() const;
+        void SetActiveForeground(attr::Color value);
 
         attr::Thickness Margin() const;
         void SetMargin(attr::Thickness value);
@@ -167,6 +176,9 @@ namespace xaml {
 
         float ToggleProgress() const;
         void SetToggleProgress(float value);
+
+        float PressProgress() const;
+        void SetPressProgress(float value);
 
         Size DesiredSize() const;
         void SetDesiredSize(Size value);
@@ -206,7 +218,10 @@ namespace xaml {
         std::string rows;
         std::string columns;
         attr::Color background{0.0f, 0.0f, 0.0f, 0.0f};
+        attr::Color activeBackground{0.0f, 0.0f, 0.0f, 0.0f};
         attr::Color borderColor{0.0f, 0.0f, 0.0f, 0.0f};
+        attr::Color activeBorderColor{0.0f, 0.0f, 0.0f, 0.0f};
+        attr::Color activeForeground{1.0f, 1.0f, 1.0f, 1.0f};
         attr::Thickness margin{};
         attr::Thickness padding{};
         attr::Thickness borderThickness{};
@@ -219,6 +234,7 @@ namespace xaml {
         float opacity = 1.0f;
         float renderOffsetX = 0.0f;
         float toggleProgress = -1.0f;
+        float pressProgress = 0.0f;
         Size desiredSize{};
         Rect bounds{};
         Rect clipBounds{};

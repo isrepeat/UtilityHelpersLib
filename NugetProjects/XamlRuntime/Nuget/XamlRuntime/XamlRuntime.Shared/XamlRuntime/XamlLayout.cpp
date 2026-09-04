@@ -393,12 +393,36 @@ namespace xaml {
         this->background = value;
     }
 
+    attr::Color Element::ActiveBackground() const {
+        return this->activeBackground;
+    }
+
+    void Element::SetActiveBackground(attr::Color value) {
+        this->activeBackground = value;
+    }
+
     attr::Color Element::BorderColor() const {
         return this->borderColor;
     }
 
     void Element::SetBorderColor(attr::Color value) {
         this->borderColor = value;
+    }
+
+    attr::Color Element::ActiveBorderColor() const {
+        return this->activeBorderColor;
+    }
+
+    void Element::SetActiveBorderColor(attr::Color value) {
+        this->activeBorderColor = value;
+    }
+
+    attr::Color Element::ActiveForeground() const {
+        return this->activeForeground;
+    }
+
+    void Element::SetActiveForeground(attr::Color value) {
+        this->activeForeground = value;
     }
 
     attr::Thickness Element::Margin() const {
@@ -495,6 +519,14 @@ namespace xaml {
 
     void Element::SetToggleProgress(float value) {
         this->toggleProgress = value;
+    }
+
+    float Element::PressProgress() const {
+        return this->pressProgress;
+    }
+
+    void Element::SetPressProgress(float value) {
+        this->pressProgress = value;
     }
 
     Size Element::DesiredSize() const {

@@ -23,7 +23,10 @@ namespace xaml {
         rows,
         columns,
         background,
+        activeBackground,
         borderBrush,
+        activeBorderBrush,
+        activeForeground,
         margin,
         padding,
         borderThickness,
@@ -35,6 +38,7 @@ namespace xaml {
         isEnabled,
         opacity,
         itemsSource,
+        count,
     };
 
     enum class XamlAttributeGroup : uint32_t {
@@ -49,7 +53,10 @@ namespace xaml {
         orientation = 1 << 8,
         gridDefinitions = 1 << 9,
         background = 1 << 10,
+        activeBackground = 1 << 16,
         border = 1 << 11,
+        activeBorder = 1 << 17,
+        activeForeground = 1 << 18,
         padding = 1 << 12,
         cornerRadius = 1 << 13,
         toggle = 1 << 14,

@@ -11,41 +11,6 @@ using System.Windows.Media;
 namespace XamlPreviewer;
 
 internal sealed class XamlCompletionController {
-    private static readonly string[] ElementNames = [
-        "Page",
-        "StackPanel",
-        "Grid",
-        "Border",
-        "TextBlock",
-        "Button",
-        "IconButton",
-        "ToggleSwitch",
-        "ScrollViewer",
-        "Image",
-        "SvgImage",
-        "ListView",
-        "ListView.ItemTemplate",
-        "DataTemplate",
-        "columnDefinitions",
-        "columnDefinition",
-        "rowDefinitions",
-        "rowDefinition",
-    ];
-
-    private static readonly string[] CommonAttributes = [
-        "id",
-        "horizontalAlignment",
-        "verticalAlignment",
-        "gridColumn",
-        "gridRow",
-        "width",
-        "height",
-        "margin",
-        "visibility",
-        "isEnabled",
-        "opacity",
-    ];
-
     private readonly TextEditor editor;
     private CompletionWindow? completionWindow;
 
@@ -76,7 +41,7 @@ internal sealed class XamlCompletionController {
 
     private void TextAreaTextEntered(object? sender, TextCompositionEventArgs eventArgs) {
         if (eventArgs.Text == "<") {
-            this.ShowCompletion(XamlCompletionController.ElementNames.Select(
+            this.ShowCompletion(XamlCompletionController.GetElementNames().Select(
                 name => new XamlCompletionData(name, "Элемент XAML")), this.editor.TextArea.Caret.Offset);
             return;
         }
@@ -226,7 +191,7 @@ internal sealed class XamlCompletionController {
         var tagContent = openingTag[1..];
         var attributeSeparator = tagContent.LastIndexOfAny([' ', '\t', '\r', '\n']);
         if (attributeSeparator < 0) {
-            this.ShowCompletion(XamlCompletionController.ElementNames.Select(
+            this.ShowCompletion(XamlCompletionController.GetElementNames().Select(
                 name => new XamlCompletionData(name, "Элемент XAML")), openingStart + 1);
             return true;
         }
@@ -249,24 +214,19 @@ internal sealed class XamlCompletionController {
     }
 
     private static IEnumerable<string> GetAttributes(string elementName) {
-        var attributes = XamlCompletionController.CommonAttributes.ToList();
-        attributes.AddRange(elementName switch {
-            "Page" => ["background", "borderBrush", "borderThickness", "padding"],
-            "StackPanel" => ["background", "borderBrush", "borderThickness", "padding", "orientation"],
-            "TextBlock" => ["text", "fontSize", "fontFamily", "fontWeight", "foreground"],
-            "Button" => ["background", "borderBrush", "borderThickness", "padding", "cornerRadius", "text", "command"],
-            "Border" => ["background", "borderBrush", "borderThickness", "padding", "cornerRadius"],
-            "ToggleSwitch" => ["background", "borderBrush", "borderThickness", "text", "tint", "isOn"],
-            "Grid" => ["background", "borderBrush", "borderThickness", "padding", "columns", "rows"],
-            "ScrollViewer" => ["background", "borderBrush", "borderThickness", "padding"],
-            "Image" or "SvgImage" => ["source", "tint"],
-            "IconButton" => ["background", "borderBrush", "borderThickness", "padding", "cornerRadius", "source", "tint", "command"],
-            "ListView" => ["background", "borderBrush", "borderThickness", "padding", "itemsSource"],
-            "columnDefinition" => ["width"],
-            "rowDefinition" => ["height"],
-            _ => [],
-        });
-        return attributes.Distinct(StringComparer.Ordinal);
+        var count = NativeRuntime.xr_supported_attribute_count(elementName);
+        if (count > 0) {
+            return Enumerable.Range(0, count)
+                .Select(index => NativeRuntime.GetSupportedAttributeName(elementName, index))
+                .Where(name => !string.IsNullOrEmpty(name));
+        }
+        return [];
+    }
+
+    private static IEnumerable<string> GetElementNames() {
+        return Enumerable.Range(0, NativeRuntime.xr_supported_element_count())
+            .Select(NativeRuntime.GetSupportedElementName)
+            .Where(name => !string.IsNullOrEmpty(name));
     }
 }
 

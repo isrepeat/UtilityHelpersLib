@@ -9,11 +9,7 @@ namespace xaml::_details {
     }
 
     bool IsInteractive(const Element& element) {
-        const ElementType type = element.Type();
-        return type == ElementType::border
-            || type == ElementType::button
-            || type == ElementType::iconButton
-            || type == ElementType::toggleSwitch;
+        return !element.Command().empty();
     }
 
     Element* HitTestElement(Element& element, float x, float y) {
@@ -48,9 +44,7 @@ namespace xaml {
                 element.IsOn());
             return true;
         }
-        const bool handled = element.Type() == ElementType::border
-            || element.Type() == ElementType::button
-            || element.Type() == ElementType::iconButton;
+        const bool handled = !element.Command().empty();
         if (handled) {
             LOG_DEBUG(
                 "XamlRuntime.Input",

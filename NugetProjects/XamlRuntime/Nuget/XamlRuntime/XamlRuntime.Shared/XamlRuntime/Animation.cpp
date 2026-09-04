@@ -19,8 +19,10 @@ namespace xaml::_details {
             target.SetOpacity(value);
         } else if (property == AnimatedProperty::renderOffsetX) {
             target.SetRenderOffsetX(value);
-        } else {
+        } else if (property == AnimatedProperty::toggleProgress) {
             target.SetToggleProgress(value);
+        } else {
+            target.SetPressProgress(value);
         }
     }
 }

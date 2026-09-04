@@ -828,7 +828,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="EditorColumn"
                                   Width="1.15*" />
-                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="10" />
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="0" />
                 <ColumnDefinition Width="0" />
@@ -842,6 +842,97 @@
                                    TextChanged="EditorTextChanged"
                                    PreviewKeyDown="EditorPreviewKeyDown"
                                    VerticalScrollBarVisibility="Auto" />
+            <Grid x:Name="FolderPickerPanel"
+                  Margin="10"
+                  Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock FontSize="18"
+                           FontWeight="SemiBold"
+                           Foreground="#E6E6E6"
+                           Text="Выберите папку с XAML" />
+                <DockPanel Grid.Row="1"
+                           Margin="0 10 0 10">
+                    <Button x:Name="FolderPickerBackButton"
+                            Width="40"
+                            Height="36"
+                            Margin="0 0 4 0"
+                            Click="FolderPickerBackButtonClick"
+                            DockPanel.Dock="Left">
+                        <local:SvgIconControl Source="Resources/Icons/navigate-back.svg"
+                                              Width="22"
+                                              Height="22"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Stroke="#E6E6E6"
+                                              StrokeThickness="2.5" />
+                    </Button>
+                    <Button x:Name="FolderPickerForwardButton"
+                            Width="40"
+                            Height="36"
+                            Margin="0 0 4 0"
+                            Click="FolderPickerForwardButtonClick"
+                            DockPanel.Dock="Left">
+                        <local:SvgIconControl Source="Resources/Icons/navigate-forward.svg"
+                                              Width="22"
+                                              Height="22"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Stroke="#E6E6E6"
+                                              StrokeThickness="2.5" />
+                    </Button>
+                    <Button Width="40"
+                            Height="36"
+                            Margin="0 0 8 0"
+                            Click="FolderPickerUpButtonClick"
+                            DockPanel.Dock="Left">
+                        <local:SvgIconControl Source="Resources/Icons/find-previous.svg"
+                                              Width="22"
+                                              Height="22"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Stroke="#E6E6E6"
+                                              StrokeThickness="2.5" />
+                    </Button>
+                    <TextBox x:Name="FolderPickerPathText"
+                             Background="#202020"
+                             BorderBrush="#4A4A4A"
+                             Foreground="#DDDDDD"
+                             KeyDown="FolderPickerPathTextKeyDown" />
+                </DockPanel>
+                <TextBlock x:Name="FolderPickerErrorText"
+                           Grid.Row="2"
+                           Foreground="#FF8A80"
+                           TextWrapping="Wrap" />
+                <ListBox x:Name="FolderPickerEntries"
+                         Grid.Row="3"
+                         Background="#202020"
+                         BorderBrush="#4A4A4A"
+                         BorderThickness="1"
+                         Foreground="#E6E6E6"
+                         MouseDoubleClick="FolderPickerEntriesMouseDoubleClick"
+                         PreviewKeyDown="FolderPickerEntriesPreviewKeyDown"
+                         PreviewMouseLeftButtonDown="FolderPickerEntriesPreviewMouseLeftButtonDown"
+                         SelectionChanged="FolderPickerEntriesSelectionChanged" />
+                <StackPanel Grid.Row="4"
+                            Margin="0 10 0 0"
+                            HorizontalAlignment="Right"
+                            Orientation="Horizontal">
+                    <Button Width="90"
+                            Margin="0 0 8 0"
+                            Click="CancelFolderPickerButtonClick"
+                            Content="Отмена" />
+                    <Button x:Name="SelectFolderButton"
+                            Width="90"
+                            Click="SelectFolderButtonClick"
+                            Content="Выбрать" />
+                </StackPanel>
+            </Grid>
             <GridSplitter Grid.Column="1"
                           HorizontalAlignment="Stretch"
                           Background="#444444"
@@ -897,11 +988,18 @@
                         BorderBrush="#555555"
                         BorderThickness="1">
                     <ScrollViewer x:Name="PreviewViewport"
+                                  HorizontalContentAlignment="Center"
                                   HorizontalScrollBarVisibility="Auto"
+                                  LostMouseCapture="PreviewViewportLostMouseCapture"
+                                  PreviewMouseLeftButtonDown="PreviewViewportPreviewMouseLeftButtonDown"
+                                  PreviewMouseLeftButtonUp="PreviewViewportPreviewMouseLeftButtonUp"
+                                  PreviewMouseMove="PreviewViewportPreviewMouseMove"
+                                  PreviewMouseWheel="PreviewViewportPreviewMouseWheel"
+                                  VerticalContentAlignment="Center"
                                   VerticalScrollBarVisibility="Auto">
                         <Viewbox x:Name="PreviewViewbox"
                                  HorizontalAlignment="Center"
-                                 VerticalAlignment="Top"
+                                 VerticalAlignment="Center"
                                  Stretch="Uniform">
                             <Border x:Name="DeviceSurface"
                                     ClipToBounds="True" />

@@ -10,6 +10,7 @@ namespace xaml {
         opacity,
         renderOffsetX,
         toggleProgress,
+        pressProgress,
     };
 
     enum class Easing {

@@ -186,6 +186,61 @@ int xr_set_attribute(
     }
 }
 
+int xr_supported_attribute_count(const char* elementType) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (elementType == nullptr) {
+            throw std::invalid_argument("element type is required");
+        }
+        if (std::string_view(elementType) == "columnDefinition" || std::string_view(elementType) == "rowDefinition") {
+            return 1;
+        }
+        return static_cast<int>(xaml::SupportedAttributeNames(xaml::ParseElementType(elementType)).size());
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return 0;
+    }
+}
+
+const char* xr_supported_attribute_name(
+    const char* elementType,
+    int index) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (elementType == nullptr || index < 0) {
+            throw std::invalid_argument("element type and non-negative index are required");
+        }
+        if (std::string_view(elementType) == "columnDefinition" && index == 0) {
+            return "width";
+        }
+        if (std::string_view(elementType) == "rowDefinition" && index == 0) {
+            return "height";
+        }
+        const std::vector<std::string_view> names = xaml::SupportedAttributeNames(
+            xaml::ParseElementType(elementType));
+        if (index >= static_cast<int>(names.size())) {
+            throw std::out_of_range("attribute index is out of range");
+        }
+        return names[static_cast<size_t>(index)].data();
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return "";
+    }
+}
+
+int xr_supported_element_count(void) {
+    return 18;
+}
+
+const char* xr_supported_element_name(int index) {
+    static constexpr std::string_view names[]{
+        "Page", "StackPanel", "Grid", "Border", "TextBlock", "Button", "IconButton", "ToggleSwitch",
+        "ScrollViewer", "Image", "SvgImage", "ListView", "ListView.ItemTemplate", "DataTemplate",
+        "columnDefinitions", "columnDefinition", "rowDefinitions", "rowDefinition"
+    };
+    return index >= 0 && index < static_cast<int>(std::size(names)) ? names[index].data() : "";
+}
+
 int xr_layout(xr_element* root, float width, float height) {
     try {
         xaml::bridge::lastError.clear();
@@ -241,6 +296,53 @@ int xr_handle_tap(xr_element* element, xr_animation_controller* animations) {
                 std::chrono::milliseconds(120));
         }
         return 1;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return 0;
+    }
+}
+
+int xr_handle_pointer_down(xr_element* element, xr_animation_controller* animations) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (element == nullptr || animations == nullptr) {
+            throw std::invalid_argument("element and animations are required");
+        }
+        xaml::Element& target = *reinterpret_cast<xaml::Element*>(element);
+        if (target.Type() != xaml::ElementType::button) {
+            return 1;
+        }
+        animations->value.Animate(
+            target,
+            xaml::AnimatedProperty::pressProgress,
+            target.PressProgress(),
+            1.0f,
+            std::chrono::milliseconds(80));
+        return 1;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return 0;
+    }
+}
+
+int xr_handle_pointer_up(xr_element* element, xr_animation_controller* animations) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (element == nullptr || animations == nullptr) {
+            throw std::invalid_argument("element and animations are required");
+        }
+        xaml::Element& target = *reinterpret_cast<xaml::Element*>(element);
+        if (target.Type() == xaml::ElementType::button) {
+            target.SetIsOn(!target.IsOn());
+            animations->value.Animate(
+                target,
+                xaml::AnimatedProperty::pressProgress,
+                target.PressProgress(),
+                0.0f,
+                std::chrono::milliseconds(150));
+            return 1;
+        }
+        return xr_handle_tap(element, animations);
     } catch (const std::exception& error) {
         xaml::bridge::lastError = error.what();
         return 0;

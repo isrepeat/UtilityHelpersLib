@@ -8,6 +8,22 @@ using System.Xml.Linq;
 namespace XamlPreviewer;
 
 internal static class PreviewRenderer {
+    public static (int Width, int Height)? GetPreviewResolution(string markup) {
+        var document = XDocument.Parse(markup, LoadOptions.None);
+        var instruction = document.Nodes().OfType<XProcessingInstruction>()
+            .FirstOrDefault(node => node.Target == "mobileclock-preview");
+        if (instruction is null) {
+            return null;
+        }
+        var attributes = XElement.Parse($"<preview {instruction.Data} />");
+        if (!int.TryParse(attributes.Attribute("width")?.Value, out var width)
+            || !int.TryParse(attributes.Attribute("height")?.Value, out var height)
+            || width <= 0 || height <= 0) {
+            throw new InvalidDataException("mobileclock-preview требует положительные width и height.");
+        }
+        return (width, height);
+    }
+
     public static IntPtr CreateRoot(string markup, JsonElement data) {
         var document = XDocument.Parse(markup, LoadOptions.SetLineInfo);
         MarkupValidator.Validate(document);
@@ -28,6 +44,9 @@ internal static class PreviewRenderer {
 
         try {
             foreach (var attribute in node.Attributes()) {
+                if (attribute.IsNamespaceDeclaration) {
+                    continue;
+                }
                 var value = PreviewRenderer.Resolve(attribute.Value, data);
                 PreviewRenderer.SetAttribute(element, attribute.Name.LocalName, value);
             }

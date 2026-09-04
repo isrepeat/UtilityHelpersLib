@@ -1,4 +1,3 @@
-using Microsoft.Win32;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Search;
@@ -16,6 +15,8 @@ using System.Windows.Threading;
 
 namespace XamlPreviewer;
 
+#pragma warning disable CS0162
+
 /// <summary>
 /// Координирует UI превьювера: режимы AvalonEdit, сохранённое состояние сессии,
 /// наблюдение за внешними файлами и жизненный цикл нативной сессии рендеринга.
@@ -24,10 +25,13 @@ namespace XamlPreviewer;
 public partial class MainWindow : Window {
     private readonly DispatcherTimer renderTimer;
     private readonly DispatcherTimer animationTimer;
+    private readonly DispatcherTimer previewZoomTimer;
     private readonly DispatcherTimer externalRefreshTimer;
     private readonly DispatcherTimer smoothScrollTimer;
     private readonly MarkupEditorController markupEditorController;
     private readonly XamlCompletionController xamlCompletionController;
+    private readonly FolderPickerController folderPickerController;
+    private readonly PreviewViewportController previewViewportController;
     private readonly Grid previewLayer = new();
     private readonly Dictionary<TextEditor, SmoothScrollState> smoothScrollStates = [];
     private bool updatingPreviewControls;
@@ -40,12 +44,41 @@ public partial class MainWindow : Window {
     private PreviewerSettings settings = null!;
     private string? markupPath;
     private string? pendingPageTransition;
+    private (int Width, int Height)? markupPreviewResolution;
     private bool isMarkupDirty;
     private bool isScenariosDirty;
     private bool isSettingsDirty;
     private bool updatingEditors;
     private EditorMode editorMode;
     private EditorMode previousEditorMode = EditorMode.Xaml;
+    private string? folderPickerDirectory;
+    private readonly List<FolderPickerHistoryEntry> folderPickerHistory = [];
+    private int folderPickerHistoryIndex = -1;
+    private bool isPreviewPanning;
+    private Point previewPanStart;
+    private double previewPanHorizontalOffset;
+    private double previewPanVerticalOffset;
+    private DateTime previewZoomStartedAt;
+    private double previewZoomStartScale;
+    private double previewZoomTargetScale;
+    private double previewZoomAnchorX;
+    private double previewZoomAnchorY;
+    private Point previewZoomViewportPoint;
+
+    private sealed class FolderPickerEntry {
+        public required string FullPath { get; init; }
+        public required string Name { get; init; }
+        public required bool IsDirectory { get; init; }
+
+        public override string ToString() {
+            return this.IsDirectory ? $"📁  {this.Name}" : $"     {this.Name}";
+        }
+    }
+
+    private sealed class FolderPickerHistoryEntry {
+        public required string DirectoryPath { get; init; }
+        public string? SelectedEntryPath { get; set; }
+    }
 
     private enum EditorMode {
         Xaml,
@@ -84,6 +117,22 @@ public partial class MainWindow : Window {
         MainWindow.ConfigureEditor(this.SettingsEditor, MarkupSyntaxHighlighter.CreateJson());
         this.markupEditorController = new MarkupEditorController(this.MarkupEditor);
         this.xamlCompletionController = new XamlCompletionController(this.MarkupEditor);
+        this.folderPickerController = new FolderPickerController(
+            this.FolderPickerPanel,
+            this.FolderPickerPathText,
+            this.FolderPickerErrorText,
+            this.FolderPickerEntries,
+            this.SelectFolderButton,
+            this.FolderPickerBackButton,
+            this.FolderPickerForwardButton,
+            this.ShowFolderPickerPreview,
+            this.ClearFolderPickerPreview,
+            this.ReportFolderPickerStatus);
+        this.previewViewportController = new PreviewViewportController(
+            this.PreviewViewport,
+            this.GetPreviewScale,
+            this.SetPreviewScale,
+            () => { this.SyncSettingsEditor(); this.PersistSettings(); });
         this.renderTimer = new DispatcherTimer {
             Interval = TimeSpan.FromMilliseconds(250)
         };
@@ -92,6 +141,10 @@ public partial class MainWindow : Window {
             Interval = TimeSpan.FromMilliseconds(16)
         };
         this.animationTimer.Tick += this.AnimationTimerTick;
+        this.previewZoomTimer = new DispatcherTimer {
+            Interval = TimeSpan.FromMilliseconds(16)
+        };
+        this.previewZoomTimer.Tick += this.PreviewZoomTimerTick;
         this.externalRefreshTimer = new DispatcherTimer {
             Interval = TimeSpan.FromMilliseconds(200)
         };
@@ -104,6 +157,7 @@ public partial class MainWindow : Window {
         this.Closing += this.WindowClosing;
         this.SizeChanged += this.WindowSizeChanged;
         this.StateChanged += this.WindowStateChanged;
+        this.PreviewKeyUp += this.WindowPreviewKeyUp;
     }
 
     private void WindowLoaded(object sender, RoutedEventArgs eventArgs) {
@@ -117,7 +171,7 @@ public partial class MainWindow : Window {
         this.RefreshPageNames();
         var lastMarkupPath = this.settings.LastMarkupPath;
         if (lastMarkupPath is not null && File.Exists(lastMarkupPath)) {
-            var lastPageName = Path.GetFileName(lastMarkupPath);
+            var lastPageName = Path.GetRelativePath(this.settings.XamlDirectory, lastMarkupPath);
             if (this.PagePicker.Items.Contains(lastPageName)) {
                 this.PagePicker.SelectedItem = lastPageName;
             } else {
@@ -152,12 +206,256 @@ public partial class MainWindow : Window {
     }
 
     private void OpenButtonClick(object sender, RoutedEventArgs eventArgs) {
-        var dialog = new OpenFileDialog {
-            Filter = "XAML-like markup (*.xaml)|*.xaml|All files (*.*)|*.*"
-        };
-        if (dialog.ShowDialog(this) == true) {
-            this.LoadMarkup(dialog.FileName);
+        this.folderPickerController.Open(this.settings.XamlDirectory);
+        this.MarkupEditor.Visibility = Visibility.Collapsed;
+        this.ScenarioPanel.Visibility = Visibility.Collapsed;
+        this.SettingsPanel.Visibility = Visibility.Collapsed;
+        this.OpenButton.IsEnabled = false;
+        this.StatusText.Foreground = PreviewRenderer.ParseBrush("#D5BD7D");
+        this.StatusText.Text = "Выберите папку, содержащую XAML-файлы.";
+    }
+
+    private void FolderPickerUpButtonClick(object sender, RoutedEventArgs eventArgs) {
+        this.folderPickerController.Up();
+    }
+
+    private void FolderPickerBackButtonClick(object sender, RoutedEventArgs eventArgs) {
+        this.folderPickerController.Back();
+    }
+
+    private void FolderPickerForwardButtonClick(object sender, RoutedEventArgs eventArgs) {
+        this.folderPickerController.Forward();
+    }
+
+    private void FolderPickerPathTextKeyDown(object sender, KeyEventArgs eventArgs) {
+        if (eventArgs.Key != Key.Enter) {
+            return;
         }
+        this.folderPickerController.SubmitPath();
+        eventArgs.Handled = true;
+    }
+
+    private void FolderPickerEntriesPreviewKeyDown(object sender, KeyEventArgs eventArgs) {
+        this.folderPickerController.HandleListKey(eventArgs);
+    }
+
+    private void FolderPickerEntriesPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs eventArgs) {
+        this.folderPickerController.HandleListBackgroundMouseDown(eventArgs.OriginalSource as DependencyObject);
+    }
+
+    private void FolderPickerEntriesMouseDoubleClick(object sender, MouseButtonEventArgs eventArgs) {
+        this.folderPickerController.HandleListDoubleClick();
+    }
+
+    private void FolderPickerEntriesSelectionChanged(object sender, SelectionChangedEventArgs eventArgs) {
+        this.folderPickerController.HandleSelectionChanged();
+    }
+
+    private void CancelFolderPickerButtonClick(object sender, RoutedEventArgs eventArgs) {
+        this.HideFolderPicker();
+    }
+
+    private void SelectFolderButtonClick(object sender, RoutedEventArgs eventArgs) {
+        if (!this.folderPickerController.TrySelectDirectory(out var selectedDirectory)) {
+            return;
+        }
+        this.settings.XamlDirectory = selectedDirectory;
+        this.RefreshPageNames();
+        this.HideFolderPicker();
+        this.PersistSettings();
+        this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
+        this.StatusText.Text = $"Выбрана папка XAML: {this.settings.XamlDirectory}";
+    }
+
+    private void RefreshFolderPickerEntries(string? selectedEntryPath) {
+        if (this.folderPickerDirectory is null || !Directory.Exists(this.folderPickerDirectory)) {
+            return;
+        }
+        this.FolderPickerPathText.Text = this.folderPickerDirectory;
+        this.FolderPickerErrorText.Text = string.Empty;
+        var entries = Directory.EnumerateDirectories(this.folderPickerDirectory)
+            .Order()
+            .Select(path => new FolderPickerEntry {
+                FullPath = path,
+                Name = Path.GetFileName(path),
+                IsDirectory = true,
+            })
+            .Concat(Directory.EnumerateFiles(this.folderPickerDirectory, "*.xaml")
+                .Order()
+                .Select(path => new FolderPickerEntry {
+                    FullPath = path,
+                    Name = Path.GetFileName(path),
+                    IsDirectory = false,
+                }))
+            .ToArray();
+        this.FolderPickerEntries.ItemsSource = entries;
+        this.FolderPickerEntries.UnselectAll();
+        if (selectedEntryPath is not null) {
+            var selectedEntry = entries.FirstOrDefault(entry => string.Equals(
+                entry.FullPath,
+                selectedEntryPath,
+                StringComparison.OrdinalIgnoreCase));
+            this.FolderPickerEntries.SelectedItem = selectedEntry;
+            if (selectedEntry is not null) {
+                this.FocusFolderPickerEntry(selectedEntry);
+            }
+        }
+        this.UpdateFolderPickerSelection();
+    }
+
+    private void FocusFolderPickerEntry(FolderPickerEntry entry) {
+        this.Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() => {
+            this.FolderPickerEntries.ScrollIntoView(entry);
+            if (this.FolderPickerEntries.ItemContainerGenerator.ContainerFromItem(entry) is ListBoxItem item) {
+                Keyboard.Focus(item);
+                return;
+            }
+            this.FolderPickerEntries.Focus();
+        }));
+    }
+
+    private bool NavigateFolderPicker(string candidate, bool addToHistory, string? selectedEntryPath = null) {
+        string path;
+        try {
+            path = Path.GetFullPath(candidate);
+        }
+        catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException) {
+            this.ShowFolderPickerError("Указан некорректный путь.");
+            return false;
+        }
+        if (!Directory.Exists(path)) {
+            this.ShowFolderPickerError("Папка не существует или недоступна.");
+            return false;
+        }
+        if (addToHistory) {
+            this.SaveFolderPickerSelection();
+        }
+        this.folderPickerDirectory = path;
+        if (addToHistory) {
+            if (this.folderPickerHistoryIndex < this.folderPickerHistory.Count - 1) {
+                this.folderPickerHistory.RemoveRange(
+                    this.folderPickerHistoryIndex + 1,
+                    this.folderPickerHistory.Count - this.folderPickerHistoryIndex - 1);
+            }
+            this.folderPickerHistory.Add(new FolderPickerHistoryEntry {
+                DirectoryPath = path
+            });
+            this.folderPickerHistoryIndex = this.folderPickerHistory.Count - 1;
+        }
+        if (selectedEntryPath is null
+            && this.folderPickerHistoryIndex >= 0
+            && this.folderPickerHistoryIndex < this.folderPickerHistory.Count) {
+            selectedEntryPath = this.folderPickerHistory[this.folderPickerHistoryIndex].SelectedEntryPath;
+        }
+        this.RefreshFolderPickerEntries(selectedEntryPath);
+        this.FolderPickerBackButton.IsEnabled = this.folderPickerHistoryIndex > 0;
+        this.FolderPickerForwardButton.IsEnabled = this.folderPickerHistoryIndex < this.folderPickerHistory.Count - 1;
+        return true;
+    }
+
+    private void SaveFolderPickerSelection() {
+        if (this.folderPickerHistoryIndex < 0
+            || this.folderPickerHistoryIndex >= this.folderPickerHistory.Count) {
+            return;
+        }
+        this.folderPickerHistory[this.folderPickerHistoryIndex].SelectedEntryPath =
+            (this.FolderPickerEntries.SelectedItem as FolderPickerEntry)?.FullPath;
+    }
+
+    private void ShowFolderPickerError(string message) {
+        this.FolderPickerErrorText.Text = message;
+        this.StatusText.Foreground = PreviewRenderer.ParseBrush("#FF8A80");
+        this.StatusText.Text = message;
+    }
+
+    private void UpdateFolderPickerSelection() {
+        this.SelectFolderButton.IsEnabled = this.FolderPickerEntries.SelectedItem is not FolderPickerEntry entry
+            || entry.IsDirectory;
+    }
+
+    private void ShowFolderPickerPreview(string path) {
+        try {
+            using var document = JsonDocument.Parse(this.ScenarioEditor.Text);
+            var pageName = Path.GetFileName(path);
+            var scenarios = document.RootElement.TryGetProperty(
+                Path.GetFileNameWithoutExtension(pageName),
+                out var selectedPage)
+                ? selectedPage
+                : document.RootElement;
+            var scenarioName = this.ScenarioPicker.SelectedItem as string;
+            var data = scenarioName is not null && scenarios.TryGetProperty(scenarioName, out var selected)
+                ? selected
+                : scenarios;
+            var root = PreviewRenderer.CreateRoot(File.ReadAllText(path), data);
+            this.animationTimer.Stop();
+            this.previewSession?.Dispose();
+            this.previewSession = null;
+            this.previewLayer.Children.Clear();
+            var previewSize = this.GetPreviewSize();
+            PreviewSession session;
+            try {
+                session = new PreviewSession(
+                    root,
+                    this.settings.ResourcesDirectory,
+                    previewSize.Width,
+                    previewSize.Height);
+            }
+            catch {
+                NativeRuntime.xr_destroy_element(root);
+                throw;
+            }
+            session.AnimationStarted += this.PreviewSessionAnimationStarted;
+            session.Tapped += this.PreviewSessionTapped;
+            this.previewSession = session;
+            this.previewLayer.Children.Add(session.Surface);
+            this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
+            this.StatusText.Text = $"Предпросмотр: {path}";
+        }
+        catch (Exception exception) {
+            this.ShowPreviewError(exception);
+        }
+    }
+
+    private void ClearFolderPickerPreview() {
+        this.animationTimer.Stop();
+        this.previewSession?.Dispose();
+        this.previewSession = null;
+        this.previewLayer.Children.Clear();
+    }
+
+    private void ShowPreviewError(Exception exception) {
+        this.ClearFolderPickerPreview();
+        this.previewLayer.Children.Add(new Border {
+            Background = PreviewRenderer.ParseBrush("#1F1717"),
+            BorderBrush = PreviewRenderer.ParseBrush("#A75B5B"),
+            BorderThickness = new Thickness(1),
+            Child = new TextBlock {
+                Margin = new Thickness(32),
+                Foreground = PreviewRenderer.ParseBrush("#FFB4AB"),
+                FontSize = 18,
+                Text = $"Ошибка предпросмотра\n\n{exception.Message}",
+                TextWrapping = TextWrapping.Wrap,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                TextAlignment = TextAlignment.Center,
+            },
+        });
+        this.StatusText.Foreground = PreviewRenderer.ParseBrush("#FF8A80");
+        this.StatusText.Text = exception.Message;
+    }
+
+    private void HideFolderPicker() {
+        this.folderPickerController.Close();
+        this.folderPickerDirectory = null;
+        this.folderPickerHistory.Clear();
+        this.folderPickerHistoryIndex = -1;
+        this.UpdateEditorMode();
+        this.ScheduleRender();
+    }
+
+    private void ReportFolderPickerStatus(string message, bool isSuccess) {
+        this.StatusText.Foreground = PreviewRenderer.ParseBrush(isSuccess ? "#8FD18B" : "#D5BD7D");
+        this.StatusText.Text = message;
     }
 
     private void SaveButtonClick(object sender, RoutedEventArgs eventArgs) {
@@ -233,6 +531,110 @@ public partial class MainWindow : Window {
 
     private void ZoomInButtonClick(object sender, RoutedEventArgs eventArgs) {
         this.SetPreviewScale(this.GetPreviewScale() + 0.1);
+    }
+
+    private void PreviewViewportPreviewMouseWheel(object sender, MouseWheelEventArgs eventArgs) {
+        this.previewViewportController.HandleMouseWheel(eventArgs);
+        return;
+        if (!Keyboard.IsKeyDown(Key.LeftCtrl) && !Keyboard.IsKeyDown(Key.RightCtrl)) {
+            return;
+        }
+        var point = eventArgs.GetPosition(this.PreviewViewport);
+        this.previewZoomStartScale = this.GetPreviewScale();
+        var wheelSteps = Math.Max(1, Math.Abs(eventArgs.Delta) / Mouse.MouseWheelDeltaForOneLine);
+        var zoomFactor = Math.Pow(1.25, wheelSteps);
+        this.previewZoomTargetScale = Math.Clamp(
+            this.previewZoomStartScale * (eventArgs.Delta > 0 ? zoomFactor : 1.0 / zoomFactor),
+            0.1,
+            3.0);
+        this.previewZoomAnchorX = (this.PreviewViewport.HorizontalOffset + point.X) / this.previewZoomStartScale;
+        this.previewZoomAnchorY = (this.PreviewViewport.VerticalOffset + point.Y) / this.previewZoomStartScale;
+        this.previewZoomViewportPoint = point;
+        this.previewZoomStartedAt = DateTime.UtcNow;
+        this.previewZoomTimer.Start();
+        eventArgs.Handled = true;
+    }
+
+    private void PreviewZoomTimerTick(object? sender, EventArgs eventArgs) {
+        const double durationMilliseconds = 120.0;
+        var progress = Math.Clamp((DateTime.UtcNow - this.previewZoomStartedAt).TotalMilliseconds / durationMilliseconds, 0.0, 1.0);
+        var easedProgress = progress;
+        // var inverseProgress = 1.0 - progress;
+        // var easedProgress = 1.0 - inverseProgress * inverseProgress * inverseProgress;
+        var scale = this.previewZoomStartScale
+            + (this.previewZoomTargetScale - this.previewZoomStartScale) * easedProgress;
+        this.settings.PreviewScale = scale;
+        this.ApplyPreviewLayout();
+        this.PreviewViewport.ScrollToHorizontalOffset(
+            this.previewZoomAnchorX * scale - this.previewZoomViewportPoint.X);
+        this.PreviewViewport.ScrollToVerticalOffset(
+            this.previewZoomAnchorY * scale - this.previewZoomViewportPoint.Y);
+        if (progress < 1.0) {
+            return;
+        }
+        this.previewZoomTimer.Stop();
+        this.SyncSettingsEditor();
+        this.PersistSettings();
+    }
+
+    private void PreviewViewportPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs eventArgs) {
+        this.previewViewportController.HandleMouseDown(eventArgs);
+        return;
+        if ((Keyboard.Modifiers & ModifierKeys.Control) == 0) {
+            return;
+        }
+        this.isPreviewPanning = true;
+        this.previewPanStart = eventArgs.GetPosition(this.PreviewViewport);
+        this.previewPanHorizontalOffset = this.PreviewViewport.HorizontalOffset;
+        this.previewPanVerticalOffset = this.PreviewViewport.VerticalOffset;
+        this.PreviewViewport.Cursor = Cursors.Cross;
+        this.PreviewViewport.CaptureMouse();
+        eventArgs.Handled = true;
+    }
+
+    private void PreviewViewportPreviewMouseMove(object sender, MouseEventArgs eventArgs) {
+        this.previewViewportController.HandleMouseMove(eventArgs);
+        return;
+        if (!this.isPreviewPanning) {
+            return;
+        }
+        var point = eventArgs.GetPosition(this.PreviewViewport);
+        this.PreviewViewport.ScrollToHorizontalOffset(this.previewPanHorizontalOffset - point.X + this.previewPanStart.X);
+        this.PreviewViewport.ScrollToVerticalOffset(this.previewPanVerticalOffset - point.Y + this.previewPanStart.Y);
+        eventArgs.Handled = true;
+    }
+
+    private void PreviewViewportPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs eventArgs) {
+        this.previewViewportController.HandleMouseUp(eventArgs);
+        return;
+        if (!this.isPreviewPanning) {
+            return;
+        }
+        this.StopPreviewPanning();
+        eventArgs.Handled = true;
+    }
+
+    private void PreviewViewportLostMouseCapture(object sender, MouseEventArgs eventArgs) {
+        this.previewViewportController.HandleLostMouseCapture();
+        return;
+        this.StopPreviewPanning();
+    }
+
+    private void WindowPreviewKeyUp(object sender, KeyEventArgs eventArgs) {
+        this.previewViewportController.HandleKeyUp(eventArgs);
+        return;
+        if (eventArgs.Key == Key.LeftCtrl || eventArgs.Key == Key.RightCtrl) {
+            this.StopPreviewPanning();
+        }
+    }
+
+    private void StopPreviewPanning() {
+        if (!this.isPreviewPanning) {
+            return;
+        }
+        this.isPreviewPanning = false;
+        this.PreviewViewport.Cursor = null;
+        this.PreviewViewport.ReleaseMouseCapture();
     }
 
     private void FitPreviewButtonClick(object sender, RoutedEventArgs eventArgs) {
@@ -379,6 +781,8 @@ public partial class MainWindow : Window {
     private void RenderTimerTick(object? sender, EventArgs eventArgs) {
         this.renderTimer.Stop();
         try {
+            this.markupPreviewResolution = PreviewRenderer.GetPreviewResolution(this.markupEditorController.Text);
+            this.ApplyPreviewLayout();
             using var document = JsonDocument.Parse(this.ScenarioEditor.Text);
             var scenarioName = this.ScenarioPicker.SelectedItem as string;
             var pageName = this.PagePicker.SelectedItem as string;
@@ -426,8 +830,7 @@ public partial class MainWindow : Window {
             this.StatusText.Text = $"Предпросмотр обновлён · {DateTime.Now:HH:mm:ss}";
         }
         catch (Exception exception) {
-            this.StatusText.Foreground = PreviewRenderer.ParseBrush("#FF8A80");
-            this.StatusText.Text = exception.Message;
+            this.ShowPreviewError(exception);
         }
     }
 
@@ -567,10 +970,8 @@ public partial class MainWindow : Window {
         // MainPage -> SettingsPage через несколько сотен миллисекунд после tap.
         var previous = this.PagePicker.SelectedItem as string;
         var pages = Directory.Exists(this.settings.XamlDirectory)
-            ? Directory.GetFiles(this.settings.XamlDirectory, "*.xaml")
-                .Select(Path.GetFileName)
-                .Where(name => name is not null)
-                .Cast<string>()
+            ? Directory.GetFiles(this.settings.XamlDirectory, "*.xaml", SearchOption.AllDirectories)
+                .Select(path => Path.GetRelativePath(this.settings.XamlDirectory, path))
                 .Order()
                 .ToArray()
             : [];
@@ -730,6 +1131,7 @@ public partial class MainWindow : Window {
 
     private void WindowClosing(object? sender, System.ComponentModel.CancelEventArgs eventArgs) {
         this.animationTimer.Stop();
+        this.previewZoomTimer.Stop();
         this.smoothScrollTimer.Stop();
         this.CompletePageTransition();
         this.previewSession?.Dispose();
@@ -825,6 +1227,9 @@ public partial class MainWindow : Window {
     }
 
     private (int Width, int Height) GetPreviewSize() {
+        if (this.markupPreviewResolution is { } resolution) {
+            return resolution;
+        }
         var width = Math.Max(1, this.settings.PreviewWidth);
         var height = Math.Max(1, this.settings.PreviewHeight);
         return this.settings.IsPreviewLandscape

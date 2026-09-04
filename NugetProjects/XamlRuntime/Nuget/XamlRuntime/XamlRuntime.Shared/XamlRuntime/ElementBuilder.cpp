@@ -32,24 +32,30 @@ namespace xaml::_details {
         case ElementType::button:
             return common
                 | static_cast<uint32_t>(XamlAttributeGroup::background)
+                | static_cast<uint32_t>(XamlAttributeGroup::activeBackground)
                 | static_cast<uint32_t>(XamlAttributeGroup::border)
+                | static_cast<uint32_t>(XamlAttributeGroup::activeBorder)
+                | static_cast<uint32_t>(XamlAttributeGroup::activeForeground)
                 | static_cast<uint32_t>(XamlAttributeGroup::padding)
                 | static_cast<uint32_t>(XamlAttributeGroup::cornerRadius)
                 | static_cast<uint32_t>(XamlAttributeGroup::text)
+                | static_cast<uint32_t>(XamlAttributeGroup::toggle)
                 | static_cast<uint32_t>(XamlAttributeGroup::command);
         case ElementType::border:
             return common
                 | static_cast<uint32_t>(XamlAttributeGroup::background)
                 | static_cast<uint32_t>(XamlAttributeGroup::border)
                 | static_cast<uint32_t>(XamlAttributeGroup::padding)
-                | static_cast<uint32_t>(XamlAttributeGroup::cornerRadius);
+                | static_cast<uint32_t>(XamlAttributeGroup::cornerRadius)
+                | static_cast<uint32_t>(XamlAttributeGroup::command);
         case ElementType::toggleSwitch:
             return common
                 | static_cast<uint32_t>(XamlAttributeGroup::background)
                 | static_cast<uint32_t>(XamlAttributeGroup::border)
                 | static_cast<uint32_t>(XamlAttributeGroup::text)
                 | static_cast<uint32_t>(XamlAttributeGroup::tint)
-                | static_cast<uint32_t>(XamlAttributeGroup::toggle);
+                | static_cast<uint32_t>(XamlAttributeGroup::toggle)
+                | static_cast<uint32_t>(XamlAttributeGroup::command);
         case ElementType::grid:
             return common
                 | static_cast<uint32_t>(XamlAttributeGroup::background)
@@ -265,6 +271,17 @@ namespace xaml {
         throw std::invalid_argument("unsupported XAML element");
     }
 
+    std::vector<std::string_view> SupportedAttributeNames(ElementType type) {
+        std::vector<std::string_view> names;
+        for (uint32_t index = 0; index < static_cast<uint32_t>(XamlAttribute::count); ++index) {
+            const XamlAttribute attribute = static_cast<XamlAttribute>(index);
+            if (_details::IsAttributeSupported(type, attribute)) {
+                names.push_back(XamlAttributeName(attribute));
+            }
+        }
+        return names;
+    }
+
     void SetAttribute(Element& element, std::string_view name, std::string_view value) {
         const std::optional<XamlAttribute> attribute = ParseXamlAttribute(name);
         if (!attribute.has_value()) {
@@ -331,8 +348,17 @@ namespace xaml {
         case XamlAttribute::background:
             element.SetBackground(_details::ParseColor(value));
             return;
+        case XamlAttribute::activeBackground:
+            element.SetActiveBackground(_details::ParseColor(value));
+            return;
         case XamlAttribute::borderBrush:
             element.SetBorderColor(_details::ParseColor(value));
+            return;
+        case XamlAttribute::activeBorderBrush:
+            element.SetActiveBorderColor(_details::ParseColor(value));
+            return;
+        case XamlAttribute::activeForeground:
+            element.SetActiveForeground(_details::ParseColor(value));
             return;
         case XamlAttribute::margin:
             element.SetMargin(_details::ParseThickness(value));

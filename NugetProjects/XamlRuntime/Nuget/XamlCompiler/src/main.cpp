@@ -31,6 +31,8 @@ namespace {
         void Compile(const std::filesystem::path& input, const std::filesystem::path& outputPath);
 
     private:
+        static constexpr const char* namespaceUri = "urn:mobileclock:xaml";
+
         std::string ReadFile(const std::filesystem::path& path) {
             std::ifstream input(path, std::ios::binary);
             if (!input) {
@@ -416,6 +418,9 @@ namespace {
             output << "            auto " << variable << " = std::make_unique<Element>(ElementType::"
                 << this->ElementTypeName(element) << ");\n";
             for (const auto& [name, value] : element.attributes) {
+                if (name == "xmlns") {
+                    continue;
+                }
                 this->EmitProperty(element, variable, name, value, output, variable, bindings, templateItem);
             }
             if (element.name == "Grid") {
@@ -603,6 +608,15 @@ namespace {
         // Каждая XAML-страница получает собственный тип. Контроллеры работают
         // с MainPage::Create(), а не с неявной свободной функцией.
         const Element root = this->Parse(input, this->ReadFile(input));
+        const auto namespaceAttribute = std::find_if(
+            root.attributes.begin(),
+            root.attributes.end(),
+            [](const auto& attribute) { return attribute.first == "xmlns"; });
+        if (namespaceAttribute == root.attributes.end()
+            || namespaceAttribute->second != XamlCompiler::namespaceUri) {
+            throw std::runtime_error(
+                "Root element must use xmlns=\"urn:mobileclock:xaml\"");
+        }
         const std::string pageName = input.stem().string();
         if (!std::regex_match(pageName, std::regex(R"([A-Za-z][A-Za-z0-9]*)"))) {
             throw std::runtime_error("XAML filename must be a valid C++ type name");

@@ -50,7 +50,7 @@ internal sealed class PreviewerSettings {
         WriteIndented = true
     };
 
-    public required string XamlDirectory { get; init; }
+    public required string XamlDirectory { get; set; }
     public required string ScenariosPath { get; init; }
     public string InteractionsPath { get; set; } = string.Empty;
     public required string ResourcesDirectory { get; init; }
