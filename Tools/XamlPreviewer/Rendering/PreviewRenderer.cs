@@ -52,6 +52,7 @@ internal static class PreviewRenderer {
             }
 
             PreviewRenderer.ApplyDefinitions(element, node);
+            PreviewRenderer.ApplyStoryboards(element, node);
             if (node.Name.LocalName == "ListView") {
                 PreviewRenderer.BuildListViewItems(element, node, data);
             }
@@ -98,6 +99,83 @@ internal static class PreviewRenderer {
             PreviewRenderer.SetAttribute(element, "rows", string.Join(",", rows.Elements().Select(
                 definition => PreviewRenderer.Attribute(definition, "height") ?? "*")));
         }
+    }
+
+    private static void ApplyStoryboards(IntPtr element, XElement node) {
+        var collection = node.Elements().FirstOrDefault(child => child.Name.LocalName
+            == $"{node.Name.LocalName}.Storyboards");
+        if (collection is null) {
+            return;
+        }
+
+        foreach (var storyboard in collection.Elements().Where(child => child.Name.LocalName == "Storyboard")) {
+            var trigger = PreviewRenderer.ParseTrigger(PreviewRenderer.Attribute(storyboard, "trigger"));
+            foreach (var track in storyboard.Elements()) {
+                var property = track.Name.LocalName == "RendererAnimation"
+                    && (PreviewRenderer.Attribute(track, "name") == "RippleWave"
+                        || PreviewRenderer.Attribute(track, "name") == "SoftPulse")
+                    ? 4 : PreviewRenderer.ParseProperty(PreviewRenderer.Attribute(track, "property"));
+                var from = PreviewRenderer.ParseAnimationValue(PreviewRenderer.Attribute(track, "from"), "Current");
+                var to = PreviewRenderer.ParseAnimationValue(PreviewRenderer.Attribute(track, "to"), "ToggleState");
+                if (!int.TryParse(PreviewRenderer.Attribute(track, "duration"), out var duration)
+                    || duration < 0) {
+                    throw new InvalidDataException("Animation track requires non-negative duration.");
+                }
+
+                var easing = PreviewRenderer.Attribute(track, "easing") switch {
+                    null or "CubicOut" => 1,
+                    "Linear" => 0,
+                    _ => throw new InvalidDataException("Animation easing must be Linear or CubicOut."),
+                };
+                var intensity = PreviewRenderer.ParseEffectParameter(track, "intensity", 0.45f, 0.0f);
+                var spread = PreviewRenderer.ParseEffectParameter(track, "spread", 0.28f, float.Epsilon);
+                var fadeExponent = PreviewRenderer.ParseEffectParameter(track, "fadeExponent", 2.0f, float.Epsilon);
+                NativeRuntime.Ensure(NativeRuntime.xr_add_storyboard_track(
+                    element, trigger, property, from, to, duration, easing,
+                    intensity, spread, fadeExponent) != 0);
+            }
+        }
+    }
+
+    private static int ParseTrigger(string? value) {
+        return value switch {
+            "PointerDown" => 0,
+            "PointerUp" => 1,
+            "Toggled" => 2,
+            _ => throw new InvalidDataException("Storyboard trigger must be PointerDown, PointerUp or Toggled."),
+        };
+    }
+
+    private static int ParseProperty(string? value) {
+        return value switch {
+            "opacity" => 0,
+            "renderOffsetX" => 1,
+            "toggleProgress" => 2,
+            "pressProgress" => 3,
+            "waveProgress" => 4,
+            _ => throw new InvalidDataException("Unsupported FloatAnimation property."),
+        };
+    }
+
+    private static float ParseAnimationValue(string? value, string stateValue) {
+        return value == stateValue
+            ? float.NaN
+            : float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var result)
+                ? result
+                : throw new InvalidDataException("Animation value must be a number or supported state value.");
+    }
+
+    private static float ParseEffectParameter(XElement element, string name, float defaultValue, float exclusiveMinimum) {
+        var value = PreviewRenderer.Attribute(element, name);
+        if (value is null) {
+            return defaultValue;
+        }
+
+        if (!float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var result)
+            || result < exclusiveMinimum || (exclusiveMinimum > 0.0f && result == exclusiveMinimum)) {
+            throw new InvalidDataException($"{name} has an invalid value.");
+        }
+        return result;
     }
 
     private static void AddChild(IntPtr parent, IntPtr child) {

@@ -374,14 +374,16 @@ namespace {
                 } else if (value != "Center") {
                     throw std::runtime_error("VerticalAlignment must be Top, Center, Bottom or Stretch");
                 }
-            } else if (name == "horizontalAlignment") {
+            } else if (name == "horizontalAlignment" || name == "contentAlignment") {
                 const std::string alignment = value == "Left" ? "left"
                     : value == "Right" ? "right" : value == "Center" ? "center"
                     : value == "Stretch" ? "stretch" : "";
                 if (alignment.empty()) {
-                    throw std::runtime_error("HorizontalAlignment must be Left, Center, Right or Stretch");
+                    throw std::runtime_error(name + " must be Left, Center, Right or Stretch");
                 }
-                output << "            " << variable << "->SetHorizontalAlignment(attr::Alignment::"
+                const std::string setter = name == "horizontalAlignment"
+                    ? "HorizontalAlignment" : "ContentAlignment";
+                output << "            " << variable << "->Set" << setter << "(attr::Alignment::"
                     << alignment << ");\n";
             } else if (name == "foreground" || name == "background") {
                 const std::string setter = name == "foreground" ? "Foreground"
@@ -426,6 +428,7 @@ namespace {
             if (element.name == "Grid") {
                 this->EmitGridDefinitions(element, variable, output);
             }
+            this->EmitStoryboards(element, variable, output);
             this->EmitBindings(bindings, output);
             if (element.name == "ListView") {
                 this->EmitListViewItems(element, variable, output, elementCounts);
@@ -433,7 +436,8 @@ namespace {
             }
             for (size_t childIndex = 0; childIndex < element.children.size(); ++childIndex) {
                 if (element.children[childIndex].name == "columnDefinitions"
-                    || element.children[childIndex].name == "rowDefinitions") {
+                    || element.children[childIndex].name == "rowDefinitions"
+                    || element.children[childIndex].name == element.name + ".Storyboards") {
                     continue;
                 }
                 const std::string childVariable = this->EmitElement(
@@ -441,6 +445,88 @@ namespace {
                 output << "            " << variable << "->AddChild(std::move(" << childVariable << "));\n";
             }
             return variable;
+        }
+
+        void EmitStoryboards(
+            const Element& element,
+            const std::string& variable,
+            std::ostringstream& output) {
+            const std::string collectionName = element.name + ".Storyboards";
+            for (const Element& collection : element.children) {
+                if (collection.name != collectionName) {
+                    continue;
+                }
+
+                for (const Element& storyboard : collection.children) {
+                    if (storyboard.name != "Storyboard") {
+                        throw std::runtime_error("Only <Storyboard> is allowed inside <" + collectionName + ">");
+                    }
+                    const auto trigger = std::find_if(
+                        storyboard.attributes.begin(), storyboard.attributes.end(),
+                        [](const auto& attribute) { return attribute.first == "trigger"; });
+                    if (trigger == storyboard.attributes.end()) {
+                        throw std::runtime_error("<Storyboard> requires trigger");
+                    }
+                    const std::string triggerName = trigger->second == "PointerDown" ? "pointerDown"
+                        : trigger->second == "PointerUp" ? "pointerUp"
+                        : trigger->second == "Toggled" ? "toggled" : "";
+                    if (triggerName.empty()) {
+                        throw std::runtime_error("Storyboard trigger must be PointerDown, PointerUp or Toggled");
+                    }
+
+                    output << "            " << variable << "->AddStoryboard({AnimationTrigger::"
+                        << triggerName << ", {";
+                    for (size_t index = 0; index < storyboard.children.size(); ++index) {
+                        const Element& track = storyboard.children[index];
+                        const auto attribute = [&track](const std::string& name) -> std::string {
+                            const auto found = std::find_if(
+                                track.attributes.begin(), track.attributes.end(),
+                                [&name](const auto& value) { return value.first == name; });
+                            return found == track.attributes.end() ? std::string{} : found->second;
+                        };
+                        const std::string property = track.name == "RendererAnimation"
+                            && (attribute("name") == "RippleWave" || attribute("name") == "SoftPulse")
+                            ? "waveProgress"
+                            : track.name == "FloatAnimation" ? attribute("property") : "";
+                        if (property != "opacity" && property != "renderOffsetX"
+                            && property != "toggleProgress" && property != "pressProgress"
+                            && property != "waveProgress") {
+                            throw std::runtime_error("Unsupported animation track on <Storyboard>");
+                        }
+                        const std::string from = attribute("from");
+                        const std::string to = attribute("to");
+                        const std::string duration = attribute("duration");
+                        const std::string easing = attribute("easing");
+                        const std::string intensity = attribute("intensity");
+                        const std::string spread = attribute("spread");
+                        const std::string fadeExponent = attribute("fadeExponent");
+                        if (from.empty() || to.empty() || duration.empty()) {
+                            throw std::runtime_error("Animation track requires from, to and duration");
+                        }
+                        const std::string easingName = easing.empty() || easing == "CubicOut" ? "cubicOut"
+                            : easing == "Linear" ? "linear" : "";
+                        if (easingName.empty()) {
+                            throw std::runtime_error("Animation easing must be Linear or CubicOut");
+                        }
+                        if (index != 0) {
+                            output << ", ";
+                        }
+                        const bool fromCurrent = from == "Current";
+                        const bool toToggleState = to == "ToggleState";
+                        output << "{AnimatedProperty::" << property << ", "
+                            << (fromCurrent ? "0.0f" : this->FloatLiteral(from)) << ", "
+                            << (toToggleState ? "0.0f" : this->FloatLiteral(to))
+                            << ", " << (fromCurrent ? "true" : "false")
+                            << ", " << (toToggleState ? "true" : "false")
+                            << ", " << (intensity.empty() ? "0.45f" : this->FloatLiteral(intensity))
+                            << ", " << (spread.empty() ? "0.28f" : this->FloatLiteral(spread))
+                            << ", " << (fadeExponent.empty() ? "2.0f" : this->FloatLiteral(fadeExponent))
+                            << ", std::chrono::milliseconds(" << std::stoi(duration)
+                            << "), Easing::" << easingName << "}";
+                    }
+                    output << "}});\n";
+                }
+            }
         }
 
         void EmitListViewItems(

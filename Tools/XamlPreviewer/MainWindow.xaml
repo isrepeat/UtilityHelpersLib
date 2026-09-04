@@ -968,6 +968,13 @@
                               Width="175"
                               Margin="0 0 16 0"
                               SelectionChanged="DevicePresetPickerSelectionChanged" />
+                    <TextBlock Margin="0 0 6 0"
+                               VerticalAlignment="Center"
+                               Text="Анимация:" />
+                    <ComboBox x:Name="AnimationSpeedPicker"
+                              Width="72"
+                              Margin="0 0 16 0"
+                              SelectionChanged="AnimationSpeedPickerSelectionChanged" />
                     <ToggleButton x:Name="PreviewOrientationToggle"
                                   Style="{StaticResource EditorSwitchToggleButtonStyle}"
                                   Width="190"

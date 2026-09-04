@@ -21,6 +21,12 @@ namespace xaml {
             attr::Color color,
             float cornerRadius,
             float thickness) = 0;
+        virtual void DrawRipple(
+            const Rect& bounds,
+            attr::Color color,
+            float cornerRadius,
+            float progress,
+            float spread) = 0;
         virtual void DrawText(
             const Rect& bounds,
             std::string_view text,

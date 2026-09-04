@@ -56,6 +56,17 @@ XAML_RUNTIME_BRIDGE_API int xr_set_attribute(
     xr_element* element,
     const char* name,
     const char* value);
+XAML_RUNTIME_BRIDGE_API int xr_add_storyboard_track(
+    xr_element* element,
+    int trigger,
+    int property,
+    float from,
+    float to,
+    int durationMilliseconds,
+    int easing,
+    float intensity,
+    float spread,
+    float fadeExponent);
 XAML_RUNTIME_BRIDGE_API int xr_supported_attribute_count(const char* elementType);
 XAML_RUNTIME_BRIDGE_API const char* xr_supported_attribute_name(
     const char* elementType,
@@ -77,6 +88,9 @@ XAML_RUNTIME_BRIDGE_API int xr_handle_pointer_up(
 XAML_RUNTIME_BRIDGE_API xr_animation_controller* xr_create_animation_controller(void);
 XAML_RUNTIME_BRIDGE_API void xr_destroy_animation_controller(
     xr_animation_controller* animations);
+XAML_RUNTIME_BRIDGE_API int xr_set_animation_playback_rate(
+    xr_animation_controller* animations,
+    float playbackRate);
 XAML_RUNTIME_BRIDGE_API int xr_update_animations(xr_animation_controller* animations);
 XAML_RUNTIME_BRIDGE_API xr_angle_surface* xr_create_angle_surface(
     int width,

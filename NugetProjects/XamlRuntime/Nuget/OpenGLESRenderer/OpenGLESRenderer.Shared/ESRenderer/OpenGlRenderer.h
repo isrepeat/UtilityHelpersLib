@@ -31,6 +31,9 @@ namespace es_renderer {
         void BeginFrame();
 
     private:
+        class Implementation;
+
+    private:
         //
         // IRenderBackend
         //
@@ -46,6 +49,12 @@ namespace es_renderer {
             xaml::attr::Color color,
             float cornerRadius,
             float thickness) override;
+        void DrawRipple(
+            const xaml::Rect& bounds,
+            xaml::attr::Color color,
+            float cornerRadius,
+            float progress,
+            float spread) override;
         void DrawText(
             const xaml::Rect& bounds,
             std::string_view text,
@@ -57,8 +66,6 @@ namespace es_renderer {
             const xaml::Rect& bounds,
             std::string_view source,
             xaml::attr::Color tint) override;
-
-        class Implementation;
 
     private:
         std::unique_ptr<Implementation> implementation;

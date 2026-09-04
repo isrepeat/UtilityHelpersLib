@@ -7,6 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PlatformTarget>x64</PlatformTarget>
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
     <NativeBridgeOutputDir>$(MSBuildProjectDirectory)\..\..\!VS_TMP\Build\$(Configuration)\x64\XamlRuntime.NativeBridge\</NativeBridgeOutputDir>
     <NativeBridgeIntermediateDir>$(MSBuildProjectDirectory)\..\..\!VS_TMP\Intermediate\$(Configuration)\x64\XamlRuntime.NativeBridge.Previewer\</NativeBridgeIntermediateDir>
     <NativeAngleZlibName>z.dll</NativeAngleZlibName>
@@ -38,7 +39,7 @@
 
   <Target Name="CopyNativeBridge" AfterTargets="Build">
     <Error Condition="!Exists('$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.dll')" Text="XamlRuntime.NativeBridge.dll was not built: $(NativeBridgeOutputDir)XamlRuntime.NativeBridge.dll" />
-    <Copy SourceFiles="$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.dll" DestinationFolder="$(OutDir)" />
     <Copy SourceFiles="$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.pdb" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.pdb')" />
     <Copy SourceFiles="$(NativeBridgeOutputDir)libEGL.dll;$(NativeBridgeOutputDir)libGLESv2.dll;$(NativeBridgeOutputDir)$(NativeAngleZlibName)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
   </Target>

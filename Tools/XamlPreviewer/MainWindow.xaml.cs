@@ -1,8 +1,10 @@
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Search;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Windows;
@@ -23,6 +25,7 @@ namespace XamlPreviewer;
 /// Разбор разметки и отрисовка остаются в специализированных классах PreviewRenderer и PreviewSession.
 /// </summary>
 public partial class MainWindow : Window {
+    private const string NativeBridgeLibraryName = "XamlRuntime.NativeBridge.dll";
     private readonly DispatcherTimer renderTimer;
     private readonly DispatcherTimer animationTimer;
     private readonly DispatcherTimer previewZoomTimer;
@@ -98,6 +101,24 @@ public partial class MainWindow : Window {
         }
     }
 
+    private sealed class AnimationSpeed {
+        public required string Name { get; init; }
+        public required double Rate { get; init; }
+
+        public override string ToString() {
+            return this.Name;
+        }
+    }
+
+    private enum ScrollSmoothingMode {
+        None,
+        Linear,
+        Smoothstep,
+        Smootherstep,
+        EaseOutCubic,
+        Exponential,
+    }
+
     private static readonly DevicePreset[] DevicePresets = [
         new() { Name = "Redmi 15C", Width = 720, Height = 1600 },
         new() { Name = "HD+", Width = 720, Height = 1280 },
@@ -105,9 +126,24 @@ public partial class MainWindow : Window {
         new() { Name = "QHD+", Width = 1440, Height = 3200 },
     ];
 
+    private static readonly AnimationSpeed[] AnimationSpeeds = [
+        new() { Name = "0.1×", Rate = 0.1 },
+        new() { Name = "0.25×", Rate = 0.25 },
+        new() { Name = "0.5×", Rate = 0.5 },
+        new() { Name = "1×", Rate = 1.0 },
+        new() { Name = "2×", Rate = 2.0 },
+        new() { Name = "4×", Rate = 4.0 },
+    ];
+
     private sealed class SmoothScrollState {
         public required ScrollViewer ScrollViewer { get; init; }
+        public double StartVerticalOffset { get; set; }
         public double TargetVerticalOffset { get; set; }
+        public double LastAppliedVerticalOffset { get; set; }
+        public long AnimationStartedAt { get; set; }
+        public TimeSpan AnimationDuration { get; set; }
+        public ScrollSmoothingMode SmoothingMode { get; set; }
+        public bool IsAnimating { get; set; }
     }
 
     public MainWindow() {
@@ -163,6 +199,7 @@ public partial class MainWindow : Window {
     }
 
     private void WindowLoaded(object sender, RoutedEventArgs eventArgs) {
+        this.UpdateNativeBridgeTitle();
         NativeRuntime.xr_configure_logging(Path.Combine(AppContext.BaseDirectory, "xaml-previewer.log"));
         this.LoadSettings();
         this.ConfigureMouseWheelScrolling();
@@ -205,6 +242,46 @@ public partial class MainWindow : Window {
         if (this.settings.PreviewScale <= 0.0) {
             this.Dispatcher.BeginInvoke(new Action(this.FitPreview));
         }
+    }
+
+    private void UpdateNativeBridgeTitle() {
+        var loadedLibraryPath = Path.Combine(AppContext.BaseDirectory, NativeBridgeLibraryName);
+        var loadedLibrary = new FileInfo(loadedLibraryPath);
+        if (!loadedLibrary.Exists) {
+            this.Title = "MobileClock XAML Previewer (DLL не найдена)";
+            WindowTheme.SetTitleBarWarning(this, true);
+            return;
+        }
+
+        var expectedLibraryPath = MainWindow.GetExpectedNativeBridgePath();
+        var isCurrent = expectedLibraryPath is not null
+            && File.Exists(expectedLibraryPath)
+            && MainWindow.FilesAreEqual(loadedLibraryPath, expectedLibraryPath);
+        this.Title = $"MobileClock XAML Previewer (DLL: {loadedLibrary.LastWriteTime:yyyy-MM-dd HH:mm:ss}{(isCurrent ? string.Empty : " — СТАРАЯ")})";
+        WindowTheme.SetTitleBarWarning(this, !isCurrent);
+    }
+
+    private static string? GetExpectedNativeBridgePath() {
+        var outputDirectory = new DirectoryInfo(AppContext.BaseDirectory);
+        var configurationDirectory = outputDirectory.Parent?.Parent;
+        if (configurationDirectory?.Parent?.Name != "Build") {
+            return null;
+        }
+
+        return Path.Combine(
+            configurationDirectory.FullName,
+            "x64",
+            "XamlRuntime.NativeBridge",
+            NativeBridgeLibraryName);
+    }
+
+    private static bool FilesAreEqual(string firstPath, string secondPath) {
+        var first = new FileInfo(firstPath);
+        var second = new FileInfo(secondPath);
+        return first.Length == second.Length
+            && CryptographicOperations.FixedTimeEquals(
+                SHA256.HashData(File.ReadAllBytes(firstPath)),
+                SHA256.HashData(File.ReadAllBytes(secondPath)));
     }
 
     private void OpenButtonClick(object sender, RoutedEventArgs eventArgs) {
@@ -407,6 +484,7 @@ public partial class MainWindow : Window {
                 NativeRuntime.xr_destroy_element(root);
                 throw;
             }
+            session.SetAnimationSpeed(this.GetAnimationPlaybackRate());
             session.AnimationStarted += this.PreviewSessionAnimationStarted;
             session.Tapped += this.PreviewSessionTapped;
             this.previewSession = session;
@@ -513,6 +591,17 @@ public partial class MainWindow : Window {
         this.SyncSettingsEditor();
         this.PersistSettings();
         this.ScheduleRender();
+    }
+
+    private void AnimationSpeedPickerSelectionChanged(object sender, SelectionChangedEventArgs eventArgs) {
+        if (this.updatingPreviewControls || this.AnimationSpeedPicker.SelectedItem is not AnimationSpeed speed) {
+            return;
+        }
+
+        this.settings.AnimationPlaybackRate = speed.Rate;
+        this.previewSession?.SetAnimationSpeed(speed.Rate);
+        this.SyncSettingsEditor();
+        this.PersistSettings();
     }
 
     private void PreviewOrientationToggleClick(object sender, RoutedEventArgs eventArgs) {
@@ -821,6 +910,7 @@ public partial class MainWindow : Window {
                 NativeRuntime.xr_destroy_element(root);
                 throw;
             }
+            session.SetAnimationSpeed(this.GetAnimationPlaybackRate());
             session.AnimationStarted += this.PreviewSessionAnimationStarted;
             session.Tapped += this.PreviewSessionTapped;
             this.previewSession = session;
@@ -1204,6 +1294,7 @@ public partial class MainWindow : Window {
 
     private void InitializePreviewControls() {
         this.DevicePresetPicker.ItemsSource = MainWindow.DevicePresets;
+        this.AnimationSpeedPicker.ItemsSource = MainWindow.AnimationSpeeds;
         this.ApplySettingsToPreviewControls();
         this.ApplyPreviewLayout();
     }
@@ -1215,6 +1306,8 @@ public partial class MainWindow : Window {
                 preset => preset.Width == this.settings.PreviewWidth
                     && preset.Height == this.settings.PreviewHeight);
             this.PreviewOrientationToggle.IsChecked = this.settings.IsPreviewLandscape;
+            this.AnimationSpeedPicker.SelectedItem = MainWindow.AnimationSpeeds.FirstOrDefault(
+                speed => speed.Rate == this.GetAnimationPlaybackRate());
         }
         finally {
             this.updatingPreviewControls = false;
@@ -1238,6 +1331,10 @@ public partial class MainWindow : Window {
         this.PreviewViewbox.Width = previewSize.Width * scale;
         this.PreviewViewbox.Height = previewSize.Height * scale;
         this.ZoomText.Text = $"{scale:P0}";
+    }
+
+    private double GetAnimationPlaybackRate() {
+        return Math.Clamp(this.settings.AnimationPlaybackRate, 0.1, 4.0);
     }
 
     private void FitPreview() {
@@ -1376,9 +1473,19 @@ public partial class MainWindow : Window {
         if (state is null || !ReferenceEquals(state.ScrollViewer, scrollViewer)) {
             state = new SmoothScrollState {
                 ScrollViewer = scrollViewer,
+                StartVerticalOffset = scrollViewer.VerticalOffset,
                 TargetVerticalOffset = scrollViewer.VerticalOffset,
+                LastAppliedVerticalOffset = scrollViewer.VerticalOffset,
             };
             this.smoothScrollStates[editor] = state;
+        }
+
+        var currentOffset = scrollViewer.VerticalOffset;
+        if (Math.Abs(currentOffset - state.LastAppliedVerticalOffset) > 0.5) {
+            state.StartVerticalOffset = currentOffset;
+            state.TargetVerticalOffset = currentOffset;
+            state.LastAppliedVerticalOffset = currentOffset;
+            state.IsAnimating = false;
         }
 
         var steps = Math.Max(1, Math.Abs(eventArgs.Delta) / Mouse.MouseWheelDeltaForOneLine);
@@ -1388,6 +1495,23 @@ public partial class MainWindow : Window {
             state.TargetVerticalOffset + (eventArgs.Delta > 0 ? -offset : offset),
             0.0,
             scrollViewer.ScrollableHeight);
+        state.StartVerticalOffset = currentOffset;
+        state.LastAppliedVerticalOffset = currentOffset;
+        state.AnimationStartedAt = Stopwatch.GetTimestamp();
+        state.AnimationDuration = TimeSpan.FromMilliseconds(Math.Clamp(
+            this.settings.MouseWheelAnimationDurationMilliseconds,
+            50.0,
+            5000.0));
+        state.SmoothingMode = this.GetScrollSmoothingMode();
+        if (state.SmoothingMode == ScrollSmoothingMode.None) {
+            scrollViewer.ScrollToVerticalOffset(state.TargetVerticalOffset);
+            state.LastAppliedVerticalOffset = state.TargetVerticalOffset;
+            state.IsAnimating = false;
+            eventArgs.Handled = true;
+            return;
+        }
+
+        state.IsAnimating = Math.Abs(state.TargetVerticalOffset - currentOffset) > 0.5;
         this.smoothScrollTimer.Start();
         eventArgs.Handled = true;
     }
@@ -1395,19 +1519,51 @@ public partial class MainWindow : Window {
     private void SmoothScrollTimerTick(object? sender, EventArgs eventArgs) {
         var isAnimating = false;
         foreach (var state in this.smoothScrollStates.Values) {
-            var currentOffset = state.ScrollViewer.VerticalOffset;
-            var difference = state.TargetVerticalOffset - currentOffset;
-            if (Math.Abs(difference) <= 0.5) {
-                state.ScrollViewer.ScrollToVerticalOffset(state.TargetVerticalOffset);
+            if (!state.IsAnimating) {
                 continue;
             }
 
-            state.ScrollViewer.ScrollToVerticalOffset(currentOffset + difference * 0.35);
+            var elapsed = Stopwatch.GetElapsedTime(state.AnimationStartedAt);
+            var progress = Math.Clamp(elapsed / state.AnimationDuration, 0.0, 1.0);
+            var interpolatedProgress = MainWindow.InterpolateScrollProgress(state.SmoothingMode, progress);
+            var nextOffset = state.StartVerticalOffset
+                + (state.TargetVerticalOffset - state.StartVerticalOffset) * interpolatedProgress;
+            state.ScrollViewer.ScrollToVerticalOffset(nextOffset);
+            state.LastAppliedVerticalOffset = nextOffset;
+            if (progress >= 1.0) {
+                state.ScrollViewer.ScrollToVerticalOffset(state.TargetVerticalOffset);
+                state.LastAppliedVerticalOffset = state.TargetVerticalOffset;
+                state.IsAnimating = false;
+                continue;
+            }
+
             isAnimating = true;
         }
         if (!isAnimating) {
             this.smoothScrollTimer.Stop();
         }
+    }
+
+    private ScrollSmoothingMode GetScrollSmoothingMode() {
+        return Enum.TryParse<ScrollSmoothingMode>(
+            this.settings.MouseWheelSmoothingMode,
+            true,
+            out var smoothingMode)
+            ? smoothingMode
+            : ScrollSmoothingMode.Exponential;
+    }
+
+    private static double InterpolateScrollProgress(ScrollSmoothingMode smoothingMode, double progress) {
+        return smoothingMode switch {
+            ScrollSmoothingMode.Linear => progress,
+            ScrollSmoothingMode.Smoothstep => progress * progress * (3.0 - 2.0 * progress),
+            ScrollSmoothingMode.Smootherstep => progress * progress * progress
+                * (progress * (progress * 6.0 - 15.0) + 10.0),
+            ScrollSmoothingMode.EaseOutCubic => 1.0 - Math.Pow(1.0 - progress, 3.0),
+            ScrollSmoothingMode.Exponential => (1.0 - Math.Exp(-6.0 * progress))
+                / (1.0 - Math.Exp(-6.0)),
+            _ => progress,
+        };
     }
 
     private static T? FindVisualChild<T>(DependencyObject element)

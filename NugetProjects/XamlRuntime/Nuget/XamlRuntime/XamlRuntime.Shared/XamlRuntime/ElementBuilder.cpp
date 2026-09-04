@@ -39,6 +39,7 @@ namespace xaml::_details {
                 | static_cast<uint32_t>(XamlAttributeGroup::padding)
                 | static_cast<uint32_t>(XamlAttributeGroup::cornerRadius)
                 | static_cast<uint32_t>(XamlAttributeGroup::text)
+                | static_cast<uint32_t>(XamlAttributeGroup::contentAlignment)
                 | static_cast<uint32_t>(XamlAttributeGroup::command);
         case ElementType::border:
             return common
@@ -331,6 +332,9 @@ namespace xaml {
             return;
         case XamlAttribute::horizontalAlignment:
             element.SetHorizontalAlignment(_details::ParseAlignment(value));
+            return;
+        case XamlAttribute::contentAlignment:
+            element.SetContentAlignment(_details::ParseAlignment(value));
             return;
         case XamlAttribute::gridRow:
             element.SetGridRow(std::stoi(std::string(value)));

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "XamlRuntime/Storyboard.h"
+
 #include <initializer_list>
 #include <memory>
 #include <string>
@@ -114,6 +116,9 @@ namespace xaml {
         attr::Alignment HorizontalAlignmentValue() const;
         void SetHorizontalAlignment(attr::Alignment value);
 
+        attr::Alignment ContentAlignmentValue() const;
+        void SetContentAlignment(attr::Alignment value);
+
         int GridRow() const;
         void SetGridRow(int value);
 
@@ -180,6 +185,21 @@ namespace xaml {
         float PressProgress() const;
         void SetPressProgress(float value);
 
+        float WaveProgress() const;
+        void SetWaveProgress(float value);
+
+        float WaveIntensity() const;
+        void SetWaveIntensity(float value);
+
+        float WaveSpread() const;
+        void SetWaveSpread(float value);
+
+        float WaveFadeExponent() const;
+        void SetWaveFadeExponent(float value);
+
+        const std::vector<Storyboard>& Storyboards() const;
+        void AddStoryboard(Storyboard value);
+
         Size DesiredSize() const;
         void SetDesiredSize(Size value);
 
@@ -213,6 +233,7 @@ namespace xaml {
         attr::Orientation orientation = attr::Orientation::vertical;
         attr::Alignment verticalAlignment = attr::Alignment::center;
         attr::Alignment horizontalAlignment = attr::Alignment::center;
+        attr::Alignment contentAlignment = attr::Alignment::left;
         int gridRow = 0;
         int gridColumn = 0;
         std::string rows;
@@ -235,6 +256,11 @@ namespace xaml {
         float renderOffsetX = 0.0f;
         float toggleProgress = -1.0f;
         float pressProgress = 0.0f;
+        float waveProgress = 1.0f;
+        float waveIntensity = 0.45f;
+        float waveSpread = 0.28f;
+        float waveFadeExponent = 2.0f;
+        std::vector<Storyboard> storyboards;
         Size desiredSize{};
         Rect bounds{};
         Rect clipBounds{};

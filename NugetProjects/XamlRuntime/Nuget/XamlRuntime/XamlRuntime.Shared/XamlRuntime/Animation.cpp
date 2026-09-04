@@ -21,9 +21,28 @@ namespace xaml::_details {
             target.SetRenderOffsetX(value);
         } else if (property == AnimatedProperty::toggleProgress) {
             target.SetToggleProgress(value);
+        } else if (property == AnimatedProperty::waveProgress) {
+            target.SetWaveProgress(value);
         } else {
             target.SetPressProgress(value);
         }
+    }
+
+    float AnimatedValue(const Element& target, AnimatedProperty property) {
+        if (property == AnimatedProperty::opacity) {
+            return target.Opacity();
+        }
+        if (property == AnimatedProperty::renderOffsetX) {
+            return target.RenderOffsetX();
+        }
+        if (property == AnimatedProperty::toggleProgress) {
+            return target.ToggleProgress() < 0.0f
+                ? (target.IsOn() ? 1.0f : 0.0f) : target.ToggleProgress();
+        }
+        if (property == AnimatedProperty::waveProgress) {
+            return target.WaveProgress();
+        }
+        return target.PressProgress();
     }
 }
 
@@ -41,6 +60,9 @@ namespace xaml {
                     return animation.target == &target && animation.property == property;
                 }),
             this->animations.end());
+        if (this->animations.empty()) {
+            this->lastUpdatedAt = std::chrono::steady_clock::now();
+        }
         _details::SetAnimatedValue(target, property, from);
         this->animations.push_back({
             &target,
@@ -49,20 +71,52 @@ namespace xaml {
             to,
             duration,
             easing,
-            std::chrono::steady_clock::now(),
+            0.0f,
         });
         LOG_DEBUG("XamlRuntime.Animation", "Started animation: {} -> {}, {} ms", from, to, duration.count());
     }
 
+    void AnimationController::Start(Element& target, AnimationTrigger trigger) {
+        for (const Storyboard& storyboard : target.Storyboards()) {
+            if (storyboard.trigger != trigger) {
+                continue;
+            }
+
+            for (const AnimationTrack& track : storyboard.tracks) {
+                if (track.property == AnimatedProperty::waveProgress) {
+                    target.SetWaveIntensity(track.intensity);
+                    target.SetWaveSpread(track.spread);
+                    target.SetWaveFadeExponent(track.fadeExponent);
+                }
+                this->Animate(
+                    target,
+                    track.property,
+                    track.fromCurrent ? _details::AnimatedValue(target, track.property) : track.from,
+                    track.toToggleState ? (target.IsOn() ? 1.0f : 0.0f) : track.to,
+                    track.duration,
+                    track.easing);
+            }
+        }
+    }
+
+    void AnimationController::SetPlaybackRate(float value) {
+        this->playbackRate = std::clamp(value, 0.1f, 4.0f);
+        this->lastUpdatedAt = std::chrono::steady_clock::now();
+    }
+
     void AnimationController::Update() {
         const auto now = std::chrono::steady_clock::now();
+        const float elapsedMilliseconds = this->lastUpdatedAt.time_since_epoch().count() == 0
+            ? 0.0f
+            : std::chrono::duration<float, std::milli>(now - this->lastUpdatedAt).count()
+                * this->playbackRate;
+        this->lastUpdatedAt = now;
         auto animation = this->animations.begin();
         while (animation != this->animations.end()) {
-            const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                now - animation->startedAt);
+            animation->elapsedMilliseconds += elapsedMilliseconds;
             const float progress = animation->duration.count() == 0 ? 1.0f : std::min(
                 1.0f,
-                static_cast<float>(elapsed.count()) / animation->duration.count());
+                animation->elapsedMilliseconds / animation->duration.count());
             const float eased = _details::Ease(progress, animation->easing);
             _details::SetAnimatedValue(
                 *animation->target,
@@ -80,4 +134,5 @@ namespace xaml {
     bool AnimationController::IsAnimating() const {
         return !this->animations.empty();
     }
+
 }

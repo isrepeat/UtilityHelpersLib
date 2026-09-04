@@ -1,6 +1,7 @@
 #include "XamlRuntime/RenderEngine.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace xaml::_details {
     Rect Translate(Rect bounds, float offsetX) {
@@ -29,17 +30,6 @@ namespace xaml::_details {
             && left.alpha == right.alpha;
     }
 
-    Rect ScaleAroundCenter(Rect bounds, float scale) {
-        const float width = bounds.width * scale;
-        const float height = bounds.height * scale;
-        return {
-            bounds.x + (bounds.width - width) / 2.0f,
-            bounds.y + (bounds.height - height) / 2.0f,
-            width,
-            height,
-        };
-    }
-
     attr::Color ButtonColor(
         const Element& element,
         attr::Color inactive,
@@ -48,6 +38,31 @@ namespace xaml::_details {
             return inactive;
         }
         return InterpolateColor(inactive, active, element.PressProgress());
+    }
+
+    void RenderButtonWave(
+        const Element& element,
+        IRenderBackend& backend,
+        Rect bounds,
+        float opacity) {
+        const float progress = element.WaveProgress();
+        if (progress <= 0.0f || progress >= 1.0f) {
+            return;
+        }
+
+        const float fade = std::pow(1.0f - progress, element.WaveFadeExponent());
+        const attr::Color color{
+            element.Foreground().red,
+            element.Foreground().green,
+            element.Foreground().blue,
+            element.Foreground().alpha * fade * element.WaveIntensity(),
+        };
+        backend.DrawRipple(
+            bounds,
+            WithOpacity(color, opacity),
+            element.CornerRadius(),
+            progress,
+            element.WaveSpread());
     }
 
     void RenderToggleSwitch(
@@ -153,11 +168,11 @@ namespace xaml::_details {
         const float offsetX = inheritedOffsetX + element.RenderOffsetX();
         const float opacity = inheritedOpacity * element.Opacity();
         Rect bounds = Translate(element.Bounds(), offsetX);
-        if (element.Type() == ElementType::button) {
-            bounds = ScaleAroundCenter(bounds, 1.0f - element.PressProgress() * 0.06f);
-        }
         backend.BeginClip(Translate(element.ClipBounds(), offsetX));
         RenderChrome(element, backend, bounds, opacity);
+        if (element.Type() == ElementType::button) {
+            RenderButtonWave(element, backend, bounds, opacity);
+        }
         if (element.Type() == ElementType::textBlock) {
             backend.DrawText(
                 bounds,
@@ -177,7 +192,9 @@ namespace xaml::_details {
                 WithOpacity(foreground, opacity),
                 element.FontSize(),
                 element.FontWeight(),
-                element.HorizontalAlignmentValue());
+                element.Type() == ElementType::button
+                    ? element.ContentAlignmentValue()
+                    : element.HorizontalAlignmentValue());
         } else if (element.Type() == ElementType::toggleSwitch) {
             RenderToggleSwitch(element, backend, bounds, opacity);
         } else if (element.Type() == ElementType::image) {

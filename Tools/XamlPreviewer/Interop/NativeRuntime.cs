@@ -87,6 +87,19 @@ internal static class NativeRuntime {
         [MarshalAs(UnmanagedType.LPUTF8Str)] string name,
         [MarshalAs(UnmanagedType.LPUTF8Str)] string value);
 
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_add_storyboard_track")]
+    public static extern int xr_add_storyboard_track(
+        IntPtr element,
+        int trigger,
+        int property,
+        float from,
+        float to,
+        int durationMilliseconds,
+        int easing,
+        float intensity,
+        float spread,
+        float fadeExponent);
+
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_supported_attribute_count")]
     public static extern int xr_supported_attribute_count(
         [MarshalAs(UnmanagedType.LPUTF8Str)] string elementType);
@@ -125,6 +138,9 @@ internal static class NativeRuntime {
 
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_destroy_animation_controller")]
     public static extern void xr_destroy_animation_controller(IntPtr animations);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_set_animation_playback_rate")]
+    public static extern int xr_set_animation_playback_rate(IntPtr animations, float playbackRate);
 
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_update_animations")]
     public static extern int xr_update_animations(IntPtr animations);

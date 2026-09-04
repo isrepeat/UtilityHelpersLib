@@ -21,6 +21,7 @@ namespace xaml {
             {XamlAttribute::orientation, XamlAttributeGroup::orientation, "orientation"},
             {XamlAttribute::verticalAlignment, XamlAttributeGroup::layout, "verticalAlignment"},
             {XamlAttribute::horizontalAlignment, XamlAttributeGroup::layout, "horizontalAlignment"},
+            {XamlAttribute::contentAlignment, XamlAttributeGroup::contentAlignment, "contentAlignment"},
             {XamlAttribute::gridRow, XamlAttributeGroup::gridPosition, "gridRow"},
             {XamlAttribute::gridColumn, XamlAttributeGroup::gridPosition, "gridColumn"},
             {XamlAttribute::rows, XamlAttributeGroup::gridDefinitions, "rows"},

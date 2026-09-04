@@ -37,6 +37,11 @@ internal sealed class PreviewSession : IDisposable {
     public event EventHandler? AnimationStarted;
     public event EventHandler<string>? Tapped;
 
+    public void SetAnimationSpeed(double value) {
+        this.ThrowIfDisposed();
+        NativeRuntime.Ensure(NativeRuntime.xr_set_animation_playback_rate(this.animations, (float)value) != 0);
+    }
+
     public bool Update() {
         this.ThrowIfDisposed();
         var isAnimating = NativeRuntime.xr_update_animations(this.animations);

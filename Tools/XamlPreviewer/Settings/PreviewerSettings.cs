@@ -8,6 +8,8 @@ namespace XamlPreviewer;
 internal sealed class PreviewerSettings {
     private const string DefaultResourcesDirectory = @"C:\WORK\Android\Projects\MobileClock\Native\Resources";
     private const string DefaultXamlDirectory = @"C:\WORK\Android\Projects\MobileClock\Native\UI";
+    private const string DefaultScenariosPath = @"C:\WORK\Android\Projects\MobileClock\Native\Tests\XamlPreviewer\scenarios.json";
+    private const string DefaultInteractionsPath = @"C:\WORK\Android\Projects\MobileClock\Native\Tests\XamlPreviewer\interactions.json";
     private const string DefaultScenarios = """
         {
           "MainPage": {
@@ -61,13 +63,16 @@ internal sealed class PreviewerSettings {
     public bool IsMaximized { get; set; }
     public double EditorPaneWidth { get; set; }
     public double EditorScale { get; set; } = 1.0;
-    public int MouseWheelLines { get; set; } = 8;
+    public int MouseWheelLines { get; set; } = 6;
+    public double MouseWheelAnimationDurationMilliseconds { get; set; } = 400.0;
+    public string MouseWheelSmoothingMode { get; set; } = "Exponential";
     public int PreviewWidth { get; set; } = 720;
     public int PreviewHeight { get; set; } = 1600;
     public double PreviewScale { get; set; }
     public double PreviewHorizontalOffset { get; set; }
     public double PreviewVerticalOffset { get; set; }
     public bool IsPreviewLandscape { get; set; }
+    public double AnimationPlaybackRate { get; set; } = 1.0;
 
     [JsonIgnore]
     public string FilePath { get; private set; } = string.Empty;
@@ -110,8 +115,8 @@ internal sealed class PreviewerSettings {
         return new PreviewerSettings {
             FilePath = settingsPath,
             XamlDirectory = DefaultXamlDirectory,
-            ScenariosPath = Path.Combine(AppContext.BaseDirectory, "scenarios.json"),
-            InteractionsPath = Path.Combine(AppContext.BaseDirectory, "interactions.json"),
+            ScenariosPath = DefaultScenariosPath,
+            InteractionsPath = DefaultInteractionsPath,
             ResourcesDirectory = DefaultResourcesDirectory,
         };
     }

@@ -78,6 +78,42 @@ namespace es_renderer::_details {
         }
     )";
 
+    constexpr char RippleVertexShader[] = R"(#version 300 es
+        layout (location = 0) in vec2 position;
+        layout (location = 1) in vec2 localPosition;
+        out vec2 local;
+        void main() {
+            local = localPosition;
+            gl_Position = vec4(position, 0.0, 1.0);
+        }
+    )";
+
+    constexpr char RippleFragmentShader[] = R"(#version 300 es
+        precision mediump float;
+        in vec2 local;
+        uniform vec2 size;
+        uniform float cornerRadius;
+        uniform float progress;
+        uniform float spread;
+        uniform vec4 rippleColor;
+        out vec4 color;
+
+        void main() {
+            vec2 halfSize = size * 0.5;
+            float radius = min(cornerRadius, min(halfSize.x, halfSize.y));
+            vec2 cornerDistance = abs(local * size - halfSize) - (halfSize - radius);
+            if (length(max(cornerDistance, 0.0)) - radius > 0.0) {
+                discard;
+            }
+
+            float distanceFromCenter = length((local - vec2(0.5)) * size);
+            float pulseRadius = 8.0 + progress * length(size) * spread;
+            float normalizedDistance = distanceFromCenter / pulseRadius;
+            float glow = exp(-normalizedDistance * normalizedDistance * 3.5);
+            color = vec4(rippleColor.rgb, rippleColor.a * glow);
+        }
+    )";
+
     constexpr char ImageVertexShader[] = R"(#version 300 es
         layout (location = 0) in vec2 position;
         layout (location = 1) in vec2 textureCoordinate;
@@ -156,6 +192,12 @@ namespace es_renderer {
             float cornerRadius,
             bool outline,
             float thickness);
+        void DrawRipple(
+            const xaml::Rect& bounds,
+            xaml::attr::Color color,
+            float cornerRadius,
+            float progress,
+            float spread);
         void DrawText(
             const xaml::Rect& bounds,
             std::string_view text,
@@ -198,6 +240,7 @@ namespace es_renderer {
         int height;
         GLuint textProgram = 0;
         GLuint solidProgram = 0;
+        GLuint rippleProgram = 0;
         GLuint imageProgram = 0;
         GLuint vertexBuffer = 0;
         ResourceLoader resourceLoader;
@@ -237,6 +280,9 @@ namespace es_renderer {
         this->solidProgram = this->CreateProgram(
             _details::SolidVertexShader,
             _details::SolidFragmentShader);
+        this->rippleProgram = this->CreateProgram(
+            _details::RippleVertexShader,
+            _details::RippleFragmentShader);
         this->imageProgram = this->CreateProgram(_details::ImageVertexShader, _details::ImageFragmentShader);
         glGenBuffers(1, &this->vertexBuffer);
         this->CreateFontAtlas(regularFontData, this->regularFontAtlas);
@@ -267,6 +313,9 @@ namespace es_renderer {
         }
         if (this->imageProgram != 0) {
             glDeleteProgram(this->imageProgram);
+        }
+        if (this->rippleProgram != 0) {
+            glDeleteProgram(this->rippleProgram);
         }
         if (this->vertexBuffer != 0) {
             glDeleteBuffers(1, &this->vertexBuffer);
@@ -555,6 +604,59 @@ namespace es_renderer {
         else {
             glDrawArrays(GL_TRIANGLE_FAN, 0, static_cast<GLsizei>(vertices.size() / 2));
         }
+    }
+
+    void OpenGlRenderer::Implementation::DrawRipple(
+        const xaml::Rect& bounds,
+        xaml::attr::Color color,
+        float cornerRadius,
+        float progress,
+        float spread) {
+        const std::vector<float> vertices{
+            bounds.x * 2.0f / this->width - 1.0f, 1.0f - bounds.y * 2.0f / this->height, 0.0f, 0.0f,
+            (bounds.x + bounds.width) * 2.0f / this->width - 1.0f, 1.0f - bounds.y * 2.0f / this->height, 1.0f, 0.0f,
+            (bounds.x + bounds.width) * 2.0f / this->width - 1.0f, 1.0f - (bounds.y + bounds.height) * 2.0f / this->height, 1.0f, 1.0f,
+            bounds.x * 2.0f / this->width - 1.0f, 1.0f - bounds.y * 2.0f / this->height, 0.0f, 0.0f,
+            (bounds.x + bounds.width) * 2.0f / this->width - 1.0f, 1.0f - (bounds.y + bounds.height) * 2.0f / this->height, 1.0f, 1.0f,
+            bounds.x * 2.0f / this->width - 1.0f, 1.0f - (bounds.y + bounds.height) * 2.0f / this->height, 0.0f, 1.0f,
+        };
+        glUseProgram(this->rippleProgram);
+        glUniform2f(
+            glGetUniformLocation(this->rippleProgram, "size"),
+            bounds.width,
+            bounds.height);
+        glUniform1f(
+            glGetUniformLocation(this->rippleProgram, "cornerRadius"),
+            cornerRadius);
+        glUniform1f(
+            glGetUniformLocation(this->rippleProgram, "progress"),
+            progress);
+        glUniform1f(
+            glGetUniformLocation(this->rippleProgram, "spread"),
+            spread);
+        glUniform4f(
+            glGetUniformLocation(this->rippleProgram, "rippleColor"),
+            color.red,
+            color.green,
+            color.blue,
+            color.alpha);
+        glBindBuffer(GL_ARRAY_BUFFER, this->vertexBuffer);
+        glBufferData(
+            GL_ARRAY_BUFFER,
+            static_cast<GLsizeiptr>(vertices.size() * sizeof(float)),
+            vertices.data(),
+            GL_DYNAMIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), nullptr);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(
+            1,
+            2,
+            GL_FLOAT,
+            GL_FALSE,
+            4 * sizeof(float),
+            reinterpret_cast<void*>(2 * sizeof(float)));
+        glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
     void OpenGlRenderer::Implementation::DrawText(
@@ -926,6 +1028,15 @@ namespace es_renderer {
             cornerRadius,
             true,
             thickness);
+    }
+
+    void OpenGlRenderer::DrawRipple(
+        const xaml::Rect& bounds,
+        xaml::attr::Color color,
+        float cornerRadius,
+        float progress,
+        float spread) {
+        this->implementation->DrawRipple(bounds, color, cornerRadius, progress, spread);
     }
 
     void OpenGlRenderer::DrawText(

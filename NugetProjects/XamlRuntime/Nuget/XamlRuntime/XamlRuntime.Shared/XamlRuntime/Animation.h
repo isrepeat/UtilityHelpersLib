@@ -1,22 +1,9 @@
 #pragma once
 
-#include <chrono>
-#include <vector>
+#include "XamlRuntime/Storyboard.h"
 
 namespace xaml {
     class Element;
-
-    enum class AnimatedProperty {
-        opacity,
-        renderOffsetX,
-        toggleProgress,
-        pressProgress,
-    };
-
-    enum class Easing {
-        linear,
-        cubicOut,
-    };
 
     class AnimationController final {
     public:
@@ -27,6 +14,8 @@ namespace xaml {
             float to,
             std::chrono::milliseconds duration,
             Easing easing = Easing::cubicOut);
+        void Start(Element& target, AnimationTrigger trigger);
+        void SetPlaybackRate(float value);
         void Update();
         bool IsAnimating() const;
 
@@ -38,10 +27,12 @@ namespace xaml {
             float to = 0.0f;
             std::chrono::milliseconds duration{};
             Easing easing = Easing::linear;
-            std::chrono::steady_clock::time_point startedAt{};
+            float elapsedMilliseconds = 0.0f;
         };
 
     private:
         std::vector<Animation> animations;
+        float playbackRate = 1.0f;
+        std::chrono::steady_clock::time_point lastUpdatedAt{};
     };
 }

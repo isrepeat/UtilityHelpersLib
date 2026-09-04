@@ -353,6 +353,14 @@ namespace xaml {
         this->horizontalAlignment = value;
     }
 
+    attr::Alignment Element::ContentAlignmentValue() const {
+        return this->contentAlignment;
+    }
+
+    void Element::SetContentAlignment(attr::Alignment value) {
+        this->contentAlignment = value;
+    }
+
     int Element::GridRow() const {
         return this->gridRow;
     }
@@ -527,6 +535,46 @@ namespace xaml {
 
     void Element::SetPressProgress(float value) {
         this->pressProgress = value;
+    }
+
+    float Element::WaveProgress() const {
+        return this->waveProgress;
+    }
+
+    void Element::SetWaveProgress(float value) {
+        this->waveProgress = value;
+    }
+
+    float Element::WaveIntensity() const {
+        return this->waveIntensity;
+    }
+
+    void Element::SetWaveIntensity(float value) {
+        this->waveIntensity = value;
+    }
+
+    float Element::WaveSpread() const {
+        return this->waveSpread;
+    }
+
+    void Element::SetWaveSpread(float value) {
+        this->waveSpread = value;
+    }
+
+    float Element::WaveFadeExponent() const {
+        return this->waveFadeExponent;
+    }
+
+    void Element::SetWaveFadeExponent(float value) {
+        this->waveFadeExponent = value;
+    }
+
+    const std::vector<Storyboard>& Element::Storyboards() const {
+        return this->storyboards;
+    }
+
+    void Element::AddStoryboard(Storyboard value) {
+        this->storyboards.push_back(std::move(value));
     }
 
     Size Element::DesiredSize() const {

@@ -55,6 +55,14 @@ namespace xaml::bridge {
             std::memcpy(command.auxiliary, &thickness, sizeof(thickness));
         }
 
+        void DrawRipple(
+            const Rect&,
+            attr::Color,
+            float,
+            float,
+            float) override {
+        }
+
         void DrawText(
             const Rect& bounds,
             std::string_view text,
@@ -105,84 +113,6 @@ namespace xaml::bridge {
     };
 
     thread_local std::string lastError;
-}
-
-namespace xaml::bridge::_details {
-    // TODO(TEMP_REMOVE): удалить после отладки геометрии анимации кнопки.
-    void LogButtonGeometry(
-        const Element& element,
-        Rect bounds,
-        std::string_view phase) {
-        constexpr int SegmentsPerCorner = 8;
-        constexpr float Pi = 3.14159265358979323846f;
-        const float maximumRadius = std::max(0.0f, std::min(bounds.width, bounds.height) / 2.0f);
-        const float radius = std::clamp(element.CornerRadius(), 0.0f, maximumRadius);
-        const float centers[][2] = {
-            {bounds.x + bounds.width - radius, bounds.y + radius},
-            {bounds.x + bounds.width - radius, bounds.y + bounds.height - radius},
-            {bounds.x + radius, bounds.y + bounds.height - radius},
-            {bounds.x + radius, bounds.y + radius},
-        };
-
-        LOG_DEBUG(
-            "XamlPreviewer.NativeBridge",
-            "TEMP_REMOVE button geometry: phase={}, id='{}', bounds=({}, {}, {}, {}), radius={}",
-            phase,
-            element.Id(),
-            bounds.x,
-            bounds.y,
-            bounds.width,
-            bounds.height,
-            radius);
-        int pointIndex = 0;
-        for (int corner = 0; corner < 4; ++corner) {
-            const float startAngle = -Pi / 2.0f + static_cast<float>(corner) * Pi / 2.0f;
-            for (int segment = 0; segment <= SegmentsPerCorner; ++segment) {
-                const float angle = startAngle
-                    + static_cast<float>(segment) * Pi / (2.0f * SegmentsPerCorner);
-                float cosine = std::cos(angle);
-                float sine = std::sin(angle);
-                if (std::abs(cosine) < 0.000001f) {
-                    cosine = 0.0f;
-                }
-                if (std::abs(sine) < 0.000001f) {
-                    sine = 0.0f;
-                }
-                if (std::abs(std::abs(cosine) - 1.0f) < 0.000001f) {
-                    cosine = cosine < 0.0f ? -1.0f : 1.0f;
-                }
-                if (std::abs(std::abs(sine) - 1.0f) < 0.000001f) {
-                    sine = sine < 0.0f ? -1.0f : 1.0f;
-                }
-                LOG_DEBUG(
-                    "XamlPreviewer.NativeBridge",
-                    "TEMP_REMOVE button geometry: phase={}, point={}, x={}, y={}",
-                    phase,
-                    pointIndex++,
-                    centers[corner][0] + cosine * radius,
-                    centers[corner][1] + sine * radius);
-            }
-        }
-        LOG_DEBUG(
-            "XamlPreviewer.NativeBridge",
-            "TEMP_REMOVE button geometry: phase={}, point={}, x={}, y={} (closing point)",
-            phase,
-            pointIndex,
-            centers[0][0],
-            bounds.y);
-    }
-
-    Rect ScaleForPressedButton(Rect bounds) {
-        constexpr float PressedScale = 0.94f;
-        const float width = bounds.width * PressedScale;
-        const float height = bounds.height * PressedScale;
-        return {
-            bounds.x + (bounds.width - width) / 2.0f,
-            bounds.y + (bounds.height - height) / 2.0f,
-            width,
-            height,
-        };
-    }
 }
 
 struct xr_animation_controller {
@@ -259,6 +189,46 @@ int xr_set_attribute(
             throw std::invalid_argument("element is required");
         }
         xaml::SetAttribute(*reinterpret_cast<xaml::Element*>(element), name, value);
+        return 1;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return 0;
+    }
+}
+
+int xr_add_storyboard_track(
+    xr_element* element,
+    int trigger,
+    int property,
+    float from,
+    float to,
+    int durationMilliseconds,
+    int easing,
+    float intensity,
+    float spread,
+    float fadeExponent) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (element == nullptr || trigger < 0 || trigger > 2 || property < 0 || property > 4
+            || durationMilliseconds < 0 || easing < 0 || easing > 1
+            || intensity < 0.0f || spread <= 0.0f || fadeExponent <= 0.0f) {
+            throw std::invalid_argument("invalid storyboard track");
+        }
+        xaml::Storyboard storyboard;
+        storyboard.trigger = static_cast<xaml::AnimationTrigger>(trigger);
+        storyboard.tracks.push_back({
+            static_cast<xaml::AnimatedProperty>(property),
+            from,
+            to,
+            std::isnan(from),
+            std::isnan(to),
+            intensity,
+            spread,
+            fadeExponent,
+            std::chrono::milliseconds(durationMilliseconds),
+            static_cast<xaml::Easing>(easing),
+        });
+        reinterpret_cast<xaml::Element*>(element)->AddStoryboard(std::move(storyboard));
         return 1;
     } catch (const std::exception& error) {
         xaml::bridge::lastError = error.what();
@@ -363,17 +333,11 @@ int xr_handle_tap(xr_element* element, xr_animation_controller* animations) {
             throw std::invalid_argument("element and animations are required");
         }
         xaml::Element& target = *reinterpret_cast<xaml::Element*>(element);
-        const bool wasOn = target.IsOn();
         if (!xaml::HandleTap(target)) {
             return 0;
         }
         if (target.Type() == xaml::ElementType::toggleSwitch) {
-            animations->value.Animate(
-                target,
-                xaml::AnimatedProperty::toggleProgress,
-                wasOn ? 1.0f : 0.0f,
-                wasOn ? 0.0f : 1.0f,
-                std::chrono::milliseconds(120));
+            animations->value.Start(target, xaml::AnimationTrigger::toggled);
         }
         return 1;
     } catch (const std::exception& error) {
@@ -389,24 +353,7 @@ int xr_handle_pointer_down(xr_element* element, xr_animation_controller* animati
             throw std::invalid_argument("element and animations are required");
         }
         xaml::Element& target = *reinterpret_cast<xaml::Element*>(element);
-        if (target.Type() != xaml::ElementType::button) {
-            return 1;
-        }
-        // TODO(TEMP_REMOVE): журналируем обе крайние геометрии до исправления rounded-rect.
-        xaml::bridge::_details::LogButtonGeometry(
-            target,
-            target.Bounds(),
-            "before-press-animation");
-        xaml::bridge::_details::LogButtonGeometry(
-            target,
-            xaml::bridge::_details::ScaleForPressedButton(target.Bounds()),
-            "press-animation-end");
-        animations->value.Animate(
-            target,
-            xaml::AnimatedProperty::pressProgress,
-            target.PressProgress(),
-            1.0f,
-            std::chrono::milliseconds(80));
+        animations->value.Start(target, xaml::AnimationTrigger::pointerDown);
         return 1;
     } catch (const std::exception& error) {
         xaml::bridge::lastError = error.what();
@@ -422,12 +369,7 @@ int xr_handle_pointer_up(xr_element* element, xr_animation_controller* animation
         }
         xaml::Element& target = *reinterpret_cast<xaml::Element*>(element);
         if (target.Type() == xaml::ElementType::button) {
-            animations->value.Animate(
-                target,
-                xaml::AnimatedProperty::pressProgress,
-                target.PressProgress(),
-                0.0f,
-                std::chrono::milliseconds(150));
+            animations->value.Start(target, xaml::AnimationTrigger::pointerUp);
             return 1;
         }
         return xr_handle_tap(element, animations);
@@ -449,6 +391,22 @@ xr_animation_controller* xr_create_animation_controller(void) {
 
 void xr_destroy_animation_controller(xr_animation_controller* animations) {
     delete animations;
+}
+
+int xr_set_animation_playback_rate(
+    xr_animation_controller* animations,
+    float playbackRate) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (animations == nullptr || !std::isfinite(playbackRate)) {
+            throw std::invalid_argument("animations and finite playbackRate are required");
+        }
+        animations->value.SetPlaybackRate(playbackRate);
+        return 1;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return 0;
+    }
 }
 
 int xr_update_animations(xr_animation_controller* animations) {
