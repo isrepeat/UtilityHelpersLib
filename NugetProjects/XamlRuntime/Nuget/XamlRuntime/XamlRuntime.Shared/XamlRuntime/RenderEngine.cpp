@@ -22,6 +22,13 @@ namespace xaml::_details {
         };
     }
 
+    bool AreEqual(attr::Color left, attr::Color right) {
+        return left.red == right.red
+            && left.green == right.green
+            && left.blue == right.blue
+            && left.alpha == right.alpha;
+    }
+
     Rect ScaleAroundCenter(Rect bounds, float scale) {
         const float width = bounds.width * scale;
         const float height = bounds.height * scale;
@@ -37,7 +44,10 @@ namespace xaml::_details {
         const Element& element,
         attr::Color inactive,
         attr::Color active) {
-        return element.IsOn() && active.alpha > 0.0f ? active : inactive;
+        if (active.alpha <= 0.0f) {
+            return inactive;
+        }
+        return InterpolateColor(inactive, active, element.PressProgress());
     }
 
     void RenderToggleSwitch(
@@ -107,6 +117,13 @@ namespace xaml::_details {
                 thickness);
             return;
         }
+        if (AreEqual(background, borderColor)) {
+            backend.DrawRoundedRect(
+                bounds,
+                WithOpacity(background, opacity),
+                element.CornerRadius());
+            return;
+        }
 
         backend.DrawRoundedRect(
             bounds,
@@ -154,7 +171,6 @@ namespace xaml::_details {
             const attr::Color foreground = element.Type() == ElementType::button
                 ? ButtonColor(element, element.Foreground(), element.ActiveForeground())
                 : element.Foreground();
-            backend.DrawOutline(bounds, WithOpacity(foreground, opacity));
             backend.DrawText(
                 bounds,
                 element.Text(),

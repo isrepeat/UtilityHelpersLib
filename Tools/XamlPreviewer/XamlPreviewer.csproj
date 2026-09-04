@@ -7,7 +7,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PlatformTarget>x64</PlatformTarget>
-    <NativeBridgeOutputDir>$(SolutionDir)!VS_TMP\Build\$(Configuration)\x64\XamlRuntime.NativeBridge\</NativeBridgeOutputDir>
+    <NativeBridgeOutputDir>$(MSBuildProjectDirectory)\..\..\!VS_TMP\Build\$(Configuration)\x64\XamlRuntime.NativeBridge\</NativeBridgeOutputDir>
+    <NativeBridgeIntermediateDir>$(MSBuildProjectDirectory)\..\..\!VS_TMP\Intermediate\$(Configuration)\x64\XamlRuntime.NativeBridge.Previewer\</NativeBridgeIntermediateDir>
     <NativeAngleZlibName>z.dll</NativeAngleZlibName>
   </PropertyGroup>
 
@@ -19,6 +20,12 @@
     <!-- NativeBridge — отдельный C++ проект; его NuGet restore-cache не является
          частью дерева исходников WPF-приложения. -->
     <None Remove="NativeBridge\obj\**" />
+    <ProjectReference Include="NativeBridge\XamlRuntime.NativeBridge.vcxproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <SetConfiguration>Configuration=$(Configuration)</SetConfiguration>
+      <SetPlatform>Platform=x64</SetPlatform>
+      <AdditionalProperties>Configuration=$(Configuration);Platform=x64;PreviewerNativeBridgeOutputDir=$(NativeBridgeOutputDir);PreviewerNativeBridgeIntermediateDir=$(NativeBridgeIntermediateDir)</AdditionalProperties>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>

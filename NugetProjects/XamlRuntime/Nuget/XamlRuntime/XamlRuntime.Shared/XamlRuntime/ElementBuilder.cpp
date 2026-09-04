@@ -39,7 +39,6 @@ namespace xaml::_details {
                 | static_cast<uint32_t>(XamlAttributeGroup::padding)
                 | static_cast<uint32_t>(XamlAttributeGroup::cornerRadius)
                 | static_cast<uint32_t>(XamlAttributeGroup::text)
-                | static_cast<uint32_t>(XamlAttributeGroup::toggle)
                 | static_cast<uint32_t>(XamlAttributeGroup::command);
         case ElementType::border:
             return common

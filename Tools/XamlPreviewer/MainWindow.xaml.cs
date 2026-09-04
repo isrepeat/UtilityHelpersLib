@@ -37,6 +37,7 @@ public partial class MainWindow : Window {
     private bool updatingPreviewControls;
     private bool settingsPersistenceReady;
     private FileSystemWatcher? markupWatcher;
+    private FileSystemWatcher? xamlDirectoryWatcher;
     private FileSystemWatcher? scenariosWatcher;
     private FileSystemWatcher? settingsWatcher;
     private PreviewSession? previewSession;
@@ -45,6 +46,7 @@ public partial class MainWindow : Window {
     private string? markupPath;
     private string? pendingPageTransition;
     private (int Width, int Height)? markupPreviewResolution;
+    private bool shouldRestorePreviewPosition = true;
     private bool isMarkupDirty;
     private bool isScenariosDirty;
     private bool isSettingsDirty;
@@ -260,6 +262,7 @@ public partial class MainWindow : Window {
             return;
         }
         this.settings.XamlDirectory = selectedDirectory;
+        this.ConfigureWatchers();
         this.RefreshPageNames();
         this.HideFolderPicker();
         this.PersistSettings();
@@ -828,6 +831,10 @@ public partial class MainWindow : Window {
             }
             this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
             this.StatusText.Text = $"Предпросмотр обновлён · {DateTime.Now:HH:mm:ss}";
+            if (this.shouldRestorePreviewPosition) {
+                this.shouldRestorePreviewPosition = false;
+                this.Dispatcher.BeginInvoke(new Action(this.RestorePreviewPosition));
+            }
         }
         catch (Exception exception) {
             this.ShowPreviewError(exception);
@@ -932,6 +939,7 @@ public partial class MainWindow : Window {
     private void LoadMarkup(string path) {
         this.markupPath = Path.GetFullPath(path);
         this.ConfigureMarkupWatcher();
+        this.ConfigureXamlDirectoryWatcher();
         this.FilePathText.Text = this.markupPath;
         this.updatingEditors = true;
         this.markupEditorController.SetText(File.ReadAllText(this.markupPath));
@@ -1000,6 +1008,22 @@ public partial class MainWindow : Window {
         this.markupWatcher = this.markupPath is null ? null : this.CreateWatcher(this.markupPath);
     }
 
+    private void ConfigureXamlDirectoryWatcher() {
+        this.xamlDirectoryWatcher?.Dispose();
+        if (!Directory.Exists(this.settings.XamlDirectory)) {
+            this.xamlDirectoryWatcher = null;
+            return;
+        }
+        this.xamlDirectoryWatcher = new FileSystemWatcher(this.settings.XamlDirectory, "*.xaml") {
+            IncludeSubdirectories = true,
+            NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName,
+            EnableRaisingEvents = true,
+        };
+        this.xamlDirectoryWatcher.Created += this.ExternalFileChanged;
+        this.xamlDirectoryWatcher.Deleted += this.ExternalFileChanged;
+        this.xamlDirectoryWatcher.Renamed += this.ExternalFileRenamed;
+    }
+
     private FileSystemWatcher? CreateWatcher(string path) {
         var directory = Path.GetDirectoryName(path);
         var fileName = Path.GetFileName(path);
@@ -1032,6 +1056,7 @@ public partial class MainWindow : Window {
     private void ExternalRefreshTimerTick(object? sender, EventArgs eventArgs) {
         this.externalRefreshTimer.Stop();
         try {
+            this.RefreshPageNames();
             if (this.markupPath is not null && File.Exists(this.markupPath)) {
                 var markup = File.ReadAllText(this.markupPath);
                 if (!this.isMarkupDirty
@@ -1136,6 +1161,7 @@ public partial class MainWindow : Window {
         this.CompletePageTransition();
         this.previewSession?.Dispose();
         this.markupWatcher?.Dispose();
+        this.xamlDirectoryWatcher?.Dispose();
         this.scenariosWatcher?.Dispose();
         this.settingsWatcher?.Dispose();
     }
@@ -1249,6 +1275,20 @@ public partial class MainWindow : Window {
         this.ApplyPreviewLayout();
         this.SyncSettingsEditor();
         this.PersistSettings();
+    }
+
+    private void PreviewViewportScrollChanged(object sender, ScrollChangedEventArgs eventArgs) {
+        if (eventArgs.HorizontalChange == 0.0 && eventArgs.VerticalChange == 0.0) {
+            return;
+        }
+        this.settings.PreviewHorizontalOffset = this.PreviewViewport.HorizontalOffset;
+        this.settings.PreviewVerticalOffset = this.PreviewViewport.VerticalOffset;
+        this.PersistSettings();
+    }
+
+    private void RestorePreviewPosition() {
+        this.PreviewViewport.ScrollToHorizontalOffset(this.settings.PreviewHorizontalOffset);
+        this.PreviewViewport.ScrollToVerticalOffset(this.settings.PreviewVerticalOffset);
     }
 
     private void ApplyEditorScale() {

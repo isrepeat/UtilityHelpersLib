@@ -65,6 +65,8 @@ internal sealed class PreviewerSettings {
     public int PreviewWidth { get; set; } = 720;
     public int PreviewHeight { get; set; } = 1600;
     public double PreviewScale { get; set; }
+    public double PreviewHorizontalOffset { get; set; }
+    public double PreviewVerticalOffset { get; set; }
     public bool IsPreviewLandscape { get; set; }
 
     [JsonIgnore]

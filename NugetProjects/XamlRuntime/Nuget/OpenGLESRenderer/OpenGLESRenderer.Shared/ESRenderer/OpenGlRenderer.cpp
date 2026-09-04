@@ -494,33 +494,44 @@ namespace es_renderer {
         };
         for (int corner = 0; corner < 4; ++corner) {
             const float startAngle = -pi / 2.0f + static_cast<float>(corner) * pi / 2.0f;
-            for (int segment = 0; segment < segmentsPerCorner; ++segment) {
+            for (int segment = 0; segment <= segmentsPerCorner; ++segment) {
                 const float angle = startAngle
                     + static_cast<float>(segment) * pi / (2.0f * segmentsPerCorner);
+                float cosine = std::cos(angle);
+                float sine = std::sin(angle);
+                if (std::abs(cosine) < 0.000001f) {
+                    cosine = 0.0f;
+                }
+                if (std::abs(sine) < 0.000001f) {
+                    sine = 0.0f;
+                }
+                if (std::abs(std::abs(cosine) - 1.0f) < 0.000001f) {
+                    cosine = cosine < 0.0f ? -1.0f : 1.0f;
+                }
+                if (std::abs(std::abs(sine) - 1.0f) < 0.000001f) {
+                    sine = sine < 0.0f ? -1.0f : 1.0f;
+                }
                 this->AppendPosition(
                     vertices,
-                    centers[corner][0] + std::cos(angle) * radius,
-                    centers[corner][1] + std::sin(angle) * radius);
+                    centers[corner][0] + cosine * radius,
+                    centers[corner][1] + sine * radius);
                 if (outline) {
                     this->AppendPosition(
                         vertices,
-                        innerCenters[corner][0] + std::cos(angle) * innerRadius,
-                        innerCenters[corner][1] + std::sin(angle) * innerRadius);
+                        innerCenters[corner][0] + cosine * innerRadius,
+                        innerCenters[corner][1] + sine * innerRadius);
                 }
             }
         }
+        // GL_TRIANGLE_FAN и GL_TRIANGLE_STRIP не замыкают контур неявно.
+        // Повторяем первую точку (и пару точек у обводки), чтобы отрисовать
+        // последний сегмент между верхним левым углом и началом контура.
+        this->AppendPosition(vertices, centers[0][0], bounds.y);
         if (outline) {
-            this->AppendPosition(vertices, centers[0][0], bounds.y);
             this->AppendPosition(
                 vertices,
                 innerCenters[0][0],
                 bounds.y + borderThickness);
-        }
-        else {
-            this->AppendPosition(
-                vertices,
-                bounds.x + bounds.width - radius,
-                bounds.y);
         }
 
         glUseProgram(this->solidProgram);

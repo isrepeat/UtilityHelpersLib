@@ -9,6 +9,7 @@
 #include "AngleRenderSurface.h"
 #include "NativeBridge.h"
 
+#include <string_view>
 #include <filesystem>
 #include <algorithm>
 #include <stdexcept>
@@ -17,6 +18,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <cmath>
 
 namespace xaml::bridge {
     class RecordingBackend final : public IRenderBackend {
@@ -103,6 +105,84 @@ namespace xaml::bridge {
     };
 
     thread_local std::string lastError;
+}
+
+namespace xaml::bridge::_details {
+    // TODO(TEMP_REMOVE): удалить после отладки геометрии анимации кнопки.
+    void LogButtonGeometry(
+        const Element& element,
+        Rect bounds,
+        std::string_view phase) {
+        constexpr int SegmentsPerCorner = 8;
+        constexpr float Pi = 3.14159265358979323846f;
+        const float maximumRadius = std::max(0.0f, std::min(bounds.width, bounds.height) / 2.0f);
+        const float radius = std::clamp(element.CornerRadius(), 0.0f, maximumRadius);
+        const float centers[][2] = {
+            {bounds.x + bounds.width - radius, bounds.y + radius},
+            {bounds.x + bounds.width - radius, bounds.y + bounds.height - radius},
+            {bounds.x + radius, bounds.y + bounds.height - radius},
+            {bounds.x + radius, bounds.y + radius},
+        };
+
+        LOG_DEBUG(
+            "XamlPreviewer.NativeBridge",
+            "TEMP_REMOVE button geometry: phase={}, id='{}', bounds=({}, {}, {}, {}), radius={}",
+            phase,
+            element.Id(),
+            bounds.x,
+            bounds.y,
+            bounds.width,
+            bounds.height,
+            radius);
+        int pointIndex = 0;
+        for (int corner = 0; corner < 4; ++corner) {
+            const float startAngle = -Pi / 2.0f + static_cast<float>(corner) * Pi / 2.0f;
+            for (int segment = 0; segment <= SegmentsPerCorner; ++segment) {
+                const float angle = startAngle
+                    + static_cast<float>(segment) * Pi / (2.0f * SegmentsPerCorner);
+                float cosine = std::cos(angle);
+                float sine = std::sin(angle);
+                if (std::abs(cosine) < 0.000001f) {
+                    cosine = 0.0f;
+                }
+                if (std::abs(sine) < 0.000001f) {
+                    sine = 0.0f;
+                }
+                if (std::abs(std::abs(cosine) - 1.0f) < 0.000001f) {
+                    cosine = cosine < 0.0f ? -1.0f : 1.0f;
+                }
+                if (std::abs(std::abs(sine) - 1.0f) < 0.000001f) {
+                    sine = sine < 0.0f ? -1.0f : 1.0f;
+                }
+                LOG_DEBUG(
+                    "XamlPreviewer.NativeBridge",
+                    "TEMP_REMOVE button geometry: phase={}, point={}, x={}, y={}",
+                    phase,
+                    pointIndex++,
+                    centers[corner][0] + cosine * radius,
+                    centers[corner][1] + sine * radius);
+            }
+        }
+        LOG_DEBUG(
+            "XamlPreviewer.NativeBridge",
+            "TEMP_REMOVE button geometry: phase={}, point={}, x={}, y={} (closing point)",
+            phase,
+            pointIndex,
+            centers[0][0],
+            bounds.y);
+    }
+
+    Rect ScaleForPressedButton(Rect bounds) {
+        constexpr float PressedScale = 0.94f;
+        const float width = bounds.width * PressedScale;
+        const float height = bounds.height * PressedScale;
+        return {
+            bounds.x + (bounds.width - width) / 2.0f,
+            bounds.y + (bounds.height - height) / 2.0f,
+            width,
+            height,
+        };
+    }
 }
 
 struct xr_animation_controller {
@@ -312,6 +392,15 @@ int xr_handle_pointer_down(xr_element* element, xr_animation_controller* animati
         if (target.Type() != xaml::ElementType::button) {
             return 1;
         }
+        // TODO(TEMP_REMOVE): журналируем обе крайние геометрии до исправления rounded-rect.
+        xaml::bridge::_details::LogButtonGeometry(
+            target,
+            target.Bounds(),
+            "before-press-animation");
+        xaml::bridge::_details::LogButtonGeometry(
+            target,
+            xaml::bridge::_details::ScaleForPressedButton(target.Bounds()),
+            "press-animation-end");
         animations->value.Animate(
             target,
             xaml::AnimatedProperty::pressProgress,
@@ -333,7 +422,6 @@ int xr_handle_pointer_up(xr_element* element, xr_animation_controller* animation
         }
         xaml::Element& target = *reinterpret_cast<xaml::Element*>(element);
         if (target.Type() == xaml::ElementType::button) {
-            target.SetIsOn(!target.IsOn());
             animations->value.Animate(
                 target,
                 xaml::AnimatedProperty::pressProgress,

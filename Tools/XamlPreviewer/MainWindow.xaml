@@ -995,6 +995,7 @@
                                   PreviewMouseLeftButtonUp="PreviewViewportPreviewMouseLeftButtonUp"
                                   PreviewMouseMove="PreviewViewportPreviewMouseMove"
                                   PreviewMouseWheel="PreviewViewportPreviewMouseWheel"
+                                  ScrollChanged="PreviewViewportScrollChanged"
                                   VerticalContentAlignment="Center"
                                   VerticalScrollBarVisibility="Auto">
                         <Viewbox x:Name="PreviewViewbox"
