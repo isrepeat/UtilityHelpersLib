@@ -37,7 +37,7 @@
     </PropertyGroup>
     <ItemDefinitionGroup>
         <ClCompile>
-            <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\NugetProjects\XamlRuntime\Nuget\OpenGLESRenderer\OpenGLESRenderer.Shared;$(ProjectDir)..\..\..\NugetProjects\XamlRuntime\Nuget\XamlRuntime\XamlRuntime.Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+            <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\HelpersNew\HelpersNew.Shared;$(ProjectDir)..\..\..\NugetProjects\XamlRuntime\Nuget\OpenGLESRenderer\OpenGLESRenderer.Shared;$(ProjectDir)..\..\..\NugetProjects\XamlRuntime\Nuget\XamlRuntime\XamlRuntime.Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
             <LanguageStandard>stdcpp17</LanguageStandard>
             <WarningLevel>Level4</WarningLevel>
         </ClCompile>
@@ -54,6 +54,7 @@
         <ClInclude Include="NativeBridge.h" />
     </ItemGroup>
     <ItemGroup>
+        <ProjectReference Include="$(ProjectDir)..\..\..\HelpersNew\HelpersNew.st\HelpersNew.st.vcxproj"><Project>{D8067C05-636F-4E85-A1BC-13F4D279C338}</Project></ProjectReference>
         <ProjectReference Include="$(ProjectDir)..\..\..\NugetProjects\XamlRuntime\Nuget\OpenGLESRenderer\OpenGLESRenderer.vcxproj">
             <Project>{A91C166B-24A1-4E60-8EF7-E2D89673515C}</Project>
             <SetConfiguration>Configuration=$(Configuration)</SetConfiguration>

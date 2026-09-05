@@ -261,6 +261,14 @@ namespace xaml {
         this->id = std::move(value);
     }
 
+    const std::string& Element::Renderer() const {
+        return this->renderer;
+    }
+
+    void Element::SetRenderer(std::string value) {
+        this->renderer = std::move(value);
+    }
+
     const std::string& Element::Text() const {
         return this->text;
     }

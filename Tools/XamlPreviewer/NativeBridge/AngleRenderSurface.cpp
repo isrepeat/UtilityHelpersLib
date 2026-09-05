@@ -2,7 +2,9 @@
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
 
+#include <HelpersNew/Filesystem/ReadAllBytes.h>
 #include <ESRenderer/OpenGlRenderer.h>
+#include <XamlRuntime/RenderEngine.h>
 
 #include "AngleRenderSurface.h"
 
@@ -14,23 +16,34 @@
 #include <vector>
 
 namespace xaml::bridge::_details {
-    std::vector<unsigned char> ReadFile(std::string_view path) {
-        std::ifstream stream(std::string(path), std::ios::binary | std::ios::ate);
-        if (!stream) {
-            throw std::runtime_error("ANGLE renderer could not open the font file");
+    // Повторяет демонстрационный renderer MobileClock, чтобы эффект был виден в previewer-е.
+    bool RenderWaveOutline(const Element& element, RenderContext& context) {
+        if (element.Type() != ElementType::button) {
+            return false;
         }
-        const auto length = stream.tellg();
-        if (length <= 0) {
-            throw std::runtime_error("ANGLE renderer received an empty font file");
+
+        context.RenderDefaultElement();
+
+        const float progress = element.WaveProgress();
+        if (progress < 0.0f || element.WaveOpacity() <= 0.0f) {
+            return true;
         }
-        std::vector<unsigned char> data(static_cast<size_t>(length));
-        stream.seekg(0, std::ios::beg);
-        if (!stream.read(
-            reinterpret_cast<char*>(data.data()),
-            static_cast<std::streamsize>(length))) {
-            throw std::runtime_error("ANGLE renderer could not read the font file");
-        }
-        return data;
+
+        const float pulse = 1.0f - std::min(progress, 1.0f);
+        const attr::Color foreground = element.Foreground();
+        const attr::Color color{
+            foreground.red,
+            foreground.green,
+            foreground.blue,
+            foreground.alpha * element.WaveOpacity() * pulse * context.Opacity(),
+        };
+        const float thickness = 1.0f + pulse * 3.0f;
+        context.Backend().DrawRoundedRectOutline(
+            context.Bounds(),
+            color,
+            element.CornerRadius(),
+            thickness);
+        return true;
     }
 }
 
@@ -58,6 +71,7 @@ namespace xaml::bridge {
         EGLDisplay display = EGL_NO_DISPLAY;
         EGLSurface surface = EGL_NO_SURFACE;
         EGLContext context = EGL_NO_CONTEXT;
+        RendererRegistry renderers;
         std::unique_ptr<es_renderer::OpenGlRenderer> renderer;
     };
 
@@ -122,11 +136,27 @@ namespace xaml::bridge {
             throw std::runtime_error("ANGLE could not create an OpenGL ES 3 context");
         }
         const std::filesystem::path regularFontPath{std::string(fontPath)};
-        const std::vector<unsigned char> regularFontData = _details::ReadFile(fontPath);
-        const std::vector<unsigned char> boldFontData = _details::ReadFile(
+        const std::vector<unsigned char> regularFontData = utility_helpers::new_helpers::filesystem::ReadAllBytes(fontPath);
+        const std::vector<unsigned char> boldFontData = utility_helpers::new_helpers::filesystem::ReadAllBytes(
             (regularFontPath.parent_path() / "Roboto-Bold.ttf").string());
-        const std::vector<unsigned char> blackFontData = _details::ReadFile(
+        const std::vector<unsigned char> blackFontData = utility_helpers::new_helpers::filesystem::ReadAllBytes(
             (regularFontPath.parent_path() / "Roboto-Black.ttf").string());
+        const std::vector<unsigned char> rippleVertexShader = utility_helpers::new_helpers::filesystem::ReadAllBytes(
+            std::string(resourceRoot) + "/Shaders/Ripple.vert");
+        const std::vector<unsigned char> rippleFragmentShader = utility_helpers::new_helpers::filesystem::ReadAllBytes(
+            std::string(resourceRoot) + "/Shaders/Ripple.frag");
+        const es_renderer::OpenGlRenderer::ShaderProgramSources shaderPrograms{
+            {"button-wave", {
+                {
+                    reinterpret_cast<const char*>(rippleVertexShader.data()),
+                    rippleVertexShader.size(),
+                },
+                {
+                    reinterpret_cast<const char*>(rippleFragmentShader.data()),
+                    rippleFragmentShader.size(),
+                },
+            }},
+        };
         this->renderer = std::make_unique<es_renderer::OpenGlRenderer>(
             width,
             height,
@@ -136,9 +166,11 @@ namespace xaml::bridge {
             boldFontData.size(),
             blackFontData.data(),
             blackFontData.size(),
+            shaderPrograms,
             [root = std::string(resourceRoot)](std::string_view source) {
-                return _details::ReadFile(root + "/" + std::string(source));
+                return utility_helpers::new_helpers::filesystem::ReadAllBytes(root + "/" + std::string(source));
             });
+        this->renderers.Register("wave-outline", _details::RenderWaveOutline);
         if (eglMakeCurrent(
             this->display,
             EGL_NO_SURFACE,
@@ -177,7 +209,7 @@ namespace xaml::bridge {
             throw std::runtime_error("ANGLE could not activate the offscreen context");
         }
         this->renderer->BeginFrame();
-        xaml::Render(root, *this->renderer);
+        xaml::Render(root, *this->renderer, this->renderers);
         glFinish();
 
         std::vector<unsigned char> pixels(

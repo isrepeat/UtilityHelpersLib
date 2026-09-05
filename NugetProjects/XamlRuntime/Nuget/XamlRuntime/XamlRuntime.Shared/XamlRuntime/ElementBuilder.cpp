@@ -13,7 +13,8 @@ namespace xaml::_details {
         const uint32_t common = static_cast<uint32_t>(XamlAttributeGroup::identity)
             | static_cast<uint32_t>(XamlAttributeGroup::layout)
             | static_cast<uint32_t>(XamlAttributeGroup::size)
-            | static_cast<uint32_t>(XamlAttributeGroup::gridPosition);
+            | static_cast<uint32_t>(XamlAttributeGroup::gridPosition)
+            | static_cast<uint32_t>(XamlAttributeGroup::renderer);
         switch (type) {
         case ElementType::page:
             return common
@@ -398,6 +399,9 @@ namespace xaml {
             element.SetOpacity(std::stof(std::string(value)));
             return;
         case XamlAttribute::itemsSource:
+            return;
+        case XamlAttribute::renderer:
+            element.SetRenderer(std::string(value));
             return;
         }
     }

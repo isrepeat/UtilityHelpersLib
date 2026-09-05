@@ -121,6 +121,12 @@ internal static class NativeRuntime {
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_hit_test")]
     public static extern IntPtr xr_hit_test(IntPtr root, float x, float y);
 
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_hit_test_visual")]
+    public static extern IntPtr xr_hit_test_visual(IntPtr root, float x, float y);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_element_bounds")]
+    public static extern int xr_element_bounds(IntPtr element, out NativeRect bounds);
+
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_element_id")]
     private static extern IntPtr xr_element_id(IntPtr element);
 

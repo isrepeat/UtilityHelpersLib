@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <ItemGroup>
+        <Filter Include="HelpersNew"><UniqueIdentifier>{AF5E3C6D-45F9-4B65-8DCB-2D72D9E8F484}</UniqueIdentifier></Filter>
+        <Filter Include="HelpersNew\Filesystem"><UniqueIdentifier>{57E1C173-08A5-4E14-9E12-178BA3A75622}</UniqueIdentifier></Filter>
+        <Filter Include="HelpersNew\Geometry"><UniqueIdentifier>{66B9D84A-8B67-427A-82DB-738F835E2606}</UniqueIdentifier></Filter>
+    </ItemGroup>
+    <ItemGroup>
+        <ClCompile Include="$(MSBuildThisFileDirectory)HelpersNew\Filesystem\ReadAllBytes.cpp"><Filter>HelpersNew\Filesystem</Filter></ClCompile>
+        <ClCompile Include="$(MSBuildThisFileDirectory)HelpersNew\Geometry\ContainsPoint.cpp"><Filter>HelpersNew\Geometry</Filter></ClCompile>
+        <ClInclude Include="$(MSBuildThisFileDirectory)HelpersNew\Filesystem\ReadAllBytes.h"><Filter>HelpersNew\Filesystem</Filter></ClInclude>
+        <ClInclude Include="$(MSBuildThisFileDirectory)HelpersNew\Geometry\ContainsPoint.h"><Filter>HelpersNew\Geometry</Filter></ClInclude>
+    </ItemGroup>
+</Project>

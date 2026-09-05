@@ -57,12 +57,21 @@ namespace xaml::_details {
             element.Foreground().blue,
             element.Foreground().alpha * fade * element.WaveIntensity(),
         };
-        backend.DrawRipple(
+        const attr::Color waveColor = WithOpacity(color, opacity);
+        backend.DrawShader(
+            "button-wave",
             bounds,
-            WithOpacity(color, opacity),
-            element.CornerRadius(),
-            std::min(progress, 1.0f),
-            element.WaveSpread());
+            {
+                {"cornerRadius", {element.CornerRadius()}, 1},
+                {"progress", {std::min(progress, 1.0f)}, 1},
+                {"spread", {element.WaveSpread()}, 1},
+                {"rippleColor", {
+                    waveColor.red,
+                    waveColor.green,
+                    waveColor.blue,
+                    waveColor.alpha,
+                }, 4},
+            });
     }
 
     void RenderToggleSwitch(
@@ -159,16 +168,17 @@ namespace xaml::_details {
     void RenderElement(
         const Element& element,
         IRenderBackend& backend,
+        const RendererRegistry* renderers,
         float inheritedOffsetX,
-        float inheritedOpacity) {
-        if (element.VisibilityValue() != attr::Visibility::visible) {
-            return;
-        }
+        float inheritedOpacity);
 
-        const float offsetX = inheritedOffsetX + element.RenderOffsetX();
-        const float opacity = inheritedOpacity * element.Opacity();
-        Rect bounds = Translate(element.Bounds(), offsetX);
-        backend.BeginClip(Translate(element.ClipBounds(), offsetX));
+    void RenderDefaultElement(
+        const Element& element,
+        IRenderBackend& backend,
+        const RendererRegistry* renderers,
+        Rect bounds,
+        float offsetX,
+        float opacity) {
         RenderChrome(element, backend, bounds, opacity);
         if (element.Type() == ElementType::button) {
             RenderButtonWave(element, backend, bounds, opacity);
@@ -204,17 +214,95 @@ namespace xaml::_details {
         }
 
         for (const auto& child : element.Children()) {
-            RenderElement(*child, backend, offsetX, opacity);
+            RenderElement(*child, backend, renderers, offsetX, opacity);
         }
+    }
+
+    void RenderElement(
+        const Element& element,
+        IRenderBackend& backend,
+        const RendererRegistry* renderers,
+        float inheritedOffsetX,
+        float inheritedOpacity) {
+        if (element.VisibilityValue() != attr::Visibility::visible) {
+            return;
+        }
+
+        const float offsetX = inheritedOffsetX + element.RenderOffsetX();
+        const float opacity = inheritedOpacity * element.Opacity();
+        Rect bounds = Translate(element.Bounds(), offsetX);
+        backend.BeginClip(Translate(element.ClipBounds(), offsetX));
+        RenderContext context(
+            backend,
+            bounds,
+            opacity,
+            [&element, &backend, renderers, bounds, offsetX, opacity]() {
+                RenderDefaultElement(element, backend, renderers, bounds, offsetX, opacity);
+            });
+        if (renderers != nullptr && renderers->Render(element, context)) {
+            backend.EndClip();
+            return;
+        }
+
+        context.RenderDefaultElement();
         backend.EndClip();
     }
 }
 
 namespace xaml {
+    RenderContext::RenderContext(
+        IRenderBackend& backend,
+        const Rect& bounds,
+        float opacity,
+        std::function<void()> defaultElementRenderer)
+        : backend(backend)
+        , bounds(bounds)
+        , opacity(opacity)
+        , defaultElementRenderer(std::move(defaultElementRenderer)) {
+    }
+
+    IRenderBackend& RenderContext::Backend() {
+        return this->backend;
+    }
+
+    const Rect& RenderContext::Bounds() const {
+        return this->bounds;
+    }
+
+    float RenderContext::Opacity() const {
+        return this->opacity;
+    }
+
+    void RenderContext::RenderDefaultElement() {
+        if (this->defaultElementRendered) {
+            return;
+        }
+
+        this->defaultElementRendered = true;
+        this->defaultElementRenderer();
+    }
+
+    void RendererRegistry::Register(std::string name, ElementRenderer renderer) {
+        this->renderers.insert_or_assign(std::move(name), std::move(renderer));
+    }
+
+    bool RendererRegistry::Render(const Element& element, RenderContext& context) const {
+        const auto found = this->renderers.find(element.Renderer());
+        return !element.Renderer().empty() && found != this->renderers.end()
+            && found->second(element, context);
+    }
+
     void Render(Element& root, IRenderBackend& backend) {
         if (root.layoutInvalid) {
             layout(root, root.availableSize);
         }
-        _details::RenderElement(root, backend, 0.0f, 1.0f);
+        _details::RenderElement(root, backend, nullptr, 0.0f, 1.0f);
+    }
+
+    void Render(Element& root, IRenderBackend& backend, const RendererRegistry& renderers) {
+        if (root.layoutInvalid) {
+            layout(root, root.availableSize);
+        }
+        _details::RenderElement(root, backend, &renderers, 0.0f, 1.0f);
     }
 }

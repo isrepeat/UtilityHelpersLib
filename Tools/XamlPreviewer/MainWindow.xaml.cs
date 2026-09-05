@@ -195,6 +195,7 @@ public partial class MainWindow : Window {
         this.Closing += this.WindowClosing;
         this.SizeChanged += this.WindowSizeChanged;
         this.StateChanged += this.WindowStateChanged;
+        this.PreviewKeyDown += this.WindowPreviewKeyDown;
         this.PreviewKeyUp += this.WindowPreviewKeyUp;
     }
 
@@ -712,7 +713,16 @@ public partial class MainWindow : Window {
         this.StopPreviewPanning();
     }
 
+    private void WindowPreviewKeyDown(object sender, KeyEventArgs eventArgs) {
+        if (eventArgs.Key is Key.LeftAlt or Key.RightAlt or Key.System) {
+            this.previewSession?.SetElementInspectionEnabled(true);
+        }
+    }
+
     private void WindowPreviewKeyUp(object sender, KeyEventArgs eventArgs) {
+        if (eventArgs.Key is Key.LeftAlt or Key.RightAlt or Key.System) {
+            this.previewSession?.SetElementInspectionEnabled(false);
+        }
         this.previewViewportController.HandleKeyUp(eventArgs);
         return;
         if (eventArgs.Key == Key.LeftCtrl || eventArgs.Key == Key.RightCtrl) {

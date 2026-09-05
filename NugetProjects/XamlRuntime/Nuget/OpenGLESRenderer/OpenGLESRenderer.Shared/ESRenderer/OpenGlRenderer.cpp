@@ -78,42 +78,6 @@ namespace es_renderer::_details {
         }
     )";
 
-    constexpr char RippleVertexShader[] = R"(#version 300 es
-        layout (location = 0) in vec2 position;
-        layout (location = 1) in vec2 localPosition;
-        out vec2 local;
-        void main() {
-            local = localPosition;
-            gl_Position = vec4(position, 0.0, 1.0);
-        }
-    )";
-
-    constexpr char RippleFragmentShader[] = R"(#version 300 es
-        precision mediump float;
-        in vec2 local;
-        uniform vec2 size;
-        uniform float cornerRadius;
-        uniform float progress;
-        uniform float spread;
-        uniform vec4 rippleColor;
-        out vec4 color;
-
-        void main() {
-            vec2 halfSize = size * 0.5;
-            float radius = min(cornerRadius, min(halfSize.x, halfSize.y));
-            vec2 cornerDistance = abs(local * size - halfSize) - (halfSize - radius);
-            if (length(max(cornerDistance, 0.0)) - radius > 0.0) {
-                discard;
-            }
-
-            float distanceFromCenter = length((local - vec2(0.5)) * size);
-            float pulseRadius = 8.0 + progress * length(size) * spread;
-            float normalizedDistance = distanceFromCenter / pulseRadius;
-            float glow = exp(-normalizedDistance * normalizedDistance * 3.5);
-            color = vec4(rippleColor.rgb, rippleColor.a * glow);
-        }
-    )";
-
     constexpr char ImageVertexShader[] = R"(#version 300 es
         layout (location = 0) in vec2 position;
         layout (location = 1) in vec2 textureCoordinate;
@@ -176,6 +140,7 @@ namespace es_renderer {
             size_t boldFontSize,
             const unsigned char* blackFontData,
             size_t blackFontSize,
+            ShaderProgramSources shaderPrograms,
             ResourceLoader resourceLoader);
         ~Implementation();
 
@@ -192,12 +157,10 @@ namespace es_renderer {
             float cornerRadius,
             bool outline,
             float thickness);
-        void DrawRipple(
+        void DrawShader(
+            std::string_view shaderName,
             const xaml::Rect& bounds,
-            xaml::attr::Color color,
-            float cornerRadius,
-            float progress,
-            float spread);
+            std::initializer_list<xaml::ShaderUniform> uniforms);
         void DrawText(
             const xaml::Rect& bounds,
             std::string_view text,
@@ -220,8 +183,10 @@ namespace es_renderer {
             stbtt_packedchar settingsGlyph[1]{};
         };
 
-        GLuint CompileShader(GLenum type, const char* source) const;
-        GLuint CreateProgram(const char* vertexSource, const char* fragmentSource) const;
+        GLuint CompileShader(GLenum type, std::string_view source) const;
+        GLuint CreateProgram(
+            std::string_view vertexSource,
+            std::string_view fragmentSource) const;
         void CreateFontAtlas(const unsigned char* fontData, FontAtlas& fontAtlas);
         void AppendPosition(std::vector<float>& vertices, float x, float y) const;
         void AppendTextVertex(
@@ -240,7 +205,7 @@ namespace es_renderer {
         int height;
         GLuint textProgram = 0;
         GLuint solidProgram = 0;
-        GLuint rippleProgram = 0;
+        std::unordered_map<std::string, GLuint> shaderPrograms;
         GLuint imageProgram = 0;
         GLuint vertexBuffer = 0;
         ResourceLoader resourceLoader;
@@ -259,6 +224,7 @@ namespace es_renderer {
         size_t boldFontSize,
         const unsigned char* blackFontData,
         size_t blackFontSize,
+        ShaderProgramSources shaderPrograms,
         ResourceLoader resourceLoader)
         : width(width)
         , height(height)
@@ -270,7 +236,8 @@ namespace es_renderer {
             || boldFontData == nullptr
             || boldFontSize == 0
             || blackFontData == nullptr
-            || blackFontSize == 0) {
+            || blackFontSize == 0
+            || shaderPrograms.empty()) {
             throw std::invalid_argument("Invalid OpenGL renderer arguments");
         }
 
@@ -280,9 +247,12 @@ namespace es_renderer {
         this->solidProgram = this->CreateProgram(
             _details::SolidVertexShader,
             _details::SolidFragmentShader);
-        this->rippleProgram = this->CreateProgram(
-            _details::RippleVertexShader,
-            _details::RippleFragmentShader);
+        for (const auto& [name, source] : shaderPrograms) {
+            if (name.empty() || source.vertex.empty() || source.fragment.empty()) {
+                throw std::invalid_argument("Invalid OpenGL shader program source");
+            }
+            this->shaderPrograms.emplace(name, this->CreateProgram(source.vertex, source.fragment));
+        }
         this->imageProgram = this->CreateProgram(_details::ImageVertexShader, _details::ImageFragmentShader);
         glGenBuffers(1, &this->vertexBuffer);
         this->CreateFontAtlas(regularFontData, this->regularFontAtlas);
@@ -314,8 +284,8 @@ namespace es_renderer {
         if (this->imageProgram != 0) {
             glDeleteProgram(this->imageProgram);
         }
-        if (this->rippleProgram != 0) {
-            glDeleteProgram(this->rippleProgram);
+        for (const auto& [name, program] : this->shaderPrograms) {
+            glDeleteProgram(program);
         }
         if (this->vertexBuffer != 0) {
             glDeleteBuffers(1, &this->vertexBuffer);
@@ -337,9 +307,13 @@ namespace es_renderer {
         glClear(GL_COLOR_BUFFER_BIT);
     }
 
-    GLuint OpenGlRenderer::Implementation::CompileShader(GLenum type, const char* source) const {
+    GLuint OpenGlRenderer::Implementation::CompileShader(
+        GLenum type,
+        std::string_view source) const {
         const GLuint shader = glCreateShader(type);
-        glShaderSource(shader, 1, &source, nullptr);
+        const char* const sourceData = source.data();
+        const GLint sourceLength = static_cast<GLint>(source.size());
+        glShaderSource(shader, 1, &sourceData, &sourceLength);
         glCompileShader(shader);
         GLint compiled = GL_FALSE;
         glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
@@ -356,8 +330,8 @@ namespace es_renderer {
     }
 
     GLuint OpenGlRenderer::Implementation::CreateProgram(
-        const char* vertexSource,
-        const char* fragmentSource) const {
+        std::string_view vertexSource,
+        std::string_view fragmentSource) const {
         const GLuint vertexShader = this->CompileShader(GL_VERTEX_SHADER, vertexSource);
         const GLuint fragmentShader = this->CompileShader(GL_FRAGMENT_SHADER, fragmentSource);
         const GLuint program = glCreateProgram();
@@ -606,12 +580,16 @@ namespace es_renderer {
         }
     }
 
-    void OpenGlRenderer::Implementation::DrawRipple(
+    void OpenGlRenderer::Implementation::DrawShader(
+        std::string_view shaderName,
         const xaml::Rect& bounds,
-        xaml::attr::Color color,
-        float cornerRadius,
-        float progress,
-        float spread) {
+        std::initializer_list<xaml::ShaderUniform> uniforms) {
+        const auto found = this->shaderPrograms.find(std::string(shaderName));
+        if (found == this->shaderPrograms.end()) {
+            LOG_ERROR("OpenGlRenderer", "Shader program is not registered: {}", shaderName);
+            return;
+        }
+        const GLuint program = found->second;
         const std::vector<float> vertices{
             bounds.x * 2.0f / this->width - 1.0f, 1.0f - bounds.y * 2.0f / this->height, 0.0f, 0.0f,
             (bounds.x + bounds.width) * 2.0f / this->width - 1.0f, 1.0f - bounds.y * 2.0f / this->height, 1.0f, 0.0f,
@@ -620,26 +598,29 @@ namespace es_renderer {
             (bounds.x + bounds.width) * 2.0f / this->width - 1.0f, 1.0f - (bounds.y + bounds.height) * 2.0f / this->height, 1.0f, 1.0f,
             bounds.x * 2.0f / this->width - 1.0f, 1.0f - (bounds.y + bounds.height) * 2.0f / this->height, 0.0f, 1.0f,
         };
-        glUseProgram(this->rippleProgram);
+        glUseProgram(program);
         glUniform2f(
-            glGetUniformLocation(this->rippleProgram, "size"),
+            glGetUniformLocation(program, "size"),
             bounds.width,
             bounds.height);
-        glUniform1f(
-            glGetUniformLocation(this->rippleProgram, "cornerRadius"),
-            cornerRadius);
-        glUniform1f(
-            glGetUniformLocation(this->rippleProgram, "progress"),
-            progress);
-        glUniform1f(
-            glGetUniformLocation(this->rippleProgram, "spread"),
-            spread);
-        glUniform4f(
-            glGetUniformLocation(this->rippleProgram, "rippleColor"),
-            color.red,
-            color.green,
-            color.blue,
-            color.alpha);
+        for (const xaml::ShaderUniform& uniform : uniforms) {
+            const GLint location = glGetUniformLocation(program, uniform.name.data());
+            if (location < 0) {
+                continue;
+            }
+            if (uniform.valueCount == 1) {
+                glUniform1f(location, uniform.values[0]);
+            }
+            else if (uniform.valueCount == 2) {
+                glUniform2f(location, uniform.values[0], uniform.values[1]);
+            }
+            else if (uniform.valueCount == 3) {
+                glUniform3f(location, uniform.values[0], uniform.values[1], uniform.values[2]);
+            }
+            else if (uniform.valueCount == 4) {
+                glUniform4f(location, uniform.values[0], uniform.values[1], uniform.values[2], uniform.values[3]);
+            }
+        }
         glBindBuffer(GL_ARRAY_BUFFER, this->vertexBuffer);
         glBufferData(
             GL_ARRAY_BUFFER,
@@ -968,6 +949,7 @@ namespace es_renderer {
         size_t boldFontSize,
         const unsigned char* blackFontData,
         size_t blackFontSize,
+        ShaderProgramSources shaderPrograms,
         ResourceLoader resourceLoader)
         : implementation(std::make_unique<Implementation>(
             width,
@@ -978,6 +960,7 @@ namespace es_renderer {
             boldFontSize,
             blackFontData,
             blackFontSize,
+            std::move(shaderPrograms),
             std::move(resourceLoader))) {
     }
 
@@ -1030,13 +1013,11 @@ namespace es_renderer {
             thickness);
     }
 
-    void OpenGlRenderer::DrawRipple(
+    void OpenGlRenderer::DrawShader(
+        std::string_view shaderName,
         const xaml::Rect& bounds,
-        xaml::attr::Color color,
-        float cornerRadius,
-        float progress,
-        float spread) {
-        this->implementation->DrawRipple(bounds, color, cornerRadius, progress, spread);
+        std::initializer_list<xaml::ShaderUniform> uniforms) {
+        this->implementation->DrawShader(shaderName, bounds, uniforms);
     }
 
     void OpenGlRenderer::DrawText(

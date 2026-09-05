@@ -1,4 +1,5 @@
 #include <Helpers.Logging/Logging.h>
+#include <HelpersNew/Geometry/ContainsPoint.h>
 
 #include <XamlRuntime/ElementBuilder.h>
 #include <XamlRuntime/RenderEngine.h>
@@ -19,6 +20,45 @@
 #include <string>
 #include <vector>
 #include <cmath>
+
+// TODO: перепиши логику NativeBridge в виде базового класса, который по сути является оберткой над API XamlRuntime,
+// и дополнительного расширяющего класса, к примеру для xr_hit_test_visual.
+
+namespace xaml::bridge::_details {
+    // Нужен previewer-у для выбора любого видимого элемента под указателем.
+    // В отличие от xaml::HitTest не требует, чтобы элемент был enabled или interactive.
+    Element* HitTestVisual(Element& element, float x, float y) {
+        const Rect& clipBounds = element.ClipBounds();
+
+        if (element.VisibilityValue() != attr::Visibility::visible
+            || !utility_helpers::new_helpers::geometry::ContainsPoint(
+                clipBounds.x,
+                clipBounds.y,
+                clipBounds.width,
+                clipBounds.height,
+                x,
+                y)) {
+            return nullptr;
+        }
+
+        const auto& children = element.Children();
+
+        for (auto child = children.rbegin(); child != children.rend(); ++child) {
+            if (Element* const hit = HitTestVisual(**child, x, y)) {
+                return hit;
+            }
+        }
+
+        const Rect& bounds = element.Bounds();
+        return utility_helpers::new_helpers::geometry::ContainsPoint(
+            bounds.x,
+            bounds.y,
+            bounds.width,
+            bounds.height,
+            x,
+            y) ? &element : nullptr;
+    }
+}
 
 namespace xaml::bridge {
     class RecordingBackend final : public IRenderBackend {
@@ -55,12 +95,10 @@ namespace xaml::bridge {
             std::memcpy(command.auxiliary, &thickness, sizeof(thickness));
         }
 
-        void DrawRipple(
+        void DrawShader(
+            std::string_view,
             const Rect&,
-            attr::Color,
-            float,
-            float,
-            float) override {
+            std::initializer_list<ShaderUniform>) override {
         }
 
         void DrawText(
@@ -316,6 +354,38 @@ xr_element* xr_hit_test(xr_element* root, float x, float y) {
     } catch (const std::exception& error) {
         xaml::bridge::lastError = error.what();
         return nullptr;
+    }
+}
+
+// Возвращает previewer-у любой видимый элемент под указателем,
+// включая элементы, которые не являются enabled или interactive.
+xr_element* xr_hit_test_visual(xr_element* root, float x, float y) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (root == nullptr) {
+            throw std::invalid_argument("root is required");
+        }
+        return reinterpret_cast<xr_element*>(xaml::bridge::_details::HitTestVisual(
+            *reinterpret_cast<xaml::Element*>(root), x, y));
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return nullptr;
+    }
+}
+
+// Копирует рассчитанные layout-границы элемента в структуру C bridge.
+int xr_element_bounds(const xr_element* element, xr_rect* bounds) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (element == nullptr || bounds == nullptr) {
+            throw std::invalid_argument("element and bounds are required");
+        }
+        const xaml::Rect elementBounds = reinterpret_cast<const xaml::Element*>(element)->Bounds();
+        *bounds = {elementBounds.x, elementBounds.y, elementBounds.width, elementBounds.height};
+        return 1;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return 0;
     }
 }
 

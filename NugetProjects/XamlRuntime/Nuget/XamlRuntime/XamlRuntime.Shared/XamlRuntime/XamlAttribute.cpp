@@ -42,6 +42,7 @@ namespace xaml {
             {XamlAttribute::isEnabled, XamlAttributeGroup::layout, "isEnabled"},
             {XamlAttribute::opacity, XamlAttributeGroup::layout, "opacity"},
             {XamlAttribute::itemsSource, XamlAttributeGroup::itemsSource, "itemsSource"},
+            {XamlAttribute::renderer, XamlAttributeGroup::renderer, "renderer"},
         };
 
         const AttributeMapping* FindAttribute(XamlAttribute attribute) {

@@ -2,8 +2,9 @@
 
 #include "XamlRuntime/RenderEngine.h"
 
-#include <cstddef>
+#include <unordered_map>
 #include <functional>
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <vector>
@@ -12,6 +13,12 @@ namespace es_renderer {
     class OpenGlRenderer final : public xaml::IRenderBackend {
     public:
         using ResourceLoader = std::function<std::vector<unsigned char>(std::string_view)>;
+
+        struct ShaderProgramSource {
+            std::string_view vertex;
+            std::string_view fragment;
+        };
+        using ShaderProgramSources = std::unordered_map<std::string, ShaderProgramSource>;
 
         OpenGlRenderer(
             int width,
@@ -22,6 +29,7 @@ namespace es_renderer {
             size_t boldFontSize,
             const unsigned char* blackFontData,
             size_t blackFontSize,
+            ShaderProgramSources shaderPrograms,
             ResourceLoader resourceLoader);
         ~OpenGlRenderer();
 
@@ -49,12 +57,10 @@ namespace es_renderer {
             xaml::attr::Color color,
             float cornerRadius,
             float thickness) override;
-        void DrawRipple(
+        void DrawShader(
+            std::string_view shaderName,
             const xaml::Rect& bounds,
-            xaml::attr::Color color,
-            float cornerRadius,
-            float progress,
-            float spread) override;
+            std::initializer_list<xaml::ShaderUniform> uniforms) override;
         void DrawText(
             const xaml::Rect& bounds,
             std::string_view text,

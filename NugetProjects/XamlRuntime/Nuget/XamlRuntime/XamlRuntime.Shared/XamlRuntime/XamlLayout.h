@@ -10,6 +10,7 @@
 
 namespace xaml {
     class IRenderBackend;
+    class RendererRegistry;
 
     enum class ElementType {
         page,
@@ -82,6 +83,9 @@ namespace xaml {
 
         const std::string& Id() const;
         void SetId(std::string value);
+
+        const std::string& Renderer() const;
+        void SetRenderer(std::string value);
 
         const std::string& Text() const;
         void SetText(std::string value);
@@ -221,10 +225,15 @@ namespace xaml {
 
         friend void layout(Element& root, Size availableSize);
         friend void Render(Element& root, IRenderBackend& backend);
+        friend void Render(
+            Element& root,
+            IRenderBackend& backend,
+            const RendererRegistry& renderers);
 
     private:
         ElementType type;
         std::string id;
+        std::string renderer;
         std::string text;
         float fontSize = 16.0f;
         std::string fontFamily;

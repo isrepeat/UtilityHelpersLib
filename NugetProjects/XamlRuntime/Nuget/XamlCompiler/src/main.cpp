@@ -420,10 +420,14 @@ namespace {
             output << "            auto " << variable << " = std::make_unique<Element>(ElementType::"
                 << this->ElementTypeName(element) << ");\n";
             for (const auto& [name, value] : element.attributes) {
-                if (name == "xmlns") {
-                    continue;
-                }
-                this->EmitProperty(element, variable, name, value, output, variable, bindings, templateItem);
+            if (name == "xmlns") {
+                continue;
+            }
+            if (name == "renderer") {
+                output << "            " << variable << "->SetRenderer(\"" << value << "\");\n";
+                continue;
+            }
+            this->EmitProperty(element, variable, name, value, output, variable, bindings, templateItem);
             }
             if (element.name == "Grid") {
                 this->EmitGridDefinitions(element, variable, output);

@@ -2,9 +2,18 @@
 
 #include "XamlRuntime/XamlLayout.h"
 
+#include <initializer_list>
+#include <functional>
+#include <unordered_map>
 #include <string_view>
 
 namespace xaml {
+    struct ShaderUniform {
+        std::string_view name;
+        float values[4]{};
+        int valueCount = 0;
+    };
+
     class IRenderBackend {
     public:
         virtual ~IRenderBackend() = default;
@@ -21,12 +30,10 @@ namespace xaml {
             attr::Color color,
             float cornerRadius,
             float thickness) = 0;
-        virtual void DrawRipple(
+        virtual void DrawShader(
+            std::string_view shaderName,
             const Rect& bounds,
-            attr::Color color,
-            float cornerRadius,
-            float progress,
-            float spread) = 0;
+            std::initializer_list<ShaderUniform> uniforms) = 0;
         virtual void DrawText(
             const Rect& bounds,
             std::string_view text,
@@ -40,5 +47,37 @@ namespace xaml {
             attr::Color tint) = 0;
     };
 
+    class RenderContext {
+    public:
+        RenderContext(
+            IRenderBackend& backend,
+            const Rect& bounds,
+            float opacity,
+            std::function<void()> defaultElementRenderer);
+        IRenderBackend& Backend();
+        const Rect& Bounds() const;
+        float Opacity() const;
+        void RenderDefaultElement();
+
+    private:
+        IRenderBackend& backend;
+        const Rect& bounds;
+        float opacity;
+        std::function<void()> defaultElementRenderer;
+        bool defaultElementRendered = false;
+    };
+
+    class RendererRegistry {
+    public:
+        using ElementRenderer = std::function<bool(const Element&, RenderContext&)>;
+
+        void Register(std::string name, ElementRenderer renderer);
+        bool Render(const Element& element, RenderContext& context) const;
+
+    private:
+        std::unordered_map<std::string, ElementRenderer> renderers;
+    };
+
     void Render(Element& root, IRenderBackend& backend);
+    void Render(Element& root, IRenderBackend& backend, const RendererRegistry& renderers);
 }
