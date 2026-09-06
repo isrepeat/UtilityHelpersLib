@@ -39,9 +39,7 @@ namespace xaml::_details {
 
 namespace xaml {
     StateRegistry::StateRegistry() {
-        this->Register<ContainerAnimation>();
-        this->Register<WaveAnimation>();
-        this->Register<Glow>();
+        this->Register<VisualTransform>();
         this->Register<EmptyState>();
     }
 

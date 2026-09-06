@@ -11,8 +11,6 @@ namespace xaml {
         renderOffsetX,
         toggleProgress,
         pressProgress,
-        waveProgress,
-        waveOpacity,
     };
 
     enum class AnimationTrigger {
@@ -45,9 +43,6 @@ namespace xaml {
         float to = 0.0f;
         bool fromCurrent = false;
         bool toToggleState = false;
-        float intensity = 0.45f;
-        float spread = 0.28f;
-        float fadeExponent = 2.0f;
         std::chrono::milliseconds duration{};
         Easing easing = Easing::linear;
         std::string name;

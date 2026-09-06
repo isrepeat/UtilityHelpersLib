@@ -4,20 +4,6 @@
 #include <cmath>
 
 namespace xaml::_details {
-    bool RenderGlow(const Element& element, RenderContext<Glow>& context) {
-        context.RenderDefault();
-        const float intensity = context.State().intensity;
-        if (intensity <= 0.0f) {
-            return true;
-        }
-        auto color = element.Foreground();
-        color.alpha *= intensity * context.Opacity();
-        context.Backend().DrawRoundedRectOutline(
-            context.Bounds(), color, element.CornerRadius(), 3.0f);
-        return true;
-    }
-
-
     Rect Translate(Rect bounds, float offsetX, float offsetY = 0.0f) {
         bounds.x += offsetX;
         bounds.y += offsetY;
@@ -53,40 +39,6 @@ namespace xaml::_details {
             return inactive;
         }
         return InterpolateColor(inactive, active, element.PressProgress());
-    }
-
-    void RenderButtonWave(
-        const Element& element,
-        IRenderBackend& backend,
-        Rect bounds,
-        float opacity) {
-        const float progress = element.WaveProgress();
-        if (progress < 0.0f || element.WaveOpacity() <= 0.0f) {
-            return;
-        }
-
-        const float fade = std::pow(element.WaveOpacity(), element.WaveFadeExponent());
-        const attr::Color color{
-            element.Foreground().red,
-            element.Foreground().green,
-            element.Foreground().blue,
-            element.Foreground().alpha * fade * element.WaveIntensity(),
-        };
-        const attr::Color waveColor = WithOpacity(color, opacity);
-        backend.DrawShader(
-            BuiltinShaders::buttonWave,
-            bounds,
-            {
-                {"cornerRadius", {element.CornerRadius()}, 1},
-                {"progress", {std::min(progress, 1.0f)}, 1},
-                {"spread", {element.WaveSpread()}, 1},
-                {"rippleColor", {
-                    waveColor.red,
-                    waveColor.green,
-                    waveColor.blue,
-                    waveColor.alpha,
-                }, 4},
-            });
     }
 
     void RenderToggleSwitch(
@@ -194,9 +146,6 @@ namespace xaml::_details {
         Rect bounds,
         float opacity) {
         RenderChrome(element, backend, bounds, opacity);
-        if (element.Type() == ElementType::button) {
-            RenderButtonWave(element, backend, bounds, opacity);
-        }
         if (element.Type() == ElementType::textBlock) {
             backend.DrawText(
                 bounds,
@@ -239,9 +188,9 @@ namespace xaml::_details {
             return;
         }
 
-        const ContainerAnimation defaults{};
-        const auto& transform = element.States().Contains<ContainerAnimation>()
-            ? element.State<ContainerAnimation>() : defaults;
+        const VisualTransform defaults{};
+        const auto& transform = element.States().Contains<VisualTransform>()
+            ? element.State<VisualTransform>() : defaults;
         const float offsetX = inheritedOffsetX + element.RenderOffsetX() + transform.offsetX;
         const float offsetY = inheritedOffsetY + transform.offsetY;
         const float opacity = inheritedOpacity * element.Opacity() * transform.opacity;
@@ -317,7 +266,6 @@ namespace xaml {
 
     RendererRegistry::RendererRegistry(StateRegistry states)
         : states(std::move(states)) {
-        this->Register<Glow>("rendererGlow", _details::RenderGlow);
     }
 
     //

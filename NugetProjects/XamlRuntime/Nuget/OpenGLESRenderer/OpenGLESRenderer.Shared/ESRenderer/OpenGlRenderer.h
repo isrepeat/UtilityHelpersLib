@@ -18,8 +18,14 @@ namespace es_renderer {
             std::string_view vertex;
             std::string_view fragment;
         };
-        // May be empty. BuiltinShaders keys override defaults; other keys add
-        // application programs. Source views must survive constructor execution.
+        // Ключи для необязательной подмены стандартных программ библиотеки.
+        struct ShaderRoles {
+            static constexpr char text[] = "core.text";
+            static constexpr char solid[] = "core.solid";
+            static constexpr char image[] = "core.image";
+        };
+        // Дополнительные программы хоста и явные подмены стандартных ролей.
+        // Набор может быть пустым. Исходники должны жить до завершения конструктора.
         using ShaderProgramSources = std::unordered_map<std::string, ShaderProgramSource>;
 
         OpenGlRenderer(

@@ -26,6 +26,8 @@
     <ItemGroup>
         <ClCompile Include="OpenGLESRenderer.Shared\ESRenderer\OpenGlRenderer.cpp" />
         <ClInclude Include="OpenGLESRenderer.Shared\ESRenderer\OpenGlRenderer.h" />
+        <ClCompile Include="OpenGLESRenderer.Shared\ESRenderer\StandardShaders.cpp" />
+        <ClInclude Include="OpenGLESRenderer.Shared\ESRenderer\StandardShaders.h" />
         <ClInclude Include="ThirdParty\stb_truetype.h" />
         <None Include="CMakeLists.txt" />
     </ItemGroup>

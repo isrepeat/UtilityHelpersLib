@@ -549,46 +549,6 @@ namespace xaml {
         this->pressProgress = value;
     }
 
-    float Element::WaveProgress() const {
-        return this->waveProgress;
-    }
-
-    void Element::SetWaveProgress(float value) {
-        this->waveProgress = value;
-    }
-
-    float Element::WaveOpacity() const {
-        return this->waveOpacity;
-    }
-
-    void Element::SetWaveOpacity(float value) {
-        this->waveOpacity = value;
-    }
-
-    float Element::WaveIntensity() const {
-        return this->waveIntensity;
-    }
-
-    void Element::SetWaveIntensity(float value) {
-        this->waveIntensity = value;
-    }
-
-    float Element::WaveSpread() const {
-        return this->waveSpread;
-    }
-
-    void Element::SetWaveSpread(float value) {
-        this->waveSpread = value;
-    }
-
-    float Element::WaveFadeExponent() const {
-        return this->waveFadeExponent;
-    }
-
-    void Element::SetWaveFadeExponent(float value) {
-        this->waveFadeExponent = value;
-    }
-
     const std::string& Element::DefaultAnimation() const {
         return this->defaultAnimation;
     }

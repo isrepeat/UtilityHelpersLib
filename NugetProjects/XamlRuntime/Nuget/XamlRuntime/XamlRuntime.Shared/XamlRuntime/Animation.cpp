@@ -13,10 +13,6 @@ namespace xaml::_details {
             target.SetRenderOffsetX(value);
         } else if (property == AnimatedProperty::toggleProgress) {
             target.SetToggleProgress(value);
-        } else if (property == AnimatedProperty::waveProgress) {
-            target.SetWaveProgress(value);
-        } else if (property == AnimatedProperty::waveOpacity) {
-            target.SetWaveOpacity(value);
         } else {
             target.SetPressProgress(value);
         }
@@ -33,88 +29,7 @@ namespace xaml::_details {
             return target.ToggleProgress() < 0.0f
                 ? (target.IsOn() ? 1.0f : 0.0f) : target.ToggleProgress();
         }
-        if (property == AnimatedProperty::waveProgress) {
-            return target.WaveProgress();
-        }
-        if (property == AnimatedProperty::waveOpacity) {
-            return target.WaveOpacity();
-        }
         return target.PressProgress();
-    }
-}
-
-namespace xaml::_details {
-    bool NonNegativeDuration(const int& value) {
-        return value >= 0;
-    }
-
-    bool NonNegative(const float& value) {
-        return value >= 0.0f;
-    }
-
-    bool Positive(const float& value) {
-        return value > 0.0f;
-    }
-
-    bool UnitInterval(const float& value) {
-        return value >= 0.0f && value <= 1.0f;
-    }
-
-    bool WaveFrom(const std::string& value) {
-        if (value != "Current") {
-            ParseStateFloat(value);
-        }
-        return true;
-    }
-
-    bool WaveEasing(const std::string& value) {
-        return value == "Linear" || value == "CubicOut";
-    }
-
-    bool ConfigureWave(AnimationContext<WaveAnimation>& context) {
-        auto& target = context.Target();
-        const auto& wave = context.State();
-        const float from = wave.from == "Current" ? target.WaveProgress() : ParseStateFloat(wave.from);
-        target.SetWaveIntensity(wave.intensity);
-        target.SetWaveSpread(wave.spread);
-        target.SetWaveFadeExponent(wave.fadeExponent);
-        context.AnimateProperty(AnimatedProperty::waveProgress, from, wave.to,
-            std::chrono::milliseconds(wave.duration),
-            wave.easing == "Linear" ? Easing::linear : Easing::cubicOut);
-        return true;
-    }
-
-    bool ConfigureFade(AnimationContext<ContainerAnimation>& context) {
-        if (context.Trigger() != AnimationTrigger::show && context.Trigger() != AnimationTrigger::hide) {
-            return false;
-        }
-        auto& state = context.State();
-        if (context.IsStartingFromHidden()) {
-            state.opacity = 0.0f;
-        }
-        context.Animate(&ContainerAnimation::opacity, context.Trigger() == AnimationTrigger::show ? 1.0f : 0.0f,
-            std::chrono::milliseconds(state.duration));
-        return true;
-    }
-
-    bool ConfigureSlideFade(AnimationContext<ContainerAnimation>& context) {
-        if (!ConfigureFade(context)) {
-            return false;
-        }
-        auto& state = context.State();
-        if (context.IsStartingFromHidden()) {
-            state.offsetY = state.distance;
-        }
-        context.Animate(&ContainerAnimation::offsetY,
-            context.Trigger() == AnimationTrigger::show ? 0.0f : state.distance,
-            std::chrono::milliseconds(state.duration));
-        return true;
-    }
-
-    bool ConfigureGlow(AnimationContext<Glow>& context) {
-        const auto& glow = context.State();
-        context.Animate(&Glow::intensity, glow.targetIntensity, std::chrono::milliseconds(glow.duration));
-        return true;
     }
 }
 
@@ -185,6 +100,18 @@ namespace xaml {
         return this->element.States();
     }
 
+    VisualTransform& AnimationInvocation::Transform() {
+        return this->Storage().Get<VisualTransform>();
+    }
+
+    void AnimationInvocation::AnimateTransform(float VisualTransform::* member, float to,
+        std::chrono::milliseconds duration, Easing easing) {
+        if (member == nullptr) {
+            throw std::invalid_argument("Transform field is required");
+        }
+        this->AnimateField(this->Transform().*member, to, duration, easing);
+    }
+
     void AnimationInvocation::AnimateProperty(AnimatedProperty property, float from, float to,
         std::chrono::milliseconds duration, Easing easing) {
         AnimationController::AddPropertyTrack(this->element, property, from, to, duration, easing,
@@ -204,7 +131,7 @@ namespace xaml {
             return;
         }
         if (this->trigger == AnimationTrigger::show || this->trigger == AnimationTrigger::hide) {
-            auto& transform = this->Storage().Get<ContainerAnimation>();
+            auto& transform = this->Storage().Get<VisualTransform>();
             transform.opacity = 1.0f;
             transform.offsetX = 0.0f;
             transform.offsetY = 0.0f;
@@ -233,35 +160,13 @@ namespace xaml {
 
     AnimationRegistry::AnimationRegistry(StateRegistry states)
         : states(std::move(states)) {
-        this->Register<ContainerAnimation>("animationFade", {
-            Option("duration", &ContainerAnimation::duration, _details::NonNegativeDuration),
-        }, _details::ConfigureFade);
-        this->Register<ContainerAnimation>("animationSlideFade", {
-            Option("duration", &ContainerAnimation::duration, _details::NonNegativeDuration),
-            Option("distance", &ContainerAnimation::distance),
-        }, _details::ConfigureSlideFade);
-        for (const char* name : {"animationSoftPulse", "animationRippleWave"}) {
-            this->Register<WaveAnimation>(name, {
-                Option("from", &WaveAnimation::from, _details::WaveFrom),
-                Option("to", &WaveAnimation::to),
-                Option("duration", &WaveAnimation::duration, _details::NonNegativeDuration),
-                Option("easing", &WaveAnimation::easing, _details::WaveEasing),
-                Option("intensity", &WaveAnimation::intensity, _details::NonNegative),
-                Option("spread", &WaveAnimation::spread, _details::Positive),
-                Option("fadeExponent", &WaveAnimation::fadeExponent, _details::Positive),
-            }, _details::ConfigureWave);
-        }
-        this->Register<Glow>("animationGlow", {
-            Option("intensity", &Glow::targetIntensity, _details::UnitInterval),
-            Option("duration", &Glow::duration, _details::NonNegativeDuration),
-        }, _details::ConfigureGlow);
     }
 
     //
     // API
     //
     void AnimationRegistry::Prepare(Element& element) const {
-        element.States().Prepare(this->states, std::type_index(typeid(ContainerAnimation)));
+        element.States().Prepare(this->states, std::type_index(typeid(VisualTransform)));
         for (const auto& storyboard : element.Storyboards()) {
             for (const auto& track : storyboard.tracks) {
                 const auto found = this->handlers.find(track.name);
@@ -286,15 +191,19 @@ namespace xaml {
         context.Storage().Prepare(this->states, found->second.stateType);
         auto& tracks = context.Target().animationState.tracks;
         const auto original = tracks;
+        context.Storage().Prepare(this->states, std::type_index(typeid(VisualTransform)));
+        const auto originalTransform = context.Transform();
         try {
             if (found->second.invoke(context)) {
                 return true;
             }
         } catch (...) {
             tracks = original;
+            context.Transform() = originalTransform;
             throw;
         }
         tracks = original;
+        context.Transform() = originalTransform;
         return false;
     }
 
@@ -321,8 +230,8 @@ namespace xaml {
             ? target.animationParametersProvider()
             : target.parent ? target.parent->animationState.parameters : AnimationParameters{};
         if (!target.animationState.registry) {
-            static const AnimationRegistry builtins;
-            builtins.Prepare(target);
+            static const AnimationRegistry emptyRegistry;
+            emptyRegistry.Prepare(target);
         }
         Configure(target, trigger, false);
     }
@@ -340,7 +249,7 @@ namespace xaml {
         const auto now = std::chrono::steady_clock::now();
         this->roots.erase(std::remove_if(this->roots.begin(), this->roots.end(),
             [](const Root& root) { return root.lifetime.expired(); }), this->roots.end());
-        // Advance only outermost tracked roots. Animate() may also track a child.
+        // Обновляем только внешние корни: Animate() может отдельно отслеживать и дочерний элемент.
         for (const auto& root : this->roots) {
             if (root.lifetime.expired()) {
                 continue;
@@ -377,7 +286,7 @@ namespace xaml {
         while (root->parent != nullptr) {
             root = root->parent;
         }
-        // Idle time before a new transition must not count towards its duration.
+        // Время простоя перед новым переходом не должно учитываться в его длительности.
         if (!IsAnimating(*root)) {
             root->animationState.updatedAt = std::chrono::steady_clock::now();
         }
@@ -435,7 +344,7 @@ namespace xaml {
 
     bool AnimationController::StartStoryboards(Element& target, AnimationTrigger trigger, bool fromHidden) {
         bool handled = false;
-        static const AnimationRegistry builtins;
+        static const AnimationRegistry emptyRegistry;
         for (const Storyboard& storyboard : target.Storyboards()) {
             if (storyboard.trigger != trigger) {
                 continue;
@@ -446,18 +355,13 @@ namespace xaml {
             for (const AnimationTrack& track : storyboard.tracks) {
                 if (!track.name.empty()) {
                     AnimationInvocation context(target, trigger, fromHidden, &track.settings);
-                    const auto& registry = target.animationState.registry ? *target.animationState.registry : builtins;
+                    const auto& registry = target.animationState.registry ? *target.animationState.registry : emptyRegistry;
                     if (registry.Configure(track.name, context)) {
                         handled = true;
                     }
                     continue;
                 }
                 handled = true;
-                if (track.property == AnimatedProperty::waveProgress) {
-                    target.SetWaveIntensity(track.intensity);
-                    target.SetWaveSpread(track.spread);
-                    target.SetWaveFadeExponent(track.fadeExponent);
-                }
                 AddPropertyTrack(target, track.property,
                     track.fromCurrent ? _details::AnimatedValue(target, track.property) : track.from,
                     track.toToggleState ? (target.IsOn() ? 1.0f : 0.0f) : track.to,
@@ -515,7 +419,7 @@ namespace xaml {
         if (animateInitial && state.targetVisible) {
             state.targetVisible = false;
             state.phase = PresencePhase::hidden;
-            // Reset descendants too, so their first appearance starts from hidden.
+            // Сбрасываем и потомков, чтобы их первое появление начиналось из скрытого состояния.
             for (const auto& child : element.children) {
                 AttachTree(*child, state.registry, false, false, parameters);
             }
@@ -541,7 +445,7 @@ namespace xaml {
             state.tracks.erase(std::remove_if(state.tracks.begin(), state.tracks.end(),
                 [](const RunningAnimation& track) { return track.presence; }), state.tracks.end());
             if (fromHidden) {
-                auto& transform = element.States().Get<ContainerAnimation>();
+                auto& transform = element.States().Get<VisualTransform>();
                 transform.opacity = 1.0f;
                 transform.offsetX = 0.0f;
                 transform.offsetY = 0.0f;
@@ -551,7 +455,7 @@ namespace xaml {
         for (const auto& child : element.children) {
             SynchronizeTree(*child, visible, state.parameters);
         }
-        // Resolve instant transitions, but wait for disappearing descendants.
+        // Завершаем мгновенные переходы, но дожидаемся исчезновения потомков.
         if (!HasPresenceTracks(element)) {
             const bool childrenPresent = std::any_of(element.children.begin(), element.children.end(),
                 [](const auto& child) { return child->IsPresent(); });

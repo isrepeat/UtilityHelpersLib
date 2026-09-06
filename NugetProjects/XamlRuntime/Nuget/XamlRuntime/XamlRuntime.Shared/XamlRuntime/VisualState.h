@@ -14,29 +14,11 @@
 #include <vector>
 
 namespace xaml {
-    // Standard composition channels and their declared configuration.
-    struct ContainerAnimation {
+    // Общие каналы композиции, не зависящие от конкретного эффекта.
+    struct VisualTransform {
         float opacity = 1.0f;
         float offsetX = 0.0f;
         float offsetY = 0.0f;
-        int duration = 180;
-        float distance = 24.0f;
-    };
-
-    struct WaveAnimation {
-        std::string from = "0";
-        float to = 1.0f;
-        int duration = 650;
-        std::string easing = "CubicOut";
-        float intensity = 0.45f;
-        float spread = 0.28f;
-        float fadeExponent = 2.0f;
-    };
-
-    struct Glow {
-        float intensity = 0.0f;
-        float targetIntensity = 0.8f;
-        int duration = 300;
     };
 
     struct EmptyState {};
@@ -176,7 +158,7 @@ namespace xaml {
         std::unordered_map<std::type_index, std::function<std::shared_ptr<void>()>> factories;
     };
 
-    // Owned by one Element. Prepared objects keep stable addresses until Clear().
+    // Принадлежит одному Element. Адреса подготовленных объектов сохраняются до вызова Clear().
     class ElementStates final {
     public:
         ElementStates() = default;

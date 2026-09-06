@@ -1,6 +1,8 @@
 add_library(utility_helpers_open_gles_renderer STATIC
     OpenGLESRenderer.Shared/ESRenderer/OpenGlRenderer.cpp
     OpenGLESRenderer.Shared/ESRenderer/OpenGlRenderer.h
+    OpenGLESRenderer.Shared/ESRenderer/StandardShaders.cpp
+    OpenGLESRenderer.Shared/ESRenderer/StandardShaders.h
     ThirdParty/stb_truetype.h
 )
 add_library(utility_helpers::open_gles_renderer ALIAS utility_helpers_open_gles_renderer)
@@ -8,6 +10,8 @@ add_library(utility_helpers::open_gles_renderer ALIAS utility_helpers_open_gles_
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/OpenGLESRenderer.Shared" FILES
     OpenGLESRenderer.Shared/ESRenderer/OpenGlRenderer.cpp
     OpenGLESRenderer.Shared/ESRenderer/OpenGlRenderer.h
+    OpenGLESRenderer.Shared/ESRenderer/StandardShaders.cpp
+    OpenGLESRenderer.Shared/ESRenderer/StandardShaders.h
 )
 source_group("ThirdParty" FILES ThirdParty/stb_truetype.h)
 

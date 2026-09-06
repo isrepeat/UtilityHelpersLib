@@ -5,6 +5,7 @@
 #undef DrawText
 
 #include "OpenGlRenderer.h"
+#include "StandardShaders.h"
 
 #define NANOSVG_IMPLEMENTATION
 #include "../../ThirdParty/nanosvg.h"
@@ -36,109 +37,6 @@ namespace es_renderer::_details {
     constexpr int AtlasWidth = 2048;
     constexpr int AtlasHeight = 1024;
     constexpr int MaximumTextGlyphs = 256;
-
-    // Текстовый pipeline передаёт в шейдер позицию вершины и UV-координаты
-    // альфа-канала glyph atlas. Геометрия уже приходит в NDC.
-    constexpr char TextVertexShader[] = R"(#version 300 es
-        layout (location = 0) in vec2 position;
-        layout (location = 1) in vec2 textureCoordinate;
-        out vec2 uv;
-        void main() {
-            uv = textureCoordinate;
-            gl_Position = vec4(position, 0.0, 1.0);
-        }
-    )";
-
-    constexpr char TextFragmentShader[] = R"(#version 300 es
-        precision mediump float;
-        in vec2 uv;
-        uniform sampler2D fontAtlas;
-        uniform vec4 textColor;
-        out vec4 color;
-        void main() {
-            float alpha = texture(fontAtlas, uv).r;
-            color = vec4(textColor.rgb, textColor.a * alpha);
-        }
-    )";
-
-    // Solid pipeline используется для фона, границ и контуров без текстуры.
-    constexpr char SolidVertexShader[] = R"(#version 300 es
-        layout (location = 0) in vec2 position;
-        void main() {
-            gl_Position = vec4(position, 0.0, 1.0);
-        }
-    )";
-
-    constexpr char SolidFragmentShader[] = R"(#version 300 es
-        precision mediump float;
-        uniform vec4 color;
-        out vec4 fragmentColor;
-        void main() {
-            fragmentColor = color;
-        }
-    )";
-
-    constexpr char ImageVertexShader[] = R"(#version 300 es
-        layout (location = 0) in vec2 position;
-        layout (location = 1) in vec2 textureCoordinate;
-        out vec2 uv;
-        void main() { uv = textureCoordinate; gl_Position = vec4(position, 0.0, 1.0); }
-    )";
-    constexpr char ImageFragmentShader[] = R"(#version 300 es
-        precision mediump float;
-        in vec2 uv;
-        uniform sampler2D imageTexture;
-        uniform vec4 tint;
-        out vec4 color;
-        void main() {
-            float alpha = texture(imageTexture, uv).a;
-            color = vec4(tint.rgb, tint.a * alpha);
-        }
-    )";
-
-    // Default button-wave program; applications may override its public key.
-    constexpr char ButtonWaveVertexShader[] = R"(#version 300 es
-
-        layout (location = 0) in vec2 position;
-        layout (location = 1) in vec2 localPosition;
-
-        out vec2 local;
-
-        void main() {
-            local = localPosition;
-            gl_Position = vec4(position, 0.0, 1.0);
-        }
-    )";
-
-    constexpr char ButtonWaveFragmentShader[] = R"(#version 300 es
-
-        precision mediump float;
-
-        in vec2 local;
-
-        uniform vec2 size;
-        uniform float cornerRadius;
-        uniform float progress;
-        uniform float spread;
-        uniform vec4 rippleColor;
-
-        out vec4 color;
-
-        void main() {
-            vec2 halfSize = size * 0.5;
-            float radius = min(cornerRadius, min(halfSize.x, halfSize.y));
-            vec2 cornerDistance = abs(local * size - halfSize) - (halfSize - radius);
-            if (length(max(cornerDistance, 0.0)) - radius > 0.0) {
-                discard;
-            }
-
-            float distanceFromCenter = length((local - vec2(0.5)) * size);
-            float pulseRadius = 8.0 + progress * length(size) * spread;
-            float normalizedDistance = distanceFromCenter / pulseRadius;
-            float glow = exp(-normalizedDistance * normalizedDistance * 3.5);
-            color = vec4(rippleColor.rgb, rippleColor.a * glow);
-        }
-    )";
 
     // Команды runtime хранят текст в UTF-8, а stb_truetype ожидает code point.
     // Повреждённая либо неподдерживаемая последовательность заменяется на '?'.
@@ -284,23 +182,25 @@ namespace es_renderer {
             throw std::invalid_argument("Invalid OpenGL renderer arguments");
         }
 
-        this->textProgram = this->CreateProgram(
-            _details::TextVertexShader,
-            _details::TextFragmentShader);
-        this->solidProgram = this->CreateProgram(
-            _details::SolidVertexShader,
-            _details::SolidFragmentShader);
-        // Supply built-ins only when the caller has not provided an override.
-        // Compile each key once; arbitrary application keys remain in this map.
-        shaderPrograms.try_emplace(xaml::BuiltinShaders::buttonWave,
-            ShaderProgramSource{_details::ButtonWaveVertexShader, _details::ButtonWaveFragmentShader});
+        // Стандартная графика работает без программ от хоста. Явная подмена
+        // по ключу роли имеет приоритет над встроенным исходником.
+        shaderPrograms.try_emplace(ShaderRoles::text,
+            ShaderProgramSource{_details::TextVertexShader, _details::TextFragmentShader});
+        shaderPrograms.try_emplace(ShaderRoles::solid,
+            ShaderProgramSource{_details::SolidVertexShader, _details::SolidFragmentShader});
+        shaderPrograms.try_emplace(ShaderRoles::image,
+            ShaderProgramSource{_details::ImageVertexShader, _details::ImageFragmentShader});
         for (const auto& [name, source] : shaderPrograms) {
             if (name.empty() || source.vertex.empty() || source.fragment.empty()) {
                 throw std::invalid_argument("Invalid OpenGL shader program source");
             }
+        }
+        for (const auto& [name, source] : shaderPrograms) {
             this->shaderPrograms.emplace(name, this->CreateProgram(source.vertex, source.fragment));
         }
-        this->imageProgram = this->CreateProgram(_details::ImageVertexShader, _details::ImageFragmentShader);
+        this->textProgram = this->shaderPrograms.at(ShaderRoles::text);
+        this->solidProgram = this->shaderPrograms.at(ShaderRoles::solid);
+        this->imageProgram = this->shaderPrograms.at(ShaderRoles::image);
         glGenBuffers(1, &this->vertexBuffer);
         this->CreateFontAtlas(regularFontData, this->regularFontAtlas);
         this->CreateFontAtlas(boldFontData, this->boldFontAtlas);
@@ -328,20 +228,11 @@ namespace es_renderer {
         for (const auto& [source, texture] : this->imageTextures) {
             glDeleteTextures(1, &texture);
         }
-        if (this->imageProgram != 0) {
-            glDeleteProgram(this->imageProgram);
-        }
         for (const auto& [name, program] : this->shaderPrograms) {
             glDeleteProgram(program);
         }
         if (this->vertexBuffer != 0) {
             glDeleteBuffers(1, &this->vertexBuffer);
-        }
-        if (this->textProgram != 0) {
-            glDeleteProgram(this->textProgram);
-        }
-        if (this->solidProgram != 0) {
-            glDeleteProgram(this->solidProgram);
         }
     }
 

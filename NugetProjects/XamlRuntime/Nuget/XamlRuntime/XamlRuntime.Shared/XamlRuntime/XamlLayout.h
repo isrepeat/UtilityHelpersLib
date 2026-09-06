@@ -190,21 +190,6 @@ namespace xaml {
         float PressProgress() const;
         void SetPressProgress(float value);
 
-        float WaveProgress() const;
-        void SetWaveProgress(float value);
-
-        float WaveOpacity() const;
-        void SetWaveOpacity(float value);
-
-        float WaveIntensity() const;
-        void SetWaveIntensity(float value);
-
-        float WaveSpread() const;
-        void SetWaveSpread(float value);
-
-        float WaveFadeExponent() const;
-        void SetWaveFadeExponent(float value);
-
         const std::string& DefaultAnimation() const;
         void SetDefaultAnimation(std::string value);
 
@@ -294,11 +279,6 @@ namespace xaml {
         float renderOffsetX = 0.0f;
         float toggleProgress = -1.0f;
         float pressProgress = 0.0f;
-        float waveProgress = 1.0f;
-        float waveOpacity = 0.0f;
-        float waveIntensity = 0.45f;
-        float waveSpread = 0.28f;
-        float waveFadeExponent = 2.0f;
         std::string defaultAnimation;
         AnimationState animationState;
         ElementStates states;

@@ -44,7 +44,7 @@ namespace xaml {
         bool presence = true;
     };
 
-    // Runtime-owned per-element state; animation callbacks access it through contexts.
+    // Служебное состояние анимации элемента; обработчики получают доступ через контексты.
     struct AnimationState {
         std::shared_ptr<const AnimationRegistry> registry;
         AnimationParameters parameters;
@@ -56,7 +56,7 @@ namespace xaml {
         std::chrono::steady_clock::time_point updatedAt{};
     };
 
-    // Non-template dispatch context. Typed contexts expose only their declared state.
+    // Нетипизированный контекст вызова. Типизированные контексты предоставляют своё состояние и общую трансформацию.
     class AnimationInvocation {
     public:
         AnimationInvocation(Element& element, AnimationTrigger trigger, bool startingFromHidden = false,
@@ -67,6 +67,9 @@ namespace xaml {
         const AnimationSettings& Settings() const;
         const AnimationParameters& Parameters() const;
         ElementStates& Storage();
+        VisualTransform& Transform();
+        void AnimateTransform(float VisualTransform::* member, float to,
+            std::chrono::milliseconds duration, Easing easing = Easing::cubicOut);
         void AnimateProperty(AnimatedProperty property, float from, float to,
             std::chrono::milliseconds duration, Easing easing = Easing::cubicOut);
         void StartDefaultAnimation();
@@ -97,6 +100,8 @@ namespace xaml {
         using AnimationInvocation::IsStartingFromHidden;
         using AnimationInvocation::Parameters;
         using AnimationInvocation::AnimateProperty;
+        using AnimationInvocation::Transform;
+        using AnimationInvocation::AnimateTransform;
         using AnimationInvocation::StartDefaultAnimation;
 
         TState& State() {

@@ -8,11 +8,6 @@
 #include <functional>
 
 namespace xaml {
-    // Public identifiers of shader programs required by standard rendering.
-    struct BuiltinShaders {
-        static constexpr char buttonWave[] = "button-wave";
-    };
-
     struct ShaderUniform {
         std::string_view name;
         float values[4]{};
