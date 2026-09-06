@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.InteropServices;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -51,6 +52,9 @@ internal static class PreviewRenderer {
                 PreviewRenderer.SetAttribute(element, attribute.Name.LocalName, value);
             }
 
+            if (node.Elements().Any(child => child.Name.LocalName == $"{node.Name.LocalName}.Animation")) {
+                throw new InvalidDataException("Use <Animation> inside an event <Storyboard>.");
+            }
             PreviewRenderer.ApplyDefinitions(element, node);
             PreviewRenderer.ApplyStoryboards(element, node);
             if (node.Name.LocalName == "ListView") {
@@ -102,37 +106,71 @@ internal static class PreviewRenderer {
     }
 
     private static void ApplyStoryboards(IntPtr element, XElement node) {
-        var collection = node.Elements().FirstOrDefault(child => child.Name.LocalName
-            == $"{node.Name.LocalName}.Storyboards");
-        if (collection is null) {
-            return;
-        }
-
-        foreach (var storyboard in collection.Elements().Where(child => child.Name.LocalName == "Storyboard")) {
-            var trigger = PreviewRenderer.ParseTrigger(PreviewRenderer.Attribute(storyboard, "trigger"));
-            foreach (var track in storyboard.Elements()) {
-                var property = track.Name.LocalName == "RendererAnimation"
-                    && (PreviewRenderer.Attribute(track, "name") == "RippleWave"
-                        || PreviewRenderer.Attribute(track, "name") == "SoftPulse")
-                    ? 4 : PreviewRenderer.ParseProperty(PreviewRenderer.Attribute(track, "property"));
-                var from = PreviewRenderer.ParseAnimationValue(PreviewRenderer.Attribute(track, "from"), "Current");
-                var to = PreviewRenderer.ParseAnimationValue(PreviewRenderer.Attribute(track, "to"), "ToggleState");
-                if (!int.TryParse(PreviewRenderer.Attribute(track, "duration"), out var duration)
-                    || duration < 0) {
-                    throw new InvalidDataException("Animation track requires non-negative duration.");
+        foreach (var collection in node.Elements().Where(child => child.Name.LocalName
+            == $"{node.Name.LocalName}.Storyboards")) {
+            foreach (var storyboard in collection.Elements()) {
+                if (storyboard.Name.LocalName != "Storyboard") {
+                    throw new InvalidDataException("Only Storyboard is allowed in Storyboards.");
                 }
+                var trigger = PreviewRenderer.ParseTrigger(PreviewRenderer.Attribute(storyboard, "trigger"));
+                if (!storyboard.HasElements) {
+                    NativeRuntime.Ensure(NativeRuntime.xr_add_storyboard_animation(
+                        element, trigger, null, [], [], 0) != 0);
+                }
+                foreach (var track in storyboard.Elements()) {
+                    if (track.HasElements) {
+                        throw new InvalidDataException("Animation tracks do not support children.");
+                    }
+                    if (track.Name.LocalName == "Animation") {
+                        var name = Attribute(track, "name");
+                        if (string.IsNullOrEmpty(name)) {
+                            throw new InvalidDataException("<Animation> requires name.");
+                        }
+                        var options = track.Attributes().Where(attribute => !attribute.IsNamespaceDeclaration
+                            && attribute.Name.LocalName != "name").ToArray();
+                        var keys = new IntPtr[options.Length];
+                        var values = new IntPtr[options.Length];
+                        try {
+                            for (var index = 0; index < options.Length; ++index) {
+                                keys[index] = Marshal.StringToCoTaskMemUTF8(options[index].Name.LocalName);
+                                values[index] = Marshal.StringToCoTaskMemUTF8(options[index].Value);
+                            }
+                            NativeRuntime.Ensure(NativeRuntime.xr_add_storyboard_animation(
+                                element, trigger, name, keys, values, options.Length) != 0);
+                        }
+                        finally {
+                            foreach (var key in keys) {
+                                Marshal.FreeCoTaskMem(key);
+                            }
+                            foreach (var value in values) {
+                                Marshal.FreeCoTaskMem(value);
+                            }
+                        }
+                        continue;
+                    }
+                    if (track.Name.LocalName != "FloatAnimation") {
+                        throw new InvalidDataException("Use Animation or FloatAnimation inside Storyboard.");
+                    }
+                    var property = PreviewRenderer.ParseProperty(PreviewRenderer.Attribute(track, "property"));
+                    var from = PreviewRenderer.ParseAnimationValue(PreviewRenderer.Attribute(track, "from"), "Current");
+                    var to = PreviewRenderer.ParseAnimationValue(PreviewRenderer.Attribute(track, "to"), "ToggleState");
+                    if (!int.TryParse(PreviewRenderer.Attribute(track, "duration"), out var duration)
+                        || duration < 0) {
+                        throw new InvalidDataException("Animation track requires non-negative duration.");
+                    }
 
-                var easing = PreviewRenderer.Attribute(track, "easing") switch {
-                    null or "CubicOut" => 1,
-                    "Linear" => 0,
-                    _ => throw new InvalidDataException("Animation easing must be Linear or CubicOut."),
-                };
-                var intensity = PreviewRenderer.ParseEffectParameter(track, "intensity", 0.45f, 0.0f);
-                var spread = PreviewRenderer.ParseEffectParameter(track, "spread", 0.28f, float.Epsilon);
-                var fadeExponent = PreviewRenderer.ParseEffectParameter(track, "fadeExponent", 2.0f, float.Epsilon);
-                NativeRuntime.Ensure(NativeRuntime.xr_add_storyboard_track(
-                    element, trigger, property, from, to, duration, easing,
-                    intensity, spread, fadeExponent) != 0);
+                    var easing = PreviewRenderer.Attribute(track, "easing") switch {
+                        null or "CubicOut" => 1,
+                        "Linear" => 0,
+                        _ => throw new InvalidDataException("Animation easing must be Linear or CubicOut."),
+                    };
+                    var intensity = PreviewRenderer.ParseAnimationParameter(track, "intensity", 0.45f, 0.0f);
+                    var spread = PreviewRenderer.ParseAnimationParameter(track, "spread", 0.28f, float.Epsilon);
+                    var fadeExponent = PreviewRenderer.ParseAnimationParameter(track, "fadeExponent", 2.0f, float.Epsilon);
+                    NativeRuntime.Ensure(NativeRuntime.xr_add_storyboard_track(
+                        element, trigger, property, from, to, duration, easing,
+                        intensity, spread, fadeExponent) != 0);
+                }
             }
         }
     }
@@ -142,7 +180,9 @@ internal static class PreviewRenderer {
             "PointerDown" => 0,
             "PointerUp" => 1,
             "Toggled" => 2,
-            _ => throw new InvalidDataException("Storyboard trigger must be PointerDown, PointerUp or Toggled."),
+            "Show" => 3,
+            "Hide" => 4,
+            _ => throw new InvalidDataException("Storyboard trigger must be PointerDown, PointerUp, Toggled, Show or Hide."),
         };
     }
 
@@ -166,7 +206,7 @@ internal static class PreviewRenderer {
                 : throw new InvalidDataException("Animation value must be a number or supported state value.");
     }
 
-    private static float ParseEffectParameter(XElement element, string name, float defaultValue, float exclusiveMinimum) {
+    private static float ParseAnimationParameter(XElement element, string name, float defaultValue, float exclusiveMinimum) {
         var value = PreviewRenderer.Attribute(element, name);
         if (value is null) {
             return defaultValue;

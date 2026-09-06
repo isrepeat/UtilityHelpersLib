@@ -18,9 +18,11 @@ internal sealed class PreviewSession : IDisposable {
 
     public PreviewSession(IntPtr root, string markupDirectory, int width, int height) {
         this.root = root;
+        NativeRuntime.Ensure(NativeRuntime.xr_layout(root, width, height) != 0);
         this.renderer = new AnglePreviewRenderer(markupDirectory, width, height);
         this.animations = NativeRuntime.xr_create_animation_controller();
         NativeRuntime.Ensure(this.animations != IntPtr.Zero);
+        NativeRuntime.Ensure(NativeRuntime.xr_attach_animations(root, this.animations) != 0);
         this.image = new Image {
             Width = this.renderer.Width,
             Height = this.renderer.Height,

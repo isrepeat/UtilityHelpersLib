@@ -234,6 +234,55 @@ int xr_set_attribute(
     }
 }
 
+int xr_add_storyboard_animation(xr_element* element, int trigger, const char* name,
+    const char* const* keys, const char* const* values, int count) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (element == nullptr || trigger < 0 || trigger > 4 || count < 0
+            || (count > 0 && (keys == nullptr || values == nullptr))) {
+            throw std::invalid_argument("invalid storyboard animation");
+        }
+        xaml::Storyboard storyboard;
+        storyboard.trigger = static_cast<xaml::AnimationTrigger>(trigger);
+        if (name != nullptr) {
+            if (*name == '\\0') {
+                throw std::invalid_argument("animation name is required");
+            }
+            xaml::AnimationTrack track;
+            track.name = name;
+            for (int index = 0; index < count; ++index) {
+                if (keys[index] == nullptr || values[index] == nullptr) {
+                    throw std::invalid_argument("animation settings are required");
+                }
+                track.settings.Set(keys[index], values[index]);
+            }
+            storyboard.tracks.push_back(std::move(track));
+        }
+        reinterpret_cast<xaml::Element*>(element)->AddStoryboard(std::move(storyboard));
+        return 1;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return 0;
+    }
+}
+
+int xr_attach_animations(xr_element* root, xr_animation_controller* animations) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (root == nullptr) {
+            throw std::invalid_argument("root is required");
+        }
+        if (animations == nullptr) {
+            throw std::invalid_argument("animations is required");
+        }
+        animations->value.Attach(*reinterpret_cast<xaml::Element*>(root), xaml::AnimationRegistry{}, true);
+        return 1;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return 0;
+    }
+}
+
 int xr_add_storyboard_track(
     xr_element* element,
     int trigger,
@@ -247,7 +296,7 @@ int xr_add_storyboard_track(
     float fadeExponent) {
     try {
         xaml::bridge::lastError.clear();
-        if (element == nullptr || trigger < 0 || trigger > 2 || property < 0 || property > 5
+        if (element == nullptr || trigger < 0 || trigger > 4 || property < 0 || property > 5
             || durationMilliseconds < 0 || easing < 0 || easing > 1
             || intensity < 0.0f || spread <= 0.0f || fadeExponent <= 0.0f) {
             throw std::invalid_argument("invalid storyboard track");
@@ -485,8 +534,9 @@ int xr_update_animations(xr_animation_controller* animations) {
         if (animations == nullptr) {
             throw std::invalid_argument("animations are required");
         }
+        const bool wasAnimating = animations->value.IsAnimating();
         animations->value.Update();
-        return animations->value.IsAnimating() ? 1 : 0;
+        return wasAnimating || animations->value.IsAnimating() ? 1 : 0;
     } catch (const std::exception& error) {
         xaml::bridge::lastError = error.what();
         return -1;

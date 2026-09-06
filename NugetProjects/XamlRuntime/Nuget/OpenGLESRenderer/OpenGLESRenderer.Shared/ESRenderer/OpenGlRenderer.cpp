@@ -96,6 +96,50 @@ namespace es_renderer::_details {
         }
     )";
 
+    // Default button-wave program; applications may override its public key.
+    constexpr char ButtonWaveVertexShader[] = R"(#version 300 es
+
+        layout (location = 0) in vec2 position;
+        layout (location = 1) in vec2 localPosition;
+
+        out vec2 local;
+
+        void main() {
+            local = localPosition;
+            gl_Position = vec4(position, 0.0, 1.0);
+        }
+    )";
+
+    constexpr char ButtonWaveFragmentShader[] = R"(#version 300 es
+
+        precision mediump float;
+
+        in vec2 local;
+
+        uniform vec2 size;
+        uniform float cornerRadius;
+        uniform float progress;
+        uniform float spread;
+        uniform vec4 rippleColor;
+
+        out vec4 color;
+
+        void main() {
+            vec2 halfSize = size * 0.5;
+            float radius = min(cornerRadius, min(halfSize.x, halfSize.y));
+            vec2 cornerDistance = abs(local * size - halfSize) - (halfSize - radius);
+            if (length(max(cornerDistance, 0.0)) - radius > 0.0) {
+                discard;
+            }
+
+            float distanceFromCenter = length((local - vec2(0.5)) * size);
+            float pulseRadius = 8.0 + progress * length(size) * spread;
+            float normalizedDistance = distanceFromCenter / pulseRadius;
+            float glow = exp(-normalizedDistance * normalizedDistance * 3.5);
+            color = vec4(rippleColor.rgb, rippleColor.a * glow);
+        }
+    )";
+
     // Команды runtime хранят текст в UTF-8, а stb_truetype ожидает code point.
     // Повреждённая либо неподдерживаемая последовательность заменяется на '?'.
     uint32_t DecodeUtf8(const char*& current, const char* end) {
@@ -236,8 +280,7 @@ namespace es_renderer {
             || boldFontData == nullptr
             || boldFontSize == 0
             || blackFontData == nullptr
-            || blackFontSize == 0
-            || shaderPrograms.empty()) {
+            || blackFontSize == 0) {
             throw std::invalid_argument("Invalid OpenGL renderer arguments");
         }
 
@@ -247,6 +290,10 @@ namespace es_renderer {
         this->solidProgram = this->CreateProgram(
             _details::SolidVertexShader,
             _details::SolidFragmentShader);
+        // Supply built-ins only when the caller has not provided an override.
+        // Compile each key once; arbitrary application keys remain in this map.
+        shaderPrograms.try_emplace(xaml::BuiltinShaders::buttonWave,
+            ShaderProgramSource{_details::ButtonWaveVertexShader, _details::ButtonWaveFragmentShader});
         for (const auto& [name, source] : shaderPrograms) {
             if (name.empty() || source.vertex.empty() || source.fragment.empty()) {
                 throw std::invalid_argument("Invalid OpenGL shader program source");

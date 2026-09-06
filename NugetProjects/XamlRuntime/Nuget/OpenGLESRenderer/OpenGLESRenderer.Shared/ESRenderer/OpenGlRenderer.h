@@ -18,6 +18,8 @@ namespace es_renderer {
             std::string_view vertex;
             std::string_view fragment;
         };
+        // May be empty. BuiltinShaders keys override defaults; other keys add
+        // application programs. Source views must survive constructor execution.
         using ShaderProgramSources = std::unordered_map<std::string, ShaderProgramSource>;
 
         OpenGlRenderer(

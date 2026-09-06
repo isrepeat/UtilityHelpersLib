@@ -56,6 +56,9 @@ XAML_RUNTIME_BRIDGE_API int xr_set_attribute(
     xr_element* element,
     const char* name,
     const char* value);
+XAML_RUNTIME_BRIDGE_API int xr_add_storyboard_animation(xr_element* element, int trigger,
+    const char* name, const char* const* keys, const char* const* values, int count);
+XAML_RUNTIME_BRIDGE_API int xr_attach_animations(xr_element* root, xr_animation_controller* animations);
 XAML_RUNTIME_BRIDGE_API int xr_add_storyboard_track(
     xr_element* element,
     int trigger,

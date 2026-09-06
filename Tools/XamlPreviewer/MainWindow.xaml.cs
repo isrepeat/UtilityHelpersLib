@@ -487,6 +487,7 @@ public partial class MainWindow : Window {
             }
             session.SetAnimationSpeed(this.GetAnimationPlaybackRate());
             session.AnimationStarted += this.PreviewSessionAnimationStarted;
+            this.animationTimer.Start();
             session.Tapped += this.PreviewSessionTapped;
             this.previewSession = session;
             this.previewLayer.Children.Add(session.Surface);
@@ -922,6 +923,7 @@ public partial class MainWindow : Window {
             }
             session.SetAnimationSpeed(this.GetAnimationPlaybackRate());
             session.AnimationStarted += this.PreviewSessionAnimationStarted;
+            this.animationTimer.Start();
             session.Tapped += this.PreviewSessionTapped;
             this.previewSession = session;
             if (previousSnapshot is not null && transition is not null) {

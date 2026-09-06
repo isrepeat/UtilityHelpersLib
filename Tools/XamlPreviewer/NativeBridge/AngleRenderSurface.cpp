@@ -17,7 +17,7 @@
 
 namespace xaml::bridge::_details {
     // Повторяет демонстрационный renderer MobileClock, чтобы эффект был виден в previewer-е.
-    bool RenderWaveOutline(const Element& element, RenderContext& context) {
+    bool RenderWaveOutline(const Element& element, RenderContext<WaveAnimation>& context) {
         if (element.Type() != ElementType::button) {
             return false;
         }
@@ -141,22 +141,6 @@ namespace xaml::bridge {
             (regularFontPath.parent_path() / "Roboto-Bold.ttf").string());
         const std::vector<unsigned char> blackFontData = utility_helpers::new_helpers::filesystem::ReadAllBytes(
             (regularFontPath.parent_path() / "Roboto-Black.ttf").string());
-        const std::vector<unsigned char> rippleVertexShader = utility_helpers::new_helpers::filesystem::ReadAllBytes(
-            std::string(resourceRoot) + "/Shaders/Ripple.vert");
-        const std::vector<unsigned char> rippleFragmentShader = utility_helpers::new_helpers::filesystem::ReadAllBytes(
-            std::string(resourceRoot) + "/Shaders/Ripple.frag");
-        const es_renderer::OpenGlRenderer::ShaderProgramSources shaderPrograms{
-            {"button-wave", {
-                {
-                    reinterpret_cast<const char*>(rippleVertexShader.data()),
-                    rippleVertexShader.size(),
-                },
-                {
-                    reinterpret_cast<const char*>(rippleFragmentShader.data()),
-                    rippleFragmentShader.size(),
-                },
-            }},
-        };
         this->renderer = std::make_unique<es_renderer::OpenGlRenderer>(
             width,
             height,
@@ -166,11 +150,11 @@ namespace xaml::bridge {
             boldFontData.size(),
             blackFontData.data(),
             blackFontData.size(),
-            shaderPrograms,
+            es_renderer::OpenGlRenderer::ShaderProgramSources{},
             [root = std::string(resourceRoot)](std::string_view source) {
                 return utility_helpers::new_helpers::filesystem::ReadAllBytes(root + "/" + std::string(source));
             });
-        this->renderers.Register("wave-outline", _details::RenderWaveOutline);
+        this->renderers.Register<WaveAnimation>("rendererWaveOutline", _details::RenderWaveOutline);
         if (eglMakeCurrent(
             this->display,
             EGL_NO_SURFACE,

@@ -87,6 +87,14 @@ internal static class NativeRuntime {
         [MarshalAs(UnmanagedType.LPUTF8Str)] string name,
         [MarshalAs(UnmanagedType.LPUTF8Str)] string value);
 
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+    public static extern int xr_add_storyboard_animation(IntPtr element, int trigger,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string? name,
+        [In] IntPtr[] keys, [In] IntPtr[] values, int count);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+    public static extern int xr_attach_animations(IntPtr root, IntPtr animations);
+
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_add_storyboard_track")]
     public static extern int xr_add_storyboard_track(
         IntPtr element,
