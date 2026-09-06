@@ -31,6 +31,7 @@
 
   <ItemGroup>
     <Resource Include="Resources\Icons\close.svg" />
+    <Resource Include="Resources\Icons\expand-all.svg" />
     <Resource Include="Resources\Icons\find-next.svg" />
     <Resource Include="Resources\Icons\find-previous.svg" />
     <Resource Include="Resources\Icons\navigate-back.svg" />

@@ -25,12 +25,14 @@ namespace XamlPreviewer;
 /// </summary>
 public partial class MainWindow : Window {
     private const string NativeBridgeLibraryName = "XamlRuntime.NativeBridge.dll";
+    private const double SearchPanelOverlayHeight = 84.0;
     private readonly DispatcherTimer renderTimer;
     private readonly DispatcherTimer animationTimer;
     private readonly DispatcherTimer previewZoomTimer;
     private readonly DispatcherTimer externalRefreshTimer;
     private readonly DispatcherTimer smoothScrollTimer;
     private readonly MarkupEditorController markupEditorController;
+    private readonly SearchPanel markupSearchPanel;
     private readonly XamlCompletionController xamlCompletionController;
     private readonly FolderPickerController folderPickerController;
     private readonly PreviewViewportController previewViewportController;
@@ -54,6 +56,7 @@ public partial class MainWindow : Window {
     private bool isScenariosDirty;
     private bool isSettingsDirty;
     private bool updatingEditors;
+    private bool suppressFoldingStatePersistence;
     private EditorMode editorMode;
     private EditorMode previousEditorMode = EditorMode.Xaml;
     private string? folderPickerDirectory;
@@ -124,10 +127,12 @@ public partial class MainWindow : Window {
         InitializeComponent();
         this.DeviceSurface.Child = this.previewLayer;
         WindowTheme.EnableDarkTitleBar(this);
-        MainWindow.ConfigureEditor(this.MarkupEditor, MarkupSyntaxHighlighter.Create());
+        this.markupSearchPanel = MainWindow.ConfigureEditor(this.MarkupEditor, MarkupSyntaxHighlighter.Create());
         MainWindow.ConfigureEditor(this.ScenarioEditor, MarkupSyntaxHighlighter.CreateJson());
         MainWindow.ConfigureEditor(this.SettingsEditor, MarkupSyntaxHighlighter.CreateJson());
+        this.markupSearchPanel.IsVisibleChanged += this.MarkupSearchPanelLayoutChanged;
         this.markupEditorController = new MarkupEditorController(this.MarkupEditor);
+        this.markupEditorController.FoldingStateChanged += this.MarkupEditorFoldingStateChanged;
         this.xamlCompletionController = new XamlCompletionController(this.MarkupEditor);
         this.folderPickerController = new FolderPickerController(
             this.FolderPickerPanel,
@@ -746,6 +751,34 @@ public partial class MainWindow : Window {
         this.MarkupEditor.Focus();
     }
 
+    private void ExpandAllFoldingsButtonClick(object sender, RoutedEventArgs eventArgs) {
+        this.markupEditorController.ExpandAll();
+    }
+
+    private void MarkupEditorFoldingStateChanged(object? sender, EventArgs eventArgs) {
+        this.UpdateExpandAllFoldingsButtonLayout();
+        this.ExpandAllFoldingsButton.Visibility = this.markupEditorController.HasFoldedSections
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        if (!this.suppressFoldingStatePersistence) {
+            this.StoreCollapsedMarkupFoldings();
+            this.PersistSettings();
+        }
+    }
+
+    private void MarkupSearchPanelLayoutChanged(
+        object sender,
+        DependencyPropertyChangedEventArgs eventArgs) {
+        this.UpdateExpandAllFoldingsButtonLayout();
+    }
+
+    private void UpdateExpandAllFoldingsButtonLayout() {
+        var searchPanelHeight = this.markupSearchPanel.IsVisible
+            ? MainWindow.SearchPanelOverlayHeight
+            : 0.0;
+        this.ExpandAllFoldingsButton.Margin = new Thickness(0.0, 16.0 + searchPanelHeight, 38.0, 0.0);
+    }
+
     private void FitPreviewButtonClick(object sender, RoutedEventArgs eventArgs) {
         this.FitPreview();
     }
@@ -1040,13 +1073,21 @@ public partial class MainWindow : Window {
     }
 
     private void LoadMarkup(string path) {
+        this.StoreCollapsedMarkupFoldings();
         this.markupPath = Path.GetFullPath(path);
         this.ConfigureMarkupWatcher();
         this.ConfigureXamlDirectoryWatcher();
         this.FilePathText.Text = this.markupPath;
+        this.suppressFoldingStatePersistence = true;
         this.updatingEditors = true;
-        this.markupEditorController.SetText(File.ReadAllText(this.markupPath));
-        this.updatingEditors = false;
+        try {
+            this.markupEditorController.SetText(File.ReadAllText(this.markupPath));
+            this.markupEditorController.SetFoldedOffsets(this.GetCollapsedMarkupFoldings());
+        }
+        finally {
+            this.updatingEditors = false;
+            this.suppressFoldingStatePersistence = false;
+        }
         this.isMarkupDirty = false;
         this.UpdateDocumentState();
         // PersistSettings записывает previewer.settings.json. Его изменение
@@ -1229,6 +1270,7 @@ public partial class MainWindow : Window {
     }
 
     private void SaveSettings() {
+        this.StoreCollapsedMarkupFoldings();
         this.settings.LastMarkupPath = this.markupPath;
         this.settings.LastScenarioName = this.ScenarioPicker.SelectedItem as string;
         if (this.WindowState == WindowState.Normal) {
@@ -1252,6 +1294,26 @@ public partial class MainWindow : Window {
         if (this.settingsPersistenceReady) {
             this.SaveSettings();
         }
+    }
+
+    private int[] GetCollapsedMarkupFoldings() {
+        if (this.markupPath is null
+            || !this.settings.CollapsedMarkupFoldingOffsets.TryGetValue(this.markupPath, out var offsets)) {
+            return [];
+        }
+        return offsets;
+    }
+
+    private void StoreCollapsedMarkupFoldings() {
+        if (this.markupPath is null) {
+            return;
+        }
+        var offsets = this.markupEditorController.GetFoldedOffsets();
+        if (offsets.Length == 0) {
+            this.settings.CollapsedMarkupFoldingOffsets.Remove(this.markupPath);
+            return;
+        }
+        this.settings.CollapsedMarkupFoldingOffsets[this.markupPath] = offsets;
     }
 
     private void RestoreWindowState() {
@@ -1448,6 +1510,7 @@ public partial class MainWindow : Window {
         }) {
             editor.FontSize = defaultFontSize * scale;
         }
+        this.markupEditorController.UpdateFoldingMarkerSize();
         this.EditorZoomText.Text = $"{scale:P0}";
     }
 
@@ -1477,7 +1540,7 @@ public partial class MainWindow : Window {
         this.UpdateDocumentState();
     }
 
-    private static void ConfigureEditor(TextEditor editor, IHighlightingDefinition highlighting) {
+    private static SearchPanel ConfigureEditor(TextEditor editor, IHighlightingDefinition highlighting) {
         editor.SyntaxHighlighting = highlighting;
         editor.TextArea.Caret.CaretBrush = PreviewRenderer.ParseBrush("#F0D78C");
         editor.TextArea.SelectionBrush = PreviewRenderer.ParseBrush("#5A4D26");
@@ -1492,6 +1555,7 @@ public partial class MainWindow : Window {
         if (messageField?.GetValue(searchPanel) is ToolTip message) {
             message.Visibility = Visibility.Collapsed;
         }
+        return searchPanel;
     }
 
     private void ConfigureMouseWheelScrolling() {
@@ -1503,14 +1567,22 @@ public partial class MainWindow : Window {
             this.SettingsEditor,
         }) {
             editor.PreviewMouseWheel -= this.EditorPreviewMouseWheel;
-            if (this.settings.MouseWheelLines > 0) {
-                editor.PreviewMouseWheel += this.EditorPreviewMouseWheel;
-            }
+            editor.PreviewMouseWheel += this.EditorPreviewMouseWheel;
         }
     }
 
     private void EditorPreviewMouseWheel(object sender, MouseWheelEventArgs eventArgs) {
-        if (sender is not TextEditor editor || this.settings.MouseWheelLines <= 0) {
+        if (sender is not TextEditor editor) {
+            return;
+        }
+
+        var steps = Math.Max(1, Math.Abs(eventArgs.Delta) / Mouse.MouseWheelDeltaForOneLine);
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) {
+            this.SetEditorScale(this.GetEditorScale() + (eventArgs.Delta > 0 ? 0.1 : -0.1) * steps);
+            eventArgs.Handled = true;
+            return;
+        }
+        if (this.settings.MouseWheelLines <= 0) {
             return;
         }
 
@@ -1538,7 +1610,6 @@ public partial class MainWindow : Window {
             state.IsAnimating = false;
         }
 
-        var steps = Math.Max(1, Math.Abs(eventArgs.Delta) / Mouse.MouseWheelDeltaForOneLine);
         var lineHeight = editor.TextArea.TextView.DefaultLineHeight;
         var offset = steps * this.settings.MouseWheelLines * lineHeight;
         state.TargetVerticalOffset = Math.Clamp(

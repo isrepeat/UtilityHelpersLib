@@ -6,13 +6,19 @@ using System.Windows.Media;
 namespace XamlPreviewer;
 
 internal sealed class MarkupEditorController {
+    private const double FoldingMarkerSizeMultiplier = 1.25;
     private readonly TextEditor editor;
     private readonly FoldingManager foldingManager;
+    private readonly XmlFoldingMargin foldingMargin;
     private readonly XmlFoldingStrategy foldingStrategy = new();
     private readonly XmlIndentationGuideRenderer indentationGuideRenderer = new();
+    private int[] foldedOffsets = [];
     private bool isUpdating;
 
     public string Text => this.editor.Text;
+    public bool HasFoldedSections => this.foldedOffsets.Length != 0;
+
+    public event EventHandler? FoldingStateChanged;
 
     public MarkupEditorController(TextEditor editor) {
         this.editor = editor;
@@ -20,9 +26,14 @@ internal sealed class MarkupEditorController {
         this.editor.Options.IndentationSize = 4;
         this.editor.Options.EnableTextDragDrop = true;
         this.foldingManager = FoldingManager.Install(this.editor.TextArea);
+        var defaultFoldingMargin = this.editor.TextArea.LeftMargins.OfType<FoldingMargin>().First();
+        this.editor.TextArea.LeftMargins.Remove(defaultFoldingMargin);
+        this.foldingMargin = new XmlFoldingMargin(this.foldingManager);
+        this.editor.TextArea.LeftMargins.Add(this.foldingMargin);
         this.ConfigureFoldingMargin();
         this.editor.TextArea.TextView.BackgroundRenderers.Add(this.indentationGuideRenderer);
         this.editor.Document.Changed += this.DocumentChanged;
+        this.editor.TextArea.PreviewMouseUp += this.TextAreaPreviewMouseUp;
         this.UpdateFoldings();
     }
 
@@ -32,7 +43,9 @@ internal sealed class MarkupEditorController {
 
     public void Dispose() {
         this.editor.Document.Changed -= this.DocumentChanged;
+        this.editor.TextArea.PreviewMouseUp -= this.TextAreaPreviewMouseUp;
         this.editor.TextArea.TextView.BackgroundRenderers.Remove(this.indentationGuideRenderer);
+        this.editor.TextArea.LeftMargins.Remove(this.foldingMargin);
         FoldingManager.Uninstall(this.foldingManager);
     }
 
@@ -70,6 +83,29 @@ internal sealed class MarkupEditorController {
         }
     }
 
+    public void SetFoldedOffsets(IEnumerable<int> offsets) {
+        var collapsedOffsets = offsets.ToHashSet();
+        foreach (var folding in this.foldingManager.AllFoldings) {
+            folding.IsFolded = collapsedOffsets.Contains(folding.StartOffset);
+        }
+        this.UpdateFoldingState();
+    }
+
+    public void ExpandAll() {
+        foreach (var folding in this.foldingManager.AllFoldings) {
+            folding.IsFolded = false;
+        }
+        this.UpdateFoldingState();
+    }
+
+    public int[] GetFoldedOffsets() {
+        return this.foldedOffsets;
+    }
+
+    public void UpdateFoldingMarkerSize() {
+        this.foldingMargin.SetMarkerSize(this.editor.FontSize * MarkupEditorController.FoldingMarkerSizeMultiplier);
+    }
+
     private void InsertNewLine() {
         var indentation = this.GetIndentation(this.editor.CaretOffset);
         var selectionStart = this.editor.SelectionStart;
@@ -87,19 +123,34 @@ internal sealed class MarkupEditorController {
         this.UpdateFoldings();
     }
 
+    private void TextAreaPreviewMouseUp(object sender, MouseButtonEventArgs eventArgs) {
+        this.editor.TextArea.Dispatcher.BeginInvoke(new Action(this.UpdateFoldingState));
+    }
+
     private void ConfigureFoldingMargin() {
-        var foldingMargin = this.editor.TextArea.LeftMargins.OfType<FoldingMargin>().FirstOrDefault();
-        if (foldingMargin is null) {
-            return;
-        }
-        foldingMargin.FoldingMarkerBackgroundBrush = MarkupEditorController.CreateBrush("#FF25282C");
-        foldingMargin.FoldingMarkerBrush = MarkupEditorController.CreateBrush("#FF9FA7AE");
-        foldingMargin.SelectedFoldingMarkerBackgroundBrush = MarkupEditorController.CreateBrush("#FF3A4046");
-        foldingMargin.SelectedFoldingMarkerBrush = MarkupEditorController.CreateBrush("#FFF2F4F5");
+        this.foldingMargin.SetMarkerSize(this.editor.FontSize * MarkupEditorController.FoldingMarkerSizeMultiplier);
+        this.foldingMargin.MarkerBackgroundBrush = MarkupEditorController.CreateBrush("#FF25282C");
+        this.foldingMargin.MarkerBrush = MarkupEditorController.CreateBrush("#FF9FA7AE");
+        this.foldingMargin.SelectedMarkerBackgroundBrush = MarkupEditorController.CreateBrush("#FF3A4046");
+        this.foldingMargin.SelectedMarkerBrush = MarkupEditorController.CreateBrush("#FFF2F4F5");
     }
 
     private void UpdateFoldings() {
         this.foldingManager.UpdateFoldings(this.foldingStrategy.CreateNewFoldings(this.editor.Document), -1);
+        this.UpdateFoldingState();
+    }
+
+    private void UpdateFoldingState() {
+        var offsets = this.foldingManager.AllFoldings
+            .Where(folding => folding.IsFolded)
+            .Select(folding => folding.StartOffset)
+            .Order()
+            .ToArray();
+        if (this.foldedOffsets.SequenceEqual(offsets)) {
+            return;
+        }
+        this.foldedOffsets = offsets;
+        this.FoldingStateChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void SelectWord() {
@@ -232,4 +283,5 @@ internal sealed class MarkupEditorController {
         brush.Freeze();
         return brush;
     }
+
 }

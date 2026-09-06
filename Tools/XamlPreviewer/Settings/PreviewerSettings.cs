@@ -67,6 +67,7 @@ internal sealed class PreviewerSettings {
     public string InteractionsPath { get; set; } = string.Empty;
     public required string ResourcesDirectory { get; init; }
     public string? LastMarkupPath { get; set; }
+    public Dictionary<string, int[]> CollapsedMarkupFoldingOffsets { get; set; } = [];
     public string? LastScenarioName { get; set; }
     public double WindowWidth { get; set; }
     public double WindowHeight { get; set; }
@@ -108,6 +109,7 @@ internal sealed class PreviewerSettings {
         if (string.IsNullOrEmpty(settings.InteractionsPath)) {
             settings.InteractionsPath = Path.Combine(AppContext.BaseDirectory, "interactions.json");
         }
+        settings.CollapsedMarkupFoldingOffsets ??= [];
         settings.CreateDefaultScenariosIfMissing();
         settings.CreateDefaultInteractionsIfMissing();
         settings.ValidateAnimationSpeeds();
@@ -119,6 +121,7 @@ internal sealed class PreviewerSettings {
         var settings = JsonSerializer.Deserialize<PreviewerSettings>(json)
             ?? throw new InvalidDataException("Настройки не содержат объект.");
         settings.FilePath = filePath;
+        settings.CollapsedMarkupFoldingOffsets ??= [];
         settings.ValidateAnimationSpeeds();
         settings.ValidateResolutions();
         return settings;
