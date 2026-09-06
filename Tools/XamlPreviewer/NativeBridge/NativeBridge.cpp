@@ -7,7 +7,9 @@
 #include <XamlRuntime/Animation.h>
 #include <XamlRuntime/Input.h>
 
-#include "../../../../Resources/XamlHost/Effects.h"
+#include "../../../../Resources/Effects/Effects.h"
+#include "../../../../Renderer/AnimationRenderers.h"
+#include "../../../../UI/PageTransition.h"
 #include "AngleRenderSurface.h"
 #include "NativeBridge.h"
 
@@ -276,7 +278,34 @@ int xr_attach_animations(xr_element* root, xr_animation_controller* animations) 
         if (animations == nullptr) {
             throw std::invalid_argument("animations is required");
         }
-        animations->value.Attach(*reinterpret_cast<xaml::Element*>(root), mobileclock::resources::effects::CreateAnimations(), true);
+        auto registry = mobileclock::resources::effects::CreateAnimations();
+        mobileclock::renderer::RegisterAnimations(registry);
+        // Rebuilding the preview is not navigation. Show/Hide run on visibility changes.
+        animations->value.Attach(*reinterpret_cast<xaml::Element*>(root), registry, false);
+        return 1;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return 0;
+    }
+}
+
+int xr_set_page_transition(xr_element* root, const char* from, const char* to, int backward, int visible) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (root == nullptr || from == nullptr || to == nullptr) {
+            throw std::invalid_argument("root, from and to are required");
+        }
+        const mobileclock::ui::PageTransitionData data{
+            from,
+            to,
+            backward != 0 ? mobileclock::ui::NavigationDirection::backward
+                          : mobileclock::ui::NavigationDirection::forward,
+        };
+        auto& page = *reinterpret_cast<xaml::Element*>(root);
+        page.SetAnimationParametersProvider([data]() {
+            return xaml::AnimationParameters::Create(data);
+        });
+        page.SetVisibility(visible != 0 ? xaml::attr::Visibility::visible : xaml::attr::Visibility::collapsed);
         return 1;
     } catch (const std::exception& error) {
         xaml::bridge::lastError = error.what();

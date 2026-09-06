@@ -37,7 +37,7 @@
     </PropertyGroup>
     <ItemDefinitionGroup>
         <ClCompile>
-            <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\HelpersNew\HelpersNew.Shared;$(ProjectDir)..\..\..\NugetProjects\XamlRuntime\Nuget\OpenGLESRenderer\OpenGLESRenderer.Shared;$(ProjectDir)..\..\..\NugetProjects\XamlRuntime\Nuget\XamlRuntime\XamlRuntime.Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+            <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..;$(ProjectDir)..\..\..\HelpersNew\HelpersNew.Shared;$(ProjectDir)..\..\..\NugetProjects\XamlRuntime\Nuget\OpenGLESRenderer\OpenGLESRenderer.Shared;$(ProjectDir)..\..\..\NugetProjects\XamlRuntime\Nuget\XamlRuntime\XamlRuntime.Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
             <LanguageStandard>stdcpp17</LanguageStandard>
             <WarningLevel>Level4</WarningLevel>
         </ClCompile>
@@ -48,8 +48,9 @@
     <ItemGroup>
         <ClCompile Include="AngleRenderSurface.cpp" />
         <ClCompile Include="NativeBridge.cpp" />
-        <ClCompile Include="..\..\..\..\Resources\XamlHost\Effects.cpp" />
-        <ClCompile Include="..\..\..\..\Resources\XamlHost\Shaders.cpp" />
+        <ClCompile Include="..\..\..\..\Renderer\AnimationRenderers.cpp" />
+        <ClCompile Include="..\..\..\..\Resources\Effects\Effects.cpp" />
+        <ClCompile Include="..\..\..\..\Resources\Effects\Shaders.cpp" />
     </ItemGroup>
     <ItemGroup>
         <ClInclude Include="AngleRenderSurface.h" />

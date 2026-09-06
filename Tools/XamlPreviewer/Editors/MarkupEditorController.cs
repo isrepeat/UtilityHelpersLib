@@ -1,10 +1,15 @@
 using ICSharpCode.AvalonEdit;
+using ICSharpCode.AvalonEdit.Folding;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace XamlPreviewer;
 
 internal sealed class MarkupEditorController {
     private readonly TextEditor editor;
+    private readonly FoldingManager foldingManager;
+    private readonly XmlFoldingStrategy foldingStrategy = new();
+    private readonly XmlIndentationGuideRenderer indentationGuideRenderer = new();
     private bool isUpdating;
 
     public string Text => this.editor.Text;
@@ -14,10 +19,21 @@ internal sealed class MarkupEditorController {
         this.editor.Options.ConvertTabsToSpaces = false;
         this.editor.Options.IndentationSize = 4;
         this.editor.Options.EnableTextDragDrop = true;
+        this.foldingManager = FoldingManager.Install(this.editor.TextArea);
+        this.ConfigureFoldingMargin();
+        this.editor.TextArea.TextView.BackgroundRenderers.Add(this.indentationGuideRenderer);
+        this.editor.Document.Changed += this.DocumentChanged;
+        this.UpdateFoldings();
     }
 
     public bool HandleTextChanged() {
         return !this.isUpdating;
+    }
+
+    public void Dispose() {
+        this.editor.Document.Changed -= this.DocumentChanged;
+        this.editor.TextArea.TextView.BackgroundRenderers.Remove(this.indentationGuideRenderer);
+        FoldingManager.Uninstall(this.foldingManager);
     }
 
     public void HandlePreviewKeyDown(KeyEventArgs eventArgs) {
@@ -63,6 +79,27 @@ internal sealed class MarkupEditorController {
             Environment.NewLine + indentation);
         this.editor.CaretOffset = selectionStart + Environment.NewLine.Length + indentation.Length;
         this.editor.SelectionLength = 0;
+    }
+
+    private void DocumentChanged(
+        object? sender,
+        ICSharpCode.AvalonEdit.Document.DocumentChangeEventArgs eventArgs) {
+        this.UpdateFoldings();
+    }
+
+    private void ConfigureFoldingMargin() {
+        var foldingMargin = this.editor.TextArea.LeftMargins.OfType<FoldingMargin>().FirstOrDefault();
+        if (foldingMargin is null) {
+            return;
+        }
+        foldingMargin.FoldingMarkerBackgroundBrush = MarkupEditorController.CreateBrush("#FF25282C");
+        foldingMargin.FoldingMarkerBrush = MarkupEditorController.CreateBrush("#FF9FA7AE");
+        foldingMargin.SelectedFoldingMarkerBackgroundBrush = MarkupEditorController.CreateBrush("#FF3A4046");
+        foldingMargin.SelectedFoldingMarkerBrush = MarkupEditorController.CreateBrush("#FFF2F4F5");
+    }
+
+    private void UpdateFoldings() {
+        this.foldingManager.UpdateFoldings(this.foldingStrategy.CreateNewFoldings(this.editor.Document), -1);
     }
 
     private void SelectWord() {
@@ -188,5 +225,11 @@ internal sealed class MarkupEditorController {
 
     private static bool IsWordCharacter(char character) {
         return char.IsLetterOrDigit(character) || character is '_' or ':' or '-' or '.';
+    }
+
+    private static SolidColorBrush CreateBrush(string value) {
+        var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(value));
+        brush.Freeze();
+        return brush;
     }
 }

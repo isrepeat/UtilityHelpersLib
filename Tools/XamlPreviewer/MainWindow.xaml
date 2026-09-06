@@ -828,7 +828,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="EditorColumn"
                                   Width="1.15*" />
-                <ColumnDefinition Width="10" />
+                <ColumnDefinition Width="15" />
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="0" />
                 <ColumnDefinition Width="0" />
@@ -935,7 +935,7 @@
             </Grid>
             <GridSplitter Grid.Column="1"
                           HorizontalAlignment="Stretch"
-                          Background="#444444"
+                          Background="#333333"
                           DragCompleted="EditorSplitterDragCompleted" />
             <Grid Grid.Column="2"
                   Margin="10">

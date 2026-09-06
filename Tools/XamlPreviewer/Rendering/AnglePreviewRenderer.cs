@@ -38,7 +38,7 @@ internal sealed class AnglePreviewRenderer : IDisposable {
             this.Height,
             96,
             96,
-            PixelFormats.Bgra32,
+            PixelFormats.Pbgra32,
             null,
             pixels,
             stride);

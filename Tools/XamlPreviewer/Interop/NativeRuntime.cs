@@ -95,6 +95,14 @@ internal static class NativeRuntime {
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
     public static extern int xr_attach_animations(IntPtr root, IntPtr animations);
 
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+    public static extern int xr_set_page_transition(
+        IntPtr root,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string from,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string to,
+        int backward,
+        int visible);
+
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_add_storyboard_track")]
     public static extern int xr_add_storyboard_track(
         IntPtr element,

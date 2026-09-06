@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Media;
 using System.Xml.Linq;
+using System.Xml;
 
 namespace XamlPreviewer;
 
@@ -26,24 +27,31 @@ internal static class PreviewRenderer {
     }
 
     public static IntPtr CreateRoot(string markup, JsonElement data) {
+        return CreateRootWithLocations(markup, data, new Dictionary<IntPtr, (int Line, int Column)>());
+    }
+
+    public static IntPtr CreateRootWithLocations(
+        string markup, JsonElement data, Dictionary<IntPtr, (int Line, int Column)> locations) {
         var document = XDocument.Parse(markup, LoadOptions.SetLineInfo);
         MarkupValidator.Validate(document);
         var rootNode = document.Root
             ?? throw new InvalidDataException("Разметка не содержит корневого элемента.");
-        return PreviewRenderer.Build(rootNode, data);
+        return PreviewRenderer.Build(rootNode, data, locations);
     }
 
     public static SolidColorBrush ParseBrush(string value) {
         return new SolidColorBrush((Color)ColorConverter.ConvertFromString(value));
     }
 
-    private static IntPtr Build(XElement node, JsonElement data) {
+    private static IntPtr Build(XElement node, JsonElement data, Dictionary<IntPtr, (int Line, int Column)> locations) {
         var element = NativeRuntime.xr_create_element(node.Name.LocalName);
         if (element == IntPtr.Zero) {
             throw new InvalidOperationException(NativeRuntime.GetLastError());
         }
 
         try {
+            var source = (IXmlLineInfo)node;
+            locations[element] = (source.LineNumber, Math.Max(1, source.LinePosition - 1));
             foreach (var attribute in node.Attributes()) {
                 if (attribute.IsNamespaceDeclaration) {
                     continue;
@@ -58,11 +66,11 @@ internal static class PreviewRenderer {
             PreviewRenderer.ApplyDefinitions(element, node);
             PreviewRenderer.ApplyStoryboards(element, node);
             if (node.Name.LocalName == "ListView") {
-                PreviewRenderer.BuildListViewItems(element, node, data);
+                PreviewRenderer.BuildListViewItems(element, node, data, locations);
             }
             else {
                 foreach (var childNode in node.Elements().Where(PreviewRenderer.IsVisualElement)) {
-                    PreviewRenderer.AddChild(element, PreviewRenderer.Build(childNode, data));
+                    PreviewRenderer.AddChild(element, PreviewRenderer.Build(childNode, data, locations));
                 }
             }
 
@@ -74,7 +82,8 @@ internal static class PreviewRenderer {
         }
     }
 
-    private static void BuildListViewItems(IntPtr listView, XElement node, JsonElement data) {
+    private static void BuildListViewItems(IntPtr listView, XElement node, JsonElement data,
+        Dictionary<IntPtr, (int Line, int Column)> locations) {
         var source = PreviewRenderer.ResolveElement(PreviewRenderer.Attribute(node, "itemsSource"), data);
         var template = node.Elements()
             .FirstOrDefault(element => element.Name.LocalName == "ListView.ItemTemplate")?
@@ -87,7 +96,7 @@ internal static class PreviewRenderer {
         }
 
         foreach (var item in items.EnumerateArray()) {
-            PreviewRenderer.AddChild(listView, PreviewRenderer.Build(template, item));
+            PreviewRenderer.AddChild(listView, PreviewRenderer.Build(template, item, locations));
         }
     }
 

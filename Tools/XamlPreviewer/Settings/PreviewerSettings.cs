@@ -5,6 +5,16 @@ using System.Text.Json.Serialization;
 
 namespace XamlPreviewer;
 
+internal sealed class DevicePreset {
+    public required string Name { get; init; }
+    public required int Width { get; init; }
+    public required int Height { get; init; }
+
+    public override string ToString() {
+        return $"{this.Name} · {this.Width}×{this.Height}";
+    }
+}
+
 internal sealed class PreviewerSettings {
     private const string DefaultResourcesDirectory = @"C:\WORK\Android\Projects\MobileClock\Native\Resources";
     private const string DefaultXamlDirectory = @"C:\WORK\Android\Projects\MobileClock\Native\UI";
@@ -37,12 +47,12 @@ internal sealed class PreviewerSettings {
         {
           "MainPage": {
             "settingsButton": {
-              "tap": { "type": "navigate", "target": "SettingsPage", "transition": "slideLeft" }
+              "tap": { "type": "navigate", "target": "SettingsPage", "direction": "forward" }
             }
           },
           "SettingsPage": {
             "backNavigation": {
-              "tap": { "type": "navigate", "target": "MainPage", "transition": "slideRight" }
+              "tap": { "type": "navigate", "target": "MainPage", "direction": "backward" }
             }
           }
         }
@@ -73,6 +83,13 @@ internal sealed class PreviewerSettings {
     public double PreviewVerticalOffset { get; set; }
     public bool IsPreviewLandscape { get; set; }
     public double AnimationPlaybackRate { get; set; } = 1.0;
+    public double[] AnimationPlaybackRates { get; set; } = [0.1, 0.25, 0.5, 1.0, 2.0, 4.0];
+    public DevicePreset[] PreviewResolutions { get; set; } = [
+        new() { Name = "Redmi 15C", Width = 720, Height = 1600 },
+        new() { Name = "HD+", Width = 720, Height = 1280 },
+        new() { Name = "FHD+", Width = 1080, Height = 2400 },
+        new() { Name = "QHD+", Width = 1440, Height = 3200 },
+    ];
 
     [JsonIgnore]
     public string FilePath { get; private set; } = string.Empty;
@@ -93,6 +110,8 @@ internal sealed class PreviewerSettings {
         }
         settings.CreateDefaultScenariosIfMissing();
         settings.CreateDefaultInteractionsIfMissing();
+        settings.ValidateAnimationSpeeds();
+        settings.ValidateResolutions();
         return settings;
     }
 
@@ -100,7 +119,28 @@ internal sealed class PreviewerSettings {
         var settings = JsonSerializer.Deserialize<PreviewerSettings>(json)
             ?? throw new InvalidDataException("Настройки не содержат объект.");
         settings.FilePath = filePath;
+        settings.ValidateAnimationSpeeds();
+        settings.ValidateResolutions();
         return settings;
+    }
+
+    private void ValidateResolutions() {
+        if (this.PreviewResolutions is null || this.PreviewResolutions.Length == 0
+            || this.PreviewResolutions.Any(preset => preset is null || string.IsNullOrWhiteSpace(preset.Name)
+                || preset.Width <= 0 || preset.Height <= 0)) {
+            throw new InvalidDataException("PreviewResolutions должен содержать названия и положительные размеры экранов.");
+        }
+    }
+
+    private void ValidateAnimationSpeeds() {
+        if (this.AnimationPlaybackRates is null || this.AnimationPlaybackRates.Length == 0
+            || this.AnimationPlaybackRates.Any(rate => !float.IsFinite((float)rate) || (float)rate <= 0)) {
+            throw new InvalidDataException("AnimationPlaybackRates должен содержать положительные конечные скорости.");
+        }
+        this.AnimationPlaybackRates = this.AnimationPlaybackRates.Distinct().ToArray();
+        if (!this.AnimationPlaybackRates.Contains(this.AnimationPlaybackRate)) {
+            this.AnimationPlaybackRate = this.AnimationPlaybackRates[0];
+        }
     }
 
     public void Save() {

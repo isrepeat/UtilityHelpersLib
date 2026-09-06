@@ -15,44 +15,73 @@ internal sealed class PreviewSession : IDisposable {
     private IntPtr capturedElement;
     private bool isElementInspectionEnabled;
     private bool isDisposed;
+    private IReadOnlyDictionary<IntPtr, (int Line, int Column)> sourceLocations =
+        new Dictionary<IntPtr, (int Line, int Column)>();
 
-    public PreviewSession(IntPtr root, string markupDirectory, int width, int height) {
+    public PreviewSession(IntPtr root, string markupDirectory, int width, int height, bool startHidden = false) {
         this.root = root;
         NativeRuntime.Ensure(NativeRuntime.xr_layout(root, width, height) != 0);
         this.renderer = new AnglePreviewRenderer(markupDirectory, width, height);
-        this.animations = NativeRuntime.xr_create_animation_controller();
-        NativeRuntime.Ensure(this.animations != IntPtr.Zero);
-        NativeRuntime.Ensure(NativeRuntime.xr_attach_animations(root, this.animations) != 0);
-        this.image = new Image {
-            Width = this.renderer.Width,
-            Height = this.renderer.Height,
-            Stretch = Stretch.Fill
-        };
-        this.inspectionOutline = new Border {
-            BorderBrush = Brushes.Red,
-            BorderThickness = new Thickness(2.0),
-            IsHitTestVisible = false,
-            Visibility = Visibility.Collapsed
-        };
-        this.surface = new Grid {
-            Width = this.renderer.Width,
-            Height = this.renderer.Height
-        };
-        this.surface.Children.Add(this.image);
-        this.surface.Children.Add(this.inspectionOutline);
-        this.image.MouseLeftButtonDown += this.ImageMouseLeftButtonDown;
-        this.image.MouseLeftButtonUp += this.ImageMouseLeftButtonUp;
-        this.image.MouseMove += this.ImageMouseMove;
-        this.image.MouseLeave += this.ImageMouseLeave;
-        this.Render();
+        try {
+            this.animations = NativeRuntime.xr_create_animation_controller();
+            NativeRuntime.Ensure(this.animations != IntPtr.Zero);
+            if (startHidden) {
+                NativeRuntime.Ensure(NativeRuntime.xr_set_attribute(root, "visibility", "Collapsed") != 0);
+            }
+            NativeRuntime.Ensure(NativeRuntime.xr_attach_animations(root, this.animations) != 0);
+            this.image = new Image {
+                Width = this.renderer.Width,
+                Height = this.renderer.Height,
+                Stretch = Stretch.Fill
+            };
+            this.inspectionOutline = new Border {
+                BorderBrush = Brushes.Red,
+                BorderThickness = new Thickness(2.0),
+                IsHitTestVisible = false,
+                Visibility = Visibility.Collapsed
+            };
+            this.surface = new Grid {
+                Width = this.renderer.Width,
+                Height = this.renderer.Height
+            };
+            this.surface.Children.Add(this.image);
+            this.surface.Children.Add(this.inspectionOutline);
+            this.image.MouseLeftButtonDown += this.ImageMouseLeftButtonDown;
+            this.image.MouseLeftButtonUp += this.ImageMouseLeftButtonUp;
+            this.image.MouseMove += this.ImageMouseMove;
+            this.image.MouseLeave += this.ImageMouseLeave;
+            if (!startHidden) {
+                this.Render();
+            }
+        } catch {
+            if (this.animations != IntPtr.Zero) {
+                NativeRuntime.xr_destroy_animation_controller(this.animations);
+                this.animations = IntPtr.Zero;
+            }
+            this.renderer.Dispose();
+            throw;
+        }
     }
 
     public FrameworkElement Surface => this.surface;
 
-    public ImageSource? Snapshot => this.image.Source;
-
     public event EventHandler? AnimationStarted;
     public event EventHandler<string>? Tapped;
+    public event EventHandler<(int Line, int Column)>? ElementSelected;
+
+    public void SetSourceLocations(IReadOnlyDictionary<IntPtr, (int Line, int Column)> locations) {
+        this.sourceLocations = locations;
+    }
+
+    public void Transition(string from, string to, bool backward, bool visible) {
+        this.ThrowIfDisposed();
+        this.capturedElement = IntPtr.Zero;
+        this.image.ReleaseMouseCapture();
+        this.inspectionOutline.Visibility = Visibility.Collapsed;
+        NativeRuntime.Ensure(NativeRuntime.xr_set_page_transition(
+            this.root, from, to, backward ? 1 : 0, visible ? 1 : 0) != 0);
+        this.Render();
+    }
 
     public void SetAnimationSpeed(double value) {
         this.ThrowIfDisposed();
@@ -65,6 +94,11 @@ internal sealed class PreviewSession : IDisposable {
             return;
         }
         this.isElementInspectionEnabled = value;
+        this.image.Cursor = null;
+        if (value) {
+            this.capturedElement = IntPtr.Zero;
+            this.image.ReleaseMouseCapture();
+        }
         if (!value) {
             this.inspectionOutline.Visibility = Visibility.Collapsed;
             return;
@@ -107,6 +141,11 @@ internal sealed class PreviewSession : IDisposable {
 
     private void ImageMouseLeftButtonDown(object sender, MouseButtonEventArgs eventArgs) {
         var point = eventArgs.GetPosition(this.image);
+        if (this.isElementInspectionEnabled) {
+            this.InspectElement(point);
+            eventArgs.Handled = true;
+            return;
+        }
         this.capturedElement = NativeRuntime.xr_hit_test(
             this.root,
             this.ScaleX(point.X),
@@ -121,6 +160,12 @@ internal sealed class PreviewSession : IDisposable {
     }
 
     private void ImageMouseLeftButtonUp(object sender, MouseButtonEventArgs eventArgs) {
+        if (this.isElementInspectionEnabled) {
+            this.capturedElement = IntPtr.Zero;
+            this.image.ReleaseMouseCapture();
+            eventArgs.Handled = true;
+            return;
+        }
         if (this.capturedElement == IntPtr.Zero) {
             return;
         }
@@ -140,6 +185,10 @@ internal sealed class PreviewSession : IDisposable {
         }
         var point = eventArgs.GetPosition(this.image);
         this.UpdateInspectionOutline(point);
+        if (this.isElementInspectionEnabled) {
+            this.image.Cursor = Cursors.Cross;
+            return;
+        }
         var element = NativeRuntime.xr_hit_test(
             this.root,
             this.ScaleX(point.X),
@@ -175,6 +224,16 @@ internal sealed class PreviewSession : IDisposable {
             0.0,
             0.0);
         this.inspectionOutline.Visibility = Visibility.Visible;
+    }
+
+    private void InspectElement(Point point) {
+        if (this.image.ActualWidth <= 0.0 || this.image.ActualHeight <= 0.0) {
+            return;
+        }
+        var element = NativeRuntime.xr_hit_test_visual(this.root, this.ScaleX(point.X), this.ScaleY(point.Y));
+        if (this.sourceLocations.TryGetValue(element, out var location)) {
+            this.ElementSelected?.Invoke(this, location);
+        }
     }
 
     private void Render() {

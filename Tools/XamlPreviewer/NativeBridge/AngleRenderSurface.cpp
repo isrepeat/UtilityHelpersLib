@@ -5,18 +5,33 @@
 #include <ESRenderer/OpenGlRenderer.h>
 #include <XamlRuntime/RenderEngine.h>
 
-#include "../../../../Resources/XamlHost/Effects.h"
-#include "../../../../Resources/XamlHost/Shaders.h"
+#include "../../../../Resources/Effects/Effects.h"
+#include "../../../../Resources/Effects/Shaders.h"
 #include "AngleRenderSurface.h"
 
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <stdexcept>
+#include <memory>
 #include <string>
 #include <vector>
 
 namespace xaml::bridge::_details {
+    EGLDisplay SharedDisplay() {
+        // EGL display belongs to the bridge, not an individual preview page.
+        static const std::shared_ptr<void> display = []() {
+            EGLDisplay value = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+            if (value == EGL_NO_DISPLAY || eglInitialize(value, nullptr, nullptr) == EGL_FALSE) {
+                throw std::runtime_error("ANGLE could not initialize EGL");
+            }
+            return std::shared_ptr<void>(value, [](void* value) {
+                eglTerminate(value);
+            });
+        }();
+        return display.get();
+    }
+
     // Повторяет демонстрационный renderer MobileClock, чтобы эффект был виден в previewer-е.
     bool RenderWaveOutline(const Element& element, RenderContext<mobileclock::resources::effects::WaveAnimation>& context) {
         if (element.Type() != ElementType::button) {
@@ -87,9 +102,8 @@ namespace xaml::bridge {
         if (width <= 0 || height <= 0) {
             throw std::invalid_argument("ANGLE surface dimensions must be positive");
         }
-        this->display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+        this->display = _details::SharedDisplay();
         if (this->display == EGL_NO_DISPLAY
-            || eglInitialize(this->display, nullptr, nullptr) == EGL_FALSE
             || eglBindAPI(EGL_OPENGL_ES_API) == EGL_FALSE) {
             throw std::runtime_error("ANGLE could not initialize EGL");
         }
@@ -167,8 +181,11 @@ namespace xaml::bridge {
     }
 
     AngleRenderSurface::Implementation::~Implementation() {
-        this->renderer.reset();
         if (this->display != EGL_NO_DISPLAY) {
+            if (this->context != EGL_NO_CONTEXT && this->surface != EGL_NO_SURFACE) {
+                eglMakeCurrent(this->display, this->surface, this->surface, this->context);
+            }
+            this->renderer.reset();
             eglMakeCurrent(this->display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
             if (this->context != EGL_NO_CONTEXT) {
                 eglDestroyContext(this->display, this->context);
@@ -176,7 +193,6 @@ namespace xaml::bridge {
             if (this->surface != EGL_NO_SURFACE) {
                 eglDestroySurface(this->display, this->surface);
             }
-            eglTerminate(this->display);
         }
     }
 
@@ -195,6 +211,7 @@ namespace xaml::bridge {
             throw std::runtime_error("ANGLE could not activate the offscreen context");
         }
         this->renderer->BeginFrame();
+        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         xaml::Render(root, *this->renderer, this->renderers);
         glFinish();
 

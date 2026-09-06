@@ -18,7 +18,7 @@ namespace xaml::_details {
         }
     }
 
-    float AnimatedValue(const Element& target, AnimatedProperty property) {
+    float AnimatedValue(const Element& target, AnimatedProperty property, AnimationTrigger trigger) {
         if (property == AnimatedProperty::opacity) {
             return target.Opacity();
         }
@@ -26,6 +26,10 @@ namespace xaml::_details {
             return target.RenderOffsetX();
         }
         if (property == AnimatedProperty::toggleProgress) {
+            if (target.ToggleProgress() < 0.0f && trigger == AnimationTrigger::toggled) {
+                // HandleTap already changed IsOn; the first animation starts at the previous state.
+                return target.IsOn() ? 0.0f : 1.0f;
+            }
             return target.ToggleProgress() < 0.0f
                 ? (target.IsOn() ? 1.0f : 0.0f) : target.ToggleProgress();
         }
@@ -237,7 +241,10 @@ namespace xaml {
     }
 
     void AnimationController::SetPlaybackRate(float value) {
-        this->playbackRate = std::clamp(value, 0.1f, 4.0f);
+        if (!std::isfinite(value) || value <= 0.0f) {
+            throw std::invalid_argument("Playback rate must be positive and finite");
+        }
+        this->playbackRate = value;
         for (const auto& root : this->roots) {
             if (!root.lifetime.expired()) {
                 root.element->animationState.updatedAt = std::chrono::steady_clock::now();
@@ -363,7 +370,7 @@ namespace xaml {
                 }
                 handled = true;
                 AddPropertyTrack(target, track.property,
-                    track.fromCurrent ? _details::AnimatedValue(target, track.property) : track.from,
+                    track.fromCurrent ? _details::AnimatedValue(target, track.property, trigger) : track.from,
                     track.toToggleState ? (target.IsOn() ? 1.0f : 0.0f) : track.to,
                     track.duration, track.easing,
                     trigger == AnimationTrigger::show || trigger == AnimationTrigger::hide);

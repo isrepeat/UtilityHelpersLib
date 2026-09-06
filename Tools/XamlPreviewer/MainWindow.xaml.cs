@@ -12,7 +12,6 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 using System.Windows.Threading;
 
 namespace XamlPreviewer;
@@ -44,10 +43,11 @@ public partial class MainWindow : Window {
     private FileSystemWatcher? scenariosWatcher;
     private FileSystemWatcher? settingsWatcher;
     private PreviewSession? previewSession;
-    private Image? transitioningPageSnapshot;
+    private bool isClosing;
+    private PreviewSession? outgoingSession;
     private PreviewerSettings settings = null!;
     private string? markupPath;
-    private string? pendingPageTransition;
+    private (string From, string To, bool Backward)? pendingPageTransition;
     private (int Width, int Height)? markupPreviewResolution;
     private bool shouldRestorePreviewPosition = true;
     private bool isMarkupDirty;
@@ -91,16 +91,6 @@ public partial class MainWindow : Window {
         Settings,
     }
 
-    private sealed class DevicePreset {
-        public required string Name { get; init; }
-        public required int Width { get; init; }
-        public required int Height { get; init; }
-
-        public override string ToString() {
-            return $"{this.Name} · {this.Width}×{this.Height}";
-        }
-    }
-
     private sealed class AnimationSpeed {
         public required string Name { get; init; }
         public required double Rate { get; init; }
@@ -118,22 +108,6 @@ public partial class MainWindow : Window {
         EaseOutCubic,
         Exponential,
     }
-
-    private static readonly DevicePreset[] DevicePresets = [
-        new() { Name = "Redmi 15C", Width = 720, Height = 1600 },
-        new() { Name = "HD+", Width = 720, Height = 1280 },
-        new() { Name = "FHD+", Width = 1080, Height = 2400 },
-        new() { Name = "QHD+", Width = 1440, Height = 3200 },
-    ];
-
-    private static readonly AnimationSpeed[] AnimationSpeeds = [
-        new() { Name = "0.1×", Rate = 0.1 },
-        new() { Name = "0.25×", Rate = 0.25 },
-        new() { Name = "0.5×", Rate = 0.5 },
-        new() { Name = "1×", Rate = 1.0 },
-        new() { Name = "2×", Rate = 2.0 },
-        new() { Name = "4×", Rate = 4.0 },
-    ];
 
     private sealed class SmoothScrollState {
         public required ScrollViewer ScrollViewer { get; init; }
@@ -197,6 +171,8 @@ public partial class MainWindow : Window {
         this.StateChanged += this.WindowStateChanged;
         this.PreviewKeyDown += this.WindowPreviewKeyDown;
         this.PreviewKeyUp += this.WindowPreviewKeyUp;
+        this.Deactivated += (_, _) => this.previewSession?.SetElementInspectionEnabled(false);
+        this.Activated += (_, _) => this.UpdateElementInspection();
     }
 
     private void WindowLoaded(object sender, RoutedEventArgs eventArgs) {
@@ -469,6 +445,7 @@ public partial class MainWindow : Window {
                 : scenarios;
             var root = PreviewRenderer.CreateRoot(File.ReadAllText(path), data);
             this.animationTimer.Stop();
+            this.CompletePageTransition();
             this.previewSession?.Dispose();
             this.previewSession = null;
             this.previewLayer.Children.Clear();
@@ -501,6 +478,8 @@ public partial class MainWindow : Window {
 
     private void ClearFolderPickerPreview() {
         this.animationTimer.Stop();
+        this.pendingPageTransition = null;
+        this.CompletePageTransition();
         this.previewSession?.Dispose();
         this.previewSession = null;
         this.previewLayer.Children.Clear();
@@ -602,6 +581,7 @@ public partial class MainWindow : Window {
 
         this.settings.AnimationPlaybackRate = speed.Rate;
         this.previewSession?.SetAnimationSpeed(speed.Rate);
+        this.outgoingSession?.SetAnimationSpeed(speed.Rate);
         this.SyncSettingsEditor();
         this.PersistSettings();
     }
@@ -715,14 +695,16 @@ public partial class MainWindow : Window {
     }
 
     private void WindowPreviewKeyDown(object sender, KeyEventArgs eventArgs) {
-        if (eventArgs.Key is Key.LeftAlt or Key.RightAlt or Key.System) {
-            this.previewSession?.SetElementInspectionEnabled(true);
+        var key = eventArgs.Key == Key.System ? eventArgs.SystemKey : eventArgs.Key;
+        if (key is Key.LeftAlt or Key.RightAlt) {
+            this.UpdateElementInspection();
         }
     }
 
     private void WindowPreviewKeyUp(object sender, KeyEventArgs eventArgs) {
-        if (eventArgs.Key is Key.LeftAlt or Key.RightAlt or Key.System) {
-            this.previewSession?.SetElementInspectionEnabled(false);
+        var key = eventArgs.Key == Key.System ? eventArgs.SystemKey : eventArgs.Key;
+        if (key is Key.LeftAlt or Key.RightAlt) {
+            this.UpdateElementInspection();
         }
         this.previewViewportController.HandleKeyUp(eventArgs);
         return;
@@ -738,6 +720,30 @@ public partial class MainWindow : Window {
         this.isPreviewPanning = false;
         this.PreviewViewport.Cursor = null;
         this.PreviewViewport.ReleaseMouseCapture();
+    }
+
+    private void UpdateElementInspection() {
+        if (this.isClosing) {
+            return;
+        }
+        this.previewSession?.SetElementInspectionEnabled(
+            this.IsActive && this.editorMode == EditorMode.Xaml
+            && (Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)));
+    }
+
+    private void PreviewElementSelected(object? sender, (int Line, int Column) location) {
+        if (this.editorMode != EditorMode.Xaml || !ReferenceEquals(sender, this.previewSession)) {
+            return;
+        }
+        var document = this.MarkupEditor.Document;
+        if (location.Line < 1 || location.Line > document.LineCount) {
+            return;
+        }
+        var line = document.GetLineByNumber(location.Line);
+        this.MarkupEditor.CaretOffset = line.Offset + Math.Min(location.Column - 1, line.Length);
+        this.MarkupEditor.Select(this.MarkupEditor.CaretOffset, 0);
+        this.MarkupEditor.ScrollTo(location.Line, location.Column);
+        this.MarkupEditor.Focus();
     }
 
     private void FitPreviewButtonClick(object sender, RoutedEventArgs eventArgs) {
@@ -883,6 +889,9 @@ public partial class MainWindow : Window {
 
     private void RenderTimerTick(object? sender, EventArgs eventArgs) {
         this.renderTimer.Stop();
+        if (this.isClosing) {
+            return;
+        }
         try {
             this.markupPreviewResolution = PreviewRenderer.GetPreviewResolution(this.markupEditorController.Text);
             this.ApplyPreviewLayout();
@@ -896,41 +905,47 @@ public partial class MainWindow : Window {
             var data = scenarioName is not null && scenarios.TryGetProperty(scenarioName, out var selected)
                 ? selected
                 : scenarios;
-            var root = PreviewRenderer.CreateRoot(this.markupEditorController.Text, data);
+            string sourceMarkup = this.markupEditorController.Text;
+            var locations = new Dictionary<IntPtr, (int Line, int Column)>();
+            var root = PreviewRenderer.CreateRootWithLocations(sourceMarkup, data, locations);
             var previewSize = this.GetPreviewSize();
             this.animationTimer.Stop();
             var previousSession = this.previewSession;
             var transition = this.pendingPageTransition;
             this.pendingPageTransition = null;
-            var previousSnapshot = previousSession is not null && transition is not null
-                ? this.CreatePageSnapshot(previousSession)
-                : null;
             this.CompletePageTransition();
-            previousSession?.Dispose();
-            this.previewSession = null;
-            this.previewLayer.Children.Clear();
             PreviewSession session;
             try {
                 session = new PreviewSession(
                     root,
                     this.settings.ResourcesDirectory,
                     previewSize.Width,
-                    previewSize.Height);
+                    previewSize.Height,
+                    previousSession is not null && transition is not null);
             }
             catch {
                 NativeRuntime.xr_destroy_element(root);
                 throw;
             }
+            this.previewLayer.Children.Clear();
             session.SetAnimationSpeed(this.GetAnimationPlaybackRate());
             session.AnimationStarted += this.PreviewSessionAnimationStarted;
             this.animationTimer.Start();
             session.Tapped += this.PreviewSessionTapped;
             this.previewSession = session;
-            if (previousSnapshot is not null && transition is not null) {
-                this.StartPageTransition(previousSnapshot, session, transition);
+            if (previousSession is not null && transition is not null) {
+                this.StartPageTransition(previousSession, session, transition.Value);
             } else {
+                previousSession?.Dispose();
                 this.previewLayer.Children.Add(session.Surface);
             }
+            session.SetSourceLocations(locations);
+            session.ElementSelected += (sender, location) => {
+                if (this.markupEditorController.Text == sourceMarkup) {
+                    this.PreviewElementSelected(sender, location);
+                }
+            };
+            this.UpdateElementInspection();
             this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
             this.StatusText.Text = $"Предпросмотр обновлён · {DateTime.Now:HH:mm:ss}";
             if (this.shouldRestorePreviewPosition) {
@@ -944,17 +959,26 @@ public partial class MainWindow : Window {
     }
 
     private void AnimationTimerTick(object? sender, EventArgs eventArgs) {
-        if (this.previewSession is null || !this.previewSession.Update()) {
+        if (this.isClosing) {
+            return;
+        }
+        bool currentAnimating = this.previewSession?.Update() ?? false;
+        bool outgoingAnimating = this.outgoingSession?.Update() ?? false;
+        if (!currentAnimating && !outgoingAnimating) {
+            this.CompletePageTransition();
             this.animationTimer.Stop();
         }
     }
 
     private void PreviewSessionAnimationStarted(object? sender, EventArgs eventArgs) {
+        if (this.isClosing) {
+            return;
+        }
         this.animationTimer.Start();
     }
 
     private void PreviewSessionTapped(object? sender, string elementId) {
-        if (string.IsNullOrEmpty(elementId) || this.PagePicker.SelectedItem is not string pageName
+        if (this.outgoingSession is not null || string.IsNullOrEmpty(elementId) || this.PagePicker.SelectedItem is not string pageName
             || !File.Exists(this.settings.InteractionsPath)) {
             return;
         }
@@ -965,77 +989,54 @@ public partial class MainWindow : Window {
             || !element.TryGetProperty("tap", out var tap)
             || !tap.TryGetProperty("type", out var type)
             || type.GetString() != "navigate"
-            || !tap.TryGetProperty("target", out var target)
-            || !tap.TryGetProperty("transition", out var transition)) {
+            || !tap.TryGetProperty("target", out var target)) {
             return;
         }
-        var transitionName = transition.GetString();
-        if (string.IsNullOrWhiteSpace(transitionName)) {
-            return;
-        }
+        // Legacy slideRight only supplies direction; effects come from XAML.
+        bool backward = tap.TryGetProperty("direction", out var direction)
+            ? string.Equals(direction.GetString(), "backward", StringComparison.OrdinalIgnoreCase)
+            : tap.TryGetProperty("transition", out var legacy)
+                && string.Equals(legacy.GetString(), "slideRight", StringComparison.OrdinalIgnoreCase);
         var targetPage = target.GetString() + ".xaml";
-        if (this.PagePicker.Items.Contains(targetPage)) {
+        if (targetPage != pageName && this.PagePicker.Items.Contains(targetPage)) {
             // Навигация выражается через тот же PagePicker, что и выбор страницы
             // пользователем. Его SelectionChanged загрузит XAML целевой страницы.
-            this.pendingPageTransition = transitionName;
+            this.pendingPageTransition = (PageId(pageName), PageId(targetPage), backward);
             this.PagePicker.SelectedItem = targetPage;
         }
     }
 
-    private void StartPageTransition(
-        Image previousSnapshot,
-        PreviewSession nextSession,
-        string transition) {
-        this.CompletePageTransition();
-        this.transitioningPageSnapshot = previousSnapshot;
-        this.previewLayer.Children.Add(previousSnapshot);
-        this.previewLayer.Children.Add(nextSession.Surface);
-
-        const int durationMilliseconds = 220;
-        var duration = new Duration(TimeSpan.FromMilliseconds(durationMilliseconds));
-        if (string.Equals(transition, "fade", StringComparison.OrdinalIgnoreCase)) {
-            previousSnapshot.BeginAnimation(
-                OpacityProperty,
-                new DoubleAnimation(1.0, 0.0, duration));
-            var fadeIn = new DoubleAnimation(0.0, 1.0, duration);
-            fadeIn.Completed += this.PageTransitionCompleted;
-            nextSession.Surface.BeginAnimation(OpacityProperty, fadeIn);
-            return;
+    private static string PageId(string fileName) {
+        var name = Path.GetFileNameWithoutExtension(fileName);
+        if (name.EndsWith("Page", StringComparison.Ordinal)) {
+            name = name[..^4];
         }
-
-        var direction = string.Equals(transition, "slideRight", StringComparison.OrdinalIgnoreCase)
-            ? 1.0
-            : -1.0;
-        var offset = this.GetPreviewSize().Width;
-        previousSnapshot.RenderTransform = new TranslateTransform();
-        nextSession.Surface.RenderTransform = new TranslateTransform(-direction * offset, 0.0);
-        previousSnapshot.RenderTransform.BeginAnimation(
-            TranslateTransform.XProperty,
-            new DoubleAnimation(0.0, direction * offset, duration));
-        var slideIn = new DoubleAnimation(-direction * offset, 0.0, duration);
-        slideIn.Completed += this.PageTransitionCompleted;
-        nextSession.Surface.RenderTransform.BeginAnimation(TranslateTransform.XProperty, slideIn);
+        return name.Length == 0 ? name : char.ToLowerInvariant(name[0]) + name[1..];
     }
 
-    private void PageTransitionCompleted(object? sender, EventArgs eventArgs) {
-        this.CompletePageTransition();
+    private void StartPageTransition(
+        PreviewSession previousSession,
+        PreviewSession nextSession,
+        (string From, string To, bool Backward) transition) {
+        this.outgoingSession = previousSession;
+        previousSession.Surface.IsHitTestVisible = false;
+        nextSession.Surface.IsHitTestVisible = false;
+        this.previewLayer.Children.Add(previousSession.Surface);
+        this.previewLayer.Children.Add(nextSession.Surface);
+        previousSession.Transition(transition.From, transition.To, transition.Backward, false);
+        nextSession.Transition(transition.From, transition.To, transition.Backward, true);
+        this.animationTimer.Start();
     }
 
     private void CompletePageTransition() {
-        if (this.transitioningPageSnapshot is null) {
-            return;
+        if (this.outgoingSession is not null) {
+            this.previewLayer.Children.Remove(this.outgoingSession.Surface);
+            this.outgoingSession.Dispose();
+            this.outgoingSession = null;
         }
-        this.previewLayer.Children.Remove(this.transitioningPageSnapshot);
-        this.transitioningPageSnapshot = null;
-    }
-
-    private Image CreatePageSnapshot(PreviewSession session) {
-        return new Image {
-            Width = this.DeviceSurface.Width,
-            Height = this.DeviceSurface.Height,
-            Source = session.Snapshot,
-            Stretch = Stretch.Fill,
-        };
+        if (this.previewSession is not null) {
+            this.previewSession.Surface.IsHitTestVisible = true;
+        }
     }
 
     private void LoadMarkup(string path) {
@@ -1067,6 +1068,9 @@ public partial class MainWindow : Window {
             }
 
             var names = scenarios.EnumerateObject().Select(property => property.Name).ToArray();
+            if (this.ScenarioPicker.Items.Cast<string>().SequenceEqual(names)) {
+                return;
+            }
             this.ScenarioPicker.ItemsSource = names;
             this.ScenarioPicker.SelectedItem = names.Contains(previous) ? previous : names.FirstOrDefault();
         }
@@ -1085,6 +1089,9 @@ public partial class MainWindow : Window {
                 .Order()
                 .ToArray()
             : [];
+        if (this.PagePicker.Items.Cast<string>().SequenceEqual(pages)) {
+            return;
+        }
         this.PagePicker.ItemsSource = pages;
         this.PagePicker.SelectedItem = pages.Contains(previous)
             ? previous
@@ -1151,13 +1158,20 @@ public partial class MainWindow : Window {
     }
 
     private void QueueExternalRefresh() {
+        if (this.isClosing) {
+            return;
+        }
         this.externalRefreshTimer.Stop();
         this.externalRefreshTimer.Start();
     }
 
     private void ExternalRefreshTimerTick(object? sender, EventArgs eventArgs) {
         this.externalRefreshTimer.Stop();
+        if (this.isClosing) {
+            return;
+        }
         try {
+            bool previewChanged = false;
             this.RefreshPageNames();
             if (this.markupPath is not null && File.Exists(this.markupPath)) {
                 var markup = File.ReadAllText(this.markupPath);
@@ -1168,6 +1182,7 @@ public partial class MainWindow : Window {
                     this.updatingEditors = false;
                     this.isMarkupDirty = false;
                     this.UpdateDocumentState();
+                    previewChanged = true;
                 }
             }
             if (File.Exists(this.settings.ScenariosPath)) {
@@ -1180,6 +1195,7 @@ public partial class MainWindow : Window {
                     this.isScenariosDirty = false;
                     this.UpdateDocumentState();
                     this.RefreshScenarioNames();
+                    previewChanged = true;
                 }
             }
             if (File.Exists(this.settings.FilePath)) {
@@ -1199,9 +1215,12 @@ public partial class MainWindow : Window {
                     this.ConfigureMouseWheelScrolling();
                     this.ApplyEditorScale();
                     this.ApplySettingsToPreviewControls();
+                    previewChanged = true;
                 }
             }
-            this.ScheduleRender();
+            if (previewChanged) {
+                this.ScheduleRender();
+            }
         }
         catch (Exception exception) {
             this.StatusText.Foreground = PreviewRenderer.ParseBrush("#FF8A80");
@@ -1257,11 +1276,23 @@ public partial class MainWindow : Window {
     }
 
     private void WindowClosing(object? sender, System.ComponentModel.CancelEventArgs eventArgs) {
+        if (this.isClosing) {
+            return;
+        }
+        this.isClosing = true;
+        this.settingsPersistenceReady = false;
+        this.renderTimer.Stop();
+        this.externalRefreshTimer.Stop();
         this.animationTimer.Stop();
         this.previewZoomTimer.Stop();
         this.smoothScrollTimer.Stop();
+        this.pendingPageTransition = null;
+        this.markupEditorController.Dispose();
+        var session = this.previewSession;
+        this.previewSession = null;
         this.CompletePageTransition();
-        this.previewSession?.Dispose();
+        session?.Dispose();
+        this.previewLayer.Children.Clear();
         this.markupWatcher?.Dispose();
         this.xamlDirectoryWatcher?.Dispose();
         this.scenariosWatcher?.Dispose();
@@ -1281,6 +1312,7 @@ public partial class MainWindow : Window {
     }
 
     private void UpdateEditorMode() {
+        this.UpdateElementInspection();
         this.MarkupEditor.Visibility = this.editorMode == EditorMode.Xaml ? Visibility.Visible : Visibility.Collapsed;
         this.ScenarioPanel.Visibility = this.editorMode == EditorMode.Scenarios ? Visibility.Visible : Visibility.Collapsed;
         this.SettingsPanel.Visibility = this.editorMode == EditorMode.Settings ? Visibility.Visible : Visibility.Collapsed;
@@ -1305,8 +1337,6 @@ public partial class MainWindow : Window {
     }
 
     private void InitializePreviewControls() {
-        this.DevicePresetPicker.ItemsSource = MainWindow.DevicePresets;
-        this.AnimationSpeedPicker.ItemsSource = MainWindow.AnimationSpeeds;
         this.ApplySettingsToPreviewControls();
         this.ApplyPreviewLayout();
     }
@@ -1314,11 +1344,17 @@ public partial class MainWindow : Window {
     private void ApplySettingsToPreviewControls() {
         this.updatingPreviewControls = true;
         try {
-            this.DevicePresetPicker.SelectedItem = MainWindow.DevicePresets.FirstOrDefault(
+            this.DevicePresetPicker.ItemsSource = this.settings.PreviewResolutions;
+            this.DevicePresetPicker.SelectedItem = this.settings.PreviewResolutions.FirstOrDefault(
                 preset => preset.Width == this.settings.PreviewWidth
                     && preset.Height == this.settings.PreviewHeight);
             this.PreviewOrientationToggle.IsChecked = this.settings.IsPreviewLandscape;
-            this.AnimationSpeedPicker.SelectedItem = MainWindow.AnimationSpeeds.FirstOrDefault(
+            var speeds = this.settings.AnimationPlaybackRates.Select(rate => new AnimationSpeed {
+                Name = rate.ToString("G", System.Globalization.CultureInfo.InvariantCulture) + "×",
+                Rate = rate,
+            }).ToArray();
+            this.AnimationSpeedPicker.ItemsSource = speeds;
+            this.AnimationSpeedPicker.SelectedItem = speeds.FirstOrDefault(
                 speed => speed.Rate == this.GetAnimationPlaybackRate());
         }
         finally {
@@ -1326,6 +1362,8 @@ public partial class MainWindow : Window {
         }
         this.UpdatePreviewOrientationToggle();
         this.ApplyPreviewLayout();
+        this.previewSession?.SetAnimationSpeed(this.GetAnimationPlaybackRate());
+        this.outgoingSession?.SetAnimationSpeed(this.GetAnimationPlaybackRate());
     }
 
     private void UpdatePreviewOrientationToggle() {
@@ -1346,7 +1384,7 @@ public partial class MainWindow : Window {
     }
 
     private double GetAnimationPlaybackRate() {
-        return Math.Clamp(this.settings.AnimationPlaybackRate, 0.1, 4.0);
+        return this.settings.AnimationPlaybackRate;
     }
 
     private void FitPreview() {
@@ -1595,6 +1633,9 @@ public partial class MainWindow : Window {
     }
 
     private void ScheduleRender() {
+        if (this.isClosing) {
+            return;
+        }
         this.renderTimer.Stop();
         this.renderTimer.Start();
     }
