@@ -66,10 +66,7 @@ XAML_RUNTIME_BRIDGE_API int xr_add_storyboard_track(
     float from,
     float to,
     int durationMilliseconds,
-    int easing,
-    float intensity,
-    float spread,
-    float fadeExponent);
+    int easing);
 XAML_RUNTIME_BRIDGE_API int xr_supported_attribute_count(const char* elementType);
 XAML_RUNTIME_BRIDGE_API const char* xr_supported_attribute_name(
     const char* elementType,

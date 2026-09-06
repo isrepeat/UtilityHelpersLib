@@ -103,10 +103,7 @@ internal static class NativeRuntime {
         float from,
         float to,
         int durationMilliseconds,
-        int easing,
-        float intensity,
-        float spread,
-        float fadeExponent);
+        int easing);
 
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_supported_attribute_count")]
     public static extern int xr_supported_attribute_count(

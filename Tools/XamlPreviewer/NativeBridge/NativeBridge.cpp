@@ -7,6 +7,7 @@
 #include <XamlRuntime/Animation.h>
 #include <XamlRuntime/Input.h>
 
+#include "../../../../Resources/XamlHost/Effects.h"
 #include "AngleRenderSurface.h"
 #include "NativeBridge.h"
 
@@ -275,7 +276,7 @@ int xr_attach_animations(xr_element* root, xr_animation_controller* animations) 
         if (animations == nullptr) {
             throw std::invalid_argument("animations is required");
         }
-        animations->value.Attach(*reinterpret_cast<xaml::Element*>(root), xaml::AnimationRegistry{}, true);
+        animations->value.Attach(*reinterpret_cast<xaml::Element*>(root), mobileclock::resources::effects::CreateAnimations(), true);
         return 1;
     } catch (const std::exception& error) {
         xaml::bridge::lastError = error.what();
@@ -290,15 +291,11 @@ int xr_add_storyboard_track(
     float from,
     float to,
     int durationMilliseconds,
-    int easing,
-    float intensity,
-    float spread,
-    float fadeExponent) {
+    int easing) {
     try {
         xaml::bridge::lastError.clear();
-        if (element == nullptr || trigger < 0 || trigger > 4 || property < 0 || property > 5
-            || durationMilliseconds < 0 || easing < 0 || easing > 1
-            || intensity < 0.0f || spread <= 0.0f || fadeExponent <= 0.0f) {
+        if (element == nullptr || trigger < 0 || trigger > 4 || property < 0 || property > 3
+            || durationMilliseconds < 0 || easing < 0 || easing > 1) {
             throw std::invalid_argument("invalid storyboard track");
         }
         xaml::Storyboard storyboard;
@@ -309,9 +306,6 @@ int xr_add_storyboard_track(
             to,
             std::isnan(from),
             std::isnan(to),
-            intensity,
-            spread,
-            fadeExponent,
             std::chrono::milliseconds(durationMilliseconds),
             static_cast<xaml::Easing>(easing),
         });

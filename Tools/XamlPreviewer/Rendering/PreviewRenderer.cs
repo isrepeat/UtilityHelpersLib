@@ -164,12 +164,8 @@ internal static class PreviewRenderer {
                         "Linear" => 0,
                         _ => throw new InvalidDataException("Animation easing must be Linear or CubicOut."),
                     };
-                    var intensity = PreviewRenderer.ParseAnimationParameter(track, "intensity", 0.45f, 0.0f);
-                    var spread = PreviewRenderer.ParseAnimationParameter(track, "spread", 0.28f, float.Epsilon);
-                    var fadeExponent = PreviewRenderer.ParseAnimationParameter(track, "fadeExponent", 2.0f, float.Epsilon);
                     NativeRuntime.Ensure(NativeRuntime.xr_add_storyboard_track(
-                        element, trigger, property, from, to, duration, easing,
-                        intensity, spread, fadeExponent) != 0);
+                        element, trigger, property, from, to, duration, easing) != 0);
                 }
             }
         }
@@ -192,8 +188,6 @@ internal static class PreviewRenderer {
             "renderOffsetX" => 1,
             "toggleProgress" => 2,
             "pressProgress" => 3,
-            "waveProgress" => 4,
-            "waveOpacity" => 5,
             _ => throw new InvalidDataException("Unsupported FloatAnimation property."),
         };
     }
@@ -204,19 +198,6 @@ internal static class PreviewRenderer {
             : float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var result)
                 ? result
                 : throw new InvalidDataException("Animation value must be a number or supported state value.");
-    }
-
-    private static float ParseAnimationParameter(XElement element, string name, float defaultValue, float exclusiveMinimum) {
-        var value = PreviewRenderer.Attribute(element, name);
-        if (value is null) {
-            return defaultValue;
-        }
-
-        if (!float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var result)
-            || result < exclusiveMinimum || (exclusiveMinimum > 0.0f && result == exclusiveMinimum)) {
-            throw new InvalidDataException($"{name} has an invalid value.");
-        }
-        return result;
     }
 
     private static void AddChild(IntPtr parent, IntPtr child) {

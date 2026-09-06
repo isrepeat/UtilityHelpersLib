@@ -48,6 +48,8 @@
     <ItemGroup>
         <ClCompile Include="AngleRenderSurface.cpp" />
         <ClCompile Include="NativeBridge.cpp" />
+        <ClCompile Include="..\..\..\..\Resources\XamlHost\Effects.cpp" />
+        <ClCompile Include="..\..\..\..\Resources\XamlHost\Shaders.cpp" />
     </ItemGroup>
     <ItemGroup>
         <ClInclude Include="AngleRenderSurface.h" />
