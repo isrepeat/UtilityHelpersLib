@@ -37,11 +37,11 @@
   <!-- ::::::::::::::::: Public assets project dependencies :::::::::::::::::: -->
   <!-- ProjectReference в C++ передаёт сборку и линковку .lib, но не публикует
        include-пути зависимости. Этот target дополняет модель public assets:
-       до запуска ClCompile он запрашивает у каждой referenced-библиотеки
+       до ClCompile и GetClCommandLines (IntelliSense) он запрашивает у каждой referenced-библиотеки
        GetPublicBuildAssets и применяет возвращённые IncludeDirectory к текущему
        проекту. Библиотека без такого target пропускается без ошибки. -->
   <Target Name="_ResolvePublicProjectBuildAssets"
-          BeforeTargets="ClCompile"
+          BeforeTargets="ClCompile;GetClCommandLines"
           Condition="'@(ProjectReference)'!=''">
     <!-- TargetOutputs сохраняют AssetType, заданный библиотекой. -->
     <MSBuild Projects="@(ProjectReference)"
