@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -26,12 +27,18 @@ namespace {
         std::string mode;
     };
 
+    struct Style {
+        std::string targetType;
+        std::vector<std::pair<std::string, std::string>> setters;
+    };
+
     class XamlCompiler {
     public:
         void Compile(const std::filesystem::path& input, const std::filesystem::path& outputPath);
 
     private:
         static constexpr const char* namespaceUri = "urn:mobileclock:xaml";
+        std::map<std::string, Style> styles;
 
         std::string ReadFile(const std::filesystem::path& path) {
             std::ifstream input(path, std::ios::binary);
@@ -96,7 +103,7 @@ namespace {
             // он принимает только теги/атрибуты, которые способен выразить runtime.
             const std::regex tagPattern(R"(<\s*([^>]+)>)");
             const std::regex attributePattern(
-                R"attr(([A-Za-z][A-Za-z0-9]*)\s*=\s*"([^"]*)")attr");
+                R"attr(([A-Za-z][A-Za-z0-9:]*)\s*=\s*"([^"]*)")attr");
             const std::regex namePattern(R"(^\s*([A-Za-z][A-Za-z0-9.]*))");
             std::vector<Element> stack;
             Element root;
@@ -241,6 +248,84 @@ namespace {
                 + std::to_string((color >> 8) & 0xff) + ".0f / 255.0f, "
                 + std::to_string(color & 0xff) + ".0f / 255.0f, "
                 + std::to_string(alpha) + ".0f / 255.0f}";
+        }
+
+        std::string AttributeValue(const Element& element, const std::string& name) {
+            const auto attribute = std::find_if(
+                element.attributes.begin(),
+                element.attributes.end(),
+                [&name](const auto& value) { return value.first == name; });
+            return attribute == element.attributes.end() ? std::string{} : attribute->second;
+        }
+
+        std::string PropertyName(const std::string& name) {
+            if (name.empty()) {
+                return name;
+            }
+            std::string result = name;
+            result.front() = static_cast<char>(std::tolower(result.front()));
+            return result;
+        }
+
+        void AddStyle(const Element& element) {
+            if (element.name != "Style") {
+                throw std::runtime_error("Only <Style> is allowed inside <Page.Resources>");
+            }
+            const std::string key = this->AttributeValue(element, "x:Key");
+            const std::string targetType = this->AttributeValue(element, "TargetType");
+            if (key.empty() || targetType.empty()) {
+                throw std::runtime_error("<Style> requires x:Key and TargetType");
+            }
+            Style style{targetType, {}};
+            for (const Element& setter : element.children) {
+                if (setter.name != "Setter" || !setter.children.empty()) {
+                    throw std::runtime_error("Only empty <Setter> is allowed inside <Style>");
+                }
+                const std::string property = this->AttributeValue(setter, "Property");
+                const std::string value = this->AttributeValue(setter, "Value");
+                if (property.empty() || value.empty()) {
+                    throw std::runtime_error("<Setter> requires Property and Value");
+                }
+                style.setters.emplace_back(this->PropertyName(property), value);
+            }
+            if (!this->styles.emplace(key, std::move(style)).second) {
+                throw std::runtime_error("Duplicate resource key: " + key);
+            }
+        }
+
+        void LoadResources(const Element& page) {
+            this->styles.clear();
+            for (const Element& child : page.children) {
+                if (child.name != "Page.Resources") {
+                    continue;
+                }
+                for (const Element& resource : child.children) {
+                    if (resource.name == "ResourceDictionary") {
+                        for (const Element& entry : resource.children) {
+                            this->AddStyle(entry);
+                        }
+                    } else {
+                        this->AddStyle(resource);
+                    }
+                }
+            }
+        }
+
+        const Style& FindStyle(const Element& element) {
+            const std::string reference = this->AttributeValue(element, "style");
+            const std::regex pattern(R"(^\{StaticResource\s+([A-Za-z][A-Za-z0-9]*)\}$)");
+            std::smatch match;
+            if (!std::regex_match(reference, match, pattern)) {
+                throw std::runtime_error("style must use {StaticResource Key}");
+            }
+            const auto style = this->styles.find(match[1].str());
+            if (style == this->styles.end()) {
+                throw std::runtime_error("Resource not found: " + match[1].str());
+            }
+            if (style->second.targetType != element.name) {
+                throw std::runtime_error("Style target type does not match <" + element.name + ">");
+            }
+            return style->second;
         }
 
         bool TryEmitBinding(
@@ -419,8 +504,13 @@ namespace {
             std::vector<Binding> bindings;
             output << "            auto " << variable << " = std::make_unique<Element>(ElementType::"
                 << this->ElementTypeName(element) << ");\n";
+            if (!this->AttributeValue(element, "style").empty()) {
+                for (const auto& [name, value] : this->FindStyle(element).setters) {
+                    this->EmitProperty(element, variable, name, value, output, variable, bindings, templateItem);
+                }
+            }
             for (const auto& [name, value] : element.attributes) {
-            if (name == "xmlns") {
+            if (name.rfind("xmlns", 0) == 0 || name == "style") {
                 continue;
             }
             if (name == "animation") {
@@ -444,6 +534,7 @@ namespace {
             for (size_t childIndex = 0; childIndex < element.children.size(); ++childIndex) {
                 if (element.children[childIndex].name == "columnDefinitions"
                     || element.children[childIndex].name == "rowDefinitions"
+                    || element.children[childIndex].name == "Page.Resources"
                     || element.children[childIndex].name == element.name + ".Storyboards") {
                     continue;
                 }
@@ -720,6 +811,10 @@ namespace {
             throw std::runtime_error(
                 "Root element must use xmlns=\"urn:mobileclock:xaml\"");
         }
+        if (root.name != "Page") {
+            throw std::runtime_error("Root element must be <Page>");
+        }
+        this->LoadResources(root);
         const std::string pageName = input.stem().string();
         if (!std::regex_match(pageName, std::regex(R"([A-Za-z][A-Za-z0-9]*)"))) {
             throw std::runtime_error("XAML filename must be a valid C++ type name");

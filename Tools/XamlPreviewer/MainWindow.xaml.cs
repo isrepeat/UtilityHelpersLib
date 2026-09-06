@@ -1542,6 +1542,8 @@ public partial class MainWindow : Window {
 
     private static SearchPanel ConfigureEditor(TextEditor editor, IHighlightingDefinition highlighting) {
         editor.SyntaxHighlighting = highlighting;
+        editor.Options.EnableHyperlinks = false;
+        editor.Options.EnableEmailHyperlinks = false;
         editor.TextArea.Caret.CaretBrush = PreviewRenderer.ParseBrush("#F0D78C");
         editor.TextArea.SelectionBrush = PreviewRenderer.ParseBrush("#5A4D26");
         editor.TextArea.SelectionForeground = PreviewRenderer.ParseBrush("#FFFFFF");

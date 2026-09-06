@@ -171,8 +171,14 @@ internal sealed class XamlCompletionController {
             return;
         }
 
-        this.editor.Document.Insert(caretOffset, closingTag);
-        this.editor.TextArea.Caret.Offset = caretOffset;
+        var line = this.editor.Document.GetLineByOffset(caretOffset);
+        var lineText = this.editor.Document.GetText(line.Offset, line.Length);
+        var indentation = new string(lineText.TakeWhile(character => character is ' ' or '\t').ToArray());
+        var contentIndentation = indentation + new string(' ', this.editor.Options.IndentationSize);
+        var insertion = Environment.NewLine + contentIndentation
+            + Environment.NewLine + indentation + closingTag;
+        this.editor.Document.Insert(caretOffset, insertion);
+        this.editor.TextArea.Caret.Offset = caretOffset + Environment.NewLine.Length + contentIndentation.Length;
     }
 
     private bool TryShowExplicitCompletion() {

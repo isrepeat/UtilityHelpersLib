@@ -10,6 +10,8 @@ using System.Xml;
 namespace XamlPreviewer;
 
 internal static class PreviewRenderer {
+    private sealed record Style(string TargetType, IReadOnlyDictionary<string, string> Setters);
+
     public static (int Width, int Height)? GetPreviewResolution(string markup) {
         var document = XDocument.Parse(markup, LoadOptions.None);
         var instruction = document.Nodes().OfType<XProcessingInstruction>()
@@ -36,14 +38,18 @@ internal static class PreviewRenderer {
         MarkupValidator.Validate(document);
         var rootNode = document.Root
             ?? throw new InvalidDataException("Разметка не содержит корневого элемента.");
-        return PreviewRenderer.Build(rootNode, data, locations);
+        return PreviewRenderer.Build(rootNode, data, locations, PreviewRenderer.ExtractStyles(rootNode));
     }
 
     public static SolidColorBrush ParseBrush(string value) {
         return new SolidColorBrush((Color)ColorConverter.ConvertFromString(value));
     }
 
-    private static IntPtr Build(XElement node, JsonElement data, Dictionary<IntPtr, (int Line, int Column)> locations) {
+    private static IntPtr Build(
+        XElement node,
+        JsonElement data,
+        Dictionary<IntPtr, (int Line, int Column)> locations,
+        IReadOnlyDictionary<string, Style> styles) {
         var element = NativeRuntime.xr_create_element(node.Name.LocalName);
         if (element == IntPtr.Zero) {
             throw new InvalidOperationException(NativeRuntime.GetLastError());
@@ -52,8 +58,21 @@ internal static class PreviewRenderer {
         try {
             var source = (IXmlLineInfo)node;
             locations[element] = (source.LineNumber, Math.Max(1, source.LinePosition - 1));
+            var styleReference = PreviewRenderer.Attribute(node, "style");
+            if (styleReference is not null) {
+                var key = PreviewRenderer.StaticResourceKey(styleReference);
+                if (!styles.TryGetValue(key, out var style)) {
+                    throw new InvalidDataException($"Ресурс стиля не найден: {key}.");
+                }
+                if (style.TargetType != node.Name.LocalName) {
+                    throw new InvalidDataException("TargetType стиля не соответствует элементу.");
+                }
+                foreach (var setter in style.Setters) {
+                    PreviewRenderer.SetAttribute(element, setter.Key, PreviewRenderer.Resolve(setter.Value, data));
+                }
+            }
             foreach (var attribute in node.Attributes()) {
-                if (attribute.IsNamespaceDeclaration) {
+                if (attribute.IsNamespaceDeclaration || attribute.Name.LocalName == "style") {
                     continue;
                 }
                 var value = PreviewRenderer.Resolve(attribute.Value, data);
@@ -66,11 +85,11 @@ internal static class PreviewRenderer {
             PreviewRenderer.ApplyDefinitions(element, node);
             PreviewRenderer.ApplyStoryboards(element, node);
             if (node.Name.LocalName == "ListView") {
-                PreviewRenderer.BuildListViewItems(element, node, data, locations);
+                PreviewRenderer.BuildListViewItems(element, node, data, locations, styles);
             }
             else {
                 foreach (var childNode in node.Elements().Where(PreviewRenderer.IsVisualElement)) {
-                    PreviewRenderer.AddChild(element, PreviewRenderer.Build(childNode, data, locations));
+                    PreviewRenderer.AddChild(element, PreviewRenderer.Build(childNode, data, locations, styles));
                 }
             }
 
@@ -82,8 +101,48 @@ internal static class PreviewRenderer {
         }
     }
 
+    private static IReadOnlyDictionary<string, Style> ExtractStyles(XElement page) {
+        var styles = new Dictionary<string, Style>(StringComparer.Ordinal);
+        var resources = page.Elements().FirstOrDefault(element => element.Name.LocalName == "Page.Resources");
+        if (resources is null) {
+            return styles;
+        }
+        var entries = resources.Elements().SingleOrDefault(element => element.Name.LocalName == "ResourceDictionary")?
+            .Elements() ?? resources.Elements();
+        foreach (var element in entries) {
+            if (element.Name.LocalName != "Style") {
+                throw new InvalidDataException("Page.Resources поддерживает только Style.");
+            }
+            var key = element.Attribute(XName.Get("Key", "http://schemas.microsoft.com/winfx/2006/xaml"))?.Value;
+            var targetType = PreviewRenderer.Attribute(element, "TargetType");
+            if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(targetType)) {
+                throw new InvalidDataException("Style требует x:Key и TargetType.");
+            }
+            var setters = element.Elements().ToDictionary(
+                setter => PreviewRenderer.PropertyName(PreviewRenderer.Attribute(setter, "Property")),
+                setter => PreviewRenderer.Attribute(setter, "Value") ?? throw new InvalidDataException("Setter требует Value."));
+            styles.Add(key, new Style(targetType, setters));
+        }
+        return styles;
+    }
+
+    private static string StaticResourceKey(string value) {
+        const string prefix = "{StaticResource ";
+        if (!value.StartsWith(prefix, StringComparison.Ordinal) || !value.EndsWith('}')) {
+            throw new InvalidDataException("style должен использовать {StaticResource Key}.");
+        }
+        return value[prefix.Length..^1].Trim();
+    }
+
+    private static string PropertyName(string? value) {
+        if (string.IsNullOrEmpty(value)) {
+            throw new InvalidDataException("Setter требует Property.");
+        }
+        return char.ToLowerInvariant(value[0]) + value[1..];
+    }
+
     private static void BuildListViewItems(IntPtr listView, XElement node, JsonElement data,
-        Dictionary<IntPtr, (int Line, int Column)> locations) {
+        Dictionary<IntPtr, (int Line, int Column)> locations, IReadOnlyDictionary<string, Style> styles) {
         var source = PreviewRenderer.ResolveElement(PreviewRenderer.Attribute(node, "itemsSource"), data);
         var template = node.Elements()
             .FirstOrDefault(element => element.Name.LocalName == "ListView.ItemTemplate")?
@@ -96,7 +155,7 @@ internal static class PreviewRenderer {
         }
 
         foreach (var item in items.EnumerateArray()) {
-            PreviewRenderer.AddChild(listView, PreviewRenderer.Build(template, item, locations));
+            PreviewRenderer.AddChild(listView, PreviewRenderer.Build(template, item, locations, styles));
         }
     }
 
@@ -260,6 +319,7 @@ internal static class PreviewRenderer {
     private static bool IsVisualElement(XElement element) {
         return element.Name.LocalName != "columnDefinitions"
             && element.Name.LocalName != "rowDefinitions"
+            && element.Name.LocalName != "Page.Resources"
             && !element.Name.LocalName.Contains('.');
     }
 

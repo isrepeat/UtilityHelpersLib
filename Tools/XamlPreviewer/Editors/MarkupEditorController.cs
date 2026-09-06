@@ -1,5 +1,6 @@
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Folding;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -51,7 +52,13 @@ internal sealed class MarkupEditorController {
 
     public void HandlePreviewKeyDown(KeyEventArgs eventArgs) {
         var key = eventArgs.Key == Key.System ? eventArgs.SystemKey : eventArgs.Key;
-        if (Keyboard.Modifiers == ModifierKeys.Control && key == Key.W) {
+        if (this.TryCollapseSelectionForNavigation(key)) {
+            eventArgs.Handled = true;
+        }
+        else if (this.TryPasteXaml(key)) {
+            eventArgs.Handled = true;
+        }
+        else if (Keyboard.Modifiers == ModifierKeys.Control && key == Key.W) {
             this.SelectWord();
             eventArgs.Handled = true;
         }
@@ -107,7 +114,7 @@ internal sealed class MarkupEditorController {
     }
 
     private void InsertNewLine() {
-        var indentation = this.GetIndentation(this.editor.CaretOffset);
+        var indentation = this.GetNewLineIndentation(this.editor.CaretOffset);
         var selectionStart = this.editor.SelectionStart;
         this.editor.Document.Replace(
             selectionStart,
@@ -115,6 +122,36 @@ internal sealed class MarkupEditorController {
             Environment.NewLine + indentation);
         this.editor.CaretOffset = selectionStart + Environment.NewLine.Length + indentation.Length;
         this.editor.SelectionLength = 0;
+    }
+
+    private bool TryPasteXaml(Key key) {
+        const string newline = "\n";
+        if ((key != Key.V || Keyboard.Modifiers != ModifierKeys.Control)
+            && (key != Key.Insert || Keyboard.Modifiers != ModifierKeys.Shift)
+            || !Clipboard.ContainsText()) {
+            return false;
+        }
+        var text = Clipboard.GetText().Replace("\r\n", newline).Replace('\r', '\n').TrimEnd('\n');
+        if (!text.Contains(newline, StringComparison.Ordinal) || !text.Contains('<')) {
+            return false;
+        }
+
+        var lines = text.Split(newline);
+        var commonIndentation = lines
+            .Where(line => !string.IsNullOrWhiteSpace(line))
+            .Select(MarkupEditorController.LeadingWhitespaceLength)
+            .DefaultIfEmpty(0)
+            .Min();
+        var indentation = this.GetContentIndentation(this.editor.CaretOffset);
+        var normalizedLines = lines.Select(line => line.Length >= commonIndentation
+            ? line[commonIndentation..]
+            : line);
+        var insertedText = string.Join(Environment.NewLine + indentation, normalizedLines);
+        var selectionStart = this.editor.SelectionStart;
+        this.editor.Document.Replace(selectionStart, this.editor.SelectionLength, insertedText);
+        this.editor.CaretOffset = selectionStart + insertedText.Length;
+        this.editor.SelectionLength = 0;
+        return true;
     }
 
     private void DocumentChanged(
@@ -125,6 +162,20 @@ internal sealed class MarkupEditorController {
 
     private void TextAreaPreviewMouseUp(object sender, MouseButtonEventArgs eventArgs) {
         this.editor.TextArea.Dispatcher.BeginInvoke(new Action(this.UpdateFoldingState));
+    }
+
+    private bool TryCollapseSelectionForNavigation(Key key) {
+        if (key is not (Key.Left or Key.Right or Key.Up or Key.Down)) {
+            return false;
+        }
+        if (this.editor.SelectionLength == 0 || Keyboard.Modifiers != ModifierKeys.None) {
+            return false;
+        }
+
+        var anchorOffset = this.editor.Document.GetOffset(
+            this.editor.TextArea.Selection.StartPosition.Location);
+        this.editor.Select(anchorOffset, 0);
+        return true;
     }
 
     private void ConfigureFoldingMargin() {
@@ -272,6 +323,108 @@ internal sealed class MarkupEditorController {
         var line = this.editor.Document.GetLineByOffset(offset);
         var lineText = this.editor.Document.GetText(line.Offset, line.Length);
         return new string(lineText.TakeWhile(character => character is ' ' or '\t').ToArray());
+    }
+
+    private string GetTagIndentation(int offset) {
+        var text = this.editor.Document.Text;
+        var tagOffset = text.LastIndexOf('<', Math.Min(offset - 1, text.Length - 1));
+        return tagOffset >= 0 ? this.GetIndentation(tagOffset) : this.GetIndentation(offset);
+    }
+
+    private string GetNewLineIndentation(int offset) {
+        var line = this.editor.Document.GetLineByOffset(offset);
+        var lineText = this.editor.Document.GetText(line.Offset, line.Length);
+        var caretColumn = Math.Clamp(offset - line.Offset, 0, lineText.Length);
+        var textBeforeCaret = lineText[..caretColumn];
+        var trimmedBeforeCaret = textBeforeCaret.Trim();
+        if (trimmedBeforeCaret.EndsWith("/>")) {
+            return this.GetTagIndentation(offset);
+        }
+        if (trimmedBeforeCaret.StartsWith("</") && trimmedBeforeCaret.EndsWith('>')) {
+            return this.GetIndentation(offset);
+        }
+        var tagStart = lineText.LastIndexOf('<', Math.Max(0, caretColumn - 1));
+        if (tagStart < 0 || tagStart + 1 >= lineText.Length
+            || lineText[tagStart + 1] is '/' or '?' or '!') {
+            if (this.TryGetClosingTagIndentation(offset, out var closingTagIndentation)) {
+                return closingTagIndentation;
+            }
+            return this.GetIndentation(offset);
+        }
+        var beforeCaret = textBeforeCaret.TrimEnd();
+        if (beforeCaret.EndsWith('>') && !beforeCaret.EndsWith("/>")) {
+            if (this.editor.Document.Text.AsSpan(offset).StartsWith("</", StringComparison.Ordinal)) {
+                return this.GetIndentation(offset);
+            }
+            return this.GetIndentation(offset)
+                + new string(' ', this.editor.Options.IndentationSize);
+        }
+
+        var tagNameEnd = tagStart + 1;
+        while (tagNameEnd < lineText.Length && !char.IsWhiteSpace(lineText[tagNameEnd])
+            && lineText[tagNameEnd] is not '>' and not '/') {
+            ++tagNameEnd;
+        }
+        var attributeStart = tagNameEnd;
+        while (attributeStart < lineText.Length && char.IsWhiteSpace(lineText[attributeStart])) {
+            ++attributeStart;
+        }
+        if (attributeStart >= caretColumn || attributeStart >= lineText.Length
+            || lineText[attributeStart] is '>' or '/') {
+            if (this.TryGetClosingTagIndentation(offset, out var closingTagIndentation)) {
+                return closingTagIndentation;
+            }
+            return this.GetIndentation(offset);
+        }
+        return new string(' ', attributeStart);
+    }
+
+    private bool TryGetClosingTagIndentation(int offset, out string indentation) {
+        var text = this.editor.Document.Text;
+        var tagOffset = offset;
+        while (tagOffset < text.Length && char.IsWhiteSpace(text[tagOffset])) {
+            ++tagOffset;
+        }
+        if (tagOffset + 2 <= text.Length && text.AsSpan(tagOffset).StartsWith("</", StringComparison.Ordinal)) {
+            indentation = this.GetIndentation(tagOffset);
+            return true;
+        }
+        indentation = string.Empty;
+        return false;
+    }
+
+    private string GetContentIndentation(int offset) {
+        var line = this.editor.Document.GetLineByOffset(offset);
+        var lineText = this.editor.Document.GetText(line.Offset, line.Length);
+        var indentation = this.GetIndentation(offset);
+        var beforeCaret = lineText[..Math.Clamp(offset - line.Offset, 0, lineText.Length)];
+        if (!string.IsNullOrWhiteSpace(beforeCaret)) {
+            return indentation;
+        }
+
+        for (var lineNumber = line.LineNumber - 1; lineNumber >= 1; --lineNumber) {
+            var previousLine = this.editor.Document.GetLineByNumber(lineNumber);
+            var previousText = this.editor.Document.GetText(previousLine.Offset, previousLine.Length);
+            if (string.IsNullOrWhiteSpace(previousText)) {
+                continue;
+            }
+            var trimmed = previousText.Trim();
+            if (trimmed.StartsWith('<') && !trimmed.StartsWith("</")
+                && trimmed.EndsWith('>') && !trimmed.EndsWith("/>")) {
+                return this.GetIndentation(previousLine.Offset)
+                    + new string(' ', this.editor.Options.IndentationSize);
+            }
+            break;
+        }
+        return indentation;
+    }
+
+    private static int LeadingWhitespaceLength(string value) {
+        var length = 0;
+        while (length < value.Length && value[length] is ' ' or '\t') {
+            ++length;
+        }
+        return length;
     }
 
     private static bool IsWordCharacter(char character) {

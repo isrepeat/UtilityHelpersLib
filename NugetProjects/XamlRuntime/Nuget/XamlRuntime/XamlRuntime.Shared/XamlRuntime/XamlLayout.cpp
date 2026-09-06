@@ -63,6 +63,8 @@ namespace xaml::_details {
         return contentSize;
     }
 
+    std::vector<std::string> tracks(const std::string& definitions);
+
     Size measure(Element& element) {
         if (!element.ParticipatesInLayout()) {
             element.SetDesiredSize({});
@@ -94,13 +96,78 @@ namespace xaml::_details {
             return result;
         }
 
+        if (element.Type() == ElementType::grid) {
+            const std::vector<std::string> columns = tracks(element.Columns());
+            const std::vector<std::string> rows = tracks(element.Rows());
+            std::vector<float> columnSizes(columns.size());
+            std::vector<float> rowSizes(rows.size());
+
+            for (size_t index = 0; index < columns.size(); ++index) {
+                const std::string& definition = columns[index];
+                if (definition != "*" && definition != "Auto" && definition.back() != '%') {
+                    columnSizes[index] = std::stof(definition);
+                }
+            }
+            for (size_t index = 0; index < rows.size(); ++index) {
+                const std::string& definition = rows[index];
+                if (definition != "*" && definition != "Auto" && definition.back() != '%') {
+                    rowSizes[index] = std::stof(definition);
+                }
+            }
+            for (const auto& child : element.Children()) {
+                const Size childSize = measure(*child);
+                const size_t column = std::min(
+                    static_cast<size_t>(std::max(0, child->GridColumn())), columns.size() - 1);
+                const size_t row = std::min(
+                    static_cast<size_t>(std::max(0, child->GridRow())), rows.size() - 1);
+                if (columns[column] == "Auto" || columns[column] == "*" || columns[column].back() == '%') {
+                    columnSizes[column] = std::max(columnSizes[column], childSize.width);
+                }
+                if (rows[row] == "Auto" || rows[row] == "*" || rows[row].back() == '%') {
+                    rowSizes[row] = std::max(rowSizes[row], childSize.height);
+                }
+            }
+
+            const auto desiredTrackSize = [](const std::vector<std::string>& definitions,
+                                             const std::vector<float>& sizes) {
+                float nonPercentageSize = 0.0f;
+                float percentage = 0.0f;
+                float percentageMinimumSize = 0.0f;
+                for (size_t index = 0; index < definitions.size(); ++index) {
+                    const std::string& definition = definitions[index];
+                    if (!definition.empty() && definition.back() == '%') {
+                        const float trackPercentage = std::stof(
+                            definition.substr(0, definition.size() - 1)) / 100.0f;
+                        percentage += trackPercentage;
+                        if (trackPercentage > 0.0f) {
+                            percentageMinimumSize = std::max(
+                                percentageMinimumSize,
+                                sizes[index] / trackPercentage);
+                        }
+                    } else {
+                        nonPercentageSize += sizes[index];
+                    }
+                }
+                if (percentage >= 1.0f) {
+                    return nonPercentageSize + percentageMinimumSize;
+                }
+                return std::max(
+                    nonPercentageSize / (1.0f - percentage),
+                    percentageMinimumSize);
+            };
+            Size result{
+                desiredTrackSize(columns, columnSizes),
+                desiredTrackSize(rows, rowSizes),
+            };
+            result = withCommonSize(element, result);
+            element.SetDesiredSize(result);
+            return result;
+        }
+
         Size result{};
         for (const auto& child : element.Children()) {
             const Size childSize = measure(*child);
-            if (element.Type() == ElementType::grid) {
-                result.width = std::max(result.width, childSize.width);
-                result.height = std::max(result.height, childSize.height);
-            } else if (element.OrientationValue() == attr::Orientation::vertical) {
+            if (element.OrientationValue() == attr::Orientation::vertical) {
                 result.width = std::max(result.width, childSize.width);
                 result.height += childSize.height;
             } else {
@@ -132,7 +199,7 @@ namespace xaml::_details {
         std::istringstream input(definitions);
         std::string track;
         while (std::getline(input, track, ',')) {
-            result.push_back(track);
+            result.push_back(track.empty() ? "*" : track);
         }
         if (result.empty()) {
             result.push_back("*");
@@ -163,6 +230,9 @@ namespace xaml::_details {
                             ? child->DesiredSize().width : child->DesiredSize().height);
                     }
                 }
+                used += sizes[index];
+            } else {
+                sizes[index] = std::stof(definition);
                 used += sizes[index];
             }
         }
