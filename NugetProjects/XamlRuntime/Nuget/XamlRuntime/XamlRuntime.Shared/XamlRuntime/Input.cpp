@@ -13,7 +13,7 @@ namespace xaml::_details {
     }
 
     Element* HitTestElement(Element& element, float x, float y) {
-        if (element.VisibilityValue() != attr::Visibility::visible
+        if (!element.CanReceiveInput()
             || !element.IsEnabled()
             || !Contains(element.ClipBounds(), x, y)) {
             return nullptr;

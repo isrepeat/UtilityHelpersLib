@@ -1,6 +1,7 @@
 #pragma once
 
 #include "XamlRuntime/Storyboard.h"
+#include "XamlRuntime/Animation.h"
 
 #include <initializer_list>
 #include <memory>
@@ -204,7 +205,28 @@ namespace xaml {
         float WaveFadeExponent() const;
         void SetWaveFadeExponent(float value);
 
+        const std::string& DefaultAnimation() const;
+        void SetDefaultAnimation(std::string value);
+
+        void SetAnimationParametersProvider(std::function<AnimationParameters()> provider);
+        PresencePhase Presence() const;
+        bool IsPresent() const;
+        bool ParticipatesInLayout() const;
+        bool CanReceiveInput() const;
+        ElementStates& States();
+        const ElementStates& States() const;
+
+        template<typename TState>
+        const TState& State() const {
+            return this->states.Get<TState>();
+        }
+
+        const AnimationParameters& CurrentAnimationParameters() const;
+        AnimationTrigger AnimationEvent() const;
+
         const std::vector<Storyboard>& Storyboards() const;
+        void SetStoryboards(std::vector<Storyboard> value);
+
         void AddStoryboard(Storyboard value);
 
         Size DesiredSize() const;
@@ -219,10 +241,14 @@ namespace xaml {
         const std::vector<std::unique_ptr<Element>>& Children() const;
         std::vector<std::unique_ptr<Element>>& Children();
         void AddChild(std::unique_ptr<Element> child);
+        void RemoveChild(Element& child);
 
     private:
         void InvalidateLayout();
 
+        friend class AnimationController;
+        friend class AnimationRegistry;
+        friend class AnimationInvocation;
         friend void layout(Element& root, Size availableSize);
         friend void Render(Element& root, IRenderBackend& backend);
         friend void Render(
@@ -273,6 +299,11 @@ namespace xaml {
         float waveIntensity = 0.45f;
         float waveSpread = 0.28f;
         float waveFadeExponent = 2.0f;
+        std::string defaultAnimation;
+        AnimationState animationState;
+        ElementStates states;
+        std::shared_ptr<int> lifetimeToken = std::make_shared<int>(0);
+        std::function<AnimationParameters()> animationParametersProvider;
         std::vector<Storyboard> storyboards;
         Size desiredSize{};
         Rect bounds{};

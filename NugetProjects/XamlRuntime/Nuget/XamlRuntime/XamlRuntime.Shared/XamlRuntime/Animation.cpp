@@ -1,19 +1,11 @@
-#include <Helpers.Logging/Logging.h>
+#include "XamlRuntime/XamlLayout.h"
+#include "XamlRuntime/Animation.h"
 
-#include "Animation.h"
-#include "XamlLayout.h"
-
+#include <stdexcept>
 #include <algorithm>
+#include <cmath>
 
 namespace xaml::_details {
-    float Ease(float progress, Easing easing) {
-        if (easing == Easing::cubicOut) {
-            const float inverse = 1.0f - progress;
-            return 1.0f - inverse * inverse * inverse;
-        }
-        return progress;
-    }
-
     void SetAnimatedValue(Element& target, AnimatedProperty property, float value) {
         if (property == AnimatedProperty::opacity) {
             target.SetOpacity(value);
@@ -51,93 +43,563 @@ namespace xaml::_details {
     }
 }
 
-namespace xaml {
-    void AnimationController::Animate(
-        Element& target,
-        AnimatedProperty property,
-        float from,
-        float to,
-        std::chrono::milliseconds duration,
-        Easing easing) {
-        this->animations.erase(
-            std::remove_if(this->animations.begin(), this->animations.end(),
-                [&target, property](const Animation& animation) {
-                    return animation.target == &target && animation.property == property;
-                }),
-            this->animations.end());
-        if (this->animations.empty()) {
-            this->lastUpdatedAt = std::chrono::steady_clock::now();
+namespace xaml::_details {
+    bool NonNegativeDuration(const int& value) {
+        return value >= 0;
+    }
+
+    bool NonNegative(const float& value) {
+        return value >= 0.0f;
+    }
+
+    bool Positive(const float& value) {
+        return value > 0.0f;
+    }
+
+    bool UnitInterval(const float& value) {
+        return value >= 0.0f && value <= 1.0f;
+    }
+
+    bool WaveFrom(const std::string& value) {
+        if (value != "Current") {
+            ParseStateFloat(value);
         }
-        _details::SetAnimatedValue(target, property, from);
-        this->animations.push_back({
-            &target,
-            property,
-            from,
-            to,
-            duration,
-            easing,
-            0.0f,
-        });
-        LOG_DEBUG("XamlRuntime.Animation", "Started animation: {} -> {}, {} ms", from, to, duration.count());
+        return true;
+    }
+
+    bool WaveEasing(const std::string& value) {
+        return value == "Linear" || value == "CubicOut";
+    }
+
+    bool ConfigureWave(AnimationContext<WaveAnimation>& context) {
+        auto& target = context.Target();
+        const auto& wave = context.State();
+        const float from = wave.from == "Current" ? target.WaveProgress() : ParseStateFloat(wave.from);
+        target.SetWaveIntensity(wave.intensity);
+        target.SetWaveSpread(wave.spread);
+        target.SetWaveFadeExponent(wave.fadeExponent);
+        context.AnimateProperty(AnimatedProperty::waveProgress, from, wave.to,
+            std::chrono::milliseconds(wave.duration),
+            wave.easing == "Linear" ? Easing::linear : Easing::cubicOut);
+        return true;
+    }
+
+    bool ConfigureFade(AnimationContext<ContainerAnimation>& context) {
+        if (context.Trigger() != AnimationTrigger::show && context.Trigger() != AnimationTrigger::hide) {
+            return false;
+        }
+        auto& state = context.State();
+        if (context.IsStartingFromHidden()) {
+            state.opacity = 0.0f;
+        }
+        context.Animate(&ContainerAnimation::opacity, context.Trigger() == AnimationTrigger::show ? 1.0f : 0.0f,
+            std::chrono::milliseconds(state.duration));
+        return true;
+    }
+
+    bool ConfigureSlideFade(AnimationContext<ContainerAnimation>& context) {
+        if (!ConfigureFade(context)) {
+            return false;
+        }
+        auto& state = context.State();
+        if (context.IsStartingFromHidden()) {
+            state.offsetY = state.distance;
+        }
+        context.Animate(&ContainerAnimation::offsetY,
+            context.Trigger() == AnimationTrigger::show ? 0.0f : state.distance,
+            std::chrono::milliseconds(state.duration));
+        return true;
+    }
+
+    bool ConfigureGlow(AnimationContext<Glow>& context) {
+        const auto& glow = context.State();
+        context.Animate(&Glow::intensity, glow.targetIntensity, std::chrono::milliseconds(glow.duration));
+        return true;
+    }
+}
+
+namespace xaml {
+    //
+    // API
+    //
+    void AnimationSettings::Set(std::string name, std::string value) {
+        this->values.insert_or_assign(std::move(name), std::move(value));
+    }
+
+    const std::string& AnimationSettings::Get(const std::string& name) const {
+        static const std::string empty;
+        const auto found = this->values.find(name);
+        return found == this->values.end() ? empty : found->second;
+    }
+
+    float AnimationSettings::Number(const std::string& name, float fallback) const {
+        const auto found = this->values.find(name);
+        if (found == this->values.end()) {
+            return fallback;
+        }
+        size_t consumed = 0;
+        const float value = std::stof(found->second, &consumed);
+        if (consumed != found->second.size() || !std::isfinite(value)) {
+            throw std::invalid_argument("Invalid animation number: " + name);
+        }
+        return value;
+    }
+
+    const std::unordered_map<std::string, std::string>& AnimationSettings::Values() const {
+        return this->values;
+    }
+
+    AnimationInvocation::AnimationInvocation(Element& element, AnimationTrigger trigger, bool startingFromHidden,
+        const AnimationSettings* settings)
+        : element(element)
+        , trigger(trigger)
+        , startingFromHidden(startingFromHidden)
+        , settings(settings) {
+    }
+
+    //
+    // API
+    //
+    Element& AnimationInvocation::Target() {
+        return this->element;
+    }
+
+    AnimationTrigger AnimationInvocation::Trigger() const {
+        return this->trigger;
+    }
+
+    bool AnimationInvocation::IsStartingFromHidden() const {
+        return this->startingFromHidden;
+    }
+
+    const AnimationSettings& AnimationInvocation::Settings() const {
+        static const AnimationSettings empty;
+        return this->settings ? *this->settings : empty;
+    }
+
+    const AnimationParameters& AnimationInvocation::Parameters() const {
+        return this->element.animationState.parameters;
+    }
+
+    ElementStates& AnimationInvocation::Storage() {
+        return this->element.States();
+    }
+
+    void AnimationInvocation::AnimateProperty(AnimatedProperty property, float from, float to,
+        std::chrono::milliseconds duration, Easing easing) {
+        AnimationController::AddPropertyTrack(this->element, property, from, to, duration, easing,
+            this->trigger == AnimationTrigger::show || this->trigger == AnimationTrigger::hide);
+    }
+
+    void AnimationInvocation::StartDefaultAnimation() {
+        if (this->defaultStarted) {
+            return;
+        }
+        this->defaultStarted = true;
+        const auto& state = this->element.animationState;
+        AnimationInvocation fallback(this->element, this->trigger, this->startingFromHidden);
+        fallback.defaultStarted = true;
+        if (state.registry && !this->element.defaultAnimation.empty()
+            && state.registry->Configure(this->element.defaultAnimation, fallback)) {
+            return;
+        }
+        if (this->trigger == AnimationTrigger::show || this->trigger == AnimationTrigger::hide) {
+            auto& transform = this->Storage().Get<ContainerAnimation>();
+            transform.opacity = 1.0f;
+            transform.offsetX = 0.0f;
+            transform.offsetY = 0.0f;
+        }
+    }
+
+    //
+    // Internal
+    //
+    void AnimationInvocation::AnimateField(float& field, float value,
+        std::chrono::milliseconds duration, Easing easing) {
+        if (duration.count() < 0 || !std::isfinite(value) || !std::isfinite(field)) {
+            throw std::invalid_argument("Invalid field animation");
+        }
+        auto& tracks = this->element.animationState.tracks;
+        tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
+            [&field](const RunningAnimation& track) { return track.field == &field; }), tracks.end());
+        if (duration.count() == 0) {
+            field = value;
+            return;
+        }
+        tracks.push_back({&field, field, value, 0.0f, static_cast<float>(duration.count()), easing,
+            AnimatedProperty::opacity,
+            this->trigger == AnimationTrigger::show || this->trigger == AnimationTrigger::hide});
+    }
+
+    AnimationRegistry::AnimationRegistry(StateRegistry states)
+        : states(std::move(states)) {
+        this->Register<ContainerAnimation>("animationFade", {
+            Option("duration", &ContainerAnimation::duration, _details::NonNegativeDuration),
+        }, _details::ConfigureFade);
+        this->Register<ContainerAnimation>("animationSlideFade", {
+            Option("duration", &ContainerAnimation::duration, _details::NonNegativeDuration),
+            Option("distance", &ContainerAnimation::distance),
+        }, _details::ConfigureSlideFade);
+        for (const char* name : {"animationSoftPulse", "animationRippleWave"}) {
+            this->Register<WaveAnimation>(name, {
+                Option("from", &WaveAnimation::from, _details::WaveFrom),
+                Option("to", &WaveAnimation::to),
+                Option("duration", &WaveAnimation::duration, _details::NonNegativeDuration),
+                Option("easing", &WaveAnimation::easing, _details::WaveEasing),
+                Option("intensity", &WaveAnimation::intensity, _details::NonNegative),
+                Option("spread", &WaveAnimation::spread, _details::Positive),
+                Option("fadeExponent", &WaveAnimation::fadeExponent, _details::Positive),
+            }, _details::ConfigureWave);
+        }
+        this->Register<Glow>("animationGlow", {
+            Option("intensity", &Glow::targetIntensity, _details::UnitInterval),
+            Option("duration", &Glow::duration, _details::NonNegativeDuration),
+        }, _details::ConfigureGlow);
+    }
+
+    //
+    // API
+    //
+    void AnimationRegistry::Prepare(Element& element) const {
+        element.States().Prepare(this->states, std::type_index(typeid(ContainerAnimation)));
+        for (const auto& storyboard : element.Storyboards()) {
+            for (const auto& track : storyboard.tracks) {
+                const auto found = this->handlers.find(track.name);
+                if (found != this->handlers.end()) {
+                    found->second.validate(track.settings);
+                    element.States().Prepare(this->states, found->second.stateType);
+                }
+            }
+        }
+        const auto fallback = this->handlers.find(element.DefaultAnimation());
+        if (fallback != this->handlers.end()) {
+            fallback->second.validate(AnimationSettings{});
+            element.States().Prepare(this->states, fallback->second.stateType);
+        }
+    }
+
+    bool AnimationRegistry::Configure(const std::string& name, AnimationInvocation& context) const {
+        const auto found = this->handlers.find(name);
+        if (found == this->handlers.end()) {
+            return false;
+        }
+        context.Storage().Prepare(this->states, found->second.stateType);
+        auto& tracks = context.Target().animationState.tracks;
+        const auto original = tracks;
+        try {
+            if (found->second.invoke(context)) {
+                return true;
+            }
+        } catch (...) {
+            tracks = original;
+            throw;
+        }
+        tracks = original;
+        return false;
+    }
+
+    void AnimationController::Attach(Element& root, const AnimationRegistry& registry, bool animateInitial) {
+        this->TrackRoot(root);
+        AttachTree(root, std::make_shared<const AnimationRegistry>(registry), true, animateInitial, {});
+        root.InvalidateLayout();
+    }
+
+    void AnimationController::Animate(Element& target, AnimatedProperty property, float from, float to,
+        std::chrono::milliseconds duration, Easing easing) {
+        this->TrackRoot(target);
+        AddPropertyTrack(target, property, from, to, duration, easing, false);
     }
 
     void AnimationController::Start(Element& target, AnimationTrigger trigger) {
-        for (const Storyboard& storyboard : target.Storyboards()) {
-            if (storyboard.trigger != trigger) {
-                continue;
-            }
-
-            for (const AnimationTrack& track : storyboard.tracks) {
-                if (track.property == AnimatedProperty::waveProgress) {
-                    target.SetWaveIntensity(track.intensity);
-                    target.SetWaveSpread(track.spread);
-                    target.SetWaveFadeExponent(track.fadeExponent);
-                }
-                this->Animate(
-                    target,
-                    track.property,
-                    track.fromCurrent ? _details::AnimatedValue(target, track.property) : track.from,
-                    track.toToggleState ? (target.IsOn() ? 1.0f : 0.0f) : track.to,
-                    track.duration,
-                    track.easing);
-            }
+        this->TrackRoot(target);
+        if (trigger == AnimationTrigger::show || trigger == AnimationTrigger::hide) {
+            target.SetVisibility(trigger == AnimationTrigger::show
+                ? attr::Visibility::visible : attr::Visibility::collapsed);
+            return;
         }
+        target.animationState.parameters = target.animationParametersProvider
+            ? target.animationParametersProvider()
+            : target.parent ? target.parent->animationState.parameters : AnimationParameters{};
+        if (!target.animationState.registry) {
+            static const AnimationRegistry builtins;
+            builtins.Prepare(target);
+        }
+        Configure(target, trigger, false);
     }
 
     void AnimationController::SetPlaybackRate(float value) {
         this->playbackRate = std::clamp(value, 0.1f, 4.0f);
-        this->lastUpdatedAt = std::chrono::steady_clock::now();
+        for (const auto& root : this->roots) {
+            if (!root.lifetime.expired()) {
+                root.element->animationState.updatedAt = std::chrono::steady_clock::now();
+            }
+        }
     }
 
     void AnimationController::Update() {
         const auto now = std::chrono::steady_clock::now();
-        const float elapsedMilliseconds = this->lastUpdatedAt.time_since_epoch().count() == 0
-            ? 0.0f
-            : std::chrono::duration<float, std::milli>(now - this->lastUpdatedAt).count()
-                * this->playbackRate;
-        this->lastUpdatedAt = now;
-        auto animation = this->animations.begin();
-        while (animation != this->animations.end()) {
-            animation->elapsedMilliseconds += elapsedMilliseconds;
-            const float progress = animation->duration.count() == 0 ? 1.0f : std::min(
-                1.0f,
-                animation->elapsedMilliseconds / animation->duration.count());
-            const float eased = _details::Ease(progress, animation->easing);
-            _details::SetAnimatedValue(
-                *animation->target,
-                animation->property,
-                animation->from + (animation->to - animation->from) * eased);
-            if (progress < 1.0f) {
-                ++animation;
-            } else {
-                LOG_DEBUG("XamlRuntime.Animation", "Completed animation");
-                animation = this->animations.erase(animation);
+        this->roots.erase(std::remove_if(this->roots.begin(), this->roots.end(),
+            [](const Root& root) { return root.lifetime.expired(); }), this->roots.end());
+        // Advance only outermost tracked roots. Animate() may also track a child.
+        for (const auto& root : this->roots) {
+            if (root.lifetime.expired()) {
+                continue;
+            }
+            bool covered = false;
+            for (Element* parent = root.element->parent; parent != nullptr; parent = parent->parent) {
+                covered = std::any_of(this->roots.begin(), this->roots.end(),
+                    [parent](const Root& other) { return other.element == parent; });
+                if (covered) {
+                    break;
+                }
+            }
+            if (!covered) {
+                const auto previous = root.element->animationState.updatedAt;
+                root.element->animationState.updatedAt = now;
+                const float elapsed = previous.time_since_epoch().count() == 0 ? 0.0f
+                    : std::chrono::duration<float, std::milli>(now - previous).count();
+                Advance(*root.element, elapsed * this->playbackRate);
             }
         }
     }
 
     bool AnimationController::IsAnimating() const {
-        return !this->animations.empty();
+        for (const auto& root : this->roots) {
+            if (!root.lifetime.expired() && AnimationController::IsAnimating(*root.element)) {
+                return true;
+            }
+        }
+        return false;
     }
 
+    void AnimationController::Synchronize(Element& element) {
+        Element* root = &element;
+        while (root->parent != nullptr) {
+            root = root->parent;
+        }
+        // Idle time before a new transition must not count towards its duration.
+        if (!IsAnimating(*root)) {
+            root->animationState.updatedAt = std::chrono::steady_clock::now();
+        }
+        const bool parentVisible = element.parent == nullptr
+            || (element.parent->animationState.registry ? element.parent->animationState.targetVisible
+                : element.parent->IsPresent());
+        const AnimationParameters inherited = element.parent == nullptr
+            ? AnimationParameters{} : element.parent->animationState.parameters;
+        SynchronizeTree(element, parentVisible, inherited);
+    }
+
+    void AnimationController::Update(Element& root, std::chrono::duration<float, std::milli> elapsed) {
+        if (elapsed.count() < 0.0f || !std::isfinite(elapsed.count())) {
+            throw std::invalid_argument("Invalid animation elapsed time");
+        }
+        Advance(root, elapsed.count());
+    }
+
+    bool AnimationController::IsAnimating(const Element& root) {
+        if (!root.animationState.tracks.empty()
+            || root.animationState.phase == PresencePhase::appearing
+            || root.animationState.phase == PresencePhase::disappearing) {
+            return true;
+        }
+        for (const auto& child : root.children) {
+            if (IsAnimating(*child)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    //
+    // Internal
+    //
+    void AnimationController::TrackRoot(Element& root) {
+        if (!IsAnimating(root)) {
+            Element* outer = &root;
+            while (outer->parent != nullptr) {
+                outer = outer->parent;
+            }
+            if (!IsAnimating(*outer)) {
+                outer->animationState.updatedAt = std::chrono::steady_clock::now();
+            }
+            root.animationState.updatedAt = std::chrono::steady_clock::now();
+        }
+        const auto found = std::find_if(this->roots.begin(), this->roots.end(),
+            [&root](const Root& tracked) {
+                return !tracked.lifetime.expired() && tracked.element == &root;
+            });
+        if (found == this->roots.end()) {
+            this->roots.push_back({&root, root.lifetimeToken});
+        }
+    }
+
+    bool AnimationController::StartStoryboards(Element& target, AnimationTrigger trigger, bool fromHidden) {
+        bool handled = false;
+        static const AnimationRegistry builtins;
+        for (const Storyboard& storyboard : target.Storyboards()) {
+            if (storyboard.trigger != trigger) {
+                continue;
+            }
+            if (storyboard.tracks.empty()) {
+                handled = true;
+            }
+            for (const AnimationTrack& track : storyboard.tracks) {
+                if (!track.name.empty()) {
+                    AnimationInvocation context(target, trigger, fromHidden, &track.settings);
+                    const auto& registry = target.animationState.registry ? *target.animationState.registry : builtins;
+                    if (registry.Configure(track.name, context)) {
+                        handled = true;
+                    }
+                    continue;
+                }
+                handled = true;
+                if (track.property == AnimatedProperty::waveProgress) {
+                    target.SetWaveIntensity(track.intensity);
+                    target.SetWaveSpread(track.spread);
+                    target.SetWaveFadeExponent(track.fadeExponent);
+                }
+                AddPropertyTrack(target, track.property,
+                    track.fromCurrent ? _details::AnimatedValue(target, track.property) : track.from,
+                    track.toToggleState ? (target.IsOn() ? 1.0f : 0.0f) : track.to,
+                    track.duration, track.easing,
+                    trigger == AnimationTrigger::show || trigger == AnimationTrigger::hide);
+            }
+        }
+        return handled;
+    }
+
+    void AnimationController::AddPropertyTrack(Element& target, AnimatedProperty property,
+        float from, float to, std::chrono::milliseconds duration, Easing easing, bool presence) {
+        if (duration.count() < 0 || !std::isfinite(from) || !std::isfinite(to)) {
+            throw std::invalid_argument("Invalid property animation");
+        }
+        auto& tracks = target.animationState.tracks;
+        tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
+            [property](const RunningAnimation& track) { return track.field == nullptr && track.property == property; }),
+            tracks.end());
+        _details::SetAnimatedValue(target, property, duration.count() == 0 ? to : from);
+        if (duration.count() != 0) {
+            tracks.push_back({nullptr, from, to, 0.0f, static_cast<float>(duration.count()), easing, property, presence});
+        }
+    }
+
+    void AnimationController::Configure(Element& element, AnimationTrigger trigger, bool fromHidden) {
+        auto& state = element.animationState;
+        state.trigger = trigger;
+        if (StartStoryboards(element, trigger, fromHidden)) {
+            return;
+        }
+        AnimationInvocation context(element, trigger, fromHidden);
+        context.StartDefaultAnimation();
+    }
+
+    bool AnimationController::HasPresenceTracks(const Element& element) {
+        return std::any_of(element.animationState.tracks.begin(), element.animationState.tracks.end(),
+            [](const RunningAnimation& track) { return track.presence; });
+    }
+
+    void AnimationController::AttachTree(Element& element, std::shared_ptr<const AnimationRegistry> registry,
+        bool parentVisible, bool animateInitial, const AnimationParameters& parameters) {
+        auto& state = element.animationState;
+        state.registry = std::move(registry);
+        state.updatedAt = std::chrono::steady_clock::now();
+        state.targetVisible = parentVisible && element.visibility == attr::Visibility::visible;
+        state.phase = state.targetVisible ? PresencePhase::visible : PresencePhase::hidden;
+        state.parameters = parameters;
+        state.tracks.clear();
+        element.States().Clear();
+        state.registry->Prepare(element);
+        for (const auto& child : element.children) {
+            AttachTree(*child, state.registry, state.targetVisible, false, parameters);
+        }
+        if (animateInitial && state.targetVisible) {
+            state.targetVisible = false;
+            state.phase = PresencePhase::hidden;
+            // Reset descendants too, so their first appearance starts from hidden.
+            for (const auto& child : element.children) {
+                AttachTree(*child, state.registry, false, false, parameters);
+            }
+            SynchronizeTree(element, parentVisible, parameters);
+        }
+    }
+
+    void AnimationController::SynchronizeTree(Element& element, bool parentVisible,
+        const AnimationParameters& parameters) {
+        auto& state = element.animationState;
+        if (!state.registry) {
+            element.InvalidateLayout();
+            return;
+        }
+        const bool visible = parentVisible && element.visibility == attr::Visibility::visible && !state.removing;
+        const bool changed = visible != state.targetVisible;
+        if (changed) {
+            const bool fromHidden = state.phase == PresencePhase::hidden;
+            state.parameters = element.animationParametersProvider ? element.animationParametersProvider() : parameters;
+            state.targetVisible = visible;
+            state.trigger = visible ? AnimationTrigger::show : AnimationTrigger::hide;
+            state.phase = visible ? PresencePhase::appearing : PresencePhase::disappearing;
+            state.tracks.erase(std::remove_if(state.tracks.begin(), state.tracks.end(),
+                [](const RunningAnimation& track) { return track.presence; }), state.tracks.end());
+            if (fromHidden) {
+                auto& transform = element.States().Get<ContainerAnimation>();
+                transform.opacity = 1.0f;
+                transform.offsetX = 0.0f;
+                transform.offsetY = 0.0f;
+            }
+            Configure(element, state.trigger, fromHidden);
+        }
+        for (const auto& child : element.children) {
+            SynchronizeTree(*child, visible, state.parameters);
+        }
+        // Resolve instant transitions, but wait for disappearing descendants.
+        if (!HasPresenceTracks(element)) {
+            const bool childrenPresent = std::any_of(element.children.begin(), element.children.end(),
+                [](const auto& child) { return child->IsPresent(); });
+            if (state.targetVisible) {
+                state.phase = PresencePhase::visible;
+            } else if (!childrenPresent) {
+                state.phase = PresencePhase::hidden;
+            }
+        }
+        element.InvalidateLayout();
+    }
+
+    void AnimationController::Advance(Element& element, float milliseconds) {
+        auto& state = element.animationState;
+        for (auto& track : state.tracks) {
+            track.elapsed += milliseconds;
+            float progress = std::min(1.0f, track.elapsed / track.duration);
+            if (track.easing == Easing::cubicOut) {
+                const float inverse = 1.0f - progress;
+                progress = 1.0f - inverse * inverse * inverse;
+            }
+            const float value = track.from + (track.to - track.from) * progress;
+            if (track.field != nullptr) {
+                *track.field = value;
+            } else {
+                _details::SetAnimatedValue(element, track.property, value);
+            }
+        }
+        state.tracks.erase(std::remove_if(state.tracks.begin(), state.tracks.end(),
+            [](const RunningAnimation& track) { return track.elapsed >= track.duration; }), state.tracks.end());
+        for (const auto& child : element.children) {
+            Advance(*child, milliseconds);
+        }
+        if (state.registry && !HasPresenceTracks(element)) {
+            const bool childrenPresent = std::any_of(element.children.begin(), element.children.end(),
+                [](const auto& child) { return child->IsPresent(); });
+            const auto phase = state.targetVisible ? PresencePhase::visible
+                : childrenPresent ? PresencePhase::disappearing : PresencePhase::hidden;
+            if (state.phase != phase) {
+                state.phase = phase;
+                element.InvalidateLayout();
+            }
+        }
+        const auto end = std::remove_if(element.children.begin(), element.children.end(),
+            [](const auto& child) { return child->animationState.removing && !child->IsPresent(); });
+        if (end != element.children.end()) {
+            element.children.erase(end, element.children.end());
+            element.InvalidateLayout();
+        }
+    }
 }

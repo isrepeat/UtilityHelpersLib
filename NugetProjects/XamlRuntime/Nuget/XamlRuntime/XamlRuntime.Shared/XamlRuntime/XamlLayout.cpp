@@ -64,7 +64,7 @@ namespace xaml::_details {
     }
 
     Size measure(Element& element) {
-        if (element.VisibilityValue() == attr::Visibility::collapsed) {
+        if (!element.ParticipatesInLayout()) {
             element.SetDesiredSize({});
             return {};
         }
@@ -502,7 +502,11 @@ namespace xaml {
     }
 
     void Element::SetVisibility(attr::Visibility value) {
-        this->visibility = value;
+        if (this->visibility != value) {
+            this->visibility = value;
+            AnimationController::Synchronize(*this);
+            this->InvalidateLayout();
+        }
     }
 
     bool Element::IsEnabled() const {
@@ -585,8 +589,60 @@ namespace xaml {
         this->waveFadeExponent = value;
     }
 
+    const std::string& Element::DefaultAnimation() const {
+        return this->defaultAnimation;
+    }
+
+    void Element::SetDefaultAnimation(std::string value) {
+        this->defaultAnimation = std::move(value);
+    }
+
+    void Element::SetAnimationParametersProvider(std::function<AnimationParameters()> provider) {
+        this->animationParametersProvider = std::move(provider);
+    }
+
+    PresencePhase Element::Presence() const {
+        return this->animationState.registry ? this->animationState.phase
+            : this->visibility == attr::Visibility::visible ? PresencePhase::visible : PresencePhase::hidden;
+    }
+
+    bool Element::IsPresent() const {
+        return this->Presence() != PresencePhase::hidden;
+    }
+
+    bool Element::ParticipatesInLayout() const {
+        return this->visibility != attr::Visibility::collapsed || this->IsPresent();
+    }
+
+    bool Element::CanReceiveInput() const {
+        return this->visibility == attr::Visibility::visible
+            && !this->animationState.removing
+            && (!this->animationState.registry || this->animationState.targetVisible)
+            && (this->parent == nullptr || this->parent->CanReceiveInput());
+    }
+
+    ElementStates& Element::States() {
+        return this->states;
+    }
+
+    const ElementStates& Element::States() const {
+        return this->states;
+    }
+
+    const AnimationParameters& Element::CurrentAnimationParameters() const {
+        return this->animationState.parameters;
+    }
+
+    AnimationTrigger Element::AnimationEvent() const {
+        return this->animationState.trigger;
+    }
+
     const std::vector<Storyboard>& Element::Storyboards() const {
         return this->storyboards;
+    }
+
+    void Element::SetStoryboards(std::vector<Storyboard> value) {
+        this->storyboards = std::move(value);
     }
 
     void Element::AddStoryboard(Storyboard value) {
@@ -627,7 +683,33 @@ namespace xaml {
 
     void Element::AddChild(std::unique_ptr<Element> child) {
         child->parent = this;
+        if (this->animationState.registry) {
+            Element* root = this;
+            while (root->parent != nullptr) {
+                root = root->parent;
+            }
+            if (!AnimationController::IsAnimating(*root)) {
+                root->animationState.updatedAt = std::chrono::steady_clock::now();
+            }
+            AnimationController::AttachTree(*child, this->animationState.registry,
+                this->animationState.targetVisible, true, this->animationState.parameters);
+        }
         this->children.push_back(std::move(child));
+        this->InvalidateLayout();
+    }
+
+    void Element::RemoveChild(Element& child) {
+        const auto found = std::find_if(this->children.begin(), this->children.end(),
+            [&child](const auto& value) { return value.get() == &child; });
+        if (found == this->children.end()) {
+            return;
+        }
+        child.animationState.removing = true;
+        if (child.animationState.registry) {
+            AnimationController::Synchronize(child);
+        } else {
+            this->children.erase(found);
+        }
         this->InvalidateLayout();
     }
 

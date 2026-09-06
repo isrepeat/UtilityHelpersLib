@@ -423,6 +423,9 @@ namespace {
             if (name == "xmlns") {
                 continue;
             }
+            if (name == "animation") {
+                throw std::runtime_error("Use <Animation> inside an event <Storyboard>");
+            }
             if (name == "renderer") {
                 output << "            " << variable << "->SetRenderer(\"" << value << "\");\n";
                 continue;
@@ -473,9 +476,11 @@ namespace {
                     }
                     const std::string triggerName = trigger->second == "PointerDown" ? "pointerDown"
                         : trigger->second == "PointerUp" ? "pointerUp"
-                        : trigger->second == "Toggled" ? "toggled" : "";
+                        : trigger->second == "Toggled" ? "toggled"
+                        : trigger->second == "Show" ? "show"
+                        : trigger->second == "Hide" ? "hide" : "";
                     if (triggerName.empty()) {
-                        throw std::runtime_error("Storyboard trigger must be PointerDown, PointerUp or Toggled");
+                        throw std::runtime_error("Storyboard trigger must be PointerDown, PointerUp, Toggled, Show or Hide");
                     }
 
                     output << "            " << variable << "->AddStoryboard({AnimationTrigger::"
@@ -488,10 +493,28 @@ namespace {
                                 [&name](const auto& value) { return value.first == name; });
                             return found == track.attributes.end() ? std::string{} : found->second;
                         };
-                        const std::string property = track.name == "RendererAnimation"
-                            && (attribute("name") == "RippleWave" || attribute("name") == "SoftPulse")
-                            ? "waveProgress"
-                            : track.name == "FloatAnimation" ? attribute("property") : "";
+                        if (!track.children.empty()) {
+                            throw std::runtime_error("Animation tracks do not support child elements");
+                        }
+                        if (index != 0) {
+                            output << ", ";
+                        }
+                        if (track.name == "Animation") {
+                            if (attribute("name").empty()) {
+                                throw std::runtime_error("<Animation> requires name");
+                            }
+                            output << "[] { AnimationTrack track; track.name = \""
+                                << this->EscapeCpp(attribute("name")) << "\";";
+                            for (const auto& [key, value] : track.attributes) {
+                                if (key != "name") {
+                                    output << " track.settings.Set(\"" << this->EscapeCpp(key)
+                                        << "\", \"" << this->EscapeCpp(value) << "\");";
+                                }
+                            }
+                            output << " return track; }()";
+                            continue;
+                        }
+                        const std::string property = track.name == "FloatAnimation" ? attribute("property") : "";
                         if (property != "opacity" && property != "renderOffsetX"
                             && property != "toggleProgress" && property != "pressProgress"
                             && property != "waveProgress" && property != "waveOpacity") {
@@ -511,9 +534,6 @@ namespace {
                             : easing == "Linear" ? "linear" : "";
                         if (easingName.empty()) {
                             throw std::runtime_error("Animation easing must be Linear or CubicOut");
-                        }
-                        if (index != 0) {
-                            output << ", ";
                         }
                         const bool fromCurrent = from == "Current";
                         const bool toToggleState = to == "ToggleState";

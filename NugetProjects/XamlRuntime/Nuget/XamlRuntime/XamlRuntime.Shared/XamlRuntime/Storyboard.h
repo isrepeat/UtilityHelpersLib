@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unordered_map>
+#include <string>
 #include <chrono>
 #include <vector>
 
@@ -17,11 +19,24 @@ namespace xaml {
         pointerDown,
         pointerUp,
         toggled,
+        show,
+        hide,
     };
 
     enum class Easing {
         linear,
         cubicOut,
+    };
+
+    class AnimationSettings final {
+    public:
+        void Set(std::string name, std::string value);
+        const std::string& Get(const std::string& name) const;
+        float Number(const std::string& name, float fallback) const;
+        const std::unordered_map<std::string, std::string>& Values() const;
+
+    private:
+        std::unordered_map<std::string, std::string> values;
     };
 
     struct AnimationTrack {
@@ -35,6 +50,8 @@ namespace xaml {
         float fadeExponent = 2.0f;
         std::chrono::milliseconds duration{};
         Easing easing = Easing::linear;
+        std::string name;
+        AnimationSettings settings;
     };
 
     struct Storyboard {

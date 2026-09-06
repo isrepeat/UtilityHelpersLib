@@ -4,8 +4,23 @@
 #include <cmath>
 
 namespace xaml::_details {
-    Rect Translate(Rect bounds, float offsetX) {
+    bool RenderGlow(const Element& element, RenderContext<Glow>& context) {
+        context.RenderDefault();
+        const float intensity = context.State().intensity;
+        if (intensity <= 0.0f) {
+            return true;
+        }
+        auto color = element.Foreground();
+        color.alpha *= intensity * context.Opacity();
+        context.Backend().DrawRoundedRectOutline(
+            context.Bounds(), color, element.CornerRadius(), 3.0f);
+        return true;
+    }
+
+
+    Rect Translate(Rect bounds, float offsetX, float offsetY = 0.0f) {
         bounds.x += offsetX;
+        bounds.y += offsetY;
         return bounds;
     }
 
@@ -59,7 +74,7 @@ namespace xaml::_details {
         };
         const attr::Color waveColor = WithOpacity(color, opacity);
         backend.DrawShader(
-            "button-wave",
+            BuiltinShaders::buttonWave,
             bounds,
             {
                 {"cornerRadius", {element.CornerRadius()}, 1},
@@ -170,14 +185,13 @@ namespace xaml::_details {
         IRenderBackend& backend,
         const RendererRegistry* renderers,
         float inheritedOffsetX,
+        float inheritedOffsetY,
         float inheritedOpacity);
 
     void RenderDefaultElement(
         const Element& element,
         IRenderBackend& backend,
-        const RendererRegistry* renderers,
         Rect bounds,
-        float offsetX,
         float opacity) {
         RenderChrome(element, backend, bounds, opacity);
         if (element.Type() == ElementType::button) {
@@ -212,10 +226,6 @@ namespace xaml::_details {
         } else if (element.Type() == ElementType::svgImage) {
             backend.DrawImage(bounds, element.Source(), WithOpacity(element.Tint(), opacity));
         }
-
-        for (const auto& child : element.Children()) {
-            RenderElement(*child, backend, renderers, offsetX, opacity);
-        }
     }
 
     void RenderElement(
@@ -223,86 +233,124 @@ namespace xaml::_details {
         IRenderBackend& backend,
         const RendererRegistry* renderers,
         float inheritedOffsetX,
+        float inheritedOffsetY,
         float inheritedOpacity) {
-        if (element.VisibilityValue() != attr::Visibility::visible) {
+        if (!element.IsPresent()) {
             return;
         }
 
-        const float offsetX = inheritedOffsetX + element.RenderOffsetX();
-        const float opacity = inheritedOpacity * element.Opacity();
-        Rect bounds = Translate(element.Bounds(), offsetX);
-        backend.BeginClip(Translate(element.ClipBounds(), offsetX));
-        RenderContext context(
-            backend,
-            bounds,
-            opacity,
-            [&element, &backend, renderers, bounds, offsetX, opacity]() {
-                RenderDefaultElement(element, backend, renderers, bounds, offsetX, opacity);
+        const ContainerAnimation defaults{};
+        const auto& transform = element.States().Contains<ContainerAnimation>()
+            ? element.State<ContainerAnimation>() : defaults;
+        const float offsetX = inheritedOffsetX + element.RenderOffsetX() + transform.offsetX;
+        const float offsetY = inheritedOffsetY + transform.offsetY;
+        const float opacity = inheritedOpacity * element.Opacity() * transform.opacity;
+        const Rect bounds = Translate(element.Bounds(), offsetX, offsetY);
+        backend.BeginClip(Translate(element.ClipBounds(), offsetX, offsetY));
+        RenderInvocation context(backend, bounds, opacity,
+            [&element, &backend, bounds, opacity]() {
+                RenderDefaultElement(element, backend, bounds, opacity);
+            },
+            [&element, &backend, renderers, offsetX, offsetY, opacity]() {
+                for (const auto& child : element.Children()) {
+                    RenderElement(*child, backend, renderers, offsetX, offsetY, opacity);
+                }
             });
-        if (renderers != nullptr && renderers->Render(element, context)) {
+        try {
+            if (renderers == nullptr || !renderers->Render(element, context)) {
+                context.RenderDefault();
+            }
+        } catch (...) {
             backend.EndClip();
-            return;
+            throw;
         }
-
-        context.RenderDefaultElement();
         backend.EndClip();
     }
 }
 
 namespace xaml {
-    RenderContext::RenderContext(
+    RenderInvocation::RenderInvocation(
         IRenderBackend& backend,
         const Rect& bounds,
         float opacity,
-        std::function<void()> defaultElementRenderer)
+        std::function<void()> defaultElementRenderer,
+        std::function<void()> childrenRenderer)
         : backend(backend)
         , bounds(bounds)
         , opacity(opacity)
-        , defaultElementRenderer(std::move(defaultElementRenderer)) {
+        , defaultElementRenderer(std::move(defaultElementRenderer))
+        , childrenRenderer(std::move(childrenRenderer)) {
     }
 
-    IRenderBackend& RenderContext::Backend() {
+    IRenderBackend& RenderInvocation::Backend() {
         return this->backend;
     }
 
-    const Rect& RenderContext::Bounds() const {
+    const Rect& RenderInvocation::Bounds() const {
         return this->bounds;
     }
 
-    float RenderContext::Opacity() const {
+    float RenderInvocation::Opacity() const {
         return this->opacity;
     }
 
-    void RenderContext::RenderDefaultElement() {
+    void RenderInvocation::RenderDefaultElement() {
         if (this->defaultElementRendered) {
             return;
         }
 
         this->defaultElementRendered = true;
         this->defaultElementRenderer();
+        this->RenderChildren();
     }
 
-    void RendererRegistry::Register(std::string name, ElementRenderer renderer) {
-        this->renderers.insert_or_assign(std::move(name), std::move(renderer));
+    void RenderInvocation::RenderDefault() {
+        this->RenderDefaultElement();
     }
 
-    bool RendererRegistry::Render(const Element& element, RenderContext& context) const {
+    void RenderInvocation::RenderChildren() {
+        if (!this->childrenRendered && this->childrenRenderer) {
+            this->childrenRendered = true;
+            this->childrenRenderer();
+        }
+    }
+
+    RendererRegistry::RendererRegistry(StateRegistry states)
+        : states(std::move(states)) {
+        this->Register<Glow>("rendererGlow", _details::RenderGlow);
+    }
+
+    //
+    // API
+    //
+    void RendererRegistry::Prepare(Element& root) const {
+        const auto found = this->renderers.find(root.Renderer());
+        if (found != this->renderers.end()) {
+            root.States().Prepare(this->states, found->second.stateType);
+        }
+        for (const auto& child : root.Children()) {
+            this->Prepare(*child);
+        }
+    }
+
+    bool RendererRegistry::Render(const Element& element, RenderInvocation& context) const {
         const auto found = this->renderers.find(element.Renderer());
         return !element.Renderer().empty() && found != this->renderers.end()
-            && found->second(element, context);
+            && found->second.render(element, context);
     }
 
     void Render(Element& root, IRenderBackend& backend) {
         if (root.layoutInvalid) {
             layout(root, root.availableSize);
         }
-        _details::RenderElement(root, backend, nullptr, 0.0f, 1.0f);
+        _details::RenderElement(root, backend, nullptr, 0.0f, 0.0f, 1.0f);
     }
 
     void Render(Element& root, IRenderBackend& backend, const RendererRegistry& renderers) {
+        renderers.Prepare(root);
         if (root.layoutInvalid) {
             layout(root, root.availableSize);
         }
-        _details::RenderElement(root, backend, &renderers, 0.0f, 1.0f);
+        _details::RenderElement(root, backend, &renderers, 0.0f, 0.0f, 1.0f);
     }
 }

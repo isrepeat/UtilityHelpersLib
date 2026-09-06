@@ -3,11 +3,16 @@
 #include "XamlRuntime/XamlLayout.h"
 
 #include <initializer_list>
-#include <functional>
 #include <unordered_map>
 #include <string_view>
+#include <functional>
 
 namespace xaml {
+    // Public identifiers of shader programs required by standard rendering.
+    struct BuiltinShaders {
+        static constexpr char buttonWave[] = "button-wave";
+    };
+
     struct ShaderUniform {
         std::string_view name;
         float values[4]{};
@@ -47,17 +52,20 @@ namespace xaml {
             attr::Color tint) = 0;
     };
 
-    class RenderContext {
+    class RenderInvocation {
     public:
-        RenderContext(
+        RenderInvocation(
             IRenderBackend& backend,
             const Rect& bounds,
             float opacity,
-            std::function<void()> defaultElementRenderer);
+            std::function<void()> defaultElementRenderer,
+            std::function<void()> childrenRenderer = {});
         IRenderBackend& Backend();
         const Rect& Bounds() const;
         float Opacity() const;
         void RenderDefaultElement();
+        void RenderDefault();
+        void RenderChildren();
 
     private:
         IRenderBackend& backend;
@@ -65,17 +73,85 @@ namespace xaml {
         float opacity;
         std::function<void()> defaultElementRenderer;
         bool defaultElementRendered = false;
+        std::function<void()> childrenRenderer;
+        bool childrenRendered = false;
     };
 
-    class RendererRegistry {
+    template<typename TState>
+    class RenderContext final {
     public:
-        using ElementRenderer = std::function<bool(const Element&, RenderContext&)>;
+        RenderContext(RenderInvocation& render, const TState& state)
+            : render(render)
+            , state(state) {
+        }
 
-        void Register(std::string name, ElementRenderer renderer);
-        bool Render(const Element& element, RenderContext& context) const;
+        const TState& State() const {
+            return this->state;
+        }
+
+        IRenderBackend& Backend() {
+            return this->render.Backend();
+        }
+
+        const Rect& Bounds() const {
+            return this->render.Bounds();
+        }
+
+        float Opacity() const {
+            return this->render.Opacity();
+        }
+
+        void RenderDefaultElement() {
+            this->render.RenderDefaultElement();
+        }
+
+        void RenderDefault() {
+            this->render.RenderDefault();
+        }
+
+        void RenderChildren() {
+            this->render.RenderChildren();
+        }
 
     private:
-        std::unordered_map<std::string, ElementRenderer> renderers;
+        RenderInvocation& render;
+        const TState& state;
+    };
+
+    class RendererRegistry final {
+    public:
+        explicit RendererRegistry(StateRegistry states = {});
+
+        template<typename TState>
+        void Register(std::string name, bool (*renderer)(const Element&, RenderContext<TState>&)) {
+            this->states.Require(std::type_index(typeid(TState)));
+            if (name.empty() || renderer == nullptr) {
+                throw std::invalid_argument("Renderer name and handler are required");
+            }
+            Entry entry{
+                std::type_index(typeid(TState)),
+                [renderer](const Element& element, RenderInvocation& invocation) {
+                    RenderContext<TState> context(invocation, element.State<TState>());
+                    return renderer(element, context);
+                },
+            };
+            if (!this->renderers.emplace(std::move(name), std::move(entry)).second) {
+                throw std::invalid_argument("Renderer name already registered");
+            }
+        }
+
+        void Prepare(Element& root) const;
+        bool Render(const Element& element, RenderInvocation& context) const;
+
+    private:
+        struct Entry {
+            std::type_index stateType;
+            std::function<bool(const Element&, RenderInvocation&)> render;
+        };
+
+    private:
+        StateRegistry states;
+        std::unordered_map<std::string, Entry> renderers;
     };
 
     void Render(Element& root, IRenderBackend& backend);
