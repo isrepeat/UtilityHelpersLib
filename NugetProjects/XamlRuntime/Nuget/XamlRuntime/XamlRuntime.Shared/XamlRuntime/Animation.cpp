@@ -361,7 +361,6 @@ namespace xaml {
 
     bool AnimationController::StartStoryboards(Element& target, AnimationTrigger trigger, bool fromHidden) {
         bool handled = false;
-        static const AnimationRegistry emptyRegistry;
         for (const Storyboard& storyboard : target.Storyboards()) {
             if (storyboard.trigger != trigger) {
                 continue;
@@ -369,24 +368,74 @@ namespace xaml {
             if (storyboard.tracks.empty()) {
                 handled = true;
             }
-            for (const AnimationTrack& track : storyboard.tracks) {
-                if (!track.name.empty()) {
-                    AnimationInvocation context(target, trigger, fromHidden, &track.settings);
-                    const auto& registry = target.animationState.registry ? *target.animationState.registry : emptyRegistry;
-                    if (registry.Configure(track.name, context)) {
-                        handled = true;
-                    }
-                    continue;
-                }
-                handled = true;
-                AddPropertyTrack(target, track.property,
-                    track.fromCurrent ? _details::AnimatedValue(target, track.property, trigger) : track.from,
-                    track.toToggleState ? (target.IsOn() ? 1.0f : 0.0f) : track.to,
-                    track.duration, track.easing,
-                    trigger == AnimationTrigger::show || trigger == AnimationTrigger::hide);
-            }
+            handled = StartTracks(target, storyboard.tracks, trigger, true) || handled;
         }
         return handled;
+    }
+
+    bool AnimationController::StartTracks(Element& target, const std::vector<AnimationTrack>& tracks,
+        AnimationTrigger trigger, bool useTransitions) {
+        bool handled = false;
+        static const AnimationRegistry emptyRegistry;
+        for (const AnimationTrack& track : tracks) {
+            if (!track.name.empty()) {
+                AnimationInvocation context(target, trigger, false, &track.settings);
+                const auto& registry = target.animationState.registry ? *target.animationState.registry : emptyRegistry;
+                handled = registry.Configure(track.name, context) || handled;
+                continue;
+            }
+            handled = true;
+            AddPropertyTrack(target, track.property,
+                track.fromCurrent ? _details::AnimatedValue(target, track.property, trigger) : track.from,
+                track.toToggleState ? (target.IsOn() ? 1.0f : 0.0f) : track.to,
+                useTransitions ? track.duration : std::chrono::milliseconds(0), track.easing, false);
+        }
+        return handled;
+    }
+
+    bool AnimationController::GoToVisualState(Element& scope, const std::string& groupName,
+        const std::string& stateName, bool useTransitions) {
+        const auto group = std::find_if(scope.visualStateGroups.begin(), scope.visualStateGroups.end(),
+            [&groupName](const VisualStateGroup& value) { return value.name == groupName; });
+        if (group == scope.visualStateGroups.end()) {
+            return false;
+        }
+        const auto state = std::find_if(group->states.begin(), group->states.end(),
+            [&stateName](const VisualState& value) { return value.name == stateName; });
+        if (state == group->states.end()) {
+            return false;
+        }
+        if (group->currentState == stateName) {
+            return true;
+        }
+        const auto findTarget = [&scope](const std::string& name) -> Element* {
+            std::function<Element*(Element&)> find = [&](Element& element) -> Element* {
+                if (element.Id() == name) {
+                    return &element;
+                }
+                for (const auto& child : element.Children()) {
+                    if (Element* const result = find(*child)) {
+                        return result;
+                    }
+                }
+                return nullptr;
+            };
+            return find(scope);
+        };
+        for (const VisualStateTrack& track : state->tracks) {
+            Element* const target = findTarget(track.targetName);
+            if (target == nullptr) {
+                throw std::invalid_argument("Visual state target was not found: " + track.targetName);
+            }
+            StartTracks(*target, {track.animation}, AnimationTrigger::visualState, useTransitions);
+        }
+        group->currentState = stateName;
+        return true;
+    }
+
+    bool VisualStateManager::GoToState(Element& scope, const std::string& groupName,
+        const std::string& stateName, bool useTransitions) {
+        return AnimationController::GoToVisualState(scope, groupName, stateName, useTransitions);
     }
 
     void AnimationController::AddPropertyTrack(Element& target, AnimatedProperty property,

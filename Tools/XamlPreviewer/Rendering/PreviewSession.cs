@@ -102,6 +102,31 @@ internal sealed class PreviewSession : IDisposable {
         return true;
     }
 
+    public bool SetElementAttribute(string elementId, string name, string value) {
+        this.ThrowIfDisposed();
+        var element = NativeRuntime.xr_find_element(this.root, elementId);
+        if (element == IntPtr.Zero) {
+            return false;
+        }
+        NativeRuntime.Ensure(NativeRuntime.xr_set_attribute(element, name, value) != 0);
+        NativeRuntime.Ensure(NativeRuntime.xr_layout(this.root, this.renderer.Width, this.renderer.Height) != 0);
+        this.Render();
+        return true;
+    }
+
+    public bool GoToVisualState(string scopeId, string groupName, string stateName) {
+        this.ThrowIfDisposed();
+        var scope = NativeRuntime.xr_find_element(this.root, scopeId);
+        if (scope == IntPtr.Zero) {
+            return false;
+        }
+        NativeRuntime.Ensure(NativeRuntime.xr_go_to_visual_state(scope, groupName, stateName, 1) != 0);
+        NativeRuntime.Ensure(NativeRuntime.xr_layout(this.root, this.renderer.Width, this.renderer.Height) != 0);
+        this.Render();
+        this.AnimationStarted?.Invoke(this, EventArgs.Empty);
+        return true;
+    }
+
     public void SetElementInspectionEnabled(bool value) {
         this.ThrowIfDisposed();
         if (this.isElementInspectionEnabled == value) {

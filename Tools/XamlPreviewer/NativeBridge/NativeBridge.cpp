@@ -372,6 +372,66 @@ int xr_add_storyboard_track(
     }
 }
 
+int xr_add_visual_state_track(
+    xr_element* scope,
+    const char* groupName,
+    const char* stateName,
+    const char* targetName,
+    int property,
+    float from,
+    float to,
+    int durationMilliseconds,
+    int easing) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (scope == nullptr || groupName == nullptr || stateName == nullptr || targetName == nullptr
+            || *groupName == '\0' || *stateName == '\0' || *targetName == '\0'
+            || property < 0 || property > 5 || durationMilliseconds < 0 || easing < 0 || easing > 1) {
+            throw std::invalid_argument("invalid visual state track");
+        }
+        auto& groups = reinterpret_cast<xaml::Element*>(scope)->VisualStateGroups();
+        auto group = std::find_if(groups.begin(), groups.end(), [groupName](const xaml::VisualStateGroup& value) {
+            return value.name == groupName;
+        });
+        if (group == groups.end()) {
+            groups.push_back({groupName});
+            group = std::prev(groups.end());
+        }
+        auto state = std::find_if(group->states.begin(), group->states.end(), [stateName](const xaml::VisualState& value) {
+            return value.name == stateName;
+        });
+        if (state == group->states.end()) {
+            group->states.push_back({stateName});
+            state = std::prev(group->states.end());
+        }
+        state->tracks.push_back({targetName, {
+            static_cast<xaml::AnimatedProperty>(property), from, to, std::isnan(from), std::isnan(to),
+            std::chrono::milliseconds(durationMilliseconds), static_cast<xaml::Easing>(easing)}});
+        return 1;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return 0;
+    }
+}
+
+int xr_go_to_visual_state(
+    xr_element* scope,
+    const char* groupName,
+    const char* stateName,
+    int useTransitions) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (scope == nullptr || groupName == nullptr || stateName == nullptr) {
+            throw std::invalid_argument("scope, groupName and stateName are required");
+        }
+        return xaml::VisualStateManager::GoToState(*reinterpret_cast<xaml::Element*>(scope),
+            groupName, stateName, useTransitions != 0) ? 1 : 0;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return 0;
+    }
+}
+
 int xr_supported_attribute_count(const char* elementType) {
     try {
         xaml::bridge::lastError.clear();

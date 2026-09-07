@@ -233,6 +233,10 @@ namespace xaml {
 
         void AddStoryboard(Storyboard value);
 
+        const std::vector<VisualStateGroup>& VisualStateGroups() const;
+        std::vector<VisualStateGroup>& VisualStateGroups();
+        void SetVisualStateGroups(std::vector<VisualStateGroup> value);
+
         Size DesiredSize() const;
         void SetDesiredSize(Size value);
 
@@ -277,7 +281,7 @@ namespace xaml {
         attr::Color foreground{};
         attr::Orientation orientation = attr::Orientation::vertical;
         attr::Alignment verticalAlignment = attr::Alignment::center;
-        attr::Alignment horizontalAlignment = attr::Alignment::center;
+        attr::Alignment horizontalAlignment = attr::Alignment::stretch;
         attr::Alignment contentAlignment = attr::Alignment::left;
         int gridRow = 0;
         int gridColumn = 0;
@@ -308,6 +312,7 @@ namespace xaml {
         std::shared_ptr<int> lifetimeToken = std::make_shared<int>(0);
         std::function<AnimationParameters()> animationParametersProvider;
         std::vector<Storyboard> storyboards;
+        std::vector<VisualStateGroup> visualStateGroups;
         Size desiredSize{};
         Rect bounds{};
         Rect clipBounds{};

@@ -548,6 +548,7 @@ namespace {
                 this->EmitGridDefinitions(element, variable, output);
             }
             this->EmitStoryboards(element, variable, output);
+            this->EmitVisualStateGroups(element, variable, output);
             this->EmitBindings(bindings, output);
             if (element.name == "ListView") {
                 this->EmitListViewItems(element, variable, output, elementCounts, bindingContext);
@@ -557,7 +558,8 @@ namespace {
                 if (element.children[childIndex].name == "columnDefinitions"
                     || element.children[childIndex].name == "rowDefinitions"
                     || element.children[childIndex].name == "Page.Resources"
-                    || element.children[childIndex].name == element.name + ".Storyboards") {
+                    || element.children[childIndex].name == element.name + ".Storyboards"
+                    || element.children[childIndex].name == "VisualStateManager.VisualStateGroups") {
                     continue;
                 }
                 const std::string childVariable = this->EmitElement(
@@ -565,6 +567,77 @@ namespace {
                 output << "            " << variable << "->AddChild(std::move(" << childVariable << "));\n";
             }
             return variable;
+        }
+
+        void EmitVisualStateGroups(
+            const Element& element,
+            const std::string& variable,
+            std::ostringstream& output) {
+            for (const Element& collection : element.children) {
+                if (collection.name != "VisualStateManager.VisualStateGroups") {
+                    continue;
+                }
+                output << "            " << variable << "->SetVisualStateGroups({";
+                for (size_t groupIndex = 0; groupIndex < collection.children.size(); ++groupIndex) {
+                    const Element& group = collection.children[groupIndex];
+                    if (group.name != "VisualStateGroup") {
+                        throw std::runtime_error("Only <VisualStateGroup> is allowed inside <VisualStateManager.VisualStateGroups>");
+                    }
+                    const std::string groupName = this->AttributeValue(group, "name");
+                    if (groupName.empty()) {
+                        throw std::runtime_error("<VisualStateGroup> requires name");
+                    }
+                    if (groupIndex != 0) {
+                        output << ", ";
+                    }
+                    output << "{\"" << this->EscapeCpp(groupName) << "\", \"\", {";
+                    for (size_t stateIndex = 0; stateIndex < group.children.size(); ++stateIndex) {
+                        const Element& state = group.children[stateIndex];
+                        const std::string stateName = this->AttributeValue(state, "name");
+                        if (state.name != "VisualState" || stateName.empty() || state.children.size() != 1
+                            || state.children.front().name != "Storyboard") {
+                            throw std::runtime_error("<VisualState> requires name and one <Storyboard>");
+                        }
+                        if (stateIndex != 0) {
+                            output << ", ";
+                        }
+                        output << "{\"" << this->EscapeCpp(stateName) << "\", {";
+                        const Element& storyboard = state.children.front();
+                        for (size_t trackIndex = 0; trackIndex < storyboard.children.size(); ++trackIndex) {
+                            const Element& track = storyboard.children[trackIndex];
+                            const std::string targetName = this->AttributeValue(track, "targetName");
+                            const std::string property = track.name == "FloatAnimation"
+                                ? this->AttributeValue(track, "property") : "";
+                            const std::string from = this->AttributeValue(track, "from");
+                            const std::string to = this->AttributeValue(track, "to");
+                            const std::string duration = this->AttributeValue(track, "duration");
+                            const std::string easing = this->AttributeValue(track, "easing");
+                            if (!track.children.empty() || targetName.empty()
+                                || (property != "opacity" && property != "renderOffsetX" && property != "renderOffsetY"
+                                    && property != "height" && property != "toggleProgress" && property != "pressProgress")
+                                || from.empty() || to.empty() || duration.empty()) {
+                                throw std::runtime_error("Visual state FloatAnimation requires targetName, supported property, from, to and duration");
+                            }
+                            const std::string easingName = easing.empty() || easing == "CubicOut" ? "cubicOut"
+                                : easing == "Linear" ? "linear" : "";
+                            if (easingName.empty()) {
+                                throw std::runtime_error("Visual state animation easing must be Linear or CubicOut");
+                            }
+                            if (trackIndex != 0) {
+                                output << ", ";
+                            }
+                            const bool fromCurrent = from == "Current";
+                            output << "{\"" << this->EscapeCpp(targetName) << "\", {AnimatedProperty::" << property
+                                << ", " << (fromCurrent ? "0.0f" : this->FloatLiteral(from)) << ", " << this->FloatLiteral(to)
+                                << ", " << (fromCurrent ? "true" : "false") << ", false, std::chrono::milliseconds(" << std::stoi(duration)
+                                << "), Easing::" << easingName << "}}";
+                        }
+                        output << "}}";
+                    }
+                    output << "}}";
+                }
+                output << "});\n";
+            }
         }
 
         void EmitStoryboards(

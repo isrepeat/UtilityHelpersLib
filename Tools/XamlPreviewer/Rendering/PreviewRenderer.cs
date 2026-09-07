@@ -50,7 +50,15 @@ internal static class PreviewRenderer {
         MarkupValidator.Validate(document);
         var rootNode = document.Root
             ?? throw new InvalidDataException("Разметка не содержит корневого элемента.");
-        return PreviewRenderer.Build(rootNode, data, locations, PreviewRenderer.ExtractStyles(rootNode));
+        var root = PreviewRenderer.Build(rootNode, data, locations, PreviewRenderer.ExtractStyles(rootNode));
+        try {
+            PreviewRenderer.ApplyInitialVisualStates(root, data);
+            return root;
+        }
+        catch {
+            NativeRuntime.xr_destroy_element(root);
+            throw;
+        }
     }
 
     public static SolidColorBrush ParseBrush(string value) {
@@ -117,6 +125,7 @@ internal static class PreviewRenderer {
                     PreviewRenderer.AddChild(element, PreviewRenderer.Build(childNode, data, locations, styles));
                 }
             }
+            PreviewRenderer.ApplyVisualStateGroups(element, node);
 
             return element;
         }
@@ -307,6 +316,67 @@ internal static class PreviewRenderer {
     private static void SetAttribute(IntPtr element, string name, string value) {
         if (NativeRuntime.xr_set_attribute(element, name, value) == 0) {
             throw new InvalidOperationException($"{name}: {NativeRuntime.GetLastError()}");
+        }
+    }
+
+    private static void ApplyVisualStateGroups(IntPtr element, XElement node) {
+        var collection = node.Elements().SingleOrDefault(child => child.Name.LocalName == "VisualStateManager.VisualStateGroups");
+        if (collection is null) {
+            return;
+        }
+        foreach (var group in collection.Elements()) {
+            var groupName = PreviewRenderer.Attribute(group, "name");
+            if (group.Name.LocalName != "VisualStateGroup" || string.IsNullOrWhiteSpace(groupName)) {
+                throw new InvalidDataException("VisualStateManager.VisualStateGroups требует именованные VisualStateGroup.");
+            }
+            foreach (var state in group.Elements()) {
+                var stateName = PreviewRenderer.Attribute(state, "name");
+                var storyboard = state.Elements().SingleOrDefault();
+                if (state.Name.LocalName != "VisualState" || string.IsNullOrWhiteSpace(stateName)
+                    || storyboard?.Name.LocalName != "Storyboard") {
+                    throw new InvalidDataException("VisualState требует name и один Storyboard.");
+                }
+                foreach (var track in storyboard.Elements()) {
+                    var targetName = PreviewRenderer.Attribute(track, "targetName");
+                    if (track.Name.LocalName != "FloatAnimation" || string.IsNullOrWhiteSpace(targetName)) {
+                        throw new InvalidDataException("VisualState поддерживает FloatAnimation с targetName.");
+                    }
+                    var property = PreviewRenderer.ParseProperty(PreviewRenderer.Attribute(track, "property"));
+                    var from = PreviewRenderer.ParseAnimationValue(PreviewRenderer.Attribute(track, "from"), "Current");
+                    var to = PreviewRenderer.ParseAnimationValue(PreviewRenderer.Attribute(track, "to"), "ToggleState");
+                    if (!int.TryParse(PreviewRenderer.Attribute(track, "duration"), out var duration) || duration < 0) {
+                        throw new InvalidDataException("Visual state animation requires non-negative duration.");
+                    }
+                    var easing = PreviewRenderer.Attribute(track, "easing") switch {
+                        null or "CubicOut" => 1,
+                        "Linear" => 0,
+                        _ => throw new InvalidDataException("Animation easing must be Linear or CubicOut."),
+                    };
+                    NativeRuntime.Ensure(NativeRuntime.xr_add_visual_state_track(element, groupName, stateName,
+                        targetName, property, from, to, duration, easing) != 0);
+                }
+            }
+        }
+    }
+
+    private static void ApplyInitialVisualStates(IntPtr root, JsonElement data) {
+        if (!data.TryGetProperty("$visualStates", out var states) || states.ValueKind != JsonValueKind.Array) {
+            return;
+        }
+        foreach (var item in states.EnumerateArray()) {
+            if (!item.TryGetProperty("host", out var hostValue)
+                || !item.TryGetProperty("group", out var groupValue)
+                || !item.TryGetProperty("state", out var stateValue)
+                || hostValue.GetString() is not string hostId
+                || groupValue.GetString() is not string groupName
+                || stateValue.GetString() is not string stateName) {
+                throw new InvalidDataException("$visualStates требует host, group и state.");
+            }
+            var host = NativeRuntime.xr_find_element(root, hostId);
+            if (host == IntPtr.Zero) {
+                throw new InvalidDataException($"Visual state host не найден: {hostId}.");
+            }
+            NativeRuntime.Ensure(NativeRuntime.xr_go_to_visual_state(host, groupName, stateName, 0) != 0);
         }
     }
 

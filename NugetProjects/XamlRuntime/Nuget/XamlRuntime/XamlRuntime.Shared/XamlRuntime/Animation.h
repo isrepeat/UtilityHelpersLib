@@ -188,6 +188,9 @@ namespace xaml {
         static void Update(Element& root, std::chrono::duration<float, std::milli> elapsed);
         static bool IsAnimating(const Element& root);
 
+        static bool GoToVisualState(Element& scope, const std::string& groupName,
+            const std::string& stateName, bool useTransitions = true);
+
     private:
         struct Root {
             Element* element;
@@ -198,6 +201,8 @@ namespace xaml {
         friend class AnimationInvocation;
         void TrackRoot(Element& root);
         static bool StartStoryboards(Element& element, AnimationTrigger trigger, bool fromHidden);
+        static bool StartTracks(Element& target, const std::vector<AnimationTrack>& tracks,
+            AnimationTrigger trigger, bool useTransitions);
         static void AddPropertyTrack(Element& target, AnimatedProperty property, float from, float to,
             std::chrono::milliseconds duration, Easing easing, bool presence);
         static void Configure(Element& element, AnimationTrigger trigger, bool fromHidden);
@@ -213,5 +218,11 @@ namespace xaml {
     private:
         std::vector<Root> roots;
         float playbackRate = 1.0f;
+    };
+
+    class VisualStateManager final {
+    public:
+        static bool GoToState(Element& scope, const std::string& groupName,
+            const std::string& stateName, bool useTransitions = true);
     };
 }

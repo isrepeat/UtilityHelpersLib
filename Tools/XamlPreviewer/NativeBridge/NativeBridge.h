@@ -70,6 +70,21 @@ XAML_RUNTIME_BRIDGE_API int xr_add_storyboard_track(
     float to,
     int durationMilliseconds,
     int easing);
+XAML_RUNTIME_BRIDGE_API int xr_add_visual_state_track(
+    xr_element* scope,
+    const char* groupName,
+    const char* stateName,
+    const char* targetName,
+    int property,
+    float from,
+    float to,
+    int durationMilliseconds,
+    int easing);
+XAML_RUNTIME_BRIDGE_API int xr_go_to_visual_state(
+    xr_element* scope,
+    const char* groupName,
+    const char* stateName,
+    int useTransitions);
 XAML_RUNTIME_BRIDGE_API int xr_supported_attribute_count(const char* elementType);
 XAML_RUNTIME_BRIDGE_API const char* xr_supported_attribute_name(
     const char* elementType,

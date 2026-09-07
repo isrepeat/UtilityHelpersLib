@@ -23,6 +23,7 @@ namespace xaml {
         hide,
         parentShow,
         parentHide,
+        visualState,
     };
 
     enum class Easing {
@@ -56,5 +57,21 @@ namespace xaml {
     struct Storyboard {
         AnimationTrigger trigger = AnimationTrigger::pointerDown;
         std::vector<AnimationTrack> tracks;
+    };
+
+    struct VisualStateTrack {
+        std::string targetName;
+        AnimationTrack animation;
+    };
+
+    struct VisualState {
+        std::string name;
+        std::vector<VisualStateTrack> tracks;
+    };
+
+    struct VisualStateGroup {
+        std::string name;
+        std::string currentState;
+        std::vector<VisualState> states;
     };
 }

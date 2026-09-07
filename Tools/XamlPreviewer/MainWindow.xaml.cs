@@ -1068,11 +1068,25 @@ public partial class MainWindow : Window {
         this.isScenariosDirty = true;
         this.UpdateDocumentState();
         this.SaveScenarios("Сценарии автоматически сохранены после интерактивного действия");
+        if (tap["visualStateHost"]?.GetValue<string>() is string visualStateHost
+            && tap["visualStateGroup"]?.GetValue<string>() is string visualStateGroup
+            && tap["path"]?.GetValue<string>() is string visualStatePath
+            && scenario[visualStatePath]?.GetValue<bool>() is bool visualStateValue
+            && tap[visualStateValue ? "visualStateTrue" : "visualStateFalse"]?.GetValue<string>() is string visualState
+            && this.previewSession?.GoToVisualState(visualStateHost, visualStateGroup, visualState) == true) {
+            return;
+        }
         if (tap["previewElement"]?.GetValue<string>() is string previewElementId
             && tap["path"]?.GetValue<string>() is string path
-            && scenario[path]?.GetValue<bool>() is bool isVisible
-            && this.previewSession?.SetElementVisibility(previewElementId, isVisible) == true) {
-            return;
+            && scenario[path]?.GetValue<bool>() is bool state) {
+            if (tap["previewAttribute"]?.GetValue<string>() is string previewAttribute
+                && tap[state ? "previewTrueValue" : "previewFalseValue"]?.GetValue<string>() is string previewValue
+                && this.previewSession?.SetElementAttribute(previewElementId, previewAttribute, previewValue) == true) {
+                return;
+            }
+            if (this.previewSession?.SetElementVisibility(previewElementId, state) == true) {
+                return;
+            }
         }
         this.RenderTimerTick(this, EventArgs.Empty);
     }

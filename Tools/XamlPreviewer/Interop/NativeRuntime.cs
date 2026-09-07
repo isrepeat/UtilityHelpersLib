@@ -118,6 +118,21 @@ internal static class NativeRuntime {
         int durationMilliseconds,
         int easing);
 
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+    public static extern int xr_add_visual_state_track(
+        IntPtr scope,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string groupName,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string stateName,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string targetName,
+        int property, float from, float to, int durationMilliseconds, int easing);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+    public static extern int xr_go_to_visual_state(
+        IntPtr scope,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string groupName,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string stateName,
+        int useTransitions);
+
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_supported_attribute_count")]
     public static extern int xr_supported_attribute_count(
         [MarshalAs(UnmanagedType.LPUTF8Str)] string elementType);

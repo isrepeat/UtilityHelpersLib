@@ -222,6 +222,16 @@ namespace xaml::_details {
             return result;
         }
 
+        if (element.Type() == ElementType::border) {
+            Size result{};
+            if (!element.Children().empty()) {
+                result = measure(*element.Children().front());
+            }
+            result = withCommonSize(element, result);
+            element.SetDesiredSize(result);
+            return result;
+        }
+
         Size result{};
         for (const auto& child : element.Children()) {
             const Size childSize = measure(*child);
@@ -248,8 +258,8 @@ namespace xaml::_details {
         return 0.0f;
     }
 
-    float alignedSize(attr::Alignment alignment, float available, float desired) {
-        return alignment == attr::Alignment::stretch ? available : desired;
+    float alignedSize(attr::Alignment alignment, float available, float desired, float explicitSize) {
+        return alignment == attr::Alignment::stretch && explicitSize <= 0.0f ? available : desired;
     }
 
     std::vector<std::string> tracks(const std::string& definitions) {
@@ -324,8 +334,8 @@ namespace xaml::_details {
                         child->HorizontalAlignmentValue(), contentBounds.width, childSize.width),
                     contentBounds.y + alignedOffset(
                         child->VerticalAlignmentValue(), contentBounds.height, childSize.height),
-                    alignedSize(child->HorizontalAlignmentValue(), contentBounds.width, childSize.width),
-                    alignedSize(child->VerticalAlignmentValue(), contentBounds.height, childSize.height),
+                    alignedSize(child->HorizontalAlignmentValue(), contentBounds.width, childSize.width, child->Width()),
+                    alignedSize(child->VerticalAlignmentValue(), contentBounds.height, childSize.height, child->Height()),
                 }, element.ClipBounds());
             }
             return;
@@ -350,8 +360,23 @@ namespace xaml::_details {
                 arrange(*child, {
                     x + alignedOffset(child->HorizontalAlignmentValue(), columnSizes[column], childSize.width),
                     y + alignedOffset(child->VerticalAlignmentValue(), rowSizes[row], childSize.height),
-                    alignedSize(child->HorizontalAlignmentValue(), columnSizes[column], childSize.width),
-                    alignedSize(child->VerticalAlignmentValue(), rowSizes[row], childSize.height),
+                    alignedSize(child->HorizontalAlignmentValue(), columnSizes[column], childSize.width, child->Width()),
+                    alignedSize(child->VerticalAlignmentValue(), rowSizes[row], childSize.height, child->Height()),
+                }, element.ClipBounds());
+            }
+            return;
+        }
+        if (element.Type() == ElementType::border) {
+            if (!element.Children().empty()) {
+                Element& child = *element.Children().front();
+                const Size childSize = child.DesiredSize();
+                arrange(child, {
+                    contentBounds.x + alignedOffset(
+                        child.HorizontalAlignmentValue(), contentBounds.width, childSize.width),
+                    contentBounds.y + alignedOffset(
+                        child.VerticalAlignmentValue(), contentBounds.height, childSize.height),
+                    alignedSize(child.HorizontalAlignmentValue(), contentBounds.width, childSize.width, child.Width()),
+                    alignedSize(child.VerticalAlignmentValue(), contentBounds.height, childSize.height, child.Height()),
                 }, element.ClipBounds());
             }
             return;
@@ -361,10 +386,10 @@ namespace xaml::_details {
             const Size size = child->DesiredSize();
             Rect childBounds;
             if (element.OrientationValue() == attr::Orientation::vertical) {
-                childBounds = {contentBounds.x + alignedOffset(child->HorizontalAlignmentValue(), contentBounds.width, size.width), cursor, alignedSize(child->HorizontalAlignmentValue(), contentBounds.width, size.width), size.height};
+                childBounds = {contentBounds.x + alignedOffset(child->HorizontalAlignmentValue(), contentBounds.width, size.width), cursor, alignedSize(child->HorizontalAlignmentValue(), contentBounds.width, size.width, child->Width()), size.height};
                 cursor += size.height;
             } else {
-                childBounds = {cursor, contentBounds.y + alignedOffset(child->VerticalAlignmentValue(), contentBounds.height, size.height), size.width, alignedSize(child->VerticalAlignmentValue(), contentBounds.height, size.height)};
+                childBounds = {cursor, contentBounds.y + alignedOffset(child->VerticalAlignmentValue(), contentBounds.height, size.height), size.width, alignedSize(child->VerticalAlignmentValue(), contentBounds.height, size.height, child->Height())};
                 cursor += size.width;
             }
             arrange(*child, childBounds, element.ClipBounds());
@@ -768,6 +793,18 @@ namespace xaml {
 
     void Element::AddStoryboard(Storyboard value) {
         this->storyboards.push_back(std::move(value));
+    }
+
+    const std::vector<VisualStateGroup>& Element::VisualStateGroups() const {
+        return this->visualStateGroups;
+    }
+
+    std::vector<VisualStateGroup>& Element::VisualStateGroups() {
+        return this->visualStateGroups;
+    }
+
+    void Element::SetVisualStateGroups(std::vector<VisualStateGroup> value) {
+        this->visualStateGroups = std::move(value);
     }
 
     Size Element::DesiredSize() const {
