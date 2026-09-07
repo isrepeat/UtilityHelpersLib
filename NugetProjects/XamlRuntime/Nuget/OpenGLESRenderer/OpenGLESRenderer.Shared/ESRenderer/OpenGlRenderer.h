@@ -45,6 +45,7 @@ namespace es_renderer {
         OpenGlRenderer& operator=(const OpenGlRenderer&) = delete;
 
         void BeginFrame();
+        std::vector<xaml::TextGlyphMetric> TextGlyphMetrics() const;
 
     private:
         class Implementation;

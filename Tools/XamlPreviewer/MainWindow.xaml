@@ -1,12 +1,11 @@
-<Window x:Class="XamlPreviewer.MainWindow"
+<Window Width="1500"
+        Height="950" x:Class="XamlPreviewer.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:avalonedit="http://icsharpcode.net/sharpdevelop/avalonedit"
         xmlns:local="clr-namespace:XamlPreviewer"
         xmlns:search="clr-namespace:ICSharpCode.AvalonEdit.Search;assembly=ICSharpCode.AvalonEdit"
         Title="MobileClock XAML Previewer"
-        Width="1500"
-        Height="950"
         MinWidth="1000"
         MinHeight="650"
         Background="#181818">
@@ -55,10 +54,9 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToolTip">
-                        <Border Background="{TemplateBinding Background}"
+                        <Border Padding="6" Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="1"
-                                Padding="6">
+                                BorderThickness="1">
                             <ContentPresenter />
                         </Border>
                     </ControlTemplate>
@@ -80,8 +78,7 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="1">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver"
@@ -120,12 +117,11 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
                         <Border x:Name="Border"
+                                Padding="{TemplateBinding Padding}"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="1"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
+                                BorderThickness="1">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked"
@@ -146,11 +142,10 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="search:SearchPanel">
-                        <Border Background="#252525"
+                        <Border VerticalAlignment="Top"
+                                HorizontalAlignment="Right" Background="#252525"
                                 BorderBrush="#4A4A4A"
                                 BorderThickness="1"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Top"
                                 Cursor="Arrow">
                             <Grid Margin="6">
                                 <Grid.RowDefinitions>
@@ -162,8 +157,8 @@
                                          Width="525"
                                          Height="36"
                                          Margin="0 0 6 0"
-                                         FontSize="16"
-                                         VerticalContentAlignment="Center">
+                                         VerticalContentAlignment="Center"
+                                         FontSize="16">
                                     <TextBox.Text>
                                         <Binding Path="SearchPattern"
                                                  RelativeSource="{RelativeSource TemplatedParent}"
@@ -180,13 +175,12 @@
                                         Style="{StaticResource SearchPanelButtonStyle}"
                                         Command="search:SearchCommands.FindNext"
                                         ToolTip="Следующее совпадение (F3)">
-                                    <local:SvgIconControl Source="Resources/Icons/find-next.svg"
-                                                          Width="18"
+                                    <local:SvgIconControl Width="18"
                                                           Height="18"
-                                                          HorizontalAlignment="Center"
                                                           VerticalAlignment="Center"
+                                                          HorizontalAlignment="Center" Source="Resources/Icons/find-next.svg"
                                                           Stroke="#E6E6E6"
-                                                          StrokeThickness="2.25" />
+                                                          StrokeThickness="2.25"/>
                                 </Button>
                                 <Button Width="36"
                                         Height="36"
@@ -194,29 +188,27 @@
                                         Style="{StaticResource SearchPanelButtonStyle}"
                                         Command="search:SearchCommands.FindPrevious"
                                         ToolTip="Предыдущее совпадение (Shift+F3)">
-                                    <local:SvgIconControl Source="Resources/Icons/find-previous.svg"
-                                                          Width="18"
+                                    <local:SvgIconControl Width="18"
                                                           Height="18"
-                                                          HorizontalAlignment="Center"
                                                           VerticalAlignment="Center"
+                                                          HorizontalAlignment="Center" Source="Resources/Icons/find-previous.svg"
                                                           Stroke="#E6E6E6"
-                                                          StrokeThickness="2.25" />
+                                                          StrokeThickness="2.25"/>
                                 </Button>
                                 <Button Width="36"
                                         Height="36"
                                         Margin="0"
-                                        HorizontalAlignment="Right"
                                         VerticalAlignment="Top"
+                                        HorizontalAlignment="Right"
                                         Style="{StaticResource SearchPanelButtonStyle}"
                                         Command="search:SearchCommands.CloseSearchPanel"
                                         Focusable="False">
-                                    <local:SvgIconControl Source="Resources/Icons/close.svg"
-                                                          Width="18"
+                                    <local:SvgIconControl Width="18"
                                                           Height="18"
-                                                          HorizontalAlignment="Center"
                                                           VerticalAlignment="Center"
+                                                          HorizontalAlignment="Center" Source="Resources/Icons/close.svg"
                                                           Stroke="#E6E6E6"
-                                                          StrokeThickness="2.25" />
+                                                          StrokeThickness="2.25"/>
                                 </Button>
                                 </StackPanel>
                                 <StackPanel Grid.Row="1"
@@ -256,14 +248,13 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Border"
+                                Padding="{TemplateBinding Padding}"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"
                                               Content="{TemplateBinding Content}"
-                                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+                                              ContentTemplate="{TemplateBinding ContentTemplate}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver"
@@ -309,13 +300,12 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
                         <Border x:Name="Border"
+                                Padding="{TemplateBinding Padding}"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              Content="{TemplateBinding Content}" />
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"
+                                              Content="{TemplateBinding Content}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver"
@@ -355,13 +345,12 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
                         <Border x:Name="Border"
+                                Padding="{TemplateBinding Padding}"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              Content="{TemplateBinding Content}" />
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"
+                                              Content="{TemplateBinding Content}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver"
@@ -423,20 +412,20 @@
                                         </ToggleButton.Template>
                                     </ToggleButton>
                                     <ContentPresenter Margin="{TemplateBinding Padding}"
-                                                      HorizontalAlignment="Left"
                                                       VerticalAlignment="Center"
+                                                      HorizontalAlignment="Left"
                                                       Content="{TemplateBinding SelectionBoxItem}"
                                                       ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
                                                       ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
-                                                      IsHitTestVisible="False" />
+                                                      IsHitTestVisible="False"/>
                                     <Path Width="10"
                                           Height="6"
                                           Margin="0 0 8 0"
-                                          HorizontalAlignment="Right"
                                           VerticalAlignment="Center"
+                                          HorizontalAlignment="Right"
                                           Data="M 0 0 L 10 0 L 5 6 Z"
                                           Fill="#B8B8B8"
-                                          IsHitTestVisible="False" />
+                                          IsHitTestVisible="False"/>
                                 </Grid>
                             </Border>
                             <Popup x:Name="Popup"
@@ -445,8 +434,7 @@
                                    Placement="Bottom"
                                    PlacementTarget="{Binding ElementName=Border}"
                                    PopupAnimation="Slide">
-                                <Border MinWidth="{Binding ActualWidth, ElementName=Border}"
-                                        Margin="0 2 0 0"
+                                <Border Margin="0 2 0 0" MinWidth="{Binding ActualWidth, ElementName=Border}"
                                         Background="#252525"
                                         BorderBrush="{StaticResource ControlBorderBrush}"
                                         BorderThickness="1">
@@ -529,9 +517,8 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              Content="{TemplateBinding Content}" />
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"
+                                              Content="{TemplateBinding Content}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver"
@@ -650,10 +637,9 @@
                 <RepeatButton Grid.Row="0"
                               Command="{x:Static ScrollBar.LineUpCommand}"
                               Style="{StaticResource ScrollBarButton}">
-                    <Path Data="M 0,4 L 3.5,0.5 L 7,4 L 7,6 L 3.5,2.5 L 0,6 z"
+                    <Path Margin="3 4 3 3" Data="M 0,4 L 3.5,0.5 L 7,4 L 7,6 L 3.5,2.5 L 0,6 z"
                           Fill="#B8B8B8"
-                          Margin="3 4 3 3"
-                          Stretch="Uniform" />
+                          Stretch="Uniform"/>
                 </RepeatButton>
                 <Track x:Name="PART_Track"
                        Grid.Row="1"
@@ -673,10 +659,9 @@
                 <RepeatButton Grid.Row="2"
                               Command="{x:Static ScrollBar.LineDownCommand}"
                               Style="{StaticResource ScrollBarButton}">
-                    <Path Data="M 0,0.5 L 3.5,4 L 7,0.5 L 7,2.5 L 3.5,6 L 0,2.5 z"
+                    <Path Margin="3 3 3 4" Data="M 0,0.5 L 3.5,4 L 7,0.5 L 7,2.5 L 3.5,6 L 0,2.5 z"
                           Fill="#B8B8B8"
-                          Margin="3 3 3 4"
-                          Stretch="Uniform" />
+                          Stretch="Uniform"/>
                 </RepeatButton>
             </Grid>
         </ControlTemplate>
@@ -695,10 +680,9 @@
                 <RepeatButton Grid.Column="0"
                               Command="{x:Static ScrollBar.LineLeftCommand}"
                               Style="{StaticResource ScrollBarButton}">
-                    <Path Data="M 4,0 L 0.5,3.5 L 4,7 L 6,7 L 2.5,3.5 L 6,0 z"
+                    <Path Margin="4 3 3 3" Data="M 4,0 L 0.5,3.5 L 4,7 L 6,7 L 2.5,3.5 L 6,0 z"
                           Fill="#B8B8B8"
-                          Margin="4 3 3 3"
-                          Stretch="Uniform" />
+                          Stretch="Uniform"/>
                 </RepeatButton>
                 <Track x:Name="PART_Track"
                        Grid.Column="1"
@@ -718,10 +702,9 @@
                 <RepeatButton Grid.Column="2"
                               Command="{x:Static ScrollBar.LineRightCommand}"
                               Style="{StaticResource ScrollBarButton}">
-                    <Path Data="M 0,0 L 3.5,3.5 L 0,7 L 2,7 L 5.5,3.5 L 2,0 z"
+                    <Path Margin="3 3 4 3" Data="M 0,0 L 3.5,3.5 L 0,7 L 2,7 L 5.5,3.5 L 2,0 z"
                           Fill="#B8B8B8"
-                          Margin="3 3 4 3"
-                          Stretch="Uniform" />
+                          Stretch="Uniform"/>
                 </RepeatButton>
             </Grid>
         </ControlTemplate>
@@ -760,9 +743,9 @@
         <DockPanel
                    Margin="10">
             <ToggleButton x:Name="EditorModeToggle"
-                          Style="{StaticResource EditorSwitchToggleButtonStyle}"
                           Width="155"
                           Margin="0 0 8 0"
+                          Style="{StaticResource EditorSwitchToggleButtonStyle}"
                           Click="EditorModeToggleClick">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock x:Name="XamlModeText"
@@ -775,11 +758,18 @@
                 </StackPanel>
             </ToggleButton>
             <ToggleButton x:Name="SettingsButton"
-                          Style="{StaticResource EditorModeToggleButtonStyle}"
                           Width="100"
                           Margin="0 0 8 0"
+                          Style="{StaticResource EditorModeToggleButtonStyle}"
                           Click="SettingsButtonClick"
-                          Content="Настройки" />
+                          Content="Настройки"/>
+            <ToggleButton x:Name="ElementInspectionButton"
+                          Width="120"
+                          Margin="0 0 8 0"
+                          Style="{StaticResource EditorModeToggleButtonStyle}"
+                          Click="ElementInspectionButtonClick"
+                          ToolTip="Закрепить режим выбора элементов UI"
+                          Content="Выбор UI"/>
             <Button x:Name="OpenButton"
                     Width="90"
                     Margin="0 0 8 0"
@@ -846,8 +836,8 @@
                     Width="100"
                     Height="28"
                     Margin="0 16 38 0"
-                    HorizontalAlignment="Right"
                     VerticalAlignment="Top"
+                    HorizontalAlignment="Right"
                     Background="#FF25282C"
                     BorderBrush="#FF4B535A"
                     Foreground="#FFF2F4F5"
@@ -857,13 +847,12 @@
                     ToolTip="Раскрыть все свёрнутые теги"
                     Visibility="Collapsed"
                     Click="ExpandAllFoldingsButtonClick">
-                <local:SvgIconControl Source="Resources/Icons/expand-all.svg"
-                                      Width="18"
+                <local:SvgIconControl Width="18"
                                       Height="18"
-                                      HorizontalAlignment="Center"
                                       VerticalAlignment="Center"
+                                      HorizontalAlignment="Center" Source="Resources/Icons/expand-all.svg"
                                       Stroke="#FFF2F4F5"
-                                      StrokeThickness="2.25" />
+                                      StrokeThickness="2.25"/>
             </Button>
             <Grid x:Name="FolderPickerPanel"
                   Margin="10"
@@ -887,13 +876,12 @@
                             Margin="0 0 4 0"
                             Click="FolderPickerBackButtonClick"
                             DockPanel.Dock="Left">
-                        <local:SvgIconControl Source="Resources/Icons/navigate-back.svg"
-                                              Width="22"
+                        <local:SvgIconControl Width="22"
                                               Height="22"
-                                              HorizontalAlignment="Center"
                                               VerticalAlignment="Center"
+                                              HorizontalAlignment="Center" Source="Resources/Icons/navigate-back.svg"
                                               Stroke="#E6E6E6"
-                                              StrokeThickness="2.5" />
+                                              StrokeThickness="2.5"/>
                     </Button>
                     <Button x:Name="FolderPickerForwardButton"
                             Width="40"
@@ -901,26 +889,24 @@
                             Margin="0 0 4 0"
                             Click="FolderPickerForwardButtonClick"
                             DockPanel.Dock="Left">
-                        <local:SvgIconControl Source="Resources/Icons/navigate-forward.svg"
-                                              Width="22"
+                        <local:SvgIconControl Width="22"
                                               Height="22"
-                                              HorizontalAlignment="Center"
                                               VerticalAlignment="Center"
+                                              HorizontalAlignment="Center" Source="Resources/Icons/navigate-forward.svg"
                                               Stroke="#E6E6E6"
-                                              StrokeThickness="2.5" />
+                                              StrokeThickness="2.5"/>
                     </Button>
                     <Button Width="40"
                             Height="36"
                             Margin="0 0 8 0"
                             Click="FolderPickerUpButtonClick"
                             DockPanel.Dock="Left">
-                        <local:SvgIconControl Source="Resources/Icons/find-previous.svg"
-                                              Width="22"
+                        <local:SvgIconControl Width="22"
                                               Height="22"
-                                              HorizontalAlignment="Center"
                                               VerticalAlignment="Center"
+                                              HorizontalAlignment="Center" Source="Resources/Icons/find-previous.svg"
                                               Stroke="#E6E6E6"
-                                              StrokeThickness="2.5" />
+                                              StrokeThickness="2.5"/>
                     </Button>
                     <TextBox x:Name="FolderPickerPathText"
                              Background="#202020"
@@ -999,8 +985,8 @@
                               Margin="0 0 16 0"
                               SelectionChanged="AnimationSpeedPickerSelectionChanged" />
                     <ToggleButton x:Name="PreviewOrientationToggle"
-                                  Style="{StaticResource EditorSwitchToggleButtonStyle}"
                                   Width="190"
+                                  Style="{StaticResource EditorSwitchToggleButtonStyle}"
                                   Click="PreviewOrientationToggleClick">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock x:Name="PortraitOrientationText"
@@ -1019,6 +1005,7 @@
                         BorderThickness="1">
                     <ScrollViewer x:Name="PreviewViewport"
                                   HorizontalContentAlignment="Center"
+                                  VerticalContentAlignment="Center"
                                   HorizontalScrollBarVisibility="Auto"
                                   LostMouseCapture="PreviewViewportLostMouseCapture"
                                   PreviewMouseLeftButtonDown="PreviewViewportPreviewMouseLeftButtonDown"
@@ -1026,11 +1013,10 @@
                                   PreviewMouseMove="PreviewViewportPreviewMouseMove"
                                   PreviewMouseWheel="PreviewViewportPreviewMouseWheel"
                                   ScrollChanged="PreviewViewportScrollChanged"
-                                  VerticalContentAlignment="Center"
                                   VerticalScrollBarVisibility="Auto">
                         <Viewbox x:Name="PreviewViewbox"
-                                 HorizontalAlignment="Center"
                                  VerticalAlignment="Center"
+                                 HorizontalAlignment="Center"
                                  Stretch="Uniform">
                             <Border x:Name="DeviceSurface"
                                     ClipToBounds="True" />
@@ -1039,9 +1025,9 @@
                 </Border>
             </Grid>
             <GridSplitter Grid.Column="3"
-                          Visibility="Collapsed"
                           HorizontalAlignment="Stretch"
-                          Background="#444444" />
+                          Visibility="Collapsed"
+                          Background="#444444"/>
             <Grid x:Name="ScenarioPanel"
                   Grid.Column="0"
                   Margin="10"

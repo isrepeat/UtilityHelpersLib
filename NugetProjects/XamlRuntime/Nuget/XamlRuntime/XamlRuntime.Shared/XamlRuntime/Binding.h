@@ -18,6 +18,11 @@ namespace xaml {
         void Clear();
         void UpdateSource(Element& element) const;
 
+        template <typename TViewModel, typename TGetter>
+        void AddCommand(Element& element, TViewModel& viewModel, TGetter getter) {
+            element.SetCommand(std::invoke(getter, viewModel));
+        }
+
         template <typename TViewModel, typename TGetter, typename TSetter, typename TProperty>
         void AddOneWay(
             Element& element,

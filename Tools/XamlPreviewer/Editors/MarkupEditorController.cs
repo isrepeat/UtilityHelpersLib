@@ -14,6 +14,7 @@ internal sealed class MarkupEditorController {
     private readonly XmlFoldingStrategy foldingStrategy = new();
     private readonly XmlIndentationGuideRenderer indentationGuideRenderer = new();
     private int[] foldedOffsets = [];
+    private bool isCommentShortcutPending;
     private bool isUpdating;
 
     public string Text => this.editor.Text;
@@ -52,7 +53,25 @@ internal sealed class MarkupEditorController {
 
     public void HandlePreviewKeyDown(KeyEventArgs eventArgs) {
         var key = eventArgs.Key == Key.System ? eventArgs.SystemKey : eventArgs.Key;
-        if (this.TryCollapseSelectionForNavigation(key)) {
+        if (this.isCommentShortcutPending) {
+            this.isCommentShortcutPending = false;
+            if (Keyboard.Modifiers == ModifierKeys.Control && key == Key.C) {
+                this.CommentSelection();
+                eventArgs.Handled = true;
+                return;
+            }
+            if (Keyboard.Modifiers == ModifierKeys.Control && key == Key.U) {
+                this.UncommentSelection();
+                eventArgs.Handled = true;
+                return;
+            }
+        }
+
+        if (Keyboard.Modifiers == ModifierKeys.Control && key == Key.K) {
+            this.isCommentShortcutPending = true;
+            eventArgs.Handled = true;
+        }
+        else if (this.TryCollapseSelectionForNavigation(key)) {
             eventArgs.Handled = true;
         }
         else if (this.TryPasteXaml(key)) {
@@ -122,6 +141,120 @@ internal sealed class MarkupEditorController {
             Environment.NewLine + indentation);
         this.editor.CaretOffset = selectionStart + Environment.NewLine.Length + indentation.Length;
         this.editor.SelectionLength = 0;
+    }
+
+    private void UncommentSelection() {
+        if (this.TryGetTouchedComment(out var commentStart, out var commentEnd)) {
+            this.Uncomment(commentStart, commentEnd);
+        }
+    }
+
+    private bool TryGetTouchedComment(out int commentStart, out int commentEnd) {
+        var text = this.editor.Text;
+        var selectionStart = this.editor.SelectionStart;
+        var selectionEnd = selectionStart + this.editor.SelectionLength;
+        var searchStart = 0;
+        while (searchStart < text.Length) {
+            var start = text.IndexOf("<!--", searchStart, StringComparison.Ordinal);
+            if (start < 0) {
+                break;
+            }
+
+            var endStart = text.IndexOf("-->", start + 4, StringComparison.Ordinal);
+            if (endStart < 0) {
+                break;
+            }
+
+            var end = endStart + 3;
+            var touchesComment = this.editor.SelectionLength == 0
+                ? selectionStart >= start && selectionStart <= end
+                : selectionStart < end && selectionEnd > start;
+            if (touchesComment) {
+                commentStart = start;
+                commentEnd = end;
+                return true;
+            }
+
+            searchStart = end;
+        }
+
+        commentStart = 0;
+        commentEnd = 0;
+        return false;
+    }
+
+    private void Uncomment(int commentStart, int commentEnd) {
+        var commentText = this.editor.Document.GetText(commentStart, commentEnd - commentStart);
+        var uncommentedText = commentText[4..^3];
+        var caretOffset = this.editor.CaretOffset;
+        var hasSelection = this.editor.SelectionLength != 0;
+        this.editor.Document.Replace(commentStart, commentText.Length, uncommentedText);
+        if (hasSelection) {
+            this.editor.Select(commentStart, uncommentedText.Length);
+            return;
+        }
+
+        this.editor.CaretOffset = Math.Clamp(caretOffset - 4, commentStart, commentStart + uncommentedText.Length);
+        this.editor.SelectionLength = 0;
+    }
+
+    private void CommentSelection() {
+        var selectionStart = this.editor.SelectionStart;
+        var selectedText = this.editor.SelectedText;
+        if (selectedText.Length == 0) {
+            if (this.TryGetContainingOpeningTag(selectionStart, out var tagStart, out var tagEnd)) {
+                var tagText = this.editor.Document.GetText(tagStart, tagEnd - tagStart);
+                this.editor.Document.Replace(tagStart, tagText.Length, "<!--" + tagText + "-->");
+                this.editor.CaretOffset = selectionStart + 4;
+                this.editor.SelectionLength = 0;
+                return;
+            }
+
+            const string emptyComment = "<!-- -->";
+            this.editor.Document.Insert(selectionStart, emptyComment);
+            this.editor.CaretOffset = selectionStart + 5;
+            this.editor.SelectionLength = 0;
+            return;
+        }
+
+        this.editor.Document.Replace(selectionStart, selectedText.Length, "<!--" + selectedText + "-->");
+        this.editor.Select(selectionStart + 4, selectedText.Length);
+    }
+
+    private bool TryGetContainingOpeningTag(int caretOffset, out int tagStart, out int tagEnd) {
+        var text = this.editor.Text;
+        tagStart = text.LastIndexOf('<', Math.Max(0, caretOffset - 1));
+        if (tagStart < 0
+            || tagStart + 1 >= text.Length
+            || text[tagStart + 1] is '/' or '!' or '?') {
+            tagEnd = 0;
+            return false;
+        }
+
+        var quote = '\0';
+        for (var offset = tagStart + 1; offset < text.Length; ++offset) {
+            var character = text[offset];
+            if (quote != '\0') {
+                if (character == quote) {
+                    quote = '\0';
+                }
+                continue;
+            }
+
+            if (character is '\'' or '"') {
+                quote = character;
+                continue;
+            }
+            if (character != '>') {
+                continue;
+            }
+
+            tagEnd = offset + 1;
+            return caretOffset > tagStart && caretOffset < tagEnd;
+        }
+
+        tagEnd = 0;
+        return false;
     }
 
     private bool TryPasteXaml(Key key) {

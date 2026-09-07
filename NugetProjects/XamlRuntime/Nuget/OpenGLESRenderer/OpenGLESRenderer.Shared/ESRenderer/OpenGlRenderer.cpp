@@ -90,6 +90,7 @@ namespace es_renderer {
         Implementation& operator=(const Implementation&) = delete;
 
         void BeginFrame() const;
+        std::vector<xaml::TextGlyphMetric> TextGlyphMetrics() const;
         void BeginClip(const xaml::Rect& bounds) const;
         void EndClip() const;
         void DrawOutline(const xaml::Rect& bounds, xaml::attr::Color color);
@@ -854,6 +855,31 @@ namespace es_renderer {
         return this->regularFontAtlas;
     }
 
+    std::vector<xaml::TextGlyphMetric> OpenGlRenderer::Implementation::TextGlyphMetrics() const {
+        std::vector<xaml::TextGlyphMetric> result;
+        result.reserve(3 * (_details::AsciiGlyphCount + _details::CyrillicGlyphCount + 1));
+        const auto append = [&result](std::string_view fontWeight, const FontAtlas& fontAtlas) {
+            const auto appendRange = [&result, fontWeight](uint32_t firstCodepoint, const auto& glyphs) {
+                for (size_t index = 0; index < std::size(glyphs); ++index) {
+                    const stbtt_packedchar& glyph = glyphs[index];
+                    result.push_back({
+                        std::string(fontWeight),
+                        firstCodepoint + static_cast<uint32_t>(index),
+                        glyph.yoff / _details::AtlasFontSize,
+                        glyph.yoff2 / _details::AtlasFontSize,
+                    });
+                }
+            };
+            appendRange(_details::FirstAsciiGlyph, fontAtlas.asciiGlyphs);
+            appendRange(_details::FirstCyrillicGlyph, fontAtlas.cyrillicGlyphs);
+            appendRange(_details::SettingsGlyph, fontAtlas.settingsGlyph);
+        };
+        append("Normal", this->regularFontAtlas);
+        append("Bold", this->boldFontAtlas);
+        append("Black", this->blackFontAtlas);
+        return result;
+    }
+
     OpenGlRenderer::Implementation::GlyphReference
     OpenGlRenderer::Implementation::GetGlyph(
         uint32_t codepoint,
@@ -903,6 +929,10 @@ namespace es_renderer {
     }
 
     OpenGlRenderer::~OpenGlRenderer() = default;
+
+    std::vector<xaml::TextGlyphMetric> OpenGlRenderer::TextGlyphMetrics() const {
+        return this->implementation->TextGlyphMetrics();
+    }
 
     //
     // API

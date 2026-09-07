@@ -4,6 +4,7 @@
 #include <HelpersNew/Filesystem/ReadAllBytes.h>
 #include <ESRenderer/OpenGlRenderer.h>
 #include <XamlRuntime/RenderEngine.h>
+#include <XamlRuntime/XamlLayout.h>
 
 #include "../../../../Resources/Effects/Effects.h"
 #include "../../../../Resources/Effects/Shaders.h"
@@ -170,6 +171,7 @@ namespace xaml::bridge {
             [root = std::string(resourceRoot)](std::string_view source) {
                 return utility_helpers::new_helpers::filesystem::ReadAllBytes(root + "/" + std::string(source));
             });
+        xaml::SetTextGlyphMetrics(this->renderer->TextGlyphMetrics());
         this->renderers.Register<mobileclock::resources::effects::WaveAnimation>("rendererWaveOutline", _details::RenderWaveOutline);
         if (eglMakeCurrent(
             this->display,
