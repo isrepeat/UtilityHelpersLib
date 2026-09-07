@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -49,6 +50,8 @@ public partial class MainWindow : Window {
     private PreviewSession? outgoingSession;
     private PreviewerSettings settings = null!;
     private string? markupPath;
+    private string scenariosPath = string.Empty;
+    private bool usesPageSpecificScenarios;
     private (string From, string To, bool Backward)? pendingPageTransition;
     private (int Width, int Height)? markupPreviewResolution;
     private bool shouldRestorePreviewPosition = true;
@@ -86,6 +89,11 @@ public partial class MainWindow : Window {
     private sealed class FolderPickerHistoryEntry {
         public required string DirectoryPath { get; init; }
         public string? SelectedEntryPath { get; set; }
+    }
+
+    private sealed class ScenarioSource {
+        public required string Path { get; init; }
+        public required bool IsPageSpecific { get; init; }
     }
 
     private enum EditorMode {
@@ -206,9 +214,11 @@ public partial class MainWindow : Window {
         }
 
         this.updatingEditors = true;
-        this.ScenarioEditor.Text = File.ReadAllText(this.settings.ScenariosPath);
         this.SettingsEditor.Text = this.settings.ToJson();
         this.updatingEditors = false;
+        if (this.markupPath is null) {
+            this.LoadScenarioForCurrentMarkup();
+        }
         this.isMarkupDirty = false;
         this.isScenariosDirty = false;
         this.isSettingsDirty = false;
@@ -437,18 +447,18 @@ public partial class MainWindow : Window {
 
     private void ShowFolderPickerPreview(string path) {
         try {
-            using var document = JsonDocument.Parse(this.ScenarioEditor.Text);
+            var markup = File.ReadAllText(path);
+            var source = this.GetScenarioSource(markup, path);
+            using var document = JsonDocument.Parse(File.Exists(source.Path)
+                ? File.ReadAllText(source.Path)
+                : "{}");
             var pageName = Path.GetFileName(path);
-            var scenarios = document.RootElement.TryGetProperty(
-                Path.GetFileNameWithoutExtension(pageName),
-                out var selectedPage)
-                ? selectedPage
-                : document.RootElement;
+            var scenarios = MainWindow.GetScenarios(document.RootElement, source.IsPageSpecific, pageName);
             var scenarioName = this.ScenarioPicker.SelectedItem as string;
             var data = scenarioName is not null && scenarios.TryGetProperty(scenarioName, out var selected)
                 ? selected
                 : scenarios;
-            var root = PreviewRenderer.CreateRoot(File.ReadAllText(path), data);
+            var root = PreviewRenderer.CreateRoot(markup, data);
             this.animationTimer.Stop();
             this.CompletePageTransition();
             this.previewSession?.Dispose();
@@ -527,11 +537,7 @@ public partial class MainWindow : Window {
 
     private void SaveButtonClick(object sender, RoutedEventArgs eventArgs) {
         if (this.editorMode == EditorMode.Scenarios) {
-            File.WriteAllText(this.settings.ScenariosPath, this.ScenarioEditor.Text.TrimEnd());
-            this.isScenariosDirty = false;
-            this.UpdateDocumentState();
-            this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
-            this.StatusText.Text = $"Сценарии сохранены: {this.settings.ScenariosPath}";
+            this.SaveScenarios("Сценарии сохранены");
             return;
         }
         if (this.editorMode == EditorMode.Settings) {
@@ -541,6 +547,7 @@ public partial class MainWindow : Window {
             this.ApplySettingsToPreviewControls();
             this.SaveSettings();
             this.RefreshPageNames();
+            this.LoadScenarioForCurrentMarkup();
             this.updatingEditors = true;
             this.SettingsEditor.Text = this.settings.ToJson();
             this.updatingEditors = false;
@@ -701,14 +708,14 @@ public partial class MainWindow : Window {
 
     private void WindowPreviewKeyDown(object sender, KeyEventArgs eventArgs) {
         var key = eventArgs.Key == Key.System ? eventArgs.SystemKey : eventArgs.Key;
-        if (key is Key.LeftAlt or Key.RightAlt) {
+        if ((key is Key.LeftAlt or Key.RightAlt) && this.ElementInspectionButton.IsChecked != true) {
             this.UpdateElementInspection();
         }
     }
 
     private void WindowPreviewKeyUp(object sender, KeyEventArgs eventArgs) {
         var key = eventArgs.Key == Key.System ? eventArgs.SystemKey : eventArgs.Key;
-        if (key is Key.LeftAlt or Key.RightAlt) {
+        if ((key is Key.LeftAlt or Key.RightAlt) && this.ElementInspectionButton.IsChecked != true) {
             this.UpdateElementInspection();
         }
         this.previewViewportController.HandleKeyUp(eventArgs);
@@ -733,7 +740,13 @@ public partial class MainWindow : Window {
         }
         this.previewSession?.SetElementInspectionEnabled(
             this.IsActive && this.editorMode == EditorMode.Xaml
-            && (Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)));
+            && (this.ElementInspectionButton.IsChecked == true
+                || Keyboard.IsKeyDown(Key.LeftAlt)
+                || Keyboard.IsKeyDown(Key.RightAlt)));
+    }
+
+    private void ElementInspectionButtonClick(object sender, RoutedEventArgs eventArgs) {
+        this.UpdateElementInspection();
     }
 
     private void PreviewElementSelected(object? sender, (int Line, int Column) location) {
@@ -833,6 +846,19 @@ public partial class MainWindow : Window {
         if (ReferenceEquals(sender, this.MarkupEditor)) {
             if (this.markupEditorController.HandleTextChanged()) {
                 this.isMarkupDirty = true;
+                try {
+                    var source = this.GetScenarioSource(
+                        this.markupEditorController.Text,
+                        this.markupPath ?? Path.Combine(this.settings.XamlDirectory, "Preview.xaml"));
+                    if (!string.Equals(source.Path, this.scenariosPath, StringComparison.OrdinalIgnoreCase)
+                        || source.IsPageSpecific != this.usesPageSpecificScenarios) {
+                        this.LoadScenarioForCurrentMarkup();
+                    }
+                }
+                catch (InvalidDataException) {
+                }
+                catch (System.Xml.XmlException) {
+                }
                 this.UpdateDocumentState();
                 this.ScheduleRender();
             }
@@ -930,11 +956,7 @@ public partial class MainWindow : Window {
             this.ApplyPreviewLayout();
             using var document = JsonDocument.Parse(this.ScenarioEditor.Text);
             var scenarioName = this.ScenarioPicker.SelectedItem as string;
-            var pageName = this.PagePicker.SelectedItem as string;
-            var scenarios = pageName is not null
-                && document.RootElement.TryGetProperty(Path.GetFileNameWithoutExtension(pageName), out var selectedPage)
-                ? selectedPage
-                : document.RootElement;
+            var scenarios = this.GetScenarios(document.RootElement);
             var data = scenarioName is not null && scenarios.TryGetProperty(scenarioName, out var selected)
                 ? selected
                 : scenarios;
@@ -1011,32 +1033,83 @@ public partial class MainWindow : Window {
     }
 
     private void PreviewSessionTapped(object? sender, string elementId) {
-        if (this.outgoingSession is not null || string.IsNullOrEmpty(elementId) || this.PagePicker.SelectedItem is not string pageName
-            || !File.Exists(this.settings.InteractionsPath)) {
+        if (this.outgoingSession is not null || string.IsNullOrEmpty(elementId)) {
             return;
         }
-        using var document = JsonDocument.Parse(File.ReadAllText(this.settings.InteractionsPath));
-        var page = Path.GetFileNameWithoutExtension(pageName);
-        if (!document.RootElement.TryGetProperty(page, out var actions)
-            || !actions.TryGetProperty(elementId, out var element)
-            || !element.TryGetProperty("tap", out var tap)
-            || !tap.TryGetProperty("type", out var type)
-            || type.GetString() != "navigate"
-            || !tap.TryGetProperty("target", out var target)) {
+        try {
+            this.ApplyScenarioTap(elementId);
+        }
+        catch (Exception exception) {
+            this.ShowPreviewError(exception);
+        }
+    }
+
+    private void ApplyScenarioTap(string elementId) {
+        var root = JsonNode.Parse(this.ScenarioEditor.Text) as JsonObject
+            ?? throw new InvalidDataException("Сценарии должны содержать JSON-объект.");
+        var scenario = this.GetSelectedScenario(root);
+        var tap = ScenarioInteraction.GetTap(scenario, elementId);
+        if (tap is null) {
             return;
         }
-        // Legacy slideRight only supplies direction; effects come from XAML.
-        bool backward = tap.TryGetProperty("direction", out var direction)
-            ? string.Equals(direction.GetString(), "backward", StringComparison.OrdinalIgnoreCase)
-            : tap.TryGetProperty("transition", out var legacy)
-                && string.Equals(legacy.GetString(), "slideRight", StringComparison.OrdinalIgnoreCase);
-        var targetPage = target.GetString() + ".xaml";
+        var type = tap["type"]?.GetValue<string>();
+        if (type == "navigate") {
+            this.NavigateScenarioTap(tap);
+            return;
+        }
+        ScenarioInteraction.HandleTap(scenario, elementId);
+        this.updatingEditors = true;
+        try {
+            this.ScenarioEditor.Text = root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+        }
+        finally {
+            this.updatingEditors = false;
+        }
+        this.isScenariosDirty = true;
+        this.UpdateDocumentState();
+        this.SaveScenarios("Сценарии автоматически сохранены после интерактивного действия");
+        if (tap["previewElement"]?.GetValue<string>() is string previewElementId
+            && tap["path"]?.GetValue<string>() is string path
+            && scenario[path]?.GetValue<bool>() is bool isVisible
+            && this.previewSession?.SetElementVisibility(previewElementId, isVisible) == true) {
+            return;
+        }
+        this.RenderTimerTick(this, EventArgs.Empty);
+    }
+
+    private void SaveScenarios(string status) {
+        File.WriteAllText(this.scenariosPath, this.ScenarioEditor.Text.TrimEnd());
+        this.isScenariosDirty = false;
+        this.UpdateDocumentState();
+        this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
+        this.StatusText.Text = $"{status}: {this.scenariosPath}";
+    }
+
+    private void NavigateScenarioTap(JsonObject tap) {
+        if (this.PagePicker.SelectedItem is not string pageName
+            || tap["target"]?.GetValue<string>() is not string target) {
+            throw new InvalidDataException("Обработчик navigate требует target.");
+        }
+        bool backward = string.Equals(tap["direction"]?.GetValue<string>(), "backward",
+            StringComparison.OrdinalIgnoreCase);
+        var targetPage = target + ".xaml";
         if (targetPage != pageName && this.PagePicker.Items.Contains(targetPage)) {
-            // Навигация выражается через тот же PagePicker, что и выбор страницы
-            // пользователем. Его SelectionChanged загрузит XAML целевой страницы.
             this.pendingPageTransition = (PageId(pageName), PageId(targetPage), backward);
             this.PagePicker.SelectedItem = targetPage;
         }
+    }
+
+    private JsonObject GetSelectedScenario(JsonObject root) {
+        JsonNode? scenarios = this.usesPageSpecificScenarios
+            ? root
+            : this.PagePicker.SelectedItem is string pageName
+                ? root[Path.GetFileNameWithoutExtension(pageName)] ?? root
+                : root;
+        if (this.ScenarioPicker.SelectedItem is string scenarioName) {
+            scenarios = scenarios?[scenarioName] ?? scenarios;
+        }
+        return scenarios as JsonObject
+            ?? throw new InvalidDataException("Выбранный сценарий должен быть JSON-объектом.");
     }
 
     private static string PageId(string fileName) {
@@ -1072,6 +1145,65 @@ public partial class MainWindow : Window {
         }
     }
 
+    private ScenarioSource GetScenarioSource(string markup, string markupFilePath) {
+        var scenarioReference = PreviewRenderer.GetPreviewScenarioPath(markup);
+        if (scenarioReference is null) {
+            return new ScenarioSource {
+                Path = this.settings.ScenariosPath,
+                IsPageSpecific = false,
+            };
+        }
+        if (Path.IsPathRooted(scenarioReference)) {
+            throw new InvalidDataException("Путь mobileclock-preview-scenario должен быть относительным.");
+        }
+        var markupDirectory = Path.GetDirectoryName(markupFilePath)
+            ?? throw new InvalidDataException("Не удалось определить каталог XAML.");
+        return new ScenarioSource {
+            Path = Path.GetFullPath(Path.Combine(markupDirectory, scenarioReference)),
+            IsPageSpecific = true,
+        };
+    }
+
+    private void LoadScenarioForCurrentMarkup() {
+        var markupFilePath = this.markupPath ?? Path.Combine(this.settings.XamlDirectory, "Preview.xaml");
+        var source = this.GetScenarioSource(this.markupEditorController.Text, markupFilePath);
+        this.scenariosPath = source.Path;
+        this.usesPageSpecificScenarios = source.IsPageSpecific;
+        this.ConfigureScenarioWatcher();
+        this.updatingEditors = true;
+        try {
+            this.ScenarioEditor.Text = File.Exists(this.scenariosPath)
+                ? File.ReadAllText(this.scenariosPath)
+                : "{}";
+        }
+        finally {
+            this.updatingEditors = false;
+        }
+        this.isScenariosDirty = false;
+        this.RefreshScenarioNames();
+    }
+
+    private JsonElement GetScenarios(JsonElement document) {
+        return MainWindow.GetScenarios(
+            document,
+            this.usesPageSpecificScenarios,
+            this.PagePicker.SelectedItem as string);
+    }
+
+    private static JsonElement GetScenarios(
+        JsonElement document,
+        bool isPageSpecific,
+        string? pageName) {
+        if (isPageSpecific) {
+            return document;
+        }
+        return document.ValueKind == JsonValueKind.Object
+            && pageName is not null
+            && document.TryGetProperty(Path.GetFileNameWithoutExtension(pageName), out var selectedPage)
+            ? selectedPage
+            : document;
+    }
+
     private void LoadMarkup(string path) {
         this.StoreCollapsedMarkupFoldings();
         this.markupPath = Path.GetFullPath(path);
@@ -1089,6 +1221,7 @@ public partial class MainWindow : Window {
             this.suppressFoldingStatePersistence = false;
         }
         this.isMarkupDirty = false;
+        this.LoadScenarioForCurrentMarkup();
         this.UpdateDocumentState();
         // PersistSettings записывает previewer.settings.json. Его изменение
         // асинхронно придёт обратно через settingsWatcher, поэтому refresh ниже
@@ -1101,10 +1234,8 @@ public partial class MainWindow : Window {
         var previous = this.ScenarioPicker.SelectedItem as string;
         try {
             using var document = JsonDocument.Parse(this.ScenarioEditor.Text);
-            if (document.RootElement.ValueKind != JsonValueKind.Object
-                || this.PagePicker.SelectedItem is not string pageName
-                || !document.RootElement.TryGetProperty(Path.GetFileNameWithoutExtension(pageName), out var scenarios)
-                || scenarios.ValueKind != JsonValueKind.Object) {
+            var scenarios = this.GetScenarios(document.RootElement);
+            if (scenarios.ValueKind != JsonValueKind.Object) {
                 return;
             }
 
@@ -1147,15 +1278,22 @@ public partial class MainWindow : Window {
 
     private void ConfigureWatchers() {
         this.ConfigureMarkupWatcher();
-        this.scenariosWatcher?.Dispose();
         this.settingsWatcher?.Dispose();
-        this.scenariosWatcher = this.CreateWatcher(this.settings.ScenariosPath);
+        this.ConfigureScenarioWatcher();
         this.settingsWatcher = this.CreateWatcher(this.settings.FilePath);
     }
 
     private void ConfigureMarkupWatcher() {
         this.markupWatcher?.Dispose();
         this.markupWatcher = this.markupPath is null ? null : this.CreateWatcher(this.markupPath);
+    }
+
+    private void ConfigureScenarioWatcher() {
+        this.scenariosWatcher?.Dispose();
+        var path = string.IsNullOrEmpty(this.scenariosPath)
+            ? this.settings.ScenariosPath
+            : this.scenariosPath;
+        this.scenariosWatcher = this.CreateWatcher(path);
     }
 
     private void ConfigureXamlDirectoryWatcher() {
@@ -1226,8 +1364,8 @@ public partial class MainWindow : Window {
                     previewChanged = true;
                 }
             }
-            if (File.Exists(this.settings.ScenariosPath)) {
-                var scenarios = File.ReadAllText(this.settings.ScenariosPath);
+            if (File.Exists(this.scenariosPath)) {
+                var scenarios = File.ReadAllText(this.scenariosPath);
                 if (!this.isScenariosDirty
                     && !string.Equals(scenarios, this.ScenarioEditor.Text, StringComparison.Ordinal)) {
                     this.updatingEditors = true;
@@ -1253,6 +1391,7 @@ public partial class MainWindow : Window {
                     // Не сбрасывает PagePicker на MainPage: RefreshPageNames
                     // восстанавливает страницу, выбранную обработчиком navigation.
                     this.RefreshPageNames();
+                    this.LoadScenarioForCurrentMarkup();
                     this.ConfigureMouseWheelScrolling();
                     this.ApplyEditorScale();
                     this.ApplySettingsToPreviewControls();

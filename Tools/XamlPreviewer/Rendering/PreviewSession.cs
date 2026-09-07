@@ -88,6 +88,20 @@ internal sealed class PreviewSession : IDisposable {
         NativeRuntime.Ensure(NativeRuntime.xr_set_animation_playback_rate(this.animations, (float)value) != 0);
     }
 
+    public bool SetElementVisibility(string elementId, bool isVisible) {
+        this.ThrowIfDisposed();
+        var element = NativeRuntime.xr_find_element(this.root, elementId);
+        if (element == IntPtr.Zero) {
+            return false;
+        }
+        NativeRuntime.Ensure(NativeRuntime.xr_set_attribute(
+            element, "visibility", isVisible ? "Visible" : "Collapsed") != 0);
+        NativeRuntime.Ensure(NativeRuntime.xr_layout(this.root, this.renderer.Width, this.renderer.Height) != 0);
+        this.Render();
+        this.AnimationStarted?.Invoke(this, EventArgs.Empty);
+        return true;
+    }
+
     public void SetElementInspectionEnabled(bool value) {
         this.ThrowIfDisposed();
         if (this.isElementInspectionEnabled == value) {
@@ -115,6 +129,7 @@ internal sealed class PreviewSession : IDisposable {
         if (isAnimating == 0) {
             return false;
         }
+        NativeRuntime.Ensure(NativeRuntime.xr_layout(this.root, this.renderer.Width, this.renderer.Height) != 0);
         this.Render();
         return true;
     }

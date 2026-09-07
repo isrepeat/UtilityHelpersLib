@@ -14,6 +14,42 @@ Tools/XamlPreviewer/bin/Debug/net8.0-windows/XamlPreviewer.exe
 
 Preview использует логический viewport `720×1280` и шрифт приложения `Roboto-Regular.ttf`. `SvgImage` загружается через общий нативный OpenGL-рендерер с указанным `tint`; при недоступном файле отображается плашка `SVG`. Сценарии группируются по имени страницы без расширения. Поддерживаются `Page`, `StackPanel`, `Grid`, `TextBlock`, `Border`, `Button`, `ToggleSwitch`, `ScrollViewer`, `Image`, `SvgImage`, `ListView`, простые `{Binding Property}` и `ListView.ItemTemplate`.
 
+## Сценарий страницы
+
+По умолчанию previewer читает общий JSON из `ScenariosPath` настроек: его верхний уровень группируется по имени страницы. Чтобы хранить сценарии рядом с конкретной страницей, добавьте перед корневым элементом XAML processing instruction:
+
+```xml
+<?mobileclock-preview width="400" height="300"?>
+<?mobileclock-preview-scenario path="Scenarios/MainPage.json"?>
+<Page xmlns="urn:mobileclock:xaml">
+```
+
+`path` обязателен и всегда задаётся относительно каталога текущего XAML. Такой JSON содержит сценарии непосредственно на верхнем уровне, например `{ "Будильники": { "ClockText": "18:47" } }`. При открытии режима «Сценарии» previewer загружает именно этот файл, следит за его внешними изменениями и сохраняет правки в него. Если директивы нет, сохраняется прежнее поведение с общим JSON из настроек.
+
+Сценарий является ViewModel для preview. Чтобы обработать тап по элементу с `id`, добавьте в выбранный сценарий служебное поле `$interactions`. Поддерживаются `set` и `toggle`; `path` указывает свойство сценария через точку:
+
+```json
+{
+  "Основной": {
+    "IsEnabled": false,
+    "Status": { "Text": "Ожидание" },
+    "$interactions": {
+      "enableButton": {
+        "tap": { "type": "set", "path": "IsEnabled", "value": true }
+      },
+      "toggleButton": {
+        "tap": { "type": "toggle", "path": "IsEnabled" }
+      },
+      "statusButton": {
+        "tap": { "type": "set", "path": "Status.Text", "value": "Готово" }
+      }
+    }
+  }
+}
+```
+
+После обработчика JSON в редакторе меняется, получает метку несохранённых изменений и preview перерисовывается с новыми значениями binding. `$interactions` не участвует в binding-ах. Все действия previewer-а хранятся в сценарии; отдельного файла interactions больше нет.
+
 ## Сворачивание XAML
 
 В XAML-редакторе слева от номеров строк показаны маркеры сворачивания.
@@ -76,25 +112,21 @@ Bridge собирает эффекты из Native/Resources/Effects и
 Native/Renderer/AnimationRenderers.cpp. Изменения этих C++-файлов требуют
 пересборки NativeBridge; настройки существующих эффектов меняются в XAML.
 
-В interactions.json у действия navigate задаются target и direction:
+Навигация задаётся в `$interactions` сценария через `navigate`, `target` и необязательный `direction`:
 
 ```json
 {
-  "MainPage": {
-    "settingsButton": {
-      "tap": { "type": "navigate", "target": "SettingsPage", "direction": "forward" }
-    }
-  },
-  "SettingsPage": {
-    "backNavigation": {
-      "tap": { "type": "navigate", "target": "MainPage", "direction": "backward" }
+  "Будильники": {
+    "$interactions": {
+      "settingsButton": {
+        "tap": { "type": "navigate", "target": "SettingsPage", "direction": "forward" }
+      }
     }
   }
 }
 ```
 
-direction по умолчанию forward. Старое transition=slideRight поддерживается
-как backward; другие старые transition больше не выбирают WPF-эффект.
+direction по умолчанию forward.
 Выбор эффекта и длительности полностью определяют Storyboard страниц.
 
 Обычное открытие и обновление предпросмотра не запускают начальный Show:

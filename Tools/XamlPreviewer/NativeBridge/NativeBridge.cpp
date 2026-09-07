@@ -28,6 +28,18 @@
 // и дополнительного расширяющего класса, к примеру для xr_hit_test_visual.
 
 namespace xaml::bridge::_details {
+    Element* FindElement(Element& element, std::string_view id) {
+        if (element.Id() == id) {
+            return &element;
+        }
+        for (const auto& child : element.Children()) {
+            if (Element* const found = FindElement(*child, id)) {
+                return found;
+            }
+        }
+        return nullptr;
+    }
+
     // Нужен previewer-у для выбора любого видимого элемента под указателем.
     // В отличие от xaml::HitTest не требует, чтобы элемент был enabled или interactive.
     Element* HitTestVisual(Element& element, float x, float y) {
@@ -237,11 +249,25 @@ int xr_set_attribute(
     }
 }
 
+xr_element* xr_find_element(xr_element* root, const char* id) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (root == nullptr || id == nullptr || *id == '\0') {
+            throw std::invalid_argument("root and id are required");
+        }
+        return reinterpret_cast<xr_element*>(xaml::bridge::_details::FindElement(
+            *reinterpret_cast<xaml::Element*>(root), id));
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return nullptr;
+    }
+}
+
 int xr_add_storyboard_animation(xr_element* element, int trigger, const char* name,
     const char* const* keys, const char* const* values, int count) {
     try {
         xaml::bridge::lastError.clear();
-        if (element == nullptr || trigger < 0 || trigger > 4 || count < 0
+        if (element == nullptr || trigger < 0 || trigger > 6 || count < 0
             || (count > 0 && (keys == nullptr || values == nullptr))) {
             throw std::invalid_argument("invalid storyboard animation");
         }
@@ -323,7 +349,7 @@ int xr_add_storyboard_track(
     int easing) {
     try {
         xaml::bridge::lastError.clear();
-        if (element == nullptr || trigger < 0 || trigger > 4 || property < 0 || property > 3
+        if (element == nullptr || trigger < 0 || trigger > 6 || property < 0 || property > 5
             || durationMilliseconds < 0 || easing < 0 || easing > 1) {
             throw std::invalid_argument("invalid storyboard track");
         }

@@ -14,18 +14,30 @@ internal static class PreviewRenderer {
 
     public static (int Width, int Height)? GetPreviewResolution(string markup) {
         var document = XDocument.Parse(markup, LoadOptions.None);
-        var instruction = document.Nodes().OfType<XProcessingInstruction>()
-            .FirstOrDefault(node => node.Target == "mobileclock-preview");
+        var instruction = PreviewRenderer.FindProcessingInstruction(document, "mobileclock-preview");
         if (instruction is null) {
             return null;
         }
-        var attributes = XElement.Parse($"<preview {instruction.Data} />");
+        var attributes = PreviewRenderer.ParseInstructionAttributes(instruction);
         if (!int.TryParse(attributes.Attribute("width")?.Value, out var width)
             || !int.TryParse(attributes.Attribute("height")?.Value, out var height)
             || width <= 0 || height <= 0) {
             throw new InvalidDataException("mobileclock-preview требует положительные width и height.");
         }
         return (width, height);
+    }
+
+    public static string? GetPreviewScenarioPath(string markup) {
+        var document = XDocument.Parse(markup, LoadOptions.None);
+        var instruction = PreviewRenderer.FindProcessingInstruction(document, "mobileclock-preview-scenario");
+        if (instruction is null) {
+            return null;
+        }
+        var path = PreviewRenderer.ParseInstructionAttributes(instruction).Attribute("path")?.Value;
+        if (string.IsNullOrWhiteSpace(path)) {
+            throw new InvalidDataException("mobileclock-preview-scenario требует непустой path.");
+        }
+        return path;
     }
 
     public static IntPtr CreateRoot(string markup, JsonElement data) {
@@ -43,6 +55,20 @@ internal static class PreviewRenderer {
 
     public static SolidColorBrush ParseBrush(string value) {
         return new SolidColorBrush((Color)ColorConverter.ConvertFromString(value));
+    }
+
+    private static XProcessingInstruction? FindProcessingInstruction(XDocument document, string target) {
+        return document.Nodes().OfType<XProcessingInstruction>()
+            .FirstOrDefault(node => node.Target == target);
+    }
+
+    private static XElement ParseInstructionAttributes(XProcessingInstruction instruction) {
+        try {
+            return XElement.Parse($"<preview {instruction.Data} />");
+        }
+        catch (System.Xml.XmlException exception) {
+            throw new InvalidDataException($"Некорректная директива {instruction.Target}.", exception);
+        }
     }
 
     private static IntPtr Build(
@@ -68,15 +94,14 @@ internal static class PreviewRenderer {
                     throw new InvalidDataException("TargetType стиля не соответствует элементу.");
                 }
                 foreach (var setter in style.Setters) {
-                    PreviewRenderer.SetAttribute(element, setter.Key, PreviewRenderer.Resolve(setter.Value, data));
+                    PreviewRenderer.ApplyAttribute(element, setter.Key, setter.Value, data);
                 }
             }
             foreach (var attribute in node.Attributes()) {
                 if (attribute.IsNamespaceDeclaration || attribute.Name.LocalName == "style") {
                     continue;
                 }
-                var value = PreviewRenderer.Resolve(attribute.Value, data);
-                PreviewRenderer.SetAttribute(element, attribute.Name.LocalName, value);
+                PreviewRenderer.ApplyAttribute(element, attribute.Name.LocalName, attribute.Value, data);
             }
 
             if (node.Elements().Any(child => child.Name.LocalName == $"{node.Name.LocalName}.Animation")) {
@@ -246,7 +271,9 @@ internal static class PreviewRenderer {
             "Toggled" => 2,
             "Show" => 3,
             "Hide" => 4,
-            _ => throw new InvalidDataException("Storyboard trigger must be PointerDown, PointerUp, Toggled, Show or Hide."),
+            "ParentShow" => 5,
+            "ParentHide" => 6,
+            _ => throw new InvalidDataException("Storyboard trigger must be PointerDown, PointerUp, Toggled, Show, Hide, ParentShow or ParentHide."),
         };
     }
 
@@ -254,8 +281,10 @@ internal static class PreviewRenderer {
         return value switch {
             "opacity" => 0,
             "renderOffsetX" => 1,
-            "toggleProgress" => 2,
-            "pressProgress" => 3,
+            "renderOffsetY" => 2,
+            "height" => 3,
+            "toggleProgress" => 4,
+            "pressProgress" => 5,
             _ => throw new InvalidDataException("Unsupported FloatAnimation property."),
         };
     }
@@ -279,6 +308,19 @@ internal static class PreviewRenderer {
         if (NativeRuntime.xr_set_attribute(element, name, value) == 0) {
             throw new InvalidOperationException($"{name}: {NativeRuntime.GetLastError()}");
         }
+    }
+
+    private static void ApplyAttribute(IntPtr element, string name, string value, JsonElement data) {
+        // XamlRuntime регистрирует command по исходной binding-строке; её нельзя
+        // подменять результатом поиска в сценарии, как остальные свойства UI.
+        var resolved = name == "command" ? value : PreviewRenderer.Resolve(value, data);
+        if (name == "visibility" && bool.TryParse(resolved, out var isVisible)) {
+            resolved = isVisible ? "Visible" : "Collapsed";
+        }
+        PreviewRenderer.SetAttribute(
+            element,
+            name,
+            resolved);
     }
 
     private static string Resolve(string value, JsonElement data) {

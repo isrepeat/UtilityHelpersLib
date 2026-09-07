@@ -19,7 +19,6 @@ internal sealed class PreviewerSettings {
     private const string DefaultResourcesDirectory = @"C:\WORK\Android\Projects\MobileClock\Native\Resources";
     private const string DefaultXamlDirectory = @"C:\WORK\Android\Projects\MobileClock\Native\UI";
     private const string DefaultScenariosPath = @"C:\WORK\Android\Projects\MobileClock\Native\Tests\XamlPreviewer\scenarios.json";
-    private const string DefaultInteractionsPath = @"C:\WORK\Android\Projects\MobileClock\Native\Tests\XamlPreviewer\interactions.json";
     private const string DefaultScenarios = """
         {
           "MainPage": {
@@ -31,28 +30,24 @@ internal sealed class PreviewerSettings {
                 { "Time": "06:18", "IsEnabled": false },
                 { "Time": "06:30", "IsEnabled": true },
                 { "Time": "06:36", "IsEnabled": false }
-              ]
+              ],
+              "$interactions": {
+                "settingsButton": {
+                  "tap": { "type": "navigate", "target": "SettingsPage", "direction": "forward" }
+                }
+              }
             }
           },
           "SettingsPage": {
             "Основной": {
               "PackageVersion": "1.4.0",
               "Theme": "Тёмная",
-              "Sound": "Мелодия по умолчанию"
-            }
-          }
-        }
-        """;
-    private const string DefaultInteractions = """
-        {
-          "MainPage": {
-            "settingsButton": {
-              "tap": { "type": "navigate", "target": "SettingsPage", "direction": "forward" }
-            }
-          },
-          "SettingsPage": {
-            "backNavigation": {
-              "tap": { "type": "navigate", "target": "MainPage", "direction": "backward" }
+              "Sound": "Мелодия по умолчанию",
+              "$interactions": {
+                "backNavigation": {
+                  "tap": { "type": "navigate", "target": "MainPage", "direction": "backward" }
+                }
+              }
             }
           }
         }
@@ -64,7 +59,6 @@ internal sealed class PreviewerSettings {
 
     public required string XamlDirectory { get; set; }
     public required string ScenariosPath { get; init; }
-    public string InteractionsPath { get; set; } = string.Empty;
     public required string ResourcesDirectory { get; init; }
     public string? LastMarkupPath { get; set; }
     public Dictionary<string, int[]> CollapsedMarkupFoldingOffsets { get; set; } = [];
@@ -106,12 +100,8 @@ internal sealed class PreviewerSettings {
             settings = CreateDefaults(settingsPath);
             settings.Save();
         }
-        if (string.IsNullOrEmpty(settings.InteractionsPath)) {
-            settings.InteractionsPath = Path.Combine(AppContext.BaseDirectory, "interactions.json");
-        }
         settings.CollapsedMarkupFoldingOffsets ??= [];
         settings.CreateDefaultScenariosIfMissing();
-        settings.CreateDefaultInteractionsIfMissing();
         settings.ValidateAnimationSpeeds();
         settings.ValidateResolutions();
         return settings;
@@ -159,7 +149,6 @@ internal sealed class PreviewerSettings {
             FilePath = settingsPath,
             XamlDirectory = DefaultXamlDirectory,
             ScenariosPath = DefaultScenariosPath,
-            InteractionsPath = DefaultInteractionsPath,
             ResourcesDirectory = DefaultResourcesDirectory,
         };
     }
@@ -175,9 +164,4 @@ internal sealed class PreviewerSettings {
         File.WriteAllText(this.ScenariosPath, DefaultScenarios.TrimEnd());
     }
 
-    private void CreateDefaultInteractionsIfMissing() {
-        if (!File.Exists(this.InteractionsPath)) {
-            File.WriteAllText(this.InteractionsPath, DefaultInteractions.TrimEnd());
-        }
-    }
 }
