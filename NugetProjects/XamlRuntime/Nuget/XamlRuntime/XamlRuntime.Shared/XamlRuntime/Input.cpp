@@ -8,8 +8,15 @@ namespace xaml::_details {
             && y >= bounds.y && y <= bounds.y + bounds.height;
     }
 
-    bool IsInteractive(const Element& element) {
-        return !element.Command().empty();
+    bool HasIntrinsicInteraction(const Element& element) {
+        switch (element.Type()) {
+        case ElementType::button:
+        case ElementType::iconButton:
+        case ElementType::toggleSwitch:
+            return true;
+        default:
+            return false;
+        }
     }
 
     Element* HitTestElement(Element& element, float x, float y) {
@@ -30,11 +37,18 @@ namespace xaml::_details {
 }
 
 namespace xaml {
+    bool IsInteractive(const Element& element) {
+        return _details::HasIntrinsicInteraction(element) || element.HasCommand();
+    }
+
     Element* HitTest(Element& root, float x, float y) {
         return _details::HitTestElement(root, x, y);
     }
 
     bool HandleTap(Element& element) {
+        if (!IsInteractive(element)) {
+            return false;
+        }
         if (element.Type() == ElementType::toggleSwitch) {
             element.SetIsOn(!element.IsOn());
             LOG_DEBUG(
@@ -44,13 +58,12 @@ namespace xaml {
                 element.IsOn());
             return true;
         }
-        const bool handled = !element.Command().empty();
-        if (handled) {
+        if (element.HasCommand()) {
             LOG_DEBUG(
                 "XamlRuntime.Input",
                 "Tap: element='{}'",
                 element.Id());
         }
-        return handled;
+        return true;
     }
 }

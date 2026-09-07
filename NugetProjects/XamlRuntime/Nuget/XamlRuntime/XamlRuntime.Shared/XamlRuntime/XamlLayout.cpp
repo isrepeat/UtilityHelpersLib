@@ -3,9 +3,12 @@
 #include "XamlLayout.h"
 
 #include <algorithm>
+#include <limits>
 #include <sstream>
 
 namespace xaml::_details {
+    std::vector<TextGlyphMetric> textGlyphMetrics;
+
     size_t utf8Length(const std::string& text) {
         size_t result = 0;
         for (const unsigned char character : text) {
@@ -14,6 +17,61 @@ namespace xaml::_details {
             }
         }
         return result;
+    }
+
+    uint32_t decodeUtf8(const char*& current, const char* end) {
+        const auto lead = static_cast<unsigned char>(*current++);
+        if (lead < 0x80) {
+            return lead;
+        }
+        if ((lead & 0xE0) == 0xC0 && current < end) {
+            const auto second = static_cast<unsigned char>(*current++);
+            return static_cast<uint32_t>(lead & 0x1F) << 6 | static_cast<uint32_t>(second & 0x3F);
+        }
+        if ((lead & 0xF0) == 0xE0 && end - current >= 2) {
+            const auto second = static_cast<unsigned char>(*current++);
+            const auto third = static_cast<unsigned char>(*current++);
+            return static_cast<uint32_t>(lead & 0x0F) << 12
+                | static_cast<uint32_t>(second & 0x3F) << 6
+                | static_cast<uint32_t>(third & 0x3F);
+        }
+        if ((lead & 0xF8) == 0xF0 && end - current >= 3) {
+            const auto second = static_cast<unsigned char>(*current++);
+            const auto third = static_cast<unsigned char>(*current++);
+            const auto fourth = static_cast<unsigned char>(*current++);
+            return static_cast<uint32_t>(lead & 0x07) << 18
+                | static_cast<uint32_t>(second & 0x3F) << 12
+                | static_cast<uint32_t>(third & 0x3F) << 6
+                | static_cast<uint32_t>(fourth & 0x3F);
+        }
+        return '?';
+    }
+
+    float textHeight(const Element& element) {
+        const std::string_view fontWeight = element.FontWeight() == "ExtraBold" || element.FontWeight() == "Black"
+            ? "Black"
+            : element.FontWeight() == "SemiBold" || element.FontWeight() == "Bold" ? "Bold" : "Normal";
+        const auto glyphFor = [fontWeight](uint32_t codepoint) -> const TextGlyphMetric* {
+            const auto found = std::find_if(textGlyphMetrics.begin(), textGlyphMetrics.end(),
+                [fontWeight, codepoint](const TextGlyphMetric& glyph) {
+                    return glyph.fontWeight == fontWeight && glyph.codepoint == codepoint;
+                });
+            return found == textGlyphMetrics.end() ? nullptr : &*found;
+        };
+
+        float top = std::numeric_limits<float>::max();
+        float bottom = std::numeric_limits<float>::lowest();
+        const char* current = element.Text().data();
+        const char* const end = current + element.Text().size();
+        while (current < end) {
+            const TextGlyphMetric* const glyph = glyphFor(decodeUtf8(current, end));
+            if (glyph == nullptr) {
+                continue;
+            }
+            top = std::min(top, glyph->top);
+            bottom = std::max(bottom, glyph->bottom);
+        }
+        return bottom > top ? (bottom - top) * element.FontSize() : element.FontSize();
     }
 
     float horizontal(const attr::Thickness& thickness) {
@@ -75,7 +133,7 @@ namespace xaml::_details {
         if (element.Type() == ElementType::textBlock || element.Type() == ElementType::button) {
             Size result{
                 std::max(1.0f, static_cast<float>(utf8Length(element.Text())) * element.FontSize() * 0.55f),
-                element.FontSize() * 1.25f,
+                textHeight(element),
             };
             if (element.Type() == ElementType::button) {
                 result.width += 48.0f;
@@ -331,6 +389,18 @@ namespace xaml {
         this->id = std::move(value);
     }
 
+    const void* Element::DataContext() const {
+        return this->dataContext;
+    }
+
+    void Element::SetDataContext(const void* value) {
+        this->hasLocalDataContext = true;
+        this->dataContext = value;
+        for (const std::unique_ptr<Element>& child : this->children) {
+            child->SetInheritedDataContext(value);
+        }
+    }
+
     const std::string& Element::Renderer() const {
         return this->renderer;
     }
@@ -391,12 +461,18 @@ namespace xaml {
         this->tint = value;
     }
 
-    const std::string& Element::Command() const {
-        return this->command;
+    bool Element::HasCommand() const {
+        return static_cast<bool>(this->command);
     }
 
-    void Element::SetCommand(std::string value) {
+    void Element::SetCommand(Command value) {
         this->command = std::move(value);
+    }
+
+    void Element::ExecuteCommand() const {
+        if (this->command) {
+            this->command();
+        }
     }
 
     attr::Color Element::Foreground() const {
@@ -556,7 +632,10 @@ namespace xaml {
     }
 
     void Element::SetHeight(float value) {
-        this->height = value;
+        if (this->height != value) {
+            this->height = value;
+            this->InvalidateLayout();
+        }
     }
 
     bool Element::IsOn() const {
@@ -577,6 +656,10 @@ namespace xaml {
             AnimationController::Synchronize(*this);
             this->InvalidateLayout();
         }
+    }
+
+    void Element::SetIsVisible(bool value) {
+        this->SetVisibility(value ? attr::Visibility::visible : attr::Visibility::collapsed);
     }
 
     bool Element::IsEnabled() const {
@@ -601,6 +684,14 @@ namespace xaml {
 
     void Element::SetRenderOffsetX(float value) {
         this->renderOffsetX = value;
+    }
+
+    float Element::RenderOffsetY() const {
+        return this->renderOffsetY;
+    }
+
+    void Element::SetRenderOffsetY(float value) {
+        this->renderOffsetY = value;
     }
 
     float Element::ToggleProgress() const {
@@ -713,6 +804,7 @@ namespace xaml {
 
     void Element::AddChild(std::unique_ptr<Element> child) {
         child->parent = this;
+        child->SetInheritedDataContext(this->dataContext);
         if (this->animationState.registry) {
             Element* root = this;
             while (root->parent != nullptr) {
@@ -726,6 +818,16 @@ namespace xaml {
         }
         this->children.push_back(std::move(child));
         this->InvalidateLayout();
+    }
+
+    void Element::SetInheritedDataContext(const void* value) {
+        if (this->hasLocalDataContext) {
+            return;
+        }
+        this->dataContext = value;
+        for (const std::unique_ptr<Element>& child : this->children) {
+            child->SetInheritedDataContext(value);
+        }
     }
 
     void Element::RemoveChild(Element& child) {
@@ -756,6 +858,10 @@ namespace xaml {
             element = element->Children().at(childIndex).get();
         }
         return *element;
+    }
+
+    void SetTextGlyphMetrics(std::vector<TextGlyphMetric> value) {
+        _details::textGlyphMetrics = std::move(value);
     }
 
     void layout(Element& root, Size availableSize) {

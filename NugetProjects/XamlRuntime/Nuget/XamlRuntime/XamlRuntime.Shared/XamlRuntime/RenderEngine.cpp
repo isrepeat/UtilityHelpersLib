@@ -192,7 +192,7 @@ namespace xaml::_details {
         const auto& transform = element.States().Contains<VisualTransform>()
             ? element.State<VisualTransform>() : defaults;
         const float offsetX = inheritedOffsetX + element.RenderOffsetX() + transform.offsetX;
-        const float offsetY = inheritedOffsetY + transform.offsetY;
+        const float offsetY = inheritedOffsetY + element.RenderOffsetY() + transform.offsetY;
         const float opacity = inheritedOpacity * element.Opacity() * transform.opacity;
         const Rect bounds = Translate(element.Bounds(), offsetX, offsetY);
         backend.BeginClip(Translate(element.ClipBounds(), offsetX, offsetY));

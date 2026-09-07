@@ -9,6 +9,8 @@ namespace xaml {
     enum class AnimatedProperty {
         opacity,
         renderOffsetX,
+        renderOffsetY,
+        height,
         toggleProgress,
         pressProgress,
     };
@@ -19,6 +21,8 @@ namespace xaml {
         toggled,
         show,
         hide,
+        parentShow,
+        parentHide,
     };
 
     enum class Easing {

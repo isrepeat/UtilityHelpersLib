@@ -7,6 +7,7 @@
 namespace xaml {
     enum class XamlAttribute {
         id,
+        dataContext,
         text,
         fontSize,
         fontFamily,
@@ -45,6 +46,7 @@ namespace xaml {
 
     enum class XamlAttributeGroup : uint32_t {
         identity = 1 << 0,
+        dataContext = 1 << 21,
         layout = 1 << 1,
         size = 1 << 2,
         gridPosition = 1 << 3,

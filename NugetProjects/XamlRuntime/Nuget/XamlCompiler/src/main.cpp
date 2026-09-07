@@ -23,6 +23,7 @@ namespace {
     struct Binding {
         std::string elementVariable;
         std::string property;
+        std::string source;
         std::string sourceProperty;
         std::string mode;
     };
@@ -332,7 +333,8 @@ namespace {
             const std::string& elementVariable,
             const std::string& name,
             const std::string& value,
-            std::vector<Binding>& bindings) {
+            std::vector<Binding>& bindings,
+            const std::string& source) {
             const std::regex bindingPattern(
                 R"(^\{Binding\s+([A-Za-z][A-Za-z0-9]*)(?:\s*,\s*Mode\s*=\s*(OneWay|TwoWay))?\s*\}$)");
             std::smatch match;
@@ -342,6 +344,7 @@ namespace {
             bindings.push_back({
                 elementVariable,
                 name,
+                source,
                 match[1].str(),
                 match[2].matched && match[2].str() == "TwoWay" ? "twoWay" : "oneWay",
             });
@@ -366,14 +369,16 @@ namespace {
             std::ostringstream& output,
             const std::string& elementVariable,
             std::vector<Binding>& bindings,
-            const std::string& templateItem) {
+            const std::string& templateItem,
+            const std::string& bindingContext) {
             // Атрибуты переводятся в явные вызовы setter'ов. Поэтому итоговый код
             // не разбирает строки в рантайме и остаётся обычным C++.
             if (name == "itemsSource" && element.name == "ListView") {
                 return;
             }
             std::string templateProperty;
-            if (!templateItem.empty() && this->TryGetBindingSource(value, templateProperty)) {
+            if (!templateItem.empty() && bindingContext == templateItem
+                && this->TryGetBindingSource(value, templateProperty)) {
                 if (name == "text") {
                     output << "            " << variable << "->SetText(" << templateItem
                         << "." << templateProperty << "());\n";
@@ -384,9 +389,14 @@ namespace {
                         << "." << templateProperty << "());\n";
                     return;
                 }
+                if (name == "command") {
+                    output << "            " << variable << "->SetCommand(" << templateItem
+                        << "." << templateProperty << "());\n";
+                    return;
+                }
                 throw std::runtime_error("Unsupported ItemTemplate binding target: " + name);
             }
-            if (this->TryEmitBinding(elementVariable, name, value, bindings)) {
+            if (this->TryEmitBinding(elementVariable, name, value, bindings, bindingContext)) {
                 return;
             }
             if (name == "id") {
@@ -402,7 +412,7 @@ namespace {
             } else if (name == "source") {
                 output << "            " << variable << "->SetSource(\"" << this->EscapeCpp(value) << "\");\n";
             } else if (name == "command") {
-                output << "            " << variable << "->SetCommand(\"" << this->EscapeCpp(value) << "\");\n";
+                throw std::runtime_error("Command must use a Binding");
             } else if (name == "gridRow" || name == "gridColumn") {
                 output << "            " << variable << "->Set" << (name == "gridRow" ? "GridRow" : "GridColumn")
                     << "(" << std::stoi(value) << ");\n";
@@ -497,20 +507,32 @@ namespace {
             const Element& element,
             std::ostringstream& output,
             std::map<std::string, size_t>& elementCounts,
-            const std::string& templateItem = "") {
+            const std::string& templateItem = "",
+            const std::string& bindingContext = "viewModel") {
             // Сначала объявляем дочерние unique_ptr, затем передаём их родителю.
             // Это повторяет ownership-структуру исходной XAML-разметки.
             const std::string variable = this->ElementVariableName(element, elementCounts);
             std::vector<Binding> bindings;
             output << "            auto " << variable << " = std::make_unique<Element>(ElementType::"
                 << this->ElementTypeName(element) << ");\n";
+            std::string childBindingContext = bindingContext;
+            const std::string dataContext = this->AttributeValue(element, "dataContext");
+            if (!dataContext.empty()) {
+                std::string sourceProperty;
+                if (!this->TryGetBindingSource(dataContext, sourceProperty)) {
+                    throw std::runtime_error("DataContext must use {Binding Property}");
+                }
+                childBindingContext += "." + sourceProperty + "()";
+                output << "            " << variable << "->SetDataContext(static_cast<const void*>(&"
+                    << childBindingContext << "));\n";
+            }
             if (!this->AttributeValue(element, "style").empty()) {
                 for (const auto& [name, value] : this->FindStyle(element).setters) {
-                    this->EmitProperty(element, variable, name, value, output, variable, bindings, templateItem);
+                    this->EmitProperty(element, variable, name, value, output, variable, bindings, templateItem, bindingContext);
                 }
             }
             for (const auto& [name, value] : element.attributes) {
-            if (name.rfind("xmlns", 0) == 0 || name == "style") {
+            if (name.rfind("xmlns", 0) == 0 || name == "style" || name == "dataContext") {
                 continue;
             }
             if (name == "animation") {
@@ -520,7 +542,7 @@ namespace {
                 output << "            " << variable << "->SetRenderer(\"" << value << "\");\n";
                 continue;
             }
-            this->EmitProperty(element, variable, name, value, output, variable, bindings, templateItem);
+            this->EmitProperty(element, variable, name, value, output, variable, bindings, templateItem, bindingContext);
             }
             if (element.name == "Grid") {
                 this->EmitGridDefinitions(element, variable, output);
@@ -528,7 +550,7 @@ namespace {
             this->EmitStoryboards(element, variable, output);
             this->EmitBindings(bindings, output);
             if (element.name == "ListView") {
-                this->EmitListViewItems(element, variable, output, elementCounts);
+                this->EmitListViewItems(element, variable, output, elementCounts, bindingContext);
                 return variable;
             }
             for (size_t childIndex = 0; childIndex < element.children.size(); ++childIndex) {
@@ -539,7 +561,7 @@ namespace {
                     continue;
                 }
                 const std::string childVariable = this->EmitElement(
-                    element.children[childIndex], output, elementCounts, templateItem);
+                    element.children[childIndex], output, elementCounts, templateItem, childBindingContext);
                 output << "            " << variable << "->AddChild(std::move(" << childVariable << "));\n";
             }
             return variable;
@@ -569,9 +591,11 @@ namespace {
                         : trigger->second == "PointerUp" ? "pointerUp"
                         : trigger->second == "Toggled" ? "toggled"
                         : trigger->second == "Show" ? "show"
-                        : trigger->second == "Hide" ? "hide" : "";
+                        : trigger->second == "Hide" ? "hide"
+                        : trigger->second == "ParentShow" ? "parentShow"
+                        : trigger->second == "ParentHide" ? "parentHide" : "";
                     if (triggerName.empty()) {
-                        throw std::runtime_error("Storyboard trigger must be PointerDown, PointerUp, Toggled, Show or Hide");
+                        throw std::runtime_error("Storyboard trigger must be PointerDown, PointerUp, Toggled, Show, Hide, ParentShow or ParentHide");
                     }
 
                     output << "            " << variable << "->AddStoryboard({AnimationTrigger::"
@@ -606,7 +630,8 @@ namespace {
                             continue;
                         }
                         const std::string property = track.name == "FloatAnimation" ? attribute("property") : "";
-                        if (property != "opacity" && property != "renderOffsetX"
+                        if (property != "opacity" && property != "renderOffsetX" && property != "renderOffsetY"
+                            && property != "height"
                             && property != "toggleProgress" && property != "pressProgress") {
                             throw std::runtime_error("Unsupported animation track on <Storyboard>");
                         }
@@ -641,7 +666,8 @@ namespace {
             const Element& listView,
             const std::string& variable,
             std::ostringstream& output,
-            std::map<std::string, size_t>& elementCounts) {
+            std::map<std::string, size_t>& elementCounts,
+            const std::string& bindingContext) {
             const auto source = std::find_if(
                 listView.attributes.begin(),
                 listView.attributes.end(),
@@ -664,12 +690,16 @@ namespace {
                 throw std::runtime_error("<ListView.ItemTemplate> requires one <DataTemplate> with one root element");
             }
             const Element& templateRoot = templateElement->children.front().children.front();
-            output << "            for (const auto& item : viewModel." << sourceProperty << "()) {\n";
+            output << "            for (const auto& item : " << bindingContext << "." << sourceProperty << "()) {\n";
             const std::string itemVariable = this->EmitElement(
                 templateRoot,
                 output,
                 elementCounts,
+                "item",
                 "item");
+            if (this->AttributeValue(templateRoot, "dataContext").empty()) {
+                output << "            " << itemVariable << "->SetDataContext(static_cast<const void*>(&item));\n";
+            }
             output << "            " << variable << "->AddChild(std::move(" << itemVariable << "));\n";
             output << "            }\n";
         }
@@ -748,13 +778,14 @@ namespace {
         void EmitBindings(const std::vector<Binding>& bindings, std::ostringstream& output) {
             for (const Binding& binding : bindings) {
                 const std::string element = "*" + binding.elementVariable;
-                const std::string property = "TViewModel::Property::"
+                const std::string source = binding.source;
+                const std::string property = "std::remove_reference_t<decltype(" + source + ")>::Property::"
                     + this->PropertyEnumName(binding.sourceProperty);
                 if (binding.property == "text") {
                     if (binding.mode == "twoWay") {
                         this->EmitBindingCall("AddTwoWay", {
                             element,
-                            "viewModel",
+                            source,
                             "&TViewModel::" + binding.sourceProperty,
                             "&TViewModel::Set" + binding.sourceProperty,
                             "&Element::Text",
@@ -764,7 +795,7 @@ namespace {
                     } else {
                         this->EmitBindingCall("AddOneWay", {
                             element,
-                            "viewModel",
+                            source,
                             "&TViewModel::" + binding.sourceProperty,
                             "&Element::SetText",
                             property,
@@ -774,7 +805,7 @@ namespace {
                     if (binding.mode == "twoWay") {
                         this->EmitBindingCall("AddTwoWay", {
                             element,
-                            "viewModel",
+                            source,
                             "&TViewModel::" + binding.sourceProperty,
                             "&TViewModel::Set" + binding.sourceProperty,
                             "&Element::IsOn",
@@ -784,12 +815,32 @@ namespace {
                     } else {
                         this->EmitBindingCall("AddOneWay", {
                             element,
-                            "viewModel",
+                            source,
                             "&TViewModel::" + binding.sourceProperty,
                             "&Element::SetIsOn",
                             property,
                         }, output);
                     }
+                } else if (binding.property == "visibility") {
+                    if (binding.mode == "twoWay") {
+                        throw std::runtime_error("Visibility binding must be OneWay");
+                    }
+                    this->EmitBindingCall("AddOneWay", {
+                        element,
+                        source,
+                        "&TViewModel::" + binding.sourceProperty,
+                        "&Element::SetIsVisible",
+                        property,
+                    }, output);
+                } else if (binding.property == "command") {
+                    if (binding.mode == "twoWay") {
+                        throw std::runtime_error("Command binding must be OneWay");
+                    }
+                    this->EmitBindingCall("AddCommand", {
+                        element,
+                        source,
+                        "&TViewModel::" + binding.sourceProperty,
+                    }, output);
                 } else {
                     throw std::runtime_error("Unsupported binding target: " + binding.property);
                 }
@@ -826,6 +877,7 @@ namespace {
         header << "// Сгенерировано XamlCompiler. Не редактировать вручную.\n"
             << "#pragma once\n\n"
             << "#include \"XamlRuntime/Binding.h\"\n"
+            << "#include <type_traits>\n"
             << "#include \"XamlRuntime/XamlLayout.h\"\n\n"
             << "namespace xaml::generated {\n"
             << "    class " << pageName << " final {\n"
@@ -834,6 +886,9 @@ namespace {
             << "        static std::unique_ptr<Element> Create(TViewModel& viewModel, BindingScope& bindings) {\n";
         std::map<std::string, size_t> elementCounts;
         const std::string rootVariable = this->EmitElement(root, header, elementCounts);
+        if (this->AttributeValue(root, "dataContext").empty()) {
+            header << "            " << rootVariable << "->SetDataContext(static_cast<const void*>(&viewModel));\n";
+        }
         header << "            return " << rootVariable << ";\n"
             << "        }\n"
             << "    };\n"

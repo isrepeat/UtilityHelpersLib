@@ -4,6 +4,8 @@
 #include "XamlRuntime/Animation.h"
 
 #include <initializer_list>
+#include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
@@ -12,6 +14,13 @@
 namespace xaml {
     class IRenderBackend;
     class RendererRegistry;
+
+    struct TextGlyphMetric {
+        std::string fontWeight;
+        uint32_t codepoint = 0;
+        float top = 0.0f;
+        float bottom = 0.0f;
+    };
 
     enum class ElementType {
         page,
@@ -78,12 +87,17 @@ namespace xaml {
 
     class Element {
     public:
+        using Command = std::function<void()>;
+
         explicit Element(ElementType type);
 
         ElementType Type() const;
 
         const std::string& Id() const;
         void SetId(std::string value);
+
+        const void* DataContext() const;
+        void SetDataContext(const void* value);
 
         const std::string& Renderer() const;
         void SetRenderer(std::string value);
@@ -106,8 +120,9 @@ namespace xaml {
         attr::Color Tint() const;
         void SetTint(attr::Color value);
 
-        const std::string& Command() const;
-        void SetCommand(std::string value);
+        bool HasCommand() const;
+        void SetCommand(Command value);
+        void ExecuteCommand() const;
 
         attr::Color Foreground() const;
         void SetForeground(attr::Color value);
@@ -174,6 +189,7 @@ namespace xaml {
 
         attr::Visibility VisibilityValue() const;
         void SetVisibility(attr::Visibility value);
+        void SetIsVisible(bool value);
 
         bool IsEnabled() const;
         void SetIsEnabled(bool value);
@@ -183,6 +199,9 @@ namespace xaml {
 
         float RenderOffsetX() const;
         void SetRenderOffsetX(float value);
+
+        float RenderOffsetY() const;
+        void SetRenderOffsetY(float value);
 
         float ToggleProgress() const;
         void SetToggleProgress(float value);
@@ -229,6 +248,7 @@ namespace xaml {
         void RemoveChild(Element& child);
 
     private:
+        void SetInheritedDataContext(const void* value);
         void InvalidateLayout();
 
         friend class AnimationController;
@@ -244,6 +264,8 @@ namespace xaml {
     private:
         ElementType type;
         std::string id;
+        const void* dataContext = nullptr;
+        bool hasLocalDataContext = false;
         std::string renderer;
         std::string text;
         float fontSize = 16.0f;
@@ -251,7 +273,7 @@ namespace xaml {
         std::string fontWeight;
         std::string source;
         attr::Color tint{1.0f, 1.0f, 1.0f, 1.0f};
-        std::string command;
+        Command command;
         attr::Color foreground{};
         attr::Orientation orientation = attr::Orientation::vertical;
         attr::Alignment verticalAlignment = attr::Alignment::center;
@@ -277,6 +299,7 @@ namespace xaml {
         bool isEnabled = true;
         float opacity = 1.0f;
         float renderOffsetX = 0.0f;
+        float renderOffsetY = 0.0f;
         float toggleProgress = -1.0f;
         float pressProgress = 0.0f;
         std::string defaultAnimation;
@@ -297,6 +320,8 @@ namespace xaml {
     // Проходит от root по индексам дочерних элементов из path: {1, 1} означает
     // root.Children()[1]->Children()[1]. Пустой путь возвращает сам root.
     Element& ElementAt(Element& root, std::initializer_list<size_t> path);
+
+    void SetTextGlyphMetrics(std::vector<TextGlyphMetric> value);
 
     void layout(Element& root, Size availableSize);
 }

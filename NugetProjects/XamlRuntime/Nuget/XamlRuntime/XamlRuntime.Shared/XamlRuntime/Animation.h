@@ -201,6 +201,8 @@ namespace xaml {
         static void AddPropertyTrack(Element& target, AnimatedProperty property, float from, float to,
             std::chrono::milliseconds duration, Easing easing, bool presence);
         static void Configure(Element& element, AnimationTrigger trigger, bool fromHidden);
+        static void StartDescendantStoryboards(Element& element, AnimationTrigger trigger,
+            const AnimationParameters& parameters);
         static void AttachTree(Element& element, std::shared_ptr<const AnimationRegistry> registry,
             bool parentVisible, bool animateInitial, const AnimationParameters& parameters);
         static void SynchronizeTree(Element& element, bool parentVisible,

@@ -11,6 +11,7 @@
 namespace xaml::_details {
     uint32_t AttributeGroups(ElementType type) {
         const uint32_t common = static_cast<uint32_t>(XamlAttributeGroup::identity)
+            | static_cast<uint32_t>(XamlAttributeGroup::dataContext)
             | static_cast<uint32_t>(XamlAttributeGroup::layout)
             | static_cast<uint32_t>(XamlAttributeGroup::size)
             | static_cast<uint32_t>(XamlAttributeGroup::gridPosition)
@@ -297,6 +298,14 @@ namespace xaml {
         case XamlAttribute::id:
             element.SetId(std::string(value));
             return;
+        case XamlAttribute::dataContext:
+            if (value.size() > 10
+                && value.substr(0, 9) == "{Binding "
+                && value.back() == '}') {
+                element.SetDataContext(nullptr);
+                return;
+            }
+            throw std::invalid_argument("DataContext must use a Binding");
         case XamlAttribute::text:
             element.SetText(std::string(value));
             return;
@@ -316,8 +325,13 @@ namespace xaml {
             element.SetTint(_details::ParseColor(value));
             return;
         case XamlAttribute::command:
-            element.SetCommand(std::string(value));
-            return;
+            if (value.size() > 10
+                && value.substr(0, 9) == "{Binding "
+                && value.back() == '}') {
+                element.SetCommand([]() {});
+                return;
+            }
+            throw std::invalid_argument("Command must use a Binding");
         case XamlAttribute::foreground:
             element.SetForeground(_details::ParseColor(value));
             return;

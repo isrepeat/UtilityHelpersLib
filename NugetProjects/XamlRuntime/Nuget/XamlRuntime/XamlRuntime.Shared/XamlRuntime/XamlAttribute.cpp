@@ -10,6 +10,7 @@ namespace xaml {
 
         constexpr AttributeMapping attributeMappings[] = {
             {XamlAttribute::id, XamlAttributeGroup::identity, "id"},
+            {XamlAttribute::dataContext, XamlAttributeGroup::dataContext, "dataContext"},
             {XamlAttribute::text, XamlAttributeGroup::text, "text"},
             {XamlAttribute::fontSize, XamlAttributeGroup::text, "fontSize"},
             {XamlAttribute::fontFamily, XamlAttributeGroup::text, "fontFamily"},

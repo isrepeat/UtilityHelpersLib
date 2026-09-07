@@ -11,6 +11,10 @@ namespace xaml::_details {
             target.SetOpacity(value);
         } else if (property == AnimatedProperty::renderOffsetX) {
             target.SetRenderOffsetX(value);
+        } else if (property == AnimatedProperty::renderOffsetY) {
+            target.SetRenderOffsetY(value);
+        } else if (property == AnimatedProperty::height) {
+            target.SetHeight(value);
         } else if (property == AnimatedProperty::toggleProgress) {
             target.SetToggleProgress(value);
         } else {
@@ -24,6 +28,12 @@ namespace xaml::_details {
         }
         if (property == AnimatedProperty::renderOffsetX) {
             return target.RenderOffsetX();
+        }
+        if (property == AnimatedProperty::renderOffsetY) {
+            return target.RenderOffsetY();
+        }
+        if (property == AnimatedProperty::height) {
+            return target.Height();
         }
         if (property == AnimatedProperty::toggleProgress) {
             if (target.ToggleProgress() < 0.0f && trigger == AnimationTrigger::toggled) {
@@ -414,7 +424,7 @@ namespace xaml {
         auto& state = element.animationState;
         state.registry = std::move(registry);
         state.updatedAt = std::chrono::steady_clock::now();
-        state.targetVisible = parentVisible && element.visibility == attr::Visibility::visible;
+        state.targetVisible = element.visibility == attr::Visibility::visible;
         state.phase = state.targetVisible ? PresencePhase::visible : PresencePhase::hidden;
         state.parameters = parameters;
         state.tracks.clear();
@@ -441,7 +451,7 @@ namespace xaml {
             element.InvalidateLayout();
             return;
         }
-        const bool visible = parentVisible && element.visibility == attr::Visibility::visible && !state.removing;
+        const bool visible = element.visibility == attr::Visibility::visible && !state.removing;
         const bool changed = visible != state.targetVisible;
         if (changed) {
             const bool fromHidden = state.phase == PresencePhase::hidden;
@@ -458,19 +468,15 @@ namespace xaml {
                 transform.offsetY = 0.0f;
             }
             Configure(element, state.trigger, fromHidden);
+            StartDescendantStoryboards(element, visible ? AnimationTrigger::parentShow : AnimationTrigger::parentHide,
+                state.parameters);
         }
         for (const auto& child : element.children) {
-            SynchronizeTree(*child, visible, state.parameters);
+            SynchronizeTree(*child, parentVisible, state.parameters);
         }
-        // Завершаем мгновенные переходы, но дожидаемся исчезновения потомков.
+        // Visibility ребёнка не зависит от Visibility родителя.
         if (!HasPresenceTracks(element)) {
-            const bool childrenPresent = std::any_of(element.children.begin(), element.children.end(),
-                [](const auto& child) { return child->IsPresent(); });
-            if (state.targetVisible) {
-                state.phase = PresencePhase::visible;
-            } else if (!childrenPresent) {
-                state.phase = PresencePhase::hidden;
-            }
+            state.phase = state.targetVisible ? PresencePhase::visible : PresencePhase::hidden;
         }
         element.InvalidateLayout();
     }
@@ -497,10 +503,7 @@ namespace xaml {
             Advance(*child, milliseconds);
         }
         if (state.registry && !HasPresenceTracks(element)) {
-            const bool childrenPresent = std::any_of(element.children.begin(), element.children.end(),
-                [](const auto& child) { return child->IsPresent(); });
-            const auto phase = state.targetVisible ? PresencePhase::visible
-                : childrenPresent ? PresencePhase::disappearing : PresencePhase::hidden;
+            const auto phase = state.targetVisible ? PresencePhase::visible : PresencePhase::hidden;
             if (state.phase != phase) {
                 state.phase = phase;
                 element.InvalidateLayout();
@@ -511,6 +514,16 @@ namespace xaml {
         if (end != element.children.end()) {
             element.children.erase(end, element.children.end());
             element.InvalidateLayout();
+        }
+    }
+
+    void AnimationController::StartDescendantStoryboards(Element& element, AnimationTrigger trigger,
+        const AnimationParameters& parameters) {
+        for (const auto& child : element.children) {
+            auto& state = child->animationState;
+            state.parameters = child->animationParametersProvider ? child->animationParametersProvider() : parameters;
+            StartStoryboards(*child, trigger, false);
+            StartDescendantStoryboards(*child, trigger, state.parameters);
         }
     }
 }
