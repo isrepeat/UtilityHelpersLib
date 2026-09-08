@@ -24,6 +24,12 @@ internal static class ScenarioInteraction {
             throw new InvalidDataException("Обработчик tap требует type и path.");
         }
         switch (type) {
+        case "append":
+            if (ScenarioInteraction.GetValue(scenario, path) is not JsonArray collection) {
+                throw new InvalidDataException($"Свойство {path} должно быть массивом для append.");
+            }
+            collection.Add(tap["value"]?.DeepClone());
+            return true;
         case "set":
             if (!tap.TryGetPropertyValue("value", out var value)) {
                 throw new InvalidDataException("Обработчик set требует value.");
@@ -40,6 +46,25 @@ internal static class ScenarioInteraction {
         default:
             throw new InvalidDataException($"Неподдерживаемый тип обработчика tap: {type}.");
         }
+    }
+
+    public static bool HandlePan(JsonObject scenario, string elementId, int itemIndex) {
+        if (scenario["$interactions"] is not JsonObject interactions
+            || interactions[elementId] is not JsonObject element
+            || element["pan"] is not JsonObject pan) {
+            return false;
+        }
+        var type = pan["type"]?.GetValue<string>();
+        var path = pan["path"]?.GetValue<string>();
+        if (type != "removeAt" || string.IsNullOrWhiteSpace(path)) {
+            throw new InvalidDataException("Обработчик pan требует type=removeAt и path.");
+        }
+        if (ScenarioInteraction.GetValue(scenario, path) is not JsonArray collection
+            || itemIndex < 0 || itemIndex >= collection.Count) {
+            return false;
+        }
+        collection.RemoveAt(itemIndex);
+        return true;
     }
 
     private static JsonNode? GetValue(JsonObject scenario, string path) {

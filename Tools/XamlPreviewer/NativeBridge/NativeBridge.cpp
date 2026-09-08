@@ -1,12 +1,13 @@
 #include <Helpers.Logging/Logging.h>
 #include <HelpersNew/Geometry/ContainsPoint.h>
 
+#include <XamlRuntime/InteractionController.h>
+#include <XamlRuntime/ScrollController.h>
 #include <XamlRuntime/ElementBuilder.h>
 #include <XamlRuntime/RenderEngine.h>
 #include <XamlRuntime/XamlLayout.h>
 #include <XamlRuntime/Animation.h>
 #include <XamlRuntime/Input.h>
-#include <XamlRuntime/ScrollController.h>
 
 #include "../../../../Resources/Effects/Effects.h"
 #include "../../../../Renderer/AnimationRenderers.h"
@@ -208,6 +209,10 @@ namespace xaml::bridge {
 struct xr_animation_controller {
     xaml::AnimationController value;
     xaml::ScrollController scrollController;
+};
+
+struct xr_interaction_controller {
+    xaml::InteractionController value;
 };
 
 struct xr_angle_surface {
@@ -881,6 +886,65 @@ xr_animation_controller* xr_create_animation_controller(void) {
 
 void xr_destroy_animation_controller(xr_animation_controller* animations) {
     delete animations;
+}
+
+xr_interaction_controller* xr_create_interaction_controller(void) {
+    return new xr_interaction_controller();
+}
+
+void xr_destroy_interaction_controller(xr_interaction_controller* controller) {
+    delete controller;
+}
+
+int xr_interaction_pointer_down(
+    xr_interaction_controller* controller,
+    xr_element* root,
+    xr_animation_controller* animations,
+    float x,
+    float y) {
+    if (controller == nullptr || root == nullptr || animations == nullptr) {
+        return 0;
+    }
+    controller->value.PointerDown(*reinterpret_cast<xaml::Element*>(root), animations->value, x, y);
+    return controller->value.HasCapture() ? 1 : 0;
+}
+
+int xr_interaction_pointer_move(xr_interaction_controller* controller, float x, float y) {
+    return controller != nullptr && controller->value.PointerMove(x, y) ? 1 : 0;
+}
+
+int xr_interaction_pointer_up(
+    xr_interaction_controller* controller,
+    xr_element* root,
+    xr_animation_controller* animations,
+    float x,
+    float y,
+    xr_interaction_result* result) {
+    if (controller == nullptr || root == nullptr || animations == nullptr || result == nullptr) {
+        return 0;
+    }
+    const xaml::GestureResult nativeResult = controller->value.PointerUp(
+        *reinterpret_cast<xaml::Element*>(root), animations->value, x, y);
+    result->kind = static_cast<int>(nativeResult.kind);
+    result->direction = static_cast<int>(nativeResult.direction);
+    result->target = reinterpret_cast<xr_element*>(nativeResult.target);
+    result->item_index = nativeResult.itemIndex;
+    return 1;
+}
+
+int xr_interaction_scroll_wheel(
+    xr_interaction_controller* controller,
+    xr_element* root,
+    float x,
+    float y,
+    float horizontalDelta,
+    float verticalDelta) {
+    return controller != nullptr && root != nullptr
+        && controller->value.ScrollWheel(*reinterpret_cast<xaml::Element*>(root), x, y, horizontalDelta, verticalDelta) ? 1 : 0;
+}
+
+int xr_interaction_update(xr_interaction_controller* controller) {
+    return controller != nullptr && controller->value.Update() ? 1 : 0;
 }
 
 int xr_set_animation_playback_rate(

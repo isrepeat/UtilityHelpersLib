@@ -30,6 +30,14 @@ internal struct NativeColor {
 }
 
 [StructLayout(LayoutKind.Sequential)]
+internal struct NativeInteractionResult {
+    public int Kind;
+    public int Direction;
+    public IntPtr Target;
+    public int ItemIndex;
+}
+
+[StructLayout(LayoutKind.Sequential)]
 internal unsafe struct NativeCommand {
     public int Type;
     public NativeRect Bounds;
@@ -205,6 +213,30 @@ internal static class NativeRuntime {
 
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_destroy_animation_controller")]
     public static extern void xr_destroy_animation_controller(IntPtr animations);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_create_interaction_controller")]
+    public static extern IntPtr xr_create_interaction_controller();
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_destroy_interaction_controller")]
+    public static extern void xr_destroy_interaction_controller(IntPtr controller);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_interaction_pointer_down")]
+    public static extern int xr_interaction_pointer_down(
+        IntPtr controller, IntPtr root, IntPtr animations, float x, float y);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_interaction_pointer_move")]
+    public static extern int xr_interaction_pointer_move(IntPtr controller, float x, float y);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_interaction_pointer_up")]
+    public static extern int xr_interaction_pointer_up(
+        IntPtr controller, IntPtr root, IntPtr animations, float x, float y, out NativeInteractionResult result);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_interaction_scroll_wheel")]
+    public static extern int xr_interaction_scroll_wheel(
+        IntPtr controller, IntPtr root, float x, float y, float horizontalDelta, float verticalDelta);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_interaction_update")]
+    public static extern int xr_interaction_update(IntPtr controller);
 
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_set_animation_playback_rate")]
     public static extern int xr_set_animation_playback_rate(IntPtr animations, float playbackRate);

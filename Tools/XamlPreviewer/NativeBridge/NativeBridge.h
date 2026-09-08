@@ -12,6 +12,7 @@ extern "C" {
 
 typedef struct xr_element xr_element;
 typedef struct xr_animation_controller xr_animation_controller;
+typedef struct xr_interaction_controller xr_interaction_controller;
 typedef struct xr_angle_surface xr_angle_surface;
 
 typedef struct xr_rect {
@@ -27,6 +28,13 @@ typedef struct xr_color {
     float blue;
     float alpha;
 } xr_color;
+
+typedef struct xr_interaction_result {
+    int kind;
+    int direction;
+    xr_element* target;
+    int item_index;
+} xr_interaction_result;
 
 typedef enum xr_command_type {
     xr_command_type_begin_clip,
@@ -136,6 +144,34 @@ XAML_RUNTIME_BRIDGE_API int xr_handle_pointer_up(
 XAML_RUNTIME_BRIDGE_API xr_animation_controller* xr_create_animation_controller(void);
 XAML_RUNTIME_BRIDGE_API void xr_destroy_animation_controller(
     xr_animation_controller* animations);
+XAML_RUNTIME_BRIDGE_API xr_interaction_controller* xr_create_interaction_controller(void);
+XAML_RUNTIME_BRIDGE_API void xr_destroy_interaction_controller(
+    xr_interaction_controller* controller);
+XAML_RUNTIME_BRIDGE_API int xr_interaction_pointer_down(
+    xr_interaction_controller* controller,
+    xr_element* root,
+    xr_animation_controller* animations,
+    float x,
+    float y);
+XAML_RUNTIME_BRIDGE_API int xr_interaction_pointer_move(
+    xr_interaction_controller* controller,
+    float x,
+    float y);
+XAML_RUNTIME_BRIDGE_API int xr_interaction_pointer_up(
+    xr_interaction_controller* controller,
+    xr_element* root,
+    xr_animation_controller* animations,
+    float x,
+    float y,
+    xr_interaction_result* result);
+XAML_RUNTIME_BRIDGE_API int xr_interaction_scroll_wheel(
+    xr_interaction_controller* controller,
+    xr_element* root,
+    float x,
+    float y,
+    float horizontal_delta,
+    float vertical_delta);
+XAML_RUNTIME_BRIDGE_API int xr_interaction_update(xr_interaction_controller* controller);
 XAML_RUNTIME_BRIDGE_API int xr_set_animation_playback_rate(
     xr_animation_controller* animations,
     float playbackRate);

@@ -19,17 +19,17 @@ internal sealed class PreviewGestureController {
     public bool HandleTap(string elementId) {
         var root = this.getScenarioRoot();
         var scenario = this.getSelectedScenario(root);
-        if (!AlarmPreviewInteraction.TryAddAlarm(scenario, elementId)) {
+        if (!ScenarioInteraction.HandleTap(scenario, elementId)) {
             return false;
         }
         this.saveChanges(root);
         return true;
     }
 
-    public bool HandleSwipe(PreviewSession session, IntPtr element) {
+    public bool HandlePan(string elementId, int itemIndex) {
         var root = this.getScenarioRoot();
         var scenario = this.getSelectedScenario(root);
-        if (!AlarmPreviewInteraction.TryRemoveAlarm(scenario, session, element)) {
+        if (!ScenarioInteraction.HandlePan(scenario, elementId, itemIndex)) {
             return false;
         }
         this.saveChanges(root);

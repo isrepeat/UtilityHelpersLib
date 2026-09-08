@@ -10,6 +10,10 @@ add_library(utility_helpers_xaml_runtime STATIC
     XamlRuntime.Shared/XamlRuntime/ElementBuilder.h
     XamlRuntime.Shared/XamlRuntime/Input.cpp
     XamlRuntime.Shared/XamlRuntime/Input.h
+    XamlRuntime.Shared/XamlRuntime/GestureRecognizer.cpp
+    XamlRuntime.Shared/XamlRuntime/GestureRecognizer.h
+    XamlRuntime.Shared/XamlRuntime/InteractionController.cpp
+    XamlRuntime.Shared/XamlRuntime/InteractionController.h
     XamlRuntime.Shared/XamlRuntime/RenderEngine.cpp
     XamlRuntime.Shared/XamlRuntime/RenderEngine.h
     XamlRuntime.Shared/XamlRuntime/ScrollController.cpp
@@ -33,6 +37,10 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/XamlRuntime.Shared" FILES
     XamlRuntime.Shared/XamlRuntime/ElementBuilder.h
     XamlRuntime.Shared/XamlRuntime/Input.cpp
     XamlRuntime.Shared/XamlRuntime/Input.h
+    XamlRuntime.Shared/XamlRuntime/GestureRecognizer.cpp
+    XamlRuntime.Shared/XamlRuntime/GestureRecognizer.h
+    XamlRuntime.Shared/XamlRuntime/InteractionController.cpp
+    XamlRuntime.Shared/XamlRuntime/InteractionController.h
     XamlRuntime.Shared/XamlRuntime/RenderEngine.cpp
     XamlRuntime.Shared/XamlRuntime/RenderEngine.h
     XamlRuntime.Shared/XamlRuntime/ScrollController.cpp

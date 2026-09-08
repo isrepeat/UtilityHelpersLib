@@ -27,6 +27,8 @@
         <ClCompile Include="XamlRuntime.Shared\XamlRuntime\ElementBuilder.cpp" />
         <ClCompile Include="XamlRuntime.Shared\XamlRuntime\XamlAttribute.cpp" />
         <ClCompile Include="XamlRuntime.Shared\XamlRuntime\Input.cpp" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\GestureRecognizer.cpp" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\InteractionController.cpp" />
         <ClCompile Include="XamlRuntime.Shared\XamlRuntime\RenderEngine.cpp" />
         <ClCompile Include="XamlRuntime.Shared\XamlRuntime\ScrollController.cpp" />
         <ClCompile Include="XamlRuntime.Shared\XamlRuntime\XamlLayout.cpp" />
@@ -38,6 +40,8 @@
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\ElementBuilder.h" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\XamlAttribute.h" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\Input.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\GestureRecognizer.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\InteractionController.h" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RenderEngine.h" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\ScrollController.h" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\XamlLayout.h" />

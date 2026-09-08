@@ -126,7 +126,7 @@ public partial class MainWindow : Window {
         this.previewGestureController = new PreviewGestureController(
             this.GetPreviewScenarioRoot,
             this.GetSelectedScenario,
-            this.SavePreviewAlarmChanges);
+            this.SavePreviewScenarioChanges);
         this.previewCursors = new PreviewCursorSet();
         this.renderTimer = new DispatcherTimer {
             Interval = TimeSpan.FromMilliseconds(250)
@@ -340,7 +340,7 @@ public partial class MainWindow : Window {
             session.AnimationStarted += this.PreviewSessionAnimationStarted;
             this.animationTimer.Start();
             session.Tapped += this.PreviewSessionTapped;
-            session.Swiped += this.PreviewSessionSwiped;
+            session.Panned += this.PreviewSessionPanned;
             this.previewSession = session;
             this.previewLayer.Children.Add(session.Surface);
             this.statusPresenter.Success($"Предпросмотр: {path}");
@@ -848,7 +848,7 @@ public partial class MainWindow : Window {
             session.AnimationStarted += this.PreviewSessionAnimationStarted;
             this.animationTimer.Start();
             session.Tapped += this.PreviewSessionTapped;
-            session.Swiped += this.PreviewSessionSwiped;
+            session.Panned += this.PreviewSessionPanned;
             this.previewSession = session;
             if (previousSession is not null && transition is not null) {
                 this.StartPageTransition(previousSession, session, transition.Value);
@@ -881,7 +881,7 @@ public partial class MainWindow : Window {
         var currentSession = this.previewSession;
         var previousOutgoingSession = this.outgoingSession;
         bool currentAnimating = currentSession?.Update() ?? false;
-        // Update can synchronously replace the session through the Swiped event.
+        // Update can synchronously replace the session through the Panned event.
         // Its return value then describes the old session, not the new animation.
         if (!ReferenceEquals(currentSession, this.previewSession)
             || !ReferenceEquals(previousOutgoingSession, this.outgoingSession)) {
@@ -917,14 +917,12 @@ public partial class MainWindow : Window {
         }
     }
 
-    private void PreviewSessionSwiped(object? sender, (IntPtr Element, string ElementId) swipe) {
-        if (this.outgoingSession is not null
-            || swipe.ElementId != "alarmBlock"
-            || sender is not PreviewSession session) {
+    private void PreviewSessionPanned(object? sender, (IntPtr Element, string ElementId, int ItemIndex) pan) {
+        if (this.outgoingSession is not null || sender is not PreviewSession) {
             return;
         }
         try {
-            this.previewGestureController.HandleSwipe(session, swipe.Element);
+            this.previewGestureController.HandlePan(pan.ElementId, pan.ItemIndex);
         }
         catch (Exception exception) {
             this.ShowPreviewError(exception);
@@ -936,7 +934,7 @@ public partial class MainWindow : Window {
             ?? throw new InvalidDataException("Сценарии должны содержать JSON-объект.");
     }
 
-    private void SavePreviewAlarmChanges(JsonObject root) {
+    private void SavePreviewScenarioChanges(JsonObject root) {
         this.updatingEditors = true;
         try {
             this.ScenarioEditor.Text = root.ToJsonString(ScenarioJsonOptions);
