@@ -179,6 +179,7 @@ namespace xaml {
         void Attach(Element& root, const AnimationRegistry& registry, bool animateInitial = false);
         void Animate(Element& target, AnimatedProperty property, float from, float to,
             std::chrono::milliseconds duration, Easing easing = Easing::cubicOut);
+        void ReleaseScrollExtentAfter(Element& scrollViewer, std::chrono::milliseconds duration);
         void Start(Element& target, AnimationTrigger trigger);
         void SetPlaybackRate(float value);
         void Update();
@@ -195,6 +196,12 @@ namespace xaml {
         struct Root {
             Element* element;
             std::weak_ptr<int> lifetime;
+        };
+
+        struct DeferredScrollExtentRelease {
+            Element* element;
+            std::weak_ptr<int> lifetime;
+            std::chrono::steady_clock::time_point expiresAt;
         };
 
         friend class Element;
@@ -217,6 +224,7 @@ namespace xaml {
 
     private:
         std::vector<Root> roots;
+        std::vector<DeferredScrollExtentRelease> deferredScrollExtentReleases;
         float playbackRate = 1.0f;
     };
 

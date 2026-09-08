@@ -26,14 +26,14 @@ internal sealed class PreviewGestureController {
         return true;
     }
 
-    public bool HandleSwipe(PreviewSession session, (string ElementId, NativeRect Bounds) swipe) {
+    public bool HandleSwipe(PreviewSession session, (string ElementId, IntPtr Transition) swipe) {
         var root = this.getScenarioRoot();
         var scenario = this.getSelectedScenario(root);
         if (!AlarmPreviewInteraction.TryRemoveAlarm(
                 scenario,
                 session,
                 swipe.ElementId,
-                swipe.Bounds)) {
+                swipe.Transition)) {
             return false;
         }
         this.saveChanges(root);

@@ -4,10 +4,8 @@ namespace XamlPreviewer;
 
 internal static class AlarmPreviewInteraction {
     private const string AlarmsPropertyName = "Alarms";
-    private const string AlarmsListId = "alarms";
     private const string AddAlarmButtonId = "addAlarmButton";
     private const string AlarmBlockId = "alarmBlock";
-    private const float AlarmItemBottomMargin = 16.0f;
 
     public static bool TryAddAlarm(JsonObject scenario, string elementId) {
         if (elementId != AlarmPreviewInteraction.AddAlarmButtonId
@@ -27,14 +25,12 @@ internal static class AlarmPreviewInteraction {
         JsonObject scenario,
         PreviewSession session,
         string elementId,
-        NativeRect alarmBounds) {
+        IntPtr listRemovalTransition) {
         if (elementId != AlarmPreviewInteraction.AlarmBlockId
-            || scenario[AlarmPreviewInteraction.AlarmsPropertyName] is not JsonArray alarms
-            || !session.TryGetElementBounds(AlarmPreviewInteraction.AlarmsListId, out var alarmsBounds)) {
+            || scenario[AlarmPreviewInteraction.AlarmsPropertyName] is not JsonArray alarms) {
             return false;
         }
-        var itemHeight = alarmBounds.Height + AlarmPreviewInteraction.AlarmItemBottomMargin;
-        var index = (int)Math.Round((alarmBounds.Y - alarmsBounds.Y) / itemHeight);
+        var index = session.GetListItemIndex(listRemovalTransition);
         if (index < 0 || index >= alarms.Count) {
             NativeRuntime.xr_log_info($"Alarm removal rejected; calculatedIndex={index}, total={alarms.Count}.");
             return false;

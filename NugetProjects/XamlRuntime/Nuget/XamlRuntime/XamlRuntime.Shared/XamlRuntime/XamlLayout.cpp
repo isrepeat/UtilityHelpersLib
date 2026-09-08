@@ -776,8 +776,19 @@ namespace xaml {
     Size Element::Extent() const { return this->extent; }
     Size Element::Viewport() const { return this->viewport; }
     void Element::SetScrollMetrics(Size extentValue, Size viewportValue) {
-        this->extent = extentValue;
+        this->extent = this->isScrollExtentHeld
+            ? Size{std::max(extentValue.width, this->heldScrollExtent.width), std::max(extentValue.height, this->heldScrollExtent.height)}
+            : extentValue;
         this->viewport = viewportValue;
+    }
+    void Element::HoldScrollExtent(Size value) {
+        this->heldScrollExtent = value;
+        this->isScrollExtentHeld = true;
+        this->extent = {std::max(this->extent.width, value.width), std::max(this->extent.height, value.height)};
+    }
+    void Element::ReleaseScrollExtent() {
+        this->isScrollExtentHeld = false;
+        this->InvalidateLayout();
     }
 
     float Element::ToggleProgress() const {

@@ -233,6 +233,14 @@ namespace xaml {
         AddPropertyTrack(target, property, from, to, duration, easing, false);
     }
 
+    void AnimationController::ReleaseScrollExtentAfter(Element& scrollViewer, std::chrono::milliseconds duration) {
+        this->deferredScrollExtentReleases.push_back({
+            &scrollViewer,
+            scrollViewer.lifetimeToken,
+            std::chrono::steady_clock::now()
+                + std::chrono::duration_cast<std::chrono::milliseconds>(duration / this->playbackRate)});
+    }
+
     void AnimationController::Start(Element& target, AnimationTrigger trigger) {
         this->TrackRoot(target);
         if (trigger == AnimationTrigger::show || trigger == AnimationTrigger::hide) {
@@ -287,6 +295,17 @@ namespace xaml {
                 Advance(*root.element, elapsed * this->playbackRate);
             }
         }
+        for (const auto& release : this->deferredScrollExtentReleases) {
+            if (!release.lifetime.expired() && release.expiresAt <= now) {
+                release.element->ReleaseScrollExtent();
+            }
+        }
+        this->deferredScrollExtentReleases.erase(std::remove_if(
+            this->deferredScrollExtentReleases.begin(),
+            this->deferredScrollExtentReleases.end(),
+            [now](const DeferredScrollExtentRelease& release) {
+                return release.lifetime.expired() || release.expiresAt <= now;
+            }), this->deferredScrollExtentReleases.end());
     }
 
     bool AnimationController::IsAnimating() const {
@@ -295,7 +314,7 @@ namespace xaml {
                 return true;
             }
         }
-        return false;
+        return !this->deferredScrollExtentReleases.empty();
     }
 
     void AnimationController::Synchronize(Element& element) {

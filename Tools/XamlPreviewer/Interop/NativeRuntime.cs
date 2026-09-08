@@ -166,6 +166,25 @@ internal static class NativeRuntime {
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_element_bounds")]
     public static extern int xr_element_bounds(IntPtr element, out NativeRect bounds);
 
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+    public static extern IntPtr xr_capture_list_removal_transition(IntPtr source);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+    public static extern int xr_list_removal_transition_item_index(IntPtr transition);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+    public static extern int xr_restore_list_removal_transition_offsets(IntPtr root, IntPtr transition);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+    public static extern int xr_animate_list_removal_transition(
+        IntPtr root,
+        IntPtr transition,
+        IntPtr animations,
+        int durationMilliseconds);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+    public static extern void xr_destroy_list_removal_transition(IntPtr transition);
+
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_scroll_by")]
     public static extern int xr_scroll_by(IntPtr root, float x, float y, float horizontalDelta, float verticalDelta);
 

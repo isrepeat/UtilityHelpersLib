@@ -225,6 +225,8 @@ namespace xaml {
         Size Extent() const;
         Size Viewport() const;
         void SetScrollMetrics(Size extentValue, Size viewportValue);
+        void HoldScrollExtent(Size value);
+        void ReleaseScrollExtent();
 
         float ToggleProgress() const;
         void SetToggleProgress(float value);
@@ -335,6 +337,8 @@ namespace xaml {
         float verticalOffset = 0.0f;
         Size extent{};
         Size viewport{};
+        Size heldScrollExtent{};
+        bool isScrollExtentHeld = false;
         float toggleProgress = -1.0f;
         float pressProgress = 0.0f;
         std::string defaultAnimation;

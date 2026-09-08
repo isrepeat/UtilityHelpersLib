@@ -16,7 +16,7 @@ internal sealed class PreviewSession : IDisposable {
     private IntPtr capturedElement;
     private Point pointerDownPoint;
     private Point lastPointerPoint;
-    private (string ElementId, NativeRect Bounds)? pendingSwipe;
+    private (IntPtr Element, string ElementId)? pendingSwipe;
     private bool isSwipeRemovalPending;
     private bool isElementInspectionEnabled;
     private GestureAxis gestureAxis;
@@ -81,7 +81,7 @@ internal sealed class PreviewSession : IDisposable {
 
     public event EventHandler? AnimationStarted;
     public event EventHandler<string>? Tapped;
-    public event EventHandler<(string ElementId, NativeRect Bounds)>? Swiped;
+    public event EventHandler<(IntPtr Element, string ElementId)>? Swiped;
     public event EventHandler<(int Line, int Column)>? ElementSelected;
 
     public void SetSourceLocations(IReadOnlyDictionary<IntPtr, (int Line, int Column)> locations) {
@@ -93,6 +93,33 @@ internal sealed class PreviewSession : IDisposable {
         bounds = default;
         var element = NativeRuntime.xr_find_element(this.root, elementId);
         return element != IntPtr.Zero && NativeRuntime.xr_element_bounds(element, out bounds) != 0;
+    }
+
+    public IntPtr CaptureListRemovalTransition(IntPtr source) {
+        this.ThrowIfDisposed();
+        return NativeRuntime.xr_capture_list_removal_transition(source);
+    }
+
+    public int GetListItemIndex(IntPtr transition) {
+        this.ThrowIfDisposed();
+        return NativeRuntime.xr_list_removal_transition_item_index(transition);
+    }
+
+    public void ApplyListRemovalTransition(IntPtr transition) {
+        this.ThrowIfDisposed();
+        try {
+            NativeRuntime.Ensure(NativeRuntime.xr_restore_list_removal_transition_offsets(this.root, transition) != 0);
+            NativeRuntime.Ensure(NativeRuntime.xr_layout(this.root, this.renderer.Width, this.renderer.Height) != 0);
+            NativeRuntime.Ensure(NativeRuntime.xr_animate_list_removal_transition(
+                this.root,
+                transition,
+                this.animations,
+                840) != 0);
+            this.Render();
+            this.AnimationStarted?.Invoke(this, EventArgs.Empty);
+        } finally {
+            NativeRuntime.xr_destroy_list_removal_transition(transition);
+        }
     }
 
     public void Transition(string from, string to, bool backward, bool visible) {
@@ -171,13 +198,13 @@ internal sealed class PreviewSession : IDisposable {
 
     public bool Update() {
         this.ThrowIfDisposed();
-        var isAnimating = NativeRuntime.xr_update_animations(this.animations);
-        NativeRuntime.Ensure(isAnimating >= 0);
-        if (isAnimating == 0) {
+        var isNativeAnimating = NativeRuntime.xr_update_animations(this.animations);
+        NativeRuntime.Ensure(isNativeAnimating >= 0);
+        if (isNativeAnimating == 0) {
             if (this.pendingSwipe is { } swipe) {
                 this.pendingSwipe = null;
                 this.isSwipeRemovalPending = false;
-                NativeRuntime.xr_log_info($"Alarm swipe animation completed; bounds=({swipe.Bounds.X:0.0},{swipe.Bounds.Y:0.0},{swipe.Bounds.Width:0.0},{swipe.Bounds.Height:0.0}).");
+                NativeRuntime.xr_log_info($"Alarm swipe animation completed; element='{swipe.ElementId}'.");
                 this.Swiped?.Invoke(this, swipe);
             }
             return false;
@@ -263,10 +290,6 @@ internal sealed class PreviewSession : IDisposable {
             NativeRuntime.Ensure(NativeRuntime.xr_handle_pointer_up(capturedElement, this.animations) != 0);
         }
         var isSwipe = this.gestureAxis == GestureAxis.Horizontal && Math.Abs(horizontalDistance) >= 180.0;
-        var bounds = default(NativeRect);
-        if (isSwipe) {
-            NativeRuntime.Ensure(NativeRuntime.xr_element_bounds(capturedElement, out bounds) != 0);
-        }
         this.capturedElement = IntPtr.Zero;
         this.image.ReleaseMouseCapture();
         this.SetCursor(this.GetCursorKind(point));
@@ -278,7 +301,7 @@ internal sealed class PreviewSession : IDisposable {
                 this.animations,
                 horizontalDistance < 0.0 ? -this.renderer.Width : this.renderer.Width,
                 220) != 0);
-            this.pendingSwipe = (elementId, bounds);
+            this.pendingSwipe = (capturedElement, elementId);
             this.isSwipeRemovalPending = true;
             NativeRuntime.xr_log_info($"Alarm swipe animation started; direction={(horizontalDistance < 0.0 ? "left" : "right")}, threshold=180.");
             this.AnimationStarted?.Invoke(this, EventArgs.Empty);
@@ -451,4 +474,5 @@ internal sealed class PreviewSession : IDisposable {
     private void ThrowIfDisposed() {
         ObjectDisposedException.ThrowIf(this.isDisposed, this);
     }
+
 }

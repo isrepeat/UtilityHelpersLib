@@ -48,6 +48,7 @@ public partial class MainWindow : Window {
     private bool updatingPreviewControls;
     private bool settingsPersistenceReady;
     private PreviewSession? previewSession;
+    private IntPtr pendingListRemovalTransition;
     private bool isClosing;
     private PreviewSession? outgoingSession;
     private PreviewerSettings settings = null!;
@@ -342,6 +343,7 @@ public partial class MainWindow : Window {
             session.Tapped += this.PreviewSessionTapped;
             session.Swiped += this.PreviewSessionSwiped;
             this.previewSession = session;
+            this.ApplyPendingAlarmReplacement(session);
             this.previewLayer.Children.Add(session.Surface);
             this.statusPresenter.Success($"Предпросмотр: {path}");
         }
@@ -846,6 +848,7 @@ public partial class MainWindow : Window {
             session.Tapped += this.PreviewSessionTapped;
             session.Swiped += this.PreviewSessionSwiped;
             this.previewSession = session;
+            this.ApplyPendingAlarmReplacement(session);
             if (previousSession is not null && transition is not null) {
                 this.StartPageTransition(previousSession, session, transition.Value);
             } else {
@@ -874,8 +877,17 @@ public partial class MainWindow : Window {
         if (this.isClosing) {
             return;
         }
-        bool currentAnimating = this.previewSession?.Update() ?? false;
-        bool outgoingAnimating = this.outgoingSession?.Update() ?? false;
+        var currentSession = this.previewSession;
+        var previousOutgoingSession = this.outgoingSession;
+        bool currentAnimating = currentSession?.Update() ?? false;
+        // Update can synchronously replace the session through the Swiped event.
+        // Its return value then describes the old session, not the new animation.
+        if (!ReferenceEquals(currentSession, this.previewSession)
+            || !ReferenceEquals(previousOutgoingSession, this.outgoingSession)) {
+            NativeRuntime.xr_log_info("Animation tick: session replaced during Update; keeping timer active for the new session.");
+            return;
+        }
+        bool outgoingAnimating = previousOutgoingSession?.Update() ?? false;
         if (!currentAnimating && !outgoingAnimating) {
             this.CompletePageTransition();
             this.animationTimer.Stop();
@@ -904,18 +916,35 @@ public partial class MainWindow : Window {
         }
     }
 
-    private void PreviewSessionSwiped(object? sender, (string ElementId, NativeRect Bounds) swipe) {
+    private void PreviewSessionSwiped(object? sender, (IntPtr Element, string ElementId) swipe) {
         if (this.outgoingSession is not null
             || swipe.ElementId != "alarmBlock"
             || sender is not PreviewSession session) {
             return;
         }
         try {
-            this.previewGestureController.HandleSwipe(session, swipe);
+            var transition = session.CaptureListRemovalTransition(swipe.Element);
+            if (transition == IntPtr.Zero) {
+                return;
+            }
+            this.pendingListRemovalTransition = transition;
+            if (!this.previewGestureController.HandleSwipe(session, (swipe.ElementId, transition))) {
+                NativeRuntime.xr_destroy_list_removal_transition(transition);
+                this.pendingListRemovalTransition = IntPtr.Zero;
+            }
         }
         catch (Exception exception) {
             this.ShowPreviewError(exception);
         }
+    }
+
+    private void ApplyPendingAlarmReplacement(PreviewSession session) {
+        if (this.pendingListRemovalTransition == IntPtr.Zero) {
+            return;
+        }
+        var transition = this.pendingListRemovalTransition;
+        this.pendingListRemovalTransition = IntPtr.Zero;
+        session.ApplyListRemovalTransition(transition);
     }
 
     private JsonObject GetPreviewScenarioRoot() {
