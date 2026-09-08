@@ -174,7 +174,7 @@ public partial class MainWindow : Window {
                 this.LoadMarkup(lastMarkupPath);
             }
         } else {
-            var defaultMarkupPath = Path.Combine(this.settings.XamlDirectory, "MainPage.xaml");
+            var defaultMarkupPath = Path.Combine(this.settings.XamlDirectory, "Pages", "MainPage.xaml");
             if (File.Exists(defaultMarkupPath)) {
                 this.LoadMarkup(defaultMarkupPath);
             }
@@ -820,7 +820,11 @@ public partial class MainWindow : Window {
                 : scenarios;
             string sourceMarkup = this.markupEditorController.Text;
             var locations = new Dictionary<IntPtr, (int Line, int Column)>();
-            var root = PreviewRenderer.CreateRootWithLocations(sourceMarkup, data, locations);
+            var root = PreviewRenderer.CreateRootWithLocations(
+                sourceMarkup,
+                data,
+                locations,
+                this.settings.XamlDirectory);
             var previewSize = this.GetPreviewSize();
             this.animationTimer.Stop();
             var previousSession = this.previewSession;
@@ -1227,6 +1231,7 @@ public partial class MainWindow : Window {
         var pages = Directory.Exists(this.settings.XamlDirectory)
             ? Directory.GetFiles(this.settings.XamlDirectory, "*.xaml", SearchOption.AllDirectories)
                 .Select(path => Path.GetRelativePath(this.settings.XamlDirectory, path))
+                .Where(path => !path.StartsWith("Pages\\backup\\", StringComparison.OrdinalIgnoreCase))
                 .Order()
                 .ToArray()
             : [];
@@ -1236,8 +1241,8 @@ public partial class MainWindow : Window {
         this.PagePicker.ItemsSource = pages;
         this.PagePicker.SelectedItem = pages.Contains(previous)
             ? previous
-            : pages.Contains("MainPage.xaml")
-                ? "MainPage.xaml"
+            : pages.Contains("Pages/MainPage.xaml")
+                ? "Pages/MainPage.xaml"
                 : pages.FirstOrDefault();
     }
 

@@ -41,16 +41,24 @@ internal static class PreviewRenderer {
     }
 
     public static IntPtr CreateRoot(string markup, JsonElement data) {
-        return CreateRootWithLocations(markup, data, new Dictionary<IntPtr, (int Line, int Column)>());
+        return CreateRootWithLocations(markup, data, new Dictionary<IntPtr, (int Line, int Column)>(), null);
     }
 
     public static IntPtr CreateRootWithLocations(
-        string markup, JsonElement data, Dictionary<IntPtr, (int Line, int Column)> locations) {
+        string markup,
+        JsonElement data,
+        Dictionary<IntPtr, (int Line, int Column)> locations,
+        string? xamlDirectory) {
         var document = XDocument.Parse(markup, LoadOptions.SetLineInfo);
         MarkupValidator.Validate(document);
         var rootNode = document.Root
             ?? throw new InvalidDataException("Разметка не содержит корневого элемента.");
-        var root = PreviewRenderer.Build(rootNode, data, locations, PreviewRenderer.ExtractStyles(rootNode));
+        var root = PreviewRenderer.Build(
+            rootNode,
+            data,
+            locations,
+            PreviewRenderer.ExtractStyles(rootNode),
+            xamlDirectory);
         try {
             PreviewRenderer.ApplyInitialVisualStates(root, data);
             return root;
@@ -83,7 +91,11 @@ internal static class PreviewRenderer {
         XElement node,
         JsonElement data,
         Dictionary<IntPtr, (int Line, int Column)> locations,
-        IReadOnlyDictionary<string, Style> styles) {
+        IReadOnlyDictionary<string, Style> styles,
+        string? xamlDirectory) {
+        if (node.Name.NamespaceName == "using:mobileclock.ui.controls") {
+            return PreviewRenderer.BuildUserControl(node, data, locations, xamlDirectory);
+        }
         var element = NativeRuntime.xr_create_element(node.Name.LocalName);
         if (element == IntPtr.Zero) {
             throw new InvalidOperationException(NativeRuntime.GetLastError());
@@ -118,11 +130,11 @@ internal static class PreviewRenderer {
             PreviewRenderer.ApplyDefinitions(element, node);
             PreviewRenderer.ApplyStoryboards(element, node);
             if (node.Name.LocalName == "ListView") {
-                PreviewRenderer.BuildListViewItems(element, node, data, locations, styles);
+                PreviewRenderer.BuildListViewItems(element, node, data, locations, styles, xamlDirectory);
             }
             else {
                 foreach (var childNode in node.Elements().Where(PreviewRenderer.IsVisualElement)) {
-                    PreviewRenderer.AddChild(element, PreviewRenderer.Build(childNode, data, locations, styles));
+                    PreviewRenderer.AddChild(element, PreviewRenderer.Build(childNode, data, locations, styles, xamlDirectory));
                 }
             }
             PreviewRenderer.ApplyVisualStateGroups(element, node);
@@ -135,9 +147,59 @@ internal static class PreviewRenderer {
         }
     }
 
+    private static IntPtr BuildUserControlRoot(
+        XElement userControl,
+        JsonElement data,
+        Dictionary<IntPtr, (int Line, int Column)> locations,
+        string? xamlDirectory) {
+        var content = userControl.Elements().Where(PreviewRenderer.IsVisualElement).ToArray();
+        if (content.Length != 1) {
+            throw new InvalidDataException("UserControl требует ровно один визуальный корневой элемент.");
+        }
+        return PreviewRenderer.Build(
+            content[0],
+            data,
+            locations,
+            PreviewRenderer.ExtractStyles(userControl),
+            xamlDirectory);
+    }
+
+    private static IntPtr BuildUserControl(
+        XElement invocation,
+        JsonElement data,
+        Dictionary<IntPtr, (int Line, int Column)> locations,
+        string? xamlDirectory) {
+        if (string.IsNullOrEmpty(xamlDirectory)) {
+            throw new InvalidDataException("Для предпросмотра UserControl требуется каталог XAML.");
+        }
+        var path = Path.Combine(xamlDirectory, "Controls", invocation.Name.LocalName + ".xaml");
+        if (!File.Exists(path)) {
+            throw new InvalidDataException($"UserControl не найден: {path}.");
+        }
+        var document = XDocument.Load(path, LoadOptions.SetLineInfo);
+        var userControl = document.Root;
+        if (userControl?.Name.LocalName != "UserControl") {
+            throw new InvalidDataException($"{path} должен иметь корень <UserControl>.");
+        }
+        var root = PreviewRenderer.BuildUserControlRoot(userControl, data, locations, xamlDirectory);
+        try {
+            foreach (var attribute in invocation.Attributes()) {
+                if (!attribute.IsNamespaceDeclaration) {
+                    PreviewRenderer.ApplyAttribute(root, attribute.Name.LocalName, attribute.Value, data);
+                }
+            }
+            return root;
+        }
+        catch {
+            NativeRuntime.xr_destroy_element(root);
+            throw;
+        }
+    }
+
     private static IReadOnlyDictionary<string, Style> ExtractStyles(XElement page) {
         var styles = new Dictionary<string, Style>(StringComparer.Ordinal);
-        var resources = page.Elements().FirstOrDefault(element => element.Name.LocalName == "Page.Resources");
+        var resources = page.Elements().FirstOrDefault(element => element.Name.LocalName
+            == $"{page.Name.LocalName}.Resources");
         if (resources is null) {
             return styles;
         }
@@ -175,8 +237,13 @@ internal static class PreviewRenderer {
         return char.ToLowerInvariant(value[0]) + value[1..];
     }
 
-    private static void BuildListViewItems(IntPtr listView, XElement node, JsonElement data,
-        Dictionary<IntPtr, (int Line, int Column)> locations, IReadOnlyDictionary<string, Style> styles) {
+    private static void BuildListViewItems(
+        IntPtr listView,
+        XElement node,
+        JsonElement data,
+        Dictionary<IntPtr, (int Line, int Column)> locations,
+        IReadOnlyDictionary<string, Style> styles,
+        string? xamlDirectory) {
         var source = PreviewRenderer.ResolveElement(PreviewRenderer.Attribute(node, "itemsSource"), data);
         var template = node.Elements()
             .FirstOrDefault(element => element.Name.LocalName == "ListView.ItemTemplate")?
@@ -189,7 +256,7 @@ internal static class PreviewRenderer {
         }
 
         foreach (var item in items.EnumerateArray()) {
-            PreviewRenderer.AddChild(listView, PreviewRenderer.Build(template, item, locations, styles));
+            PreviewRenderer.AddChild(listView, PreviewRenderer.Build(template, item, locations, styles, xamlDirectory));
         }
     }
 

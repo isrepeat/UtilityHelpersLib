@@ -5,9 +5,11 @@
 #include <iostream>
 #include <map>
 #include <regex>
+#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace {
@@ -35,11 +37,49 @@ namespace {
 
     class XamlCompiler {
     public:
-        void Compile(const std::filesystem::path& input, const std::filesystem::path& outputPath);
+        void Compile(
+            const std::filesystem::path& input,
+            const std::filesystem::path& outputPath,
+            const std::vector<std::string>& ignoredDirectories,
+            const std::vector<std::string>& ignoredFileSuffixes);
 
     private:
         static constexpr const char* namespaceUri = "urn:mobileclock:xaml";
         std::map<std::string, Style> styles;
+        std::set<std::string> requiredControls;
+
+        bool IsIgnored(
+            const std::filesystem::path& input,
+            const std::vector<std::string>& ignoredDirectories,
+            const std::vector<std::string>& ignoredFileSuffixes) {
+            for (const std::filesystem::path& component : input.lexically_normal()) {
+                for (const std::string& directory : ignoredDirectories) {
+                    if (component == directory) {
+                        return true;
+                    }
+                }
+            }
+            const std::string fileName = input.stem().string();
+            for (const std::string& suffix : ignoredFileSuffixes) {
+                if (fileName.size() >= suffix.size()
+                    && fileName.compare(fileName.size() - suffix.size(), suffix.size(), suffix) == 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        std::string UserControlName(const Element& element) {
+            static constexpr std::string_view prefix = "controls:";
+            if (element.name.rfind(prefix, 0) != 0) {
+                return {};
+            }
+            const std::string name = element.name.substr(prefix.size());
+            if (!std::regex_match(name, std::regex(R"([A-Za-z][A-Za-z0-9]*)"))) {
+                throw std::runtime_error("UserControl name must be a valid C++ type name");
+            }
+            return name;
+        }
 
         std::string ReadFile(const std::filesystem::path& path) {
             std::ifstream input(path, std::ios::binary);
@@ -105,7 +145,7 @@ namespace {
             const std::regex tagPattern(R"(<\s*([^>]+)>)");
             const std::regex attributePattern(
                 R"attr(([A-Za-z][A-Za-z0-9:]*)\s*=\s*"([^"]*)")attr");
-            const std::regex namePattern(R"(^\s*([A-Za-z][A-Za-z0-9.]*))");
+            const std::regex namePattern(R"(^\s*([A-Za-z][A-Za-z0-9.:]*))");
             std::vector<Element> stack;
             Element root;
             bool hasRoot = false;
@@ -297,7 +337,7 @@ namespace {
         void LoadResources(const Element& page) {
             this->styles.clear();
             for (const Element& child : page.children) {
-                if (child.name != "Page.Resources") {
+                if (child.name != page.name + ".Resources") {
                     continue;
                 }
                 for (const Element& resource : child.children) {
@@ -507,7 +547,8 @@ namespace {
         std::string ElementVariableName(
             const Element& element,
             std::map<std::string, size_t>& elementCounts) {
-            std::string result = element.name;
+            const std::string userControlName = this->UserControlName(element);
+            std::string result = userControlName.empty() ? element.name : userControlName;
             result.front() = static_cast<char>(result.front() - 'A' + 'a');
             if (element.name == "Page") {
                 return result;
@@ -521,6 +562,35 @@ namespace {
             std::map<std::string, size_t>& elementCounts,
             const std::string& templateItem = "",
             const std::string& bindingContext = "viewModel") {
+            const std::string userControlName = this->UserControlName(element);
+            if (!userControlName.empty()) {
+                if (!element.children.empty()) {
+                    throw std::runtime_error("<" + element.name + "> cannot contain child elements");
+                }
+                this->requiredControls.emplace(userControlName);
+                const std::string variable = this->ElementVariableName(element, elementCounts);
+                std::string childBindingContext = bindingContext;
+                const std::string dataContext = this->AttributeValue(element, "dataContext");
+                if (!dataContext.empty()) {
+                    std::string sourceProperty;
+                    if (!this->TryGetBindingSource(dataContext, sourceProperty)) {
+                        throw std::runtime_error("DataContext must use {Binding Property}");
+                    }
+                    childBindingContext += "." + sourceProperty + "()";
+                }
+                output << "            auto " << variable << " = mobileclock::ui::controls::" << userControlName
+                    << "::Create(" << childBindingContext << ", bindings);\n";
+                std::vector<Binding> bindings;
+                for (const auto& [name, value] : element.attributes) {
+                    if (name.rfind("xmlns", 0) == 0 || name == "dataContext") {
+                        continue;
+                    }
+                    this->EmitProperty(element, variable, name, value, output, variable, bindings, templateItem, bindingContext);
+                }
+                this->EmitBindings(bindings, output);
+                return variable;
+            }
+
             // Сначала объявляем дочерние unique_ptr, затем передаём их родителю.
             // Это повторяет ownership-структуру исходной XAML-разметки.
             const std::string variable = this->ElementVariableName(element, elementCounts);
@@ -569,7 +639,7 @@ namespace {
             for (size_t childIndex = 0; childIndex < element.children.size(); ++childIndex) {
                 if (element.children[childIndex].name == "columnDefinitions"
                     || element.children[childIndex].name == "rowDefinitions"
-                    || element.children[childIndex].name == "Page.Resources"
+                    || element.children[childIndex].name == element.name + ".Resources"
                     || element.children[childIndex].name == element.name + ".Storyboards"
                     || element.children[childIndex].name == "VisualStateManager.VisualStateGroups") {
                     continue;
@@ -934,7 +1004,15 @@ namespace {
 
     };
 
-    void XamlCompiler::Compile(const std::filesystem::path& input, const std::filesystem::path& outputPath) {
+    void XamlCompiler::Compile(
+        const std::filesystem::path& input,
+        const std::filesystem::path& outputPath,
+        const std::vector<std::string>& ignoredDirectories,
+        const std::vector<std::string>& ignoredFileSuffixes) {
+        if (this->IsIgnored(input, ignoredDirectories, ignoredFileSuffixes)) {
+            std::cout << "XamlCompiler: skipping " << input.string() << '\n';
+            return;
+        }
         // Каждая XAML-страница получает собственный тип. Контроллеры работают
         // с MainPage::Create(), а не с неявной свободной функцией.
         const Element root = this->Parse(input, this->ReadFile(input));
@@ -947,37 +1025,65 @@ namespace {
             throw std::runtime_error(
                 "Root element must use xmlns=\"urn:mobileclock:xaml\"");
         }
-        if (root.name != "Page") {
-            throw std::runtime_error("Root element must be <Page>");
+        const bool isPage = root.name == "Page";
+        const bool isUserControl = root.name == "UserControl";
+        if (!isPage && !isUserControl) {
+            throw std::runtime_error("Root element must be <Page> or <UserControl>");
         }
         this->LoadResources(root);
-        const std::string pageName = input.stem().string();
-        if (!std::regex_match(pageName, std::regex(R"([A-Za-z][A-Za-z0-9]*)"))) {
+        this->requiredControls.clear();
+        const std::string typeName = input.stem().string();
+        if (!std::regex_match(typeName, std::regex(R"([A-Za-z][A-Za-z0-9]*)"))) {
             throw std::runtime_error("XAML filename must be a valid C++ type name");
+        }
+        Element rootElement = root;
+        if (isUserControl) {
+            const std::string className = this->AttributeValue(root, "x:Class");
+            if (className != "mobileclock::ui::controls::" + typeName) {
+                throw std::runtime_error(
+                    "<UserControl> requires x:Class=\"mobileclock::ui::controls::" + typeName + "\"");
+            }
+            std::vector<Element> content;
+            for (const Element& child : root.children) {
+                if (child.name != "UserControl.Resources") {
+                    content.push_back(child);
+                }
+            }
+            if (content.size() != 1) {
+                throw std::runtime_error("<UserControl> requires exactly one visual root element");
+            }
+            rootElement = std::move(content.front());
         }
         const std::filesystem::path headerPath = outputPath.parent_path()
             / (outputPath.stem().string() + ".h");
+
+        std::ostringstream body;
+        const std::string generatedTypeName = isUserControl ? typeName + "Xaml" : typeName;
+        body << "namespace xaml::generated {\n"
+            << "    class " << generatedTypeName << " final {\n"
+            << "    public:\n"
+            << "        template <typename TViewModel>\n"
+            << "        static std::unique_ptr<Element> Create(TViewModel& viewModel, BindingScope& bindings) {\n";
+        std::map<std::string, size_t> elementCounts;
+        const std::string rootVariable = this->EmitElement(rootElement, body, elementCounts);
+        if (this->AttributeValue(rootElement, "dataContext").empty()) {
+            body << "            " << rootVariable << "->SetDataContext(static_cast<const void*>(&viewModel));\n";
+        }
+        body << "            return " << rootVariable << ";\n"
+            << "        }\n"
+            << "    };\n"
+            << "}";
 
         std::ostringstream header;
         header << "// Сгенерировано XamlCompiler. Не редактировать вручную.\n"
             << "#pragma once\n\n"
             << "#include \"XamlRuntime/Binding.h\"\n"
-            << "#include <type_traits>\n"
-            << "#include \"XamlRuntime/XamlLayout.h\"\n\n"
-            << "namespace xaml::generated {\n"
-            << "    class " << pageName << " final {\n"
-            << "    public:\n"
-            << "        template <typename TViewModel>\n"
-            << "        static std::unique_ptr<Element> Create(TViewModel& viewModel, BindingScope& bindings) {\n";
-        std::map<std::string, size_t> elementCounts;
-        const std::string rootVariable = this->EmitElement(root, header, elementCounts);
-        if (this->AttributeValue(root, "dataContext").empty()) {
-            header << "            " << rootVariable << "->SetDataContext(static_cast<const void*>(&viewModel));\n";
+            << "#include \"XamlRuntime/XamlLayout.h\"\n"
+            << "#include <type_traits>\n";
+        for (const std::string& control : this->requiredControls) {
+            header << "#include \"UI/Controls/" << control << ".h\"\n";
         }
-        header << "            return " << rootVariable << ";\n"
-            << "        }\n"
-            << "    };\n"
-            << "}";
+        header << "\n" << body.str();
 
         std::ostringstream output;
         output << "// Сгенерировано XamlCompiler. Не редактировать вручную.\n"
@@ -997,13 +1103,33 @@ namespace {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 3) {
-        std::cerr << "Usage: XamlCompiler <input.xaml> <output.xaml.cpp>\n";
+    if (argc < 3 || (argc - 3) % 2 != 0) {
+        std::cerr << "Usage: XamlCompiler <input.xaml> <output.xaml.cpp> "
+            "[--ignore-directory <name>] [--ignore-file-suffix <suffix>]\n";
         return 1;
     }
     try {
+        std::vector<std::string> ignoredDirectories;
+        std::vector<std::string> ignoredFileSuffixes;
+        for (int index = 3; index < argc; index += 2) {
+            const std::string_view option = argv[index];
+            const std::string value = argv[index + 1];
+            if (option == "--ignore-directory") {
+                if (!std::regex_match(value, std::regex(R"([A-Za-z][A-Za-z0-9_-]*)"))) {
+                    throw std::runtime_error("Ignored directory name is invalid: " + value);
+                }
+                ignoredDirectories.push_back(value);
+            } else if (option == "--ignore-file-suffix") {
+                if (!std::regex_match(value, std::regex(R"([A-Za-z0-9_-]+)"))) {
+                    throw std::runtime_error("Ignored file suffix is invalid: " + value);
+                }
+                ignoredFileSuffixes.push_back(value);
+            } else {
+                throw std::runtime_error("Unknown argument: " + std::string(argv[index]));
+            }
+        }
         XamlCompiler compiler;
-        compiler.Compile(argv[1], argv[2]);
+        compiler.Compile(argv[1], argv[2], ignoredDirectories, ignoredFileSuffixes);
         return 0;
     } catch (const std::exception& error) {
         std::cerr << "XamlCompiler: " << error.what() << '\n';
