@@ -97,6 +97,7 @@ namespace xaml {
         using Command = std::function<void()>;
 
         explicit Element(ElementType type);
+        virtual ~Element();
 
         ElementType Type() const;
 

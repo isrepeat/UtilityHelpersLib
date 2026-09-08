@@ -299,6 +299,17 @@ namespace {
             return attribute == element.attributes.end() ? std::string{} : attribute->second;
         }
 
+        bool UsesControlItemsSource(const Element& element) {
+            if (element.name == "ListView"
+                && this->AttributeValue(element, "itemsSource") == "{Binding ItemsSource}") {
+                return true;
+            }
+            return std::any_of(
+                element.children.begin(),
+                element.children.end(),
+                [this](const Element& child) { return this->UsesControlItemsSource(child); });
+        }
+
         std::string PropertyName(const std::string& name) {
             if (name.empty()) {
                 return name;
@@ -578,11 +589,21 @@ namespace {
                     }
                     childBindingContext += "." + sourceProperty + "()";
                 }
+                const std::string itemsSource = this->AttributeValue(element, "itemsSource");
+                std::string itemsSourceProperty;
+                if (!itemsSource.empty()
+                    && !this->TryGetBindingSource(itemsSource, itemsSourceProperty)) {
+                    throw std::runtime_error("UserControl itemsSource must use {Binding Property}");
+                }
                 output << "            auto " << variable << " = mobileclock::ui::controls::" << userControlName
-                    << "::Create(" << childBindingContext << ", bindings);\n";
+                    << "::Create(" << childBindingContext;
+                if (!itemsSourceProperty.empty()) {
+                    output << ", " << bindingContext << "." << itemsSourceProperty << "()";
+                }
+                output << ", bindings);\n";
                 std::vector<Binding> bindings;
                 for (const auto& [name, value] : element.attributes) {
-                    if (name.rfind("xmlns", 0) == 0 || name == "dataContext") {
+                    if (name.rfind("xmlns", 0) == 0 || name == "dataContext" || name == "itemsSource") {
                         continue;
                     }
                     this->EmitProperty(element, variable, name, value, output, variable, bindings, templateItem, bindingContext);
@@ -845,7 +866,9 @@ namespace {
                 throw std::runtime_error("<ListView.ItemTemplate> requires one <DataTemplate> with one root element");
             }
             const Element& templateRoot = templateElement->children.front().children.front();
-            output << "            for (const auto& item : " << bindingContext << "." << sourceProperty << "()) {\n";
+            const std::string sourceExpression = sourceProperty == "ItemsSource"
+                ? "itemsSource" : bindingContext + "." + sourceProperty + "()";
+            output << "            for (const auto& item : " << sourceExpression << ") {\n";
             const std::string itemVariable = this->EmitElement(
                 templateRoot,
                 output,
@@ -1059,11 +1082,15 @@ namespace {
 
         std::ostringstream body;
         const std::string generatedTypeName = isUserControl ? typeName + "Xaml" : typeName;
+        const std::string factoryMethod = isUserControl ? "BuildContent" : "Create";
+        const bool usesItemsSource = isUserControl && this->UsesControlItemsSource(rootElement);
         body << "namespace xaml::generated {\n"
             << "    class " << generatedTypeName << " final {\n"
             << "    public:\n"
-            << "        template <typename TViewModel>\n"
-            << "        static std::unique_ptr<Element> Create(TViewModel& viewModel, BindingScope& bindings) {\n";
+            << "        template <typename TViewModel" << (usesItemsSource ? ", typename TItemsSource" : "") << ">\n"
+            << "        static std::unique_ptr<Element> " << factoryMethod
+            << "(TViewModel& viewModel" << (usesItemsSource ? ", const TItemsSource& itemsSource" : "")
+            << ", BindingScope& bindings) {\n";
         std::map<std::string, size_t> elementCounts;
         const std::string rootVariable = this->EmitElement(rootElement, body, elementCounts);
         if (this->AttributeValue(rootElement, "dataContext").empty()) {

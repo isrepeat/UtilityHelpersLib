@@ -6,7 +6,6 @@
 #include <XamlRuntime/XamlLayout.h>
 #include <XamlRuntime/Animation.h>
 #include <XamlRuntime/Input.h>
-#include <XamlRuntime/ListTransition.h>
 #include <XamlRuntime/ScrollController.h>
 
 #include "../../../../Resources/Effects/Effects.h"
@@ -209,10 +208,6 @@ namespace xaml::bridge {
 struct xr_animation_controller {
     xaml::AnimationController value;
     xaml::ScrollController scrollController;
-};
-
-struct xr_list_removal_transition {
-    xaml::ListRemovalTransition value;
 };
 
 struct xr_angle_surface {
@@ -661,13 +656,13 @@ int xr_get_scroll_offsets(
             || horizontalOffset == nullptr || verticalOffset == nullptr) {
             throw std::invalid_argument("root, scroll viewer id and offsets are required");
         }
-        const xaml::ScrollOffsetSnapshot offsets = xaml::CaptureScrollOffsets(
+        xaml::Element* const scrollViewer = xaml::bridge::_details::FindElement(
             *reinterpret_cast<xaml::Element*>(root), scrollViewerId);
-        if (!offsets.isPresent) {
+        if (scrollViewer == nullptr || scrollViewer->Type() != xaml::ElementType::scrollViewer) {
             return 0;
         }
-        *horizontalOffset = offsets.horizontal;
-        *verticalOffset = offsets.vertical;
+        *horizontalOffset = scrollViewer->HorizontalOffset();
+        *verticalOffset = scrollViewer->VerticalOffset();
         return 1;
     } catch (const std::exception& error) {
         xaml::bridge::lastError = error.what();
@@ -686,120 +681,18 @@ int xr_set_scroll_offsets(
             || !std::isfinite(horizontalOffset) || !std::isfinite(verticalOffset)) {
             throw std::invalid_argument("root, scroll viewer id and finite offsets are required");
         }
-        const xaml::ScrollOffsetSnapshot before = xaml::CaptureScrollOffsets(
+        xaml::Element* const scrollViewer = xaml::bridge::_details::FindElement(
             *reinterpret_cast<xaml::Element*>(root), scrollViewerId);
-        if (!before.isPresent) {
+        if (scrollViewer == nullptr || scrollViewer->Type() != xaml::ElementType::scrollViewer) {
             return 0;
         }
-        xaml::RestoreScrollOffsets(
-            *reinterpret_cast<xaml::Element*>(root),
-            scrollViewerId,
-            {horizontalOffset, verticalOffset, true});
+        scrollViewer->SetHorizontalOffset(horizontalOffset);
+        scrollViewer->SetVerticalOffset(verticalOffset);
         return 1;
     } catch (const std::exception& error) {
         xaml::bridge::lastError = error.what();
         return 0;
     }
-}
-
-int xr_animate_list_removal(
-    xr_element* root,
-    const char* itemId,
-    int removedIndex,
-    const xr_rect* previousBounds,
-    int previousCount,
-    xr_animation_controller* animations,
-    int durationMilliseconds) {
-    try {
-        xaml::bridge::lastError.clear();
-        if (root == nullptr || itemId == nullptr || *itemId == '\0' || removedIndex < 0
-            || previousCount < 0 || (previousCount > 0 && previousBounds == nullptr)
-            || animations == nullptr || durationMilliseconds < 0) {
-            throw std::invalid_argument("invalid list removal animation");
-        }
-        std::vector<xaml::ListItemSnapshot> snapshots;
-        snapshots.reserve(static_cast<size_t>(previousCount));
-        for (int index = 0; index < previousCount; ++index) {
-            const xr_rect& bounds = previousBounds[index];
-            snapshots.push_back({nullptr, nullptr, {bounds.x, bounds.y, bounds.width, bounds.height}});
-        }
-        xaml::AnimateListRemoval(
-            *reinterpret_cast<xaml::Element*>(root),
-            itemId,
-            static_cast<size_t>(removedIndex),
-            snapshots,
-            animations->value,
-            std::chrono::milliseconds(durationMilliseconds));
-        return 1;
-    } catch (const std::exception& error) {
-        xaml::bridge::lastError = error.what();
-        return 0;
-    }
-}
-
-xr_list_removal_transition* xr_capture_list_removal_transition(xr_element* source) {
-    try {
-        xaml::bridge::lastError.clear();
-        if (source == nullptr) {
-            throw std::invalid_argument("source is required");
-        }
-        auto transition = std::make_unique<xr_list_removal_transition>();
-        transition->value = xaml::CaptureListRemovalTransition(*reinterpret_cast<xaml::Element*>(source));
-        return transition->value.isPresent ? transition.release() : nullptr;
-    } catch (const std::exception& error) {
-        xaml::bridge::lastError = error.what();
-        return nullptr;
-    }
-}
-
-int xr_list_removal_transition_item_index(const xr_list_removal_transition* transition) {
-    if (transition == nullptr || !transition->value.isPresent) {
-        return -1;
-    }
-    return static_cast<int>(transition->value.removedIndex);
-}
-
-int xr_restore_list_removal_transition_offsets(
-    xr_element* root,
-    const xr_list_removal_transition* transition) {
-    try {
-        xaml::bridge::lastError.clear();
-        if (root == nullptr || transition == nullptr || !transition->value.isPresent) {
-            throw std::invalid_argument("root and transition are required");
-        }
-        xaml::RestoreListRemovalTransitionOffsets(*reinterpret_cast<xaml::Element*>(root), transition->value);
-        return 1;
-    } catch (const std::exception& error) {
-        xaml::bridge::lastError = error.what();
-        return 0;
-    }
-}
-
-int xr_animate_list_removal_transition(
-    xr_element* root,
-    const xr_list_removal_transition* transition,
-    xr_animation_controller* animations,
-    int durationMilliseconds) {
-    try {
-        xaml::bridge::lastError.clear();
-        if (root == nullptr || transition == nullptr || !transition->value.isPresent
-            || animations == nullptr || durationMilliseconds < 0) {
-            throw std::invalid_argument("root, transition and animation controller are required");
-        }
-        xaml::AnimateListRemovalTransition(
-            *reinterpret_cast<xaml::Element*>(root),
-            transition->value,
-            animations->value,
-            std::chrono::milliseconds(durationMilliseconds));
-        return 1;
-    } catch (const std::exception& error) {
-        xaml::bridge::lastError = error.what();
-        return 0;
-    }
-}
-
-void xr_destroy_list_removal_transition(xr_list_removal_transition* transition) {
-    delete transition;
 }
 
 int xr_scroll_by(xr_element* root, float x, float y, float horizontalDelta, float verticalDelta) {

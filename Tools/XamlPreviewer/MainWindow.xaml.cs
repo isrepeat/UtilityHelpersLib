@@ -48,7 +48,6 @@ public partial class MainWindow : Window {
     private bool updatingPreviewControls;
     private bool settingsPersistenceReady;
     private PreviewSession? previewSession;
-    private IntPtr pendingListRemovalTransition;
     private bool isClosing;
     private PreviewSession? outgoingSession;
     private PreviewerSettings settings = null!;
@@ -343,7 +342,6 @@ public partial class MainWindow : Window {
             session.Tapped += this.PreviewSessionTapped;
             session.Swiped += this.PreviewSessionSwiped;
             this.previewSession = session;
-            this.ApplyPendingAlarmReplacement(session);
             this.previewLayer.Children.Add(session.Surface);
             this.statusPresenter.Success($"Предпросмотр: {path}");
         }
@@ -852,7 +850,6 @@ public partial class MainWindow : Window {
             session.Tapped += this.PreviewSessionTapped;
             session.Swiped += this.PreviewSessionSwiped;
             this.previewSession = session;
-            this.ApplyPendingAlarmReplacement(session);
             if (previousSession is not null && transition is not null) {
                 this.StartPageTransition(previousSession, session, transition.Value);
             } else {
@@ -927,28 +924,11 @@ public partial class MainWindow : Window {
             return;
         }
         try {
-            var transition = session.CaptureListRemovalTransition(swipe.Element);
-            if (transition == IntPtr.Zero) {
-                return;
-            }
-            this.pendingListRemovalTransition = transition;
-            if (!this.previewGestureController.HandleSwipe(session, (swipe.ElementId, transition))) {
-                NativeRuntime.xr_destroy_list_removal_transition(transition);
-                this.pendingListRemovalTransition = IntPtr.Zero;
-            }
+            this.previewGestureController.HandleSwipe(session, swipe.Element);
         }
         catch (Exception exception) {
             this.ShowPreviewError(exception);
         }
-    }
-
-    private void ApplyPendingAlarmReplacement(PreviewSession session) {
-        if (this.pendingListRemovalTransition == IntPtr.Zero) {
-            return;
-        }
-        var transition = this.pendingListRemovalTransition;
-        this.pendingListRemovalTransition = IntPtr.Zero;
-        session.ApplyListRemovalTransition(transition);
     }
 
     private JsonObject GetPreviewScenarioRoot() {

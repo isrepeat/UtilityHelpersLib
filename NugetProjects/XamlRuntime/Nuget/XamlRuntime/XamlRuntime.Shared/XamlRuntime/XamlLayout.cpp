@@ -444,6 +444,8 @@ namespace xaml {
         : type(type) {
     }
 
+    Element::~Element() = default;
+
     ElementType Element::Type() const {
         return this->type;
     }

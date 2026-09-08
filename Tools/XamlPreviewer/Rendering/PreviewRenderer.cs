@@ -181,10 +181,21 @@ internal static class PreviewRenderer {
         if (userControl?.Name.LocalName != "UserControl") {
             throw new InvalidDataException($"{path} должен иметь корень <UserControl>.");
         }
-        var root = PreviewRenderer.BuildUserControlRoot(userControl, data, locations, xamlDirectory);
+        var controlDefinition = new XElement(userControl);
+        var itemsSource = PreviewRenderer.Attribute(invocation, "itemsSource");
+        if (itemsSource is not null) {
+            foreach (var listView in controlDefinition.Descendants()
+                .Where(element => element.Name.LocalName == "ListView")) {
+                var source = listView.Attributes().FirstOrDefault(attribute => attribute.Name.LocalName == "itemsSource");
+                if (source?.Value == "{Binding ItemsSource}") {
+                    source.Value = itemsSource;
+                }
+            }
+        }
+        var root = PreviewRenderer.BuildUserControlRoot(controlDefinition, data, locations, xamlDirectory);
         try {
             foreach (var attribute in invocation.Attributes()) {
-                if (!attribute.IsNamespaceDeclaration) {
+                if (!attribute.IsNamespaceDeclaration && attribute.Name.LocalName != "itemsSource") {
                     PreviewRenderer.ApplyAttribute(root, attribute.Name.LocalName, attribute.Value, data);
                 }
             }

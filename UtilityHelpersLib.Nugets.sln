@@ -114,9 +114,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{9EB79BCF-ED13-45EA-BEA9-F76877ECF2B7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XamlPreviewer", "Tools\XamlPreviewer\XamlPreviewer.csproj", "{3406152C-A0EF-4865-A700-1CF83B5817A8}"
-	ProjectSection(ProjectDependencies) = postProject
-		{4F503B7D-45FB-4120-A069-6638899C08A8} = {4F503B7D-45FB-4120-A069-6638899C08A8}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XamlRuntime.NativeBridge", "Tools\XamlPreviewer\NativeBridge\XamlRuntime.NativeBridge.vcxproj", "{4F503B7D-45FB-4120-A069-6638899C08A8}"
 EndProject

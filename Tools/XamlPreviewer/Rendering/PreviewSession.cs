@@ -95,31 +95,10 @@ internal sealed class PreviewSession : IDisposable {
         return element != IntPtr.Zero && NativeRuntime.xr_element_bounds(element, out bounds) != 0;
     }
 
-    public IntPtr CaptureListRemovalTransition(IntPtr source) {
+    public bool TryGetElementBounds(IntPtr element, out NativeRect bounds) {
         this.ThrowIfDisposed();
-        return NativeRuntime.xr_capture_list_removal_transition(source);
-    }
-
-    public int GetListItemIndex(IntPtr transition) {
-        this.ThrowIfDisposed();
-        return NativeRuntime.xr_list_removal_transition_item_index(transition);
-    }
-
-    public void ApplyListRemovalTransition(IntPtr transition) {
-        this.ThrowIfDisposed();
-        try {
-            NativeRuntime.Ensure(NativeRuntime.xr_restore_list_removal_transition_offsets(this.root, transition) != 0);
-            NativeRuntime.Ensure(NativeRuntime.xr_layout(this.root, this.renderer.Width, this.renderer.Height) != 0);
-            NativeRuntime.Ensure(NativeRuntime.xr_animate_list_removal_transition(
-                this.root,
-                transition,
-                this.animations,
-                840) != 0);
-            this.Render();
-            this.AnimationStarted?.Invoke(this, EventArgs.Empty);
-        } finally {
-            NativeRuntime.xr_destroy_list_removal_transition(transition);
-        }
+        bounds = default;
+        return element != IntPtr.Zero && NativeRuntime.xr_element_bounds(element, out bounds) != 0;
     }
 
     public void Transition(string from, string to, bool backward, bool visible) {

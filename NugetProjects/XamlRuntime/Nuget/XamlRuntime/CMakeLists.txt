@@ -1,6 +1,7 @@
 add_library(utility_helpers_xaml_runtime STATIC
     XamlRuntime.Shared/XamlRuntime/Binding.cpp
     XamlRuntime.Shared/XamlRuntime/Binding.h
+    XamlRuntime.Shared/XamlRuntime/DependentProperty.h
     XamlRuntime.Shared/XamlRuntime/Animation.cpp
     XamlRuntime.Shared/XamlRuntime/VisualState.cpp
     XamlRuntime.Shared/XamlRuntime/VisualState.h
@@ -9,20 +10,21 @@ add_library(utility_helpers_xaml_runtime STATIC
     XamlRuntime.Shared/XamlRuntime/ElementBuilder.h
     XamlRuntime.Shared/XamlRuntime/Input.cpp
     XamlRuntime.Shared/XamlRuntime/Input.h
-    XamlRuntime.Shared/XamlRuntime/ListTransition.cpp
-    XamlRuntime.Shared/XamlRuntime/ListTransition.h
     XamlRuntime.Shared/XamlRuntime/RenderEngine.cpp
     XamlRuntime.Shared/XamlRuntime/RenderEngine.h
     XamlRuntime.Shared/XamlRuntime/ScrollController.cpp
     XamlRuntime.Shared/XamlRuntime/ScrollController.h
     XamlRuntime.Shared/XamlRuntime/XamlLayout.cpp
     XamlRuntime.Shared/XamlRuntime/XamlLayout.h
+    XamlRuntime.Shared/XamlRuntime/UserControl.cpp
+    XamlRuntime.Shared/XamlRuntime/UserControl.h
 )
 add_library(utility_helpers::xaml_runtime ALIAS utility_helpers_xaml_runtime)
 
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/XamlRuntime.Shared" FILES
     XamlRuntime.Shared/XamlRuntime/Binding.cpp
     XamlRuntime.Shared/XamlRuntime/Binding.h
+    XamlRuntime.Shared/XamlRuntime/DependentProperty.h
     XamlRuntime.Shared/XamlRuntime/Animation.cpp
     XamlRuntime.Shared/XamlRuntime/VisualState.cpp
     XamlRuntime.Shared/XamlRuntime/VisualState.h
@@ -31,14 +33,14 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/XamlRuntime.Shared" FILES
     XamlRuntime.Shared/XamlRuntime/ElementBuilder.h
     XamlRuntime.Shared/XamlRuntime/Input.cpp
     XamlRuntime.Shared/XamlRuntime/Input.h
-    XamlRuntime.Shared/XamlRuntime/ListTransition.cpp
-    XamlRuntime.Shared/XamlRuntime/ListTransition.h
     XamlRuntime.Shared/XamlRuntime/RenderEngine.cpp
     XamlRuntime.Shared/XamlRuntime/RenderEngine.h
     XamlRuntime.Shared/XamlRuntime/ScrollController.cpp
     XamlRuntime.Shared/XamlRuntime/ScrollController.h
     XamlRuntime.Shared/XamlRuntime/XamlLayout.cpp
     XamlRuntime.Shared/XamlRuntime/XamlLayout.h
+    XamlRuntime.Shared/XamlRuntime/UserControl.cpp
+    XamlRuntime.Shared/XamlRuntime/UserControl.h
 )
 target_include_directories(utility_helpers_xaml_runtime PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/XamlRuntime.Shared>"

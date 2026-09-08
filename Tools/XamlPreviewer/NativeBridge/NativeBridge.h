@@ -13,7 +13,6 @@ extern "C" {
 typedef struct xr_element xr_element;
 typedef struct xr_animation_controller xr_animation_controller;
 typedef struct xr_angle_surface xr_angle_surface;
-typedef struct xr_list_removal_transition xr_list_removal_transition;
 
 typedef struct xr_rect {
     float x;
@@ -110,25 +109,6 @@ XAML_RUNTIME_BRIDGE_API int xr_set_scroll_offsets(
     const char* scroll_viewer_id,
     float horizontal_offset,
     float vertical_offset);
-XAML_RUNTIME_BRIDGE_API int xr_animate_list_removal(
-    xr_element* root,
-    const char* item_id,
-    int removed_index,
-    const xr_rect* previous_bounds,
-    int previous_count,
-    xr_animation_controller* animations,
-    int duration_milliseconds);
-XAML_RUNTIME_BRIDGE_API xr_list_removal_transition* xr_capture_list_removal_transition(xr_element* source);
-XAML_RUNTIME_BRIDGE_API int xr_list_removal_transition_item_index(const xr_list_removal_transition* transition);
-XAML_RUNTIME_BRIDGE_API int xr_restore_list_removal_transition_offsets(
-    xr_element* root,
-    const xr_list_removal_transition* transition);
-XAML_RUNTIME_BRIDGE_API int xr_animate_list_removal_transition(
-    xr_element* root,
-    const xr_list_removal_transition* transition,
-    xr_animation_controller* animations,
-    int duration_milliseconds);
-XAML_RUNTIME_BRIDGE_API void xr_destroy_list_removal_transition(xr_list_removal_transition* transition);
 XAML_RUNTIME_BRIDGE_API int xr_scroll_by(xr_element* root, float x, float y, float horizontalDelta, float verticalDelta);
 XAML_RUNTIME_BRIDGE_API int xr_scroll_begin(
     xr_element* root,
