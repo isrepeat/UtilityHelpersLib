@@ -19,20 +19,46 @@ namespace xaml::_details {
         }
     }
 
-    Element* HitTestElement(Element& element, float x, float y) {
+    Element* HitTestElement(Element& element, float x, float y, float offsetX, float offsetY) {
         if (!element.CanReceiveInput()
             || !element.IsEnabled()
-            || !Contains(element.ClipBounds(), x, y)) {
+            || !Contains(element.ClipBounds(), x - offsetX, y - offsetY)) {
             return nullptr;
         }
 
+        const float childrenOffsetX = element.Type() == ElementType::scrollViewer
+            ? offsetX - element.HorizontalOffset() : offsetX;
+        const float childrenOffsetY = element.Type() == ElementType::scrollViewer
+            ? offsetY - element.VerticalOffset() : offsetY;
         std::vector<std::unique_ptr<Element>>& children = element.Children();
         for (auto child = children.rbegin(); child != children.rend(); ++child) {
-            if (Element* const hit = HitTestElement(**child, x, y)) {
+            if (Element* const hit = HitTestElement(**child, x, y, childrenOffsetX, childrenOffsetY)) {
                 return hit;
             }
         }
-        return IsInteractive(element) && Contains(element.Bounds(), x, y) ? &element : nullptr;
+        return IsInteractive(element) && Contains(
+            element.Bounds(),
+            x - offsetX,
+            y - offsetY) ? &element : nullptr;
+    }
+
+    Element* HitTestVisualElement(Element& element, float x, float y, float offsetX, float offsetY) {
+        if (element.VisibilityValue() != attr::Visibility::visible
+            || !Contains(element.ClipBounds(), x - offsetX, y - offsetY)) {
+            return nullptr;
+        }
+
+        const float childrenOffsetX = element.Type() == ElementType::scrollViewer
+            ? offsetX - element.HorizontalOffset() : offsetX;
+        const float childrenOffsetY = element.Type() == ElementType::scrollViewer
+            ? offsetY - element.VerticalOffset() : offsetY;
+        std::vector<std::unique_ptr<Element>>& children = element.Children();
+        for (auto child = children.rbegin(); child != children.rend(); ++child) {
+            if (Element* const hit = HitTestVisualElement(**child, x, y, childrenOffsetX, childrenOffsetY)) {
+                return hit;
+            }
+        }
+        return Contains(element.Bounds(), x - offsetX, y - offsetY) ? &element : nullptr;
     }
 }
 
@@ -42,7 +68,11 @@ namespace xaml {
     }
 
     Element* HitTest(Element& root, float x, float y) {
-        return _details::HitTestElement(root, x, y);
+        return _details::HitTestElement(root, x, y, 0.0f, 0.0f);
+    }
+
+    Element* HitTestVisual(Element& root, float x, float y) {
+        return _details::HitTestVisualElement(root, x, y, 0.0f, 0.0f);
     }
 
     bool HandleTap(Element& element) {

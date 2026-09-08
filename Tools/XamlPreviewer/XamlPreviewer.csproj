@@ -36,6 +36,9 @@
     <Resource Include="Resources\Icons\find-previous.svg" />
     <Resource Include="Resources\Icons\navigate-back.svg" />
     <Resource Include="Resources\Icons\navigate-forward.svg" />
+    <Content Include="Resources\Cursors\*.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <!-- Кэш WPF может сохраниться после удаления сгенерированных исходников.

@@ -24,7 +24,6 @@ internal sealed class AnglePreviewRenderer : IDisposable {
 
     public BitmapSource Render(IntPtr root) {
         const int bytesPerPixel = 4;
-        NativeRuntime.Ensure(NativeRuntime.xr_layout(root, this.Width, this.Height) != 0);
         var stride = this.Width * bytesPerPixel;
         var pixels = new byte[stride * this.Height];
         NativeRuntime.Ensure(NativeRuntime.xr_render_angle_surface(
@@ -38,7 +37,7 @@ internal sealed class AnglePreviewRenderer : IDisposable {
             this.Height,
             96,
             96,
-            PixelFormats.Pbgra32,
+            PixelFormats.Bgra32,
             null,
             pixels,
             stride);

@@ -11,6 +11,8 @@ add_library(utility_helpers_xaml_runtime STATIC
     XamlRuntime.Shared/XamlRuntime/Input.h
     XamlRuntime.Shared/XamlRuntime/RenderEngine.cpp
     XamlRuntime.Shared/XamlRuntime/RenderEngine.h
+    XamlRuntime.Shared/XamlRuntime/ScrollController.cpp
+    XamlRuntime.Shared/XamlRuntime/ScrollController.h
     XamlRuntime.Shared/XamlRuntime/XamlLayout.cpp
     XamlRuntime.Shared/XamlRuntime/XamlLayout.h
 )
@@ -29,6 +31,8 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/XamlRuntime.Shared" FILES
     XamlRuntime.Shared/XamlRuntime/Input.h
     XamlRuntime.Shared/XamlRuntime/RenderEngine.cpp
     XamlRuntime.Shared/XamlRuntime/RenderEngine.h
+    XamlRuntime.Shared/XamlRuntime/ScrollController.cpp
+    XamlRuntime.Shared/XamlRuntime/ScrollController.h
     XamlRuntime.Shared/XamlRuntime/XamlLayout.cpp
     XamlRuntime.Shared/XamlRuntime/XamlLayout.h
 )

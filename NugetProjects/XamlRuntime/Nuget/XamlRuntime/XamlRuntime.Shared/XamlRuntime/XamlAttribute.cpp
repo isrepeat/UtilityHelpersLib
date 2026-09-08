@@ -44,6 +44,8 @@ namespace xaml {
             {XamlAttribute::opacity, XamlAttributeGroup::layout, "opacity"},
             {XamlAttribute::itemsSource, XamlAttributeGroup::itemsSource, "itemsSource"},
             {XamlAttribute::renderer, XamlAttributeGroup::renderer, "renderer"},
+            {XamlAttribute::verticalScrollBarVisibility, XamlAttributeGroup::scroll, "verticalScrollBarVisibility"},
+            {XamlAttribute::horizontalScrollBarVisibility, XamlAttributeGroup::scroll, "horizontalScrollBarVisibility"},
         };
 
         const AttributeMapping* FindAttribute(XamlAttribute attribute) {

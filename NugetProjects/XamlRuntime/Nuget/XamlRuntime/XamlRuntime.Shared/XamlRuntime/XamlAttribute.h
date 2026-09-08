@@ -41,6 +41,8 @@ namespace xaml {
         opacity,
         itemsSource,
         renderer,
+        verticalScrollBarVisibility,
+        horizontalScrollBarVisibility,
         count,
     };
 
@@ -67,6 +69,7 @@ namespace xaml {
         toggle = 1 << 14,
         itemsSource = 1 << 15,
         renderer = 1 << 20,
+        scroll = 1 << 22,
     };
 
     std::optional<XamlAttribute> ParseXamlAttribute(std::string_view name);

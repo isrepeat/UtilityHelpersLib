@@ -95,7 +95,16 @@ XAML_RUNTIME_BRIDGE_API const char* xr_supported_element_name(int index);
 XAML_RUNTIME_BRIDGE_API int xr_layout(xr_element* root, float width, float height);
 XAML_RUNTIME_BRIDGE_API xr_element* xr_hit_test(xr_element* root, float x, float y);
 XAML_RUNTIME_BRIDGE_API xr_element* xr_hit_test_visual(xr_element* root, float x, float y);
+XAML_RUNTIME_BRIDGE_API int xr_hit_test_cursor_kind(xr_element* root, float x, float y);
 XAML_RUNTIME_BRIDGE_API int xr_element_bounds(const xr_element* element, xr_rect* bounds);
+XAML_RUNTIME_BRIDGE_API int xr_scroll_by(xr_element* root, float x, float y, float horizontalDelta, float verticalDelta);
+XAML_RUNTIME_BRIDGE_API int xr_scroll_begin(
+    xr_element* root,
+    xr_animation_controller* animations,
+    float x,
+    float y);
+XAML_RUNTIME_BRIDGE_API int xr_scroll_drag(xr_animation_controller* animations, float verticalDelta);
+XAML_RUNTIME_BRIDGE_API void xr_scroll_end(xr_animation_controller* animations);
 XAML_RUNTIME_BRIDGE_API int xr_set_render_offset_x(xr_element* element, float value);
 XAML_RUNTIME_BRIDGE_API int xr_animate_render_offset_x(
     xr_element* element,

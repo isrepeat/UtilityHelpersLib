@@ -68,7 +68,8 @@ namespace xaml::_details {
             return common
                 | static_cast<uint32_t>(XamlAttributeGroup::background)
                 | static_cast<uint32_t>(XamlAttributeGroup::border)
-                | static_cast<uint32_t>(XamlAttributeGroup::padding);
+                | static_cast<uint32_t>(XamlAttributeGroup::padding)
+                | static_cast<uint32_t>(XamlAttributeGroup::scroll);
         case ElementType::image:
         case ElementType::svgImage:
             return common
@@ -417,6 +418,27 @@ namespace xaml {
         case XamlAttribute::renderer:
             element.SetRenderer(std::string(value));
             return;
+        case XamlAttribute::verticalScrollBarVisibility:
+        case XamlAttribute::horizontalScrollBarVisibility: {
+            attr::ScrollBarVisibility visibility;
+            if (value == "Auto") {
+                visibility = attr::ScrollBarVisibility::autoValue;
+            } else if (value == "Disabled") {
+                visibility = attr::ScrollBarVisibility::disabled;
+            } else if (value == "Hidden") {
+                visibility = attr::ScrollBarVisibility::hidden;
+            } else if (value == "Visible") {
+                visibility = attr::ScrollBarVisibility::visible;
+            } else {
+                throw std::invalid_argument("scroll bar visibility must be Auto, Disabled, Hidden or Visible");
+            }
+            if (attribute.value() == XamlAttribute::verticalScrollBarVisibility) {
+                element.SetVerticalScrollBarVisibility(visibility);
+            } else {
+                element.SetHorizontalScrollBarVisibility(visibility);
+            }
+            return;
+        }
         }
     }
 

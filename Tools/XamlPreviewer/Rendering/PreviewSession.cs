@@ -10,19 +10,29 @@ internal sealed class PreviewSession : IDisposable {
     private readonly Image image;
     private readonly Border inspectionOutline;
     private readonly Grid surface;
+    private readonly PreviewCursorSet cursorSet;
     private IntPtr root;
     private IntPtr animations;
     private IntPtr capturedElement;
     private Point pointerDownPoint;
+    private Point lastPointerPoint;
     private (string ElementId, NativeRect Bounds)? pendingSwipe;
     private bool isSwipeRemovalPending;
     private bool isElementInspectionEnabled;
+    private GestureAxis gestureAxis;
     private bool isDisposed;
     private IReadOnlyDictionary<IntPtr, (int Line, int Column)> sourceLocations =
         new Dictionary<IntPtr, (int Line, int Column)>();
 
-    public PreviewSession(IntPtr root, string markupDirectory, int width, int height, bool startHidden = false) {
+    public PreviewSession(
+        IntPtr root,
+        string markupDirectory,
+        int width,
+        int height,
+        PreviewCursorSet cursorSet,
+        bool startHidden = false) {
         this.root = root;
+        this.cursorSet = cursorSet;
         NativeRuntime.Ensure(NativeRuntime.xr_layout(root, width, height) != 0);
         this.renderer = new AnglePreviewRenderer(markupDirectory, width, height);
         try {
@@ -53,6 +63,7 @@ internal sealed class PreviewSession : IDisposable {
             this.image.MouseLeftButtonUp += this.ImageMouseLeftButtonUp;
             this.image.MouseMove += this.ImageMouseMove;
             this.image.MouseLeave += this.ImageMouseLeave;
+            this.image.MouseWheel += this.ImageMouseWheel;
             if (!startHidden) {
                 this.Render();
             }
@@ -185,6 +196,7 @@ internal sealed class PreviewSession : IDisposable {
         this.image.MouseLeftButtonUp -= this.ImageMouseLeftButtonUp;
         this.image.MouseMove -= this.ImageMouseMove;
         this.image.MouseLeave -= this.ImageMouseLeave;
+        this.image.MouseWheel -= this.ImageMouseWheel;
         if (this.animations != IntPtr.Zero) {
             NativeRuntime.xr_destroy_animation_controller(this.animations);
             this.animations = IntPtr.Zero;
@@ -210,9 +222,21 @@ internal sealed class PreviewSession : IDisposable {
             this.root,
             this.ScaleX(point.X),
             this.ScaleY(point.Y));
+        if (this.capturedElement == IntPtr.Zero) {
+            this.capturedElement = NativeRuntime.xr_hit_test_visual(
+                this.root,
+                this.ScaleX(point.X),
+                this.ScaleY(point.Y));
+        }
         if (this.capturedElement != IntPtr.Zero) {
+            var cursorKind = this.GetCursorKind(point);
             this.pointerDownPoint = new Point(this.ScaleX(point.X), this.ScaleY(point.Y));
+            this.lastPointerPoint = this.pointerDownPoint;
+            this.gestureAxis = GestureAxis.None;
             this.image.CaptureMouse();
+            this.image.Cursor = cursorKind == PreviewCursorKind.Tap
+                ? this.cursorSet.TapPressed
+                : null;
             NativeRuntime.Ensure(NativeRuntime.xr_handle_pointer_down(this.capturedElement, this.animations) != 0);
             this.Render();
             this.AnimationStarted?.Invoke(this, EventArgs.Empty);
@@ -235,16 +259,17 @@ internal sealed class PreviewSession : IDisposable {
         var point = eventArgs.GetPosition(this.image);
         var pointerUpPoint = new Point(this.ScaleX(point.X), this.ScaleY(point.Y));
         var horizontalDistance = pointerUpPoint.X - this.pointerDownPoint.X;
-        var verticalDistance = pointerUpPoint.Y - this.pointerDownPoint.Y;
-        NativeRuntime.Ensure(NativeRuntime.xr_handle_pointer_up(capturedElement, this.animations) != 0);
-        var isSwipe = Math.Abs(horizontalDistance) >= 180.0
-            && Math.Abs(horizontalDistance) > Math.Abs(verticalDistance);
+        if (this.gestureAxis != GestureAxis.Vertical) {
+            NativeRuntime.Ensure(NativeRuntime.xr_handle_pointer_up(capturedElement, this.animations) != 0);
+        }
+        var isSwipe = this.gestureAxis == GestureAxis.Horizontal && Math.Abs(horizontalDistance) >= 180.0;
         var bounds = default(NativeRect);
         if (isSwipe) {
             NativeRuntime.Ensure(NativeRuntime.xr_element_bounds(capturedElement, out bounds) != 0);
         }
         this.capturedElement = IntPtr.Zero;
         this.image.ReleaseMouseCapture();
+        this.SetCursor(this.GetCursorKind(point));
         this.Render();
         this.AnimationStarted?.Invoke(this, EventArgs.Empty);
         if (isSwipe) {
@@ -257,14 +282,30 @@ internal sealed class PreviewSession : IDisposable {
             this.isSwipeRemovalPending = true;
             NativeRuntime.xr_log_info($"Alarm swipe animation started; direction={(horizontalDistance < 0.0 ? "left" : "right")}, threshold=180.");
             this.AnimationStarted?.Invoke(this, EventArgs.Empty);
-        } else {
+        } else if (this.gestureAxis != GestureAxis.Vertical) {
+            NativeRuntime.xr_log_info($"Alarm swipe reset started; element='{elementId}', offset={horizontalDistance:0.0}, target=0, duration=180.");
             NativeRuntime.Ensure(NativeRuntime.xr_animate_render_offset_x(
                 capturedElement,
                 this.animations,
                 0.0f,
                 180) != 0);
             this.Tapped?.Invoke(this, elementId);
+            this.AnimationStarted?.Invoke(this, EventArgs.Empty);
+        } else if (elementId == "alarmBlock") {
+            NativeRuntime.xr_log_info("Alarm swipe reset after scroll gesture started; target=0, duration=180.");
+            NativeRuntime.Ensure(NativeRuntime.xr_animate_render_offset_x(
+                capturedElement,
+                this.animations,
+                0.0f,
+                180) != 0);
+            this.AnimationStarted?.Invoke(this, EventArgs.Empty);
         }
+        if (this.gestureAxis == GestureAxis.Vertical) {
+            NativeRuntime.xr_scroll_end(this.animations);
+            NativeRuntime.xr_log_info("Preview scroll drag completed; inertial update may continue.");
+            this.AnimationStarted?.Invoke(this, EventArgs.Empty);
+        }
+        this.gestureAxis = GestureAxis.None;
         eventArgs.Handled = true;
     }
 
@@ -273,8 +314,36 @@ internal sealed class PreviewSession : IDisposable {
             var pointerPoint = eventArgs.GetPosition(this.image);
             var horizontalDistance = this.ScaleX(pointerPoint.X) - this.pointerDownPoint.X;
             var verticalDistance = this.ScaleY(pointerPoint.Y) - this.pointerDownPoint.Y;
-            if (Math.Abs(horizontalDistance) > Math.Abs(verticalDistance)
-                && NativeRuntime.GetElementId(this.capturedElement) == "alarmBlock") {
+            if (this.gestureAxis == GestureAxis.None
+                && Math.Max(Math.Abs(horizontalDistance), Math.Abs(verticalDistance)) >= 8.0) {
+                if (Math.Abs(verticalDistance) > Math.Abs(horizontalDistance)) {
+                    if (NativeRuntime.xr_scroll_begin(
+                        this.root,
+                        this.animations,
+                        (float)this.pointerDownPoint.X,
+                        (float)this.pointerDownPoint.Y) != 0) {
+                        this.gestureAxis = GestureAxis.Vertical;
+                    }
+                } else if (NativeRuntime.GetElementId(this.capturedElement) == "alarmBlock") {
+                    this.gestureAxis = GestureAxis.Horizontal;
+                }
+                if (this.gestureAxis != GestureAxis.None) {
+                    NativeRuntime.xr_log_info($"Preview gesture axis locked: {this.gestureAxis}.");
+                }
+            }
+            if (this.gestureAxis == GestureAxis.Vertical) {
+                var verticalDelta = this.lastPointerPoint.Y - this.ScaleY(pointerPoint.Y);
+                var didScroll = NativeRuntime.xr_scroll_drag(this.animations, (float)verticalDelta) != 0;
+                this.lastPointerPoint = new Point(this.ScaleX(pointerPoint.X), this.ScaleY(pointerPoint.Y));
+                if (didScroll) {
+                    NativeRuntime.xr_log_info($"Preview scroll drag: verticalDelta={verticalDelta:0.0}.");
+                    NativeRuntime.Ensure(NativeRuntime.xr_layout(this.root, this.renderer.Width, this.renderer.Height) != 0);
+                    this.Render();
+                }
+                return;
+            }
+            if (this.gestureAxis == GestureAxis.Horizontal) {
+                NativeRuntime.xr_log_info($"Alarm swipe drag: horizontalOffset={horizontalDistance:0.0}.");
                 NativeRuntime.Ensure(NativeRuntime.xr_set_render_offset_x(
                     this.capturedElement,
                     (float)horizontalDistance) != 0);
@@ -288,16 +357,48 @@ internal sealed class PreviewSession : IDisposable {
             this.image.Cursor = Cursors.Cross;
             return;
         }
-        var element = NativeRuntime.xr_hit_test(
-            this.root,
-            this.ScaleX(point.X),
-            this.ScaleY(point.Y));
-        this.image.Cursor = element == IntPtr.Zero ? null : Cursors.Hand;
+        this.SetCursor(this.GetCursorKind(point));
     }
 
     private void ImageMouseLeave(object sender, MouseEventArgs eventArgs) {
         this.image.Cursor = null;
         this.inspectionOutline.Visibility = Visibility.Collapsed;
+    }
+
+    private PreviewCursorKind GetCursorKind(Point point) {
+        return (PreviewCursorKind)NativeRuntime.xr_hit_test_cursor_kind(
+            this.root,
+            this.ScaleX(point.X),
+            this.ScaleY(point.Y));
+    }
+
+    private void SetCursor(PreviewCursorKind kind) {
+        this.image.Cursor = kind switch {
+            PreviewCursorKind.Tap => this.cursorSet.Tap,
+            _ => null,
+        };
+    }
+
+    private enum GestureAxis {
+        None,
+        Horizontal,
+        Vertical,
+    }
+
+    private enum PreviewCursorKind {
+        None,
+        Tap,
+        Grab,
+    }
+
+    private void ImageMouseWheel(object sender, MouseWheelEventArgs eventArgs) {
+        var point = eventArgs.GetPosition(this.image);
+        if (NativeRuntime.xr_scroll_by(this.root, this.ScaleX(point.X), this.ScaleY(point.Y), 0.0f, -eventArgs.Delta / 120.0f * 72.0f) == 0) {
+            return;
+        }
+        NativeRuntime.Ensure(NativeRuntime.xr_layout(this.root, this.renderer.Width, this.renderer.Height) != 0);
+        this.Render();
+        eventArgs.Handled = true;
     }
 
     private void UpdateInspectionOutline(Point point) {

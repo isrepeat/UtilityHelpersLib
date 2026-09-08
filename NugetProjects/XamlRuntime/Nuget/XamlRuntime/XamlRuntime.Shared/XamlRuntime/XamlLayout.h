@@ -58,6 +58,13 @@ namespace xaml {
             visible,
         };
 
+        enum class ScrollBarVisibility {
+            autoValue,
+            disabled,
+            hidden,
+            visible,
+        };
+
         struct Color {
             float red = 1.0f;
             float green = 1.0f;
@@ -203,6 +210,22 @@ namespace xaml {
         float RenderOffsetY() const;
         void SetRenderOffsetY(float value);
 
+        attr::ScrollBarVisibility VerticalScrollBarVisibility() const;
+        void SetVerticalScrollBarVisibility(attr::ScrollBarVisibility value);
+
+        attr::ScrollBarVisibility HorizontalScrollBarVisibility() const;
+        void SetHorizontalScrollBarVisibility(attr::ScrollBarVisibility value);
+
+        float HorizontalOffset() const;
+        void SetHorizontalOffset(float value);
+
+        float VerticalOffset() const;
+        void SetVerticalOffset(float value);
+
+        Size Extent() const;
+        Size Viewport() const;
+        void SetScrollMetrics(Size extentValue, Size viewportValue);
+
         float ToggleProgress() const;
         void SetToggleProgress(float value);
 
@@ -250,6 +273,8 @@ namespace xaml {
         std::vector<std::unique_ptr<Element>>& Children();
         void AddChild(std::unique_ptr<Element> child);
         void RemoveChild(Element& child);
+
+        Element* Parent() const;
 
     private:
         void SetInheritedDataContext(const void* value);
@@ -304,6 +329,12 @@ namespace xaml {
         float opacity = 1.0f;
         float renderOffsetX = 0.0f;
         float renderOffsetY = 0.0f;
+        attr::ScrollBarVisibility verticalScrollBarVisibility = attr::ScrollBarVisibility::autoValue;
+        attr::ScrollBarVisibility horizontalScrollBarVisibility = attr::ScrollBarVisibility::disabled;
+        float horizontalOffset = 0.0f;
+        float verticalOffset = 0.0f;
+        Size extent{};
+        Size viewport{};
         float toggleProgress = -1.0f;
         float pressProgress = 0.0f;
         std::string defaultAnimation;

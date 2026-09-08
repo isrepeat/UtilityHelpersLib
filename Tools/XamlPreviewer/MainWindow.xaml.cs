@@ -43,6 +43,7 @@ public partial class MainWindow : Window {
     private readonly FolderPickerController folderPickerController;
     private readonly PreviewViewportController previewViewportController;
     private readonly PreviewGestureController previewGestureController;
+    private readonly PreviewCursorSet previewCursors;
     private readonly Grid previewLayer = new();
     private bool updatingPreviewControls;
     private bool settingsPersistenceReady;
@@ -126,6 +127,7 @@ public partial class MainWindow : Window {
             this.GetPreviewScenarioRoot,
             this.GetSelectedScenario,
             this.SavePreviewAlarmChanges);
+        this.previewCursors = new PreviewCursorSet();
         this.renderTimer = new DispatcherTimer {
             Interval = TimeSpan.FromMilliseconds(250)
         };
@@ -327,7 +329,8 @@ public partial class MainWindow : Window {
                     root,
                     this.settings.ResourcesDirectory,
                     previewSize.Width,
-                    previewSize.Height);
+                    previewSize.Height,
+                    this.previewCursors);
             }
             catch {
                 NativeRuntime.xr_destroy_element(root);
@@ -829,6 +832,7 @@ public partial class MainWindow : Window {
                     this.settings.ResourcesDirectory,
                     previewSize.Width,
                     previewSize.Height,
+                    this.previewCursors,
                     previousSession is not null && transition is not null);
             }
             catch {
@@ -1370,6 +1374,7 @@ public partial class MainWindow : Window {
         this.previewSession = null;
         this.CompletePageTransition();
         session?.Dispose();
+        this.previewCursors.Dispose();
         this.previewLayer.Children.Clear();
     }
 

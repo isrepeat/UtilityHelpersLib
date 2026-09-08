@@ -6,6 +6,7 @@
 #include <XamlRuntime/XamlLayout.h>
 #include <XamlRuntime/Animation.h>
 #include <XamlRuntime/Input.h>
+#include <XamlRuntime/ScrollController.h>
 
 #include "../../../../Resources/Effects/Effects.h"
 #include "../../../../Renderer/AnimationRenderers.h"
@@ -42,7 +43,7 @@ namespace xaml::bridge::_details {
 
     // Нужен previewer-у для выбора любого видимого элемента под указателем.
     // В отличие от xaml::HitTest не требует, чтобы элемент был enabled или interactive.
-    Element* HitTestVisual(Element& element, float x, float y) {
+    Element* HitTestVisual(Element& element, float x, float y, float offsetX = 0.0f, float offsetY = 0.0f) {
         const Rect& clipBounds = element.ClipBounds();
 
         if (element.VisibilityValue() != attr::Visibility::visible
@@ -51,15 +52,19 @@ namespace xaml::bridge::_details {
                 clipBounds.y,
                 clipBounds.width,
                 clipBounds.height,
-                x,
-                y)) {
+                x - offsetX,
+                y - offsetY)) {
             return nullptr;
         }
 
         const auto& children = element.Children();
+        const float childrenOffsetX = element.Type() == ElementType::scrollViewer
+            ? offsetX - element.HorizontalOffset() : offsetX;
+        const float childrenOffsetY = element.Type() == ElementType::scrollViewer
+            ? offsetY - element.VerticalOffset() : offsetY;
 
         for (auto child = children.rbegin(); child != children.rend(); ++child) {
-            if (Element* const hit = HitTestVisual(**child, x, y)) {
+            if (Element* const hit = xaml::bridge::_details::HitTestVisual(**child, x, y, childrenOffsetX, childrenOffsetY)) {
                 return hit;
             }
         }
@@ -70,8 +75,16 @@ namespace xaml::bridge::_details {
             bounds.y,
             bounds.width,
             bounds.height,
-            x,
-            y) ? &element : nullptr;
+            x - offsetX,
+            y - offsetY) ? &element : nullptr;
+    }
+
+    Element* FindScrollViewer(Element& root, float x, float y) {
+        Element* element = xaml::bridge::_details::HitTestVisual(root, x, y);
+        while (element != nullptr && element->Type() != ElementType::scrollViewer) {
+            element = element->Parent();
+        }
+        return element;
     }
 }
 
@@ -170,6 +183,7 @@ namespace xaml::bridge {
 
 struct xr_animation_controller {
     xaml::AnimationController value;
+    xaml::ScrollController scrollController;
 };
 
 struct xr_angle_surface {
@@ -537,6 +551,33 @@ xr_element* xr_hit_test_visual(xr_element* root, float x, float y) {
     }
 }
 
+int xr_hit_test_cursor_kind(xr_element* root, float x, float y) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (root == nullptr) {
+            throw std::invalid_argument("root is required");
+        }
+        auto& nativeRoot = *reinterpret_cast<xaml::Element*>(root);
+        xaml::Element* const visual = xaml::bridge::_details::HitTestVisual(nativeRoot, x, y);
+        if (visual == nullptr) {
+            return 0;
+        }
+        xaml::Element* const interactive = xaml::HitTest(nativeRoot, x, y);
+        if (interactive != nullptr && interactive->Type() != xaml::ElementType::scrollViewer) {
+            return 1;
+        }
+        for (xaml::Element* element = visual; element != nullptr; element = element->Parent()) {
+            if (element->Type() == xaml::ElementType::scrollViewer) {
+                return 2;
+            }
+        }
+        return 0;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return 0;
+    }
+}
+
 // Копирует рассчитанные layout-границы элемента в структуру C bridge.
 int xr_element_bounds(const xr_element* element, xr_rect* bounds) {
     try {
@@ -550,6 +591,81 @@ int xr_element_bounds(const xr_element* element, xr_rect* bounds) {
     } catch (const std::exception& error) {
         xaml::bridge::lastError = error.what();
         return 0;
+    }
+}
+
+int xr_scroll_by(xr_element* root, float x, float y, float horizontalDelta, float verticalDelta) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (root == nullptr || !std::isfinite(horizontalDelta) || !std::isfinite(verticalDelta)) {
+            throw std::invalid_argument("root and finite deltas are required");
+        }
+        xaml::Element* element = xaml::bridge::_details::FindScrollViewer(
+            *reinterpret_cast<xaml::Element*>(root), x, y);
+        if (element == nullptr) {
+            return 0;
+        }
+        const float horizontalOffset = std::clamp(
+            element->HorizontalOffset() + horizontalDelta,
+            0.0f,
+            std::max(0.0f, element->Extent().width - element->Viewport().width));
+        const float verticalOffset = std::clamp(
+            element->VerticalOffset() + verticalDelta,
+            0.0f,
+            std::max(0.0f, element->Extent().height - element->Viewport().height));
+        const bool changed = horizontalOffset != element->HorizontalOffset()
+            || verticalOffset != element->VerticalOffset();
+        if (!changed) {
+            return 0;
+        }
+        element->SetHorizontalOffset(horizontalOffset);
+        element->SetVerticalOffset(verticalOffset);
+        return 1;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return 0;
+    }
+}
+
+int xr_scroll_begin(
+    xr_element* root,
+    xr_animation_controller* animations,
+    float x,
+    float y) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (root == nullptr || animations == nullptr || !std::isfinite(x) || !std::isfinite(y)) {
+            throw std::invalid_argument("root, animations and finite coordinates are required");
+        }
+        xaml::Element* const scrollViewer = xaml::bridge::_details::FindScrollViewer(
+            *reinterpret_cast<xaml::Element*>(root), x, y);
+        if (scrollViewer == nullptr) {
+            return 0;
+        }
+        animations->scrollController.Begin(*scrollViewer);
+        return 1;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return 0;
+    }
+}
+
+int xr_scroll_drag(xr_animation_controller* animations, float verticalDelta) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (animations == nullptr || !std::isfinite(verticalDelta)) {
+            throw std::invalid_argument("animations and finite vertical delta are required");
+        }
+        return animations->scrollController.Drag(verticalDelta) ? 1 : 0;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return 0;
+    }
+}
+
+void xr_scroll_end(xr_animation_controller* animations) {
+    if (animations != nullptr) {
+        animations->scrollController.End();
     }
 }
 
@@ -689,8 +805,9 @@ int xr_update_animations(xr_animation_controller* animations) {
             throw std::invalid_argument("animations are required");
         }
         const bool wasAnimating = animations->value.IsAnimating();
+        const bool wasScrolling = animations->scrollController.Update();
         animations->value.Update();
-        return wasAnimating || animations->value.IsAnimating() ? 1 : 0;
+        return wasAnimating || animations->value.IsAnimating() || wasScrolling ? 1 : 0;
     } catch (const std::exception& error) {
         xaml::bridge::lastError = error.what();
         return -1;

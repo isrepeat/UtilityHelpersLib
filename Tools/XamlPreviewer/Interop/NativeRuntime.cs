@@ -160,8 +160,23 @@ internal static class NativeRuntime {
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_hit_test_visual")]
     public static extern IntPtr xr_hit_test_visual(IntPtr root, float x, float y);
 
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_hit_test_cursor_kind")]
+    public static extern int xr_hit_test_cursor_kind(IntPtr root, float x, float y);
+
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_element_bounds")]
     public static extern int xr_element_bounds(IntPtr element, out NativeRect bounds);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_scroll_by")]
+    public static extern int xr_scroll_by(IntPtr root, float x, float y, float horizontalDelta, float verticalDelta);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_scroll_begin")]
+    public static extern int xr_scroll_begin(IntPtr root, IntPtr animations, float x, float y);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_scroll_drag")]
+    public static extern int xr_scroll_drag(IntPtr animations, float verticalDelta);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_scroll_end")]
+    public static extern void xr_scroll_end(IntPtr animations);
 
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_set_render_offset_x")]
     public static extern int xr_set_render_offset_x(IntPtr element, float value);

@@ -140,6 +140,34 @@ namespace xaml::_details {
         float inheritedOffsetY,
         float inheritedOpacity);
 
+    void RenderScrollBars(const Element& element, IRenderBackend& backend, Rect bounds, float opacity) {
+        const Size extent = element.Extent();
+        const Size viewport = element.Viewport();
+        constexpr float thickness = 6.0f;
+        const attr::Color track{0.0f, 0.0f, 0.0f, 0.20f};
+        const attr::Color thumb{0.85f, 0.85f, 0.85f, 0.65f};
+        const bool vertical = element.VerticalScrollBarVisibility() == attr::ScrollBarVisibility::visible
+            || (element.VerticalScrollBarVisibility() == attr::ScrollBarVisibility::autoValue && extent.height > viewport.height);
+        if (vertical && viewport.height > 0.0f) {
+            const float thumbHeight = std::max(18.0f, viewport.height * viewport.height / extent.height);
+            const float range = std::max(0.0f, viewport.height - thumbHeight);
+            const float maximum = std::max(0.0f, extent.height - viewport.height);
+            const float y = bounds.y + (maximum == 0.0f ? 0.0f : range * element.VerticalOffset() / maximum);
+            backend.DrawRoundedRect({bounds.x + bounds.width - thickness, bounds.y, thickness, viewport.height}, WithOpacity(track, opacity), thickness / 2.0f);
+            backend.DrawRoundedRect({bounds.x + bounds.width - thickness, y, thickness, thumbHeight}, WithOpacity(thumb, opacity), thickness / 2.0f);
+        }
+        const bool horizontal = element.HorizontalScrollBarVisibility() == attr::ScrollBarVisibility::visible
+            || (element.HorizontalScrollBarVisibility() == attr::ScrollBarVisibility::autoValue && extent.width > viewport.width);
+        if (horizontal && viewport.width > 0.0f) {
+            const float thumbWidth = std::max(18.0f, viewport.width * viewport.width / extent.width);
+            const float range = std::max(0.0f, viewport.width - thumbWidth);
+            const float maximum = std::max(0.0f, extent.width - viewport.width);
+            const float x = bounds.x + (maximum == 0.0f ? 0.0f : range * element.HorizontalOffset() / maximum);
+            backend.DrawRoundedRect({bounds.x, bounds.y + bounds.height - thickness, viewport.width, thickness}, WithOpacity(track, opacity), thickness / 2.0f);
+            backend.DrawRoundedRect({x, bounds.y + bounds.height - thickness, thumbWidth, thickness}, WithOpacity(thumb, opacity), thickness / 2.0f);
+        }
+    }
+
     void RenderDefaultElement(
         const Element& element,
         IRenderBackend& backend,
@@ -195,14 +223,24 @@ namespace xaml::_details {
         const float offsetY = inheritedOffsetY + element.RenderOffsetY() + transform.offsetY;
         const float opacity = inheritedOpacity * element.Opacity() * transform.opacity;
         const Rect bounds = Translate(element.Bounds(), offsetX, offsetY);
+        const float childrenOffsetX = element.Type() == ElementType::scrollViewer
+            ? offsetX - element.HorizontalOffset() : offsetX;
+        const float childrenOffsetY = element.Type() == ElementType::scrollViewer
+            ? offsetY - element.VerticalOffset() : offsetY;
         backend.BeginClip(Translate(element.ClipBounds(), offsetX, offsetY));
         RenderInvocation context(backend, bounds, opacity,
             [&element, &backend, bounds, opacity]() {
                 RenderDefaultElement(element, backend, bounds, opacity);
             },
-            [&element, &backend, renderers, offsetX, offsetY, opacity]() {
+            [&element, &backend, renderers, childrenOffsetX, childrenOffsetY, opacity]() {
                 for (const auto& child : element.Children()) {
-                    RenderElement(*child, backend, renderers, offsetX, offsetY, opacity);
+                    RenderElement(
+                        *child,
+                        backend,
+                        renderers,
+                        childrenOffsetX,
+                        childrenOffsetY,
+                        opacity);
                 }
             });
         try {
@@ -212,6 +250,9 @@ namespace xaml::_details {
         } catch (...) {
             backend.EndClip();
             throw;
+        }
+        if (element.Type() == ElementType::scrollViewer) {
+            RenderScrollBars(element, backend, bounds, opacity);
         }
         backend.EndClip();
     }

@@ -459,6 +459,18 @@ namespace {
                 }
                 output << "            " << variable << "->SetOrientation(attr::Orientation::"
                     << orientation << ");\n";
+            } else if (name == "verticalScrollBarVisibility" || name == "horizontalScrollBarVisibility") {
+                const std::string visibility = value == "Auto" ? "autoValue"
+                    : value == "Disabled" ? "disabled"
+                    : value == "Hidden" ? "hidden"
+                    : value == "Visible" ? "visible" : "";
+                if (visibility.empty()) {
+                    throw std::runtime_error("ScrollBarVisibility must be Auto, Disabled, Hidden or Visible");
+                }
+                const std::string setter = name == "verticalScrollBarVisibility"
+                    ? "VerticalScrollBarVisibility" : "HorizontalScrollBarVisibility";
+                output << "            " << variable << "->Set" << setter
+                    << "(attr::ScrollBarVisibility::" << visibility << ");\n";
             } else if (name == "verticalAlignment") {
                 if (value == "Top") {
                     output << "            " << variable << "->SetVerticalAlignment(attr::Alignment::top);\n";

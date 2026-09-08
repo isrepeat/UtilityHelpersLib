@@ -112,6 +112,7 @@ namespace es_renderer {
             std::string_view fontWeight,
             xaml::attr::Alignment horizontalAlignment);
         void DrawImage(const xaml::Rect& bounds, std::string_view source, xaml::attr::Color tint);
+        void ApplyClip(const xaml::Rect& bounds) const;
 
     private:
         struct GlyphReference {
@@ -149,6 +150,7 @@ namespace es_renderer {
         GLuint textProgram = 0;
         GLuint solidProgram = 0;
         std::unordered_map<std::string, GLuint> shaderPrograms;
+        mutable std::vector<xaml::Rect> clipStack;
         GLuint imageProgram = 0;
         GLuint vertexBuffer = 0;
         ResourceLoader resourceLoader;
@@ -240,6 +242,7 @@ namespace es_renderer {
     void OpenGlRenderer::Implementation::BeginFrame() const {
         glViewport(0, 0, this->width, this->height);
         glDisable(GL_SCISSOR_TEST);
+        this->clipStack.clear();
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -363,7 +366,15 @@ namespace es_renderer {
     }
 
     void OpenGlRenderer::Implementation::EndClip() const {
-        glDisable(GL_SCISSOR_TEST);
+        if (this->clipStack.empty()) {
+            return;
+        }
+        this->clipStack.pop_back();
+        if (this->clipStack.empty()) {
+            glDisable(GL_SCISSOR_TEST);
+            return;
+        }
+        this->ApplyClip(this->clipStack.back());
     }
 
     void OpenGlRenderer::Implementation::DrawOutline(
@@ -795,6 +806,27 @@ namespace es_renderer {
     }
 
     void OpenGlRenderer::Implementation::BeginClip(const xaml::Rect& bounds) const {
+        xaml::Rect clipped = bounds;
+        if (!this->clipStack.empty()) {
+            const xaml::Rect& parent = this->clipStack.back();
+            const float left = std::max(parent.x, clipped.x);
+            const float top = std::max(parent.y, clipped.y);
+            const float right = std::min(parent.x + parent.width, clipped.x + clipped.width);
+            const float bottom = std::min(parent.y + parent.height, clipped.y + clipped.height);
+            clipped = {left, top, std::max(0.0f, right - left), std::max(0.0f, bottom - top)};
+        }
+        this->clipStack.push_back(clipped);
+        this->ApplyClip(clipped);
+    }
+
+    void OpenGlRenderer::Implementation::ApplyClip(const xaml::Rect& bounds) const {
+        // Пустое пересечение должно оставаться пустым: floor/ceil дробной
+        // координаты иначе превращают нулевой размер в полосу из одного пикселя.
+        if (bounds.width <= 0.0f || bounds.height <= 0.0f) {
+            glEnable(GL_SCISSOR_TEST);
+            glScissor(0, 0, 0, 0);
+            return;
+        }
         // Координаты XAML отсчитываются сверху, тогда как glScissor — снизу.
         // Поэтому вертикальные границы инвертируются перед включением scissor.
         const int left = std::max(0, static_cast<int>(std::floor(bounds.x)));

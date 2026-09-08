@@ -104,6 +104,13 @@ namespace xaml::_details {
         };
     }
 
+    void clipSubtree(Element& element) {
+        element.SetClipBounds(element.Bounds());
+        for (const std::unique_ptr<Element>& child : element.Children()) {
+            clipSubtree(*child);
+        }
+    }
+
     Size withCommonSize(const Element& element, Size contentSize) {
         const attr::Thickness padding = element.Padding();
         const attr::Thickness border = element.BorderThickness();
@@ -223,6 +230,16 @@ namespace xaml::_details {
         }
 
         if (element.Type() == ElementType::border) {
+            Size result{};
+            if (!element.Children().empty()) {
+                result = measure(*element.Children().front());
+            }
+            result = withCommonSize(element, result);
+            element.SetDesiredSize(result);
+            return result;
+        }
+
+        if (element.Type() == ElementType::scrollViewer) {
             Size result{};
             if (!element.Children().empty()) {
                 result = measure(*element.Children().front());
@@ -379,6 +396,31 @@ namespace xaml::_details {
                     alignedSize(child.VerticalAlignmentValue(), contentBounds.height, childSize.height, child.Height()),
                 }, element.ClipBounds());
             }
+            return;
+        }
+        if (element.Type() == ElementType::scrollViewer) {
+            if (element.Children().empty()) {
+                element.SetScrollMetrics({}, {contentBounds.width, contentBounds.height});
+                element.SetHorizontalOffset(0.0f);
+                element.SetVerticalOffset(0.0f);
+                return;
+            }
+            Element& child = *element.Children().front();
+            const Size desired = child.DesiredSize();
+            element.SetScrollMetrics(
+                {std::max(contentBounds.width, desired.width), std::max(contentBounds.height, desired.height)},
+                {contentBounds.width, contentBounds.height});
+            element.SetHorizontalOffset(std::clamp(element.HorizontalOffset(), 0.0f,
+                std::max(0.0f, element.Extent().width - element.Viewport().width)));
+            element.SetVerticalOffset(std::clamp(element.VerticalOffset(), 0.0f,
+                std::max(0.0f, element.Extent().height - element.Viewport().height)));
+            arrange(child, {
+                contentBounds.x,
+                contentBounds.y,
+                element.Extent().width,
+                element.Extent().height,
+            }, element.ClipBounds());
+            clipSubtree(child);
             return;
         }
         float cursor = element.OrientationValue() == attr::Orientation::vertical ? contentBounds.y : contentBounds.x;
@@ -719,6 +761,25 @@ namespace xaml {
         this->renderOffsetY = value;
     }
 
+    attr::ScrollBarVisibility Element::VerticalScrollBarVisibility() const { return this->verticalScrollBarVisibility; }
+    void Element::SetVerticalScrollBarVisibility(attr::ScrollBarVisibility value) { this->verticalScrollBarVisibility = value; }
+    attr::ScrollBarVisibility Element::HorizontalScrollBarVisibility() const { return this->horizontalScrollBarVisibility; }
+    void Element::SetHorizontalScrollBarVisibility(attr::ScrollBarVisibility value) { this->horizontalScrollBarVisibility = value; }
+    float Element::HorizontalOffset() const { return this->horizontalOffset; }
+    void Element::SetHorizontalOffset(float value) {
+        this->horizontalOffset = std::clamp(value, 0.0f, std::max(0.0f, this->extent.width - this->viewport.width));
+    }
+    float Element::VerticalOffset() const { return this->verticalOffset; }
+    void Element::SetVerticalOffset(float value) {
+        this->verticalOffset = std::clamp(value, 0.0f, std::max(0.0f, this->extent.height - this->viewport.height));
+    }
+    Size Element::Extent() const { return this->extent; }
+    Size Element::Viewport() const { return this->viewport; }
+    void Element::SetScrollMetrics(Size extentValue, Size viewportValue) {
+        this->extent = extentValue;
+        this->viewport = viewportValue;
+    }
+
     float Element::ToggleProgress() const {
         return this->toggleProgress;
     }
@@ -880,6 +941,10 @@ namespace xaml {
             this->children.erase(found);
         }
         this->InvalidateLayout();
+    }
+
+    Element* Element::Parent() const {
+        return this->parent;
     }
 
     void Element::InvalidateLayout() {
