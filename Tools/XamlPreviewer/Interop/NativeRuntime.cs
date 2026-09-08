@@ -72,6 +72,9 @@ internal static class NativeRuntime {
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_configure_logging")]
     public static extern void xr_configure_logging([MarshalAs(UnmanagedType.LPUTF8Str)] string filePath);
 
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_log_info")]
+    public static extern void xr_log_info([MarshalAs(UnmanagedType.LPUTF8Str)] string message);
+
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_create_element")]
     public static extern IntPtr xr_create_element([MarshalAs(UnmanagedType.LPUTF8Str)] string type);
 
@@ -159,6 +162,16 @@ internal static class NativeRuntime {
 
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_element_bounds")]
     public static extern int xr_element_bounds(IntPtr element, out NativeRect bounds);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_set_render_offset_x")]
+    public static extern int xr_set_render_offset_x(IntPtr element, float value);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_animate_render_offset_x")]
+    public static extern int xr_animate_render_offset_x(
+        IntPtr element,
+        IntPtr animations,
+        float value,
+        int durationMilliseconds);
 
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_element_id")]
     private static extern IntPtr xr_element_id(IntPtr element);

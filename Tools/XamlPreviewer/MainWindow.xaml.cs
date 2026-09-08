@@ -1,7 +1,7 @@
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Search;
-using System.Diagnostics;
+using System.Text.Encodings.Web;
 using System.IO;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -27,24 +27,25 @@ namespace XamlPreviewer;
 public partial class MainWindow : Window {
     private const string NativeBridgeLibraryName = "XamlRuntime.NativeBridge.dll";
     private const double SearchPanelOverlayHeight = 84.0;
+    private static readonly JsonSerializerOptions ScenarioJsonOptions = new() {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        WriteIndented = true
+    };
     private readonly DispatcherTimer renderTimer;
     private readonly DispatcherTimer animationTimer;
     private readonly DispatcherTimer previewZoomTimer;
-    private readonly DispatcherTimer externalRefreshTimer;
-    private readonly DispatcherTimer smoothScrollTimer;
+    private readonly PreviewFileWatchController fileWatchController;
+    private readonly EditorScrollController editorScrollController;
+    private readonly PreviewStatusPresenter statusPresenter;
     private readonly MarkupEditorController markupEditorController;
     private readonly SearchPanel markupSearchPanel;
     private readonly XamlCompletionController xamlCompletionController;
     private readonly FolderPickerController folderPickerController;
     private readonly PreviewViewportController previewViewportController;
+    private readonly PreviewGestureController previewGestureController;
     private readonly Grid previewLayer = new();
-    private readonly Dictionary<TextEditor, SmoothScrollState> smoothScrollStates = [];
     private bool updatingPreviewControls;
     private bool settingsPersistenceReady;
-    private FileSystemWatcher? markupWatcher;
-    private FileSystemWatcher? xamlDirectoryWatcher;
-    private FileSystemWatcher? scenariosWatcher;
-    private FileSystemWatcher? settingsWatcher;
     private PreviewSession? previewSession;
     private bool isClosing;
     private PreviewSession? outgoingSession;
@@ -62,9 +63,6 @@ public partial class MainWindow : Window {
     private bool suppressFoldingStatePersistence;
     private EditorMode editorMode;
     private EditorMode previousEditorMode = EditorMode.Xaml;
-    private string? folderPickerDirectory;
-    private readonly List<FolderPickerHistoryEntry> folderPickerHistory = [];
-    private int folderPickerHistoryIndex = -1;
     private bool isPreviewPanning;
     private Point previewPanStart;
     private double previewPanHorizontalOffset;
@@ -75,21 +73,6 @@ public partial class MainWindow : Window {
     private double previewZoomAnchorX;
     private double previewZoomAnchorY;
     private Point previewZoomViewportPoint;
-
-    private sealed class FolderPickerEntry {
-        public required string FullPath { get; init; }
-        public required string Name { get; init; }
-        public required bool IsDirectory { get; init; }
-
-        public override string ToString() {
-            return this.IsDirectory ? $"📁  {this.Name}" : $"     {this.Name}";
-        }
-    }
-
-    private sealed class FolderPickerHistoryEntry {
-        public required string DirectoryPath { get; init; }
-        public string? SelectedEntryPath { get; set; }
-    }
 
     private sealed class ScenarioSource {
         public required string Path { get; init; }
@@ -111,28 +94,9 @@ public partial class MainWindow : Window {
         }
     }
 
-    private enum ScrollSmoothingMode {
-        None,
-        Linear,
-        Smoothstep,
-        Smootherstep,
-        EaseOutCubic,
-        Exponential,
-    }
-
-    private sealed class SmoothScrollState {
-        public required ScrollViewer ScrollViewer { get; init; }
-        public double StartVerticalOffset { get; set; }
-        public double TargetVerticalOffset { get; set; }
-        public double LastAppliedVerticalOffset { get; set; }
-        public long AnimationStartedAt { get; set; }
-        public TimeSpan AnimationDuration { get; set; }
-        public ScrollSmoothingMode SmoothingMode { get; set; }
-        public bool IsAnimating { get; set; }
-    }
-
     public MainWindow() {
         InitializeComponent();
+        this.statusPresenter = new PreviewStatusPresenter(this.StatusText);
         this.DeviceSurface.Child = this.previewLayer;
         WindowTheme.EnableDarkTitleBar(this);
         this.markupSearchPanel = MainWindow.ConfigureEditor(this.MarkupEditor, MarkupSyntaxHighlighter.Create());
@@ -158,6 +122,10 @@ public partial class MainWindow : Window {
             this.GetPreviewScale,
             this.SetPreviewScale,
             () => { this.SyncSettingsEditor(); this.PersistSettings(); });
+        this.previewGestureController = new PreviewGestureController(
+            this.GetPreviewScenarioRoot,
+            this.GetSelectedScenario,
+            this.SavePreviewAlarmChanges);
         this.renderTimer = new DispatcherTimer {
             Interval = TimeSpan.FromMilliseconds(250)
         };
@@ -170,14 +138,10 @@ public partial class MainWindow : Window {
             Interval = TimeSpan.FromMilliseconds(16)
         };
         this.previewZoomTimer.Tick += this.PreviewZoomTimerTick;
-        this.externalRefreshTimer = new DispatcherTimer {
-            Interval = TimeSpan.FromMilliseconds(200)
-        };
-        this.externalRefreshTimer.Tick += this.ExternalRefreshTimerTick;
-        this.smoothScrollTimer = new DispatcherTimer {
-            Interval = TimeSpan.FromMilliseconds(16)
-        };
-        this.smoothScrollTimer.Tick += this.SmoothScrollTimerTick;
+        this.fileWatchController = new PreviewFileWatchController(this.Dispatcher, this.ExternalRefresh);
+        this.editorScrollController = new EditorScrollController(
+            () => this.settings,
+            steps => this.SetEditorScale(this.GetEditorScale() + 0.1 * steps));
         this.Loaded += this.WindowLoaded;
         this.Closing += this.WindowClosing;
         this.SizeChanged += this.WindowSizeChanged;
@@ -282,8 +246,7 @@ public partial class MainWindow : Window {
         this.ScenarioPanel.Visibility = Visibility.Collapsed;
         this.SettingsPanel.Visibility = Visibility.Collapsed;
         this.OpenButton.IsEnabled = false;
-        this.StatusText.Foreground = PreviewRenderer.ParseBrush("#D5BD7D");
-        this.StatusText.Text = "Выберите папку, содержащую XAML-файлы.";
+        this.statusPresenter.Information("Выберите папку, содержащую XAML-файлы.");
     }
 
     private void FolderPickerUpButtonClick(object sender, RoutedEventArgs eventArgs) {
@@ -335,114 +298,7 @@ public partial class MainWindow : Window {
         this.RefreshPageNames();
         this.HideFolderPicker();
         this.PersistSettings();
-        this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
-        this.StatusText.Text = $"Выбрана папка XAML: {this.settings.XamlDirectory}";
-    }
-
-    private void RefreshFolderPickerEntries(string? selectedEntryPath) {
-        if (this.folderPickerDirectory is null || !Directory.Exists(this.folderPickerDirectory)) {
-            return;
-        }
-        this.FolderPickerPathText.Text = this.folderPickerDirectory;
-        this.FolderPickerErrorText.Text = string.Empty;
-        var entries = Directory.EnumerateDirectories(this.folderPickerDirectory)
-            .Order()
-            .Select(path => new FolderPickerEntry {
-                FullPath = path,
-                Name = Path.GetFileName(path),
-                IsDirectory = true,
-            })
-            .Concat(Directory.EnumerateFiles(this.folderPickerDirectory, "*.xaml")
-                .Order()
-                .Select(path => new FolderPickerEntry {
-                    FullPath = path,
-                    Name = Path.GetFileName(path),
-                    IsDirectory = false,
-                }))
-            .ToArray();
-        this.FolderPickerEntries.ItemsSource = entries;
-        this.FolderPickerEntries.UnselectAll();
-        if (selectedEntryPath is not null) {
-            var selectedEntry = entries.FirstOrDefault(entry => string.Equals(
-                entry.FullPath,
-                selectedEntryPath,
-                StringComparison.OrdinalIgnoreCase));
-            this.FolderPickerEntries.SelectedItem = selectedEntry;
-            if (selectedEntry is not null) {
-                this.FocusFolderPickerEntry(selectedEntry);
-            }
-        }
-        this.UpdateFolderPickerSelection();
-    }
-
-    private void FocusFolderPickerEntry(FolderPickerEntry entry) {
-        this.Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() => {
-            this.FolderPickerEntries.ScrollIntoView(entry);
-            if (this.FolderPickerEntries.ItemContainerGenerator.ContainerFromItem(entry) is ListBoxItem item) {
-                Keyboard.Focus(item);
-                return;
-            }
-            this.FolderPickerEntries.Focus();
-        }));
-    }
-
-    private bool NavigateFolderPicker(string candidate, bool addToHistory, string? selectedEntryPath = null) {
-        string path;
-        try {
-            path = Path.GetFullPath(candidate);
-        }
-        catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException) {
-            this.ShowFolderPickerError("Указан некорректный путь.");
-            return false;
-        }
-        if (!Directory.Exists(path)) {
-            this.ShowFolderPickerError("Папка не существует или недоступна.");
-            return false;
-        }
-        if (addToHistory) {
-            this.SaveFolderPickerSelection();
-        }
-        this.folderPickerDirectory = path;
-        if (addToHistory) {
-            if (this.folderPickerHistoryIndex < this.folderPickerHistory.Count - 1) {
-                this.folderPickerHistory.RemoveRange(
-                    this.folderPickerHistoryIndex + 1,
-                    this.folderPickerHistory.Count - this.folderPickerHistoryIndex - 1);
-            }
-            this.folderPickerHistory.Add(new FolderPickerHistoryEntry {
-                DirectoryPath = path
-            });
-            this.folderPickerHistoryIndex = this.folderPickerHistory.Count - 1;
-        }
-        if (selectedEntryPath is null
-            && this.folderPickerHistoryIndex >= 0
-            && this.folderPickerHistoryIndex < this.folderPickerHistory.Count) {
-            selectedEntryPath = this.folderPickerHistory[this.folderPickerHistoryIndex].SelectedEntryPath;
-        }
-        this.RefreshFolderPickerEntries(selectedEntryPath);
-        this.FolderPickerBackButton.IsEnabled = this.folderPickerHistoryIndex > 0;
-        this.FolderPickerForwardButton.IsEnabled = this.folderPickerHistoryIndex < this.folderPickerHistory.Count - 1;
-        return true;
-    }
-
-    private void SaveFolderPickerSelection() {
-        if (this.folderPickerHistoryIndex < 0
-            || this.folderPickerHistoryIndex >= this.folderPickerHistory.Count) {
-            return;
-        }
-        this.folderPickerHistory[this.folderPickerHistoryIndex].SelectedEntryPath =
-            (this.FolderPickerEntries.SelectedItem as FolderPickerEntry)?.FullPath;
-    }
-
-    private void ShowFolderPickerError(string message) {
-        this.FolderPickerErrorText.Text = message;
-        this.StatusText.Foreground = PreviewRenderer.ParseBrush("#FF8A80");
-        this.StatusText.Text = message;
-    }
-
-    private void UpdateFolderPickerSelection() {
-        this.SelectFolderButton.IsEnabled = this.FolderPickerEntries.SelectedItem is not FolderPickerEntry entry
-            || entry.IsDirectory;
+        this.statusPresenter.Success($"Выбрана папка XAML: {this.settings.XamlDirectory}");
     }
 
     private void ShowFolderPickerPreview(string path) {
@@ -481,10 +337,10 @@ public partial class MainWindow : Window {
             session.AnimationStarted += this.PreviewSessionAnimationStarted;
             this.animationTimer.Start();
             session.Tapped += this.PreviewSessionTapped;
+            session.Swiped += this.PreviewSessionSwiped;
             this.previewSession = session;
             this.previewLayer.Children.Add(session.Surface);
-            this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
-            this.StatusText.Text = $"Предпросмотр: {path}";
+            this.statusPresenter.Success($"Предпросмотр: {path}");
         }
         catch (Exception exception) {
             this.ShowPreviewError(exception);
@@ -517,22 +373,21 @@ public partial class MainWindow : Window {
                 TextAlignment = TextAlignment.Center,
             },
         });
-        this.StatusText.Foreground = PreviewRenderer.ParseBrush("#FF8A80");
-        this.StatusText.Text = exception.Message;
+        this.statusPresenter.Error(exception.Message);
     }
 
     private void HideFolderPicker() {
         this.folderPickerController.Close();
-        this.folderPickerDirectory = null;
-        this.folderPickerHistory.Clear();
-        this.folderPickerHistoryIndex = -1;
         this.UpdateEditorMode();
         this.ScheduleRender();
     }
 
     private void ReportFolderPickerStatus(string message, bool isSuccess) {
-        this.StatusText.Foreground = PreviewRenderer.ParseBrush(isSuccess ? "#8FD18B" : "#D5BD7D");
-        this.StatusText.Text = message;
+        if (isSuccess) {
+            this.statusPresenter.Success(message);
+        } else {
+            this.statusPresenter.Information(message);
+        }
     }
 
     private void SaveButtonClick(object sender, RoutedEventArgs eventArgs) {
@@ -553,8 +408,7 @@ public partial class MainWindow : Window {
             this.updatingEditors = false;
             this.isSettingsDirty = false;
             this.UpdateDocumentState();
-            this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
-            this.StatusText.Text = $"Настройки сохранены: {this.settings.FilePath}";
+            this.statusPresenter.Success($"Настройки сохранены: {this.settings.FilePath}");
             return;
         }
         if (this.markupPath is null) {
@@ -564,8 +418,7 @@ public partial class MainWindow : Window {
         File.WriteAllText(this.markupPath, this.markupEditorController.Text.TrimEnd());
         this.isMarkupDirty = false;
         this.UpdateDocumentState();
-        this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
-        this.StatusText.Text = $"Сохранено: {this.markupPath}";
+        this.statusPresenter.Success($"Сохранено: {this.markupPath}");
     }
 
     private void ScenarioPickerSelectionChanged(object sender, SelectionChangedEventArgs eventArgs) {
@@ -987,6 +840,7 @@ public partial class MainWindow : Window {
             session.AnimationStarted += this.PreviewSessionAnimationStarted;
             this.animationTimer.Start();
             session.Tapped += this.PreviewSessionTapped;
+            session.Swiped += this.PreviewSessionSwiped;
             this.previewSession = session;
             if (previousSession is not null && transition is not null) {
                 this.StartPageTransition(previousSession, session, transition.Value);
@@ -1001,8 +855,7 @@ public partial class MainWindow : Window {
                 }
             };
             this.UpdateElementInspection();
-            this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
-            this.StatusText.Text = $"Предпросмотр обновлён · {DateTime.Now:HH:mm:ss}";
+            this.statusPresenter.Success($"Предпросмотр обновлён · {DateTime.Now:HH:mm:ss}");
             if (this.shouldRestorePreviewPosition) {
                 this.shouldRestorePreviewPosition = false;
                 this.Dispatcher.BeginInvoke(new Action(this.RestorePreviewPosition));
@@ -1037,11 +890,47 @@ public partial class MainWindow : Window {
             return;
         }
         try {
+            if (this.previewGestureController.HandleTap(elementId)) {
+                return;
+            }
             this.ApplyScenarioTap(elementId);
         }
         catch (Exception exception) {
             this.ShowPreviewError(exception);
         }
+    }
+
+    private void PreviewSessionSwiped(object? sender, (string ElementId, NativeRect Bounds) swipe) {
+        if (this.outgoingSession is not null
+            || swipe.ElementId != "alarmBlock"
+            || sender is not PreviewSession session) {
+            return;
+        }
+        try {
+            this.previewGestureController.HandleSwipe(session, swipe);
+        }
+        catch (Exception exception) {
+            this.ShowPreviewError(exception);
+        }
+    }
+
+    private JsonObject GetPreviewScenarioRoot() {
+        return JsonNode.Parse(this.ScenarioEditor.Text) as JsonObject
+            ?? throw new InvalidDataException("Сценарии должны содержать JSON-объект.");
+    }
+
+    private void SavePreviewAlarmChanges(JsonObject root) {
+        this.updatingEditors = true;
+        try {
+            this.ScenarioEditor.Text = root.ToJsonString(ScenarioJsonOptions);
+        }
+        finally {
+            this.updatingEditors = false;
+        }
+        this.isScenariosDirty = true;
+        this.UpdateDocumentState();
+        this.SaveScenarios("Сценарии автоматически сохранены после изменения будильников");
+        this.RenderTimerTick(this, EventArgs.Empty);
     }
 
     private void ApplyScenarioTap(string elementId) {
@@ -1073,7 +962,7 @@ public partial class MainWindow : Window {
         }
         this.updatingEditors = true;
         try {
-            this.ScenarioEditor.Text = root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+            this.ScenarioEditor.Text = root.ToJsonString(ScenarioJsonOptions);
         }
         finally {
             this.updatingEditors = false;
@@ -1130,8 +1019,7 @@ public partial class MainWindow : Window {
         File.WriteAllText(this.scenariosPath, this.ScenarioEditor.Text.TrimEnd());
         this.isScenariosDirty = false;
         this.UpdateDocumentState();
-        this.StatusText.Foreground = PreviewRenderer.ParseBrush("#8FD18B");
-        this.StatusText.Text = $"{status}: {this.scenariosPath}";
+        this.statusPresenter.Success($"{status}: {this.scenariosPath}");
     }
 
     private void NavigateScenarioTap(JsonObject tap) {
@@ -1218,7 +1106,7 @@ public partial class MainWindow : Window {
         var source = this.GetScenarioSource(this.markupEditorController.Text, markupFilePath);
         this.scenariosPath = source.Path;
         this.usesPageSpecificScenarios = source.IsPageSpecific;
-        this.ConfigureScenarioWatcher();
+        this.ConfigureWatchers();
         this.updatingEditors = true;
         try {
             this.ScenarioEditor.Text = File.Exists(this.scenariosPath)
@@ -1256,8 +1144,7 @@ public partial class MainWindow : Window {
     private void LoadMarkup(string path) {
         this.StoreCollapsedMarkupFoldings();
         this.markupPath = Path.GetFullPath(path);
-        this.ConfigureMarkupWatcher();
-        this.ConfigureXamlDirectoryWatcher();
+        this.ConfigureWatchers();
         this.FilePathText.Text = this.markupPath;
         this.suppressFoldingStatePersistence = true;
         this.updatingEditors = true;
@@ -1326,75 +1213,17 @@ public partial class MainWindow : Window {
     }
 
     private void ConfigureWatchers() {
-        this.ConfigureMarkupWatcher();
-        this.settingsWatcher?.Dispose();
-        this.ConfigureScenarioWatcher();
-        this.settingsWatcher = this.CreateWatcher(this.settings.FilePath);
-    }
-
-    private void ConfigureMarkupWatcher() {
-        this.markupWatcher?.Dispose();
-        this.markupWatcher = this.markupPath is null ? null : this.CreateWatcher(this.markupPath);
-    }
-
-    private void ConfigureScenarioWatcher() {
-        this.scenariosWatcher?.Dispose();
-        var path = string.IsNullOrEmpty(this.scenariosPath)
+        var scenariosPath = string.IsNullOrEmpty(this.scenariosPath)
             ? this.settings.ScenariosPath
             : this.scenariosPath;
-        this.scenariosWatcher = this.CreateWatcher(path);
+        this.fileWatchController.Configure(
+            this.markupPath,
+            scenariosPath,
+            this.settings.FilePath,
+            this.settings.XamlDirectory);
     }
 
-    private void ConfigureXamlDirectoryWatcher() {
-        this.xamlDirectoryWatcher?.Dispose();
-        if (!Directory.Exists(this.settings.XamlDirectory)) {
-            this.xamlDirectoryWatcher = null;
-            return;
-        }
-        this.xamlDirectoryWatcher = new FileSystemWatcher(this.settings.XamlDirectory, "*.xaml") {
-            IncludeSubdirectories = true,
-            NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName,
-            EnableRaisingEvents = true,
-        };
-        this.xamlDirectoryWatcher.Created += this.ExternalFileChanged;
-        this.xamlDirectoryWatcher.Deleted += this.ExternalFileChanged;
-        this.xamlDirectoryWatcher.Renamed += this.ExternalFileRenamed;
-    }
-
-    private FileSystemWatcher? CreateWatcher(string path) {
-        var directory = Path.GetDirectoryName(path);
-        var fileName = Path.GetFileName(path);
-        if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(fileName) || !Directory.Exists(directory)) {
-            return null;
-        }
-        var watcher = new FileSystemWatcher(directory, fileName) {
-            NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName,
-            EnableRaisingEvents = true
-        };
-        watcher.Changed += this.ExternalFileChanged;
-        watcher.Created += this.ExternalFileChanged;
-        watcher.Renamed += this.ExternalFileRenamed;
-        return watcher;
-    }
-
-    private void ExternalFileChanged(object sender, FileSystemEventArgs eventArgs) {
-        this.Dispatcher.BeginInvoke(this.QueueExternalRefresh);
-    }
-
-    private void ExternalFileRenamed(object sender, RenamedEventArgs eventArgs) {
-        this.Dispatcher.BeginInvoke(this.QueueExternalRefresh);
-    }
-
-    private void QueueExternalRefresh() {
-        if (this.isClosing) {
-            return;
-        }
-        this.externalRefreshTimer.Stop();
-        this.externalRefreshTimer.Start();
-    }
-
-    private void ExternalRefreshTimerTick(object? sender, EventArgs eventArgs) {
-        this.externalRefreshTimer.Stop();
+    private void ExternalRefresh() {
         if (this.isClosing) {
             return;
         }
@@ -1452,8 +1281,7 @@ public partial class MainWindow : Window {
             }
         }
         catch (Exception exception) {
-            this.StatusText.Foreground = PreviewRenderer.ParseBrush("#FF8A80");
-            this.StatusText.Text = exception.Message;
+            this.statusPresenter.Error(exception.Message);
         }
     }
 
@@ -1532,10 +1360,10 @@ public partial class MainWindow : Window {
         this.isClosing = true;
         this.settingsPersistenceReady = false;
         this.renderTimer.Stop();
-        this.externalRefreshTimer.Stop();
         this.animationTimer.Stop();
         this.previewZoomTimer.Stop();
-        this.smoothScrollTimer.Stop();
+        this.fileWatchController.Dispose();
+        this.editorScrollController.Dispose();
         this.pendingPageTransition = null;
         this.markupEditorController.Dispose();
         var session = this.previewSession;
@@ -1543,10 +1371,6 @@ public partial class MainWindow : Window {
         this.CompletePageTransition();
         session?.Dispose();
         this.previewLayer.Children.Clear();
-        this.markupWatcher?.Dispose();
-        this.xamlDirectoryWatcher?.Dispose();
-        this.scenariosWatcher?.Dispose();
-        this.settingsWatcher?.Dispose();
     }
 
     private void WindowSizeChanged(object sender, SizeChangedEventArgs eventArgs) {
@@ -1749,148 +1573,10 @@ public partial class MainWindow : Window {
     }
 
     private void ConfigureMouseWheelScrolling() {
-        this.smoothScrollTimer.Stop();
-        this.smoothScrollStates.Clear();
-        foreach (var editor in new[] {
+        this.editorScrollController.Configure(
             this.MarkupEditor,
             this.ScenarioEditor,
-            this.SettingsEditor,
-        }) {
-            editor.PreviewMouseWheel -= this.EditorPreviewMouseWheel;
-            editor.PreviewMouseWheel += this.EditorPreviewMouseWheel;
-        }
-    }
-
-    private void EditorPreviewMouseWheel(object sender, MouseWheelEventArgs eventArgs) {
-        if (sender is not TextEditor editor) {
-            return;
-        }
-
-        var steps = Math.Max(1, Math.Abs(eventArgs.Delta) / Mouse.MouseWheelDeltaForOneLine);
-        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) {
-            this.SetEditorScale(this.GetEditorScale() + (eventArgs.Delta > 0 ? 0.1 : -0.1) * steps);
-            eventArgs.Handled = true;
-            return;
-        }
-        if (this.settings.MouseWheelLines <= 0) {
-            return;
-        }
-
-        var scrollViewer = MainWindow.FindVisualChild<ScrollViewer>(editor);
-        if (scrollViewer is null) {
-            return;
-        }
-
-        var state = this.smoothScrollStates.GetValueOrDefault(editor);
-        if (state is null || !ReferenceEquals(state.ScrollViewer, scrollViewer)) {
-            state = new SmoothScrollState {
-                ScrollViewer = scrollViewer,
-                StartVerticalOffset = scrollViewer.VerticalOffset,
-                TargetVerticalOffset = scrollViewer.VerticalOffset,
-                LastAppliedVerticalOffset = scrollViewer.VerticalOffset,
-            };
-            this.smoothScrollStates[editor] = state;
-        }
-
-        var currentOffset = scrollViewer.VerticalOffset;
-        if (Math.Abs(currentOffset - state.LastAppliedVerticalOffset) > 0.5) {
-            state.StartVerticalOffset = currentOffset;
-            state.TargetVerticalOffset = currentOffset;
-            state.LastAppliedVerticalOffset = currentOffset;
-            state.IsAnimating = false;
-        }
-
-        var lineHeight = editor.TextArea.TextView.DefaultLineHeight;
-        var offset = steps * this.settings.MouseWheelLines * lineHeight;
-        state.TargetVerticalOffset = Math.Clamp(
-            state.TargetVerticalOffset + (eventArgs.Delta > 0 ? -offset : offset),
-            0.0,
-            scrollViewer.ScrollableHeight);
-        state.StartVerticalOffset = currentOffset;
-        state.LastAppliedVerticalOffset = currentOffset;
-        state.AnimationStartedAt = Stopwatch.GetTimestamp();
-        state.AnimationDuration = TimeSpan.FromMilliseconds(Math.Clamp(
-            this.settings.MouseWheelAnimationDurationMilliseconds,
-            50.0,
-            5000.0));
-        state.SmoothingMode = this.GetScrollSmoothingMode();
-        if (state.SmoothingMode == ScrollSmoothingMode.None) {
-            scrollViewer.ScrollToVerticalOffset(state.TargetVerticalOffset);
-            state.LastAppliedVerticalOffset = state.TargetVerticalOffset;
-            state.IsAnimating = false;
-            eventArgs.Handled = true;
-            return;
-        }
-
-        state.IsAnimating = Math.Abs(state.TargetVerticalOffset - currentOffset) > 0.5;
-        this.smoothScrollTimer.Start();
-        eventArgs.Handled = true;
-    }
-
-    private void SmoothScrollTimerTick(object? sender, EventArgs eventArgs) {
-        var isAnimating = false;
-        foreach (var state in this.smoothScrollStates.Values) {
-            if (!state.IsAnimating) {
-                continue;
-            }
-
-            var elapsed = Stopwatch.GetElapsedTime(state.AnimationStartedAt);
-            var progress = Math.Clamp(elapsed / state.AnimationDuration, 0.0, 1.0);
-            var interpolatedProgress = MainWindow.InterpolateScrollProgress(state.SmoothingMode, progress);
-            var nextOffset = state.StartVerticalOffset
-                + (state.TargetVerticalOffset - state.StartVerticalOffset) * interpolatedProgress;
-            state.ScrollViewer.ScrollToVerticalOffset(nextOffset);
-            state.LastAppliedVerticalOffset = nextOffset;
-            if (progress >= 1.0) {
-                state.ScrollViewer.ScrollToVerticalOffset(state.TargetVerticalOffset);
-                state.LastAppliedVerticalOffset = state.TargetVerticalOffset;
-                state.IsAnimating = false;
-                continue;
-            }
-
-            isAnimating = true;
-        }
-        if (!isAnimating) {
-            this.smoothScrollTimer.Stop();
-        }
-    }
-
-    private ScrollSmoothingMode GetScrollSmoothingMode() {
-        return Enum.TryParse<ScrollSmoothingMode>(
-            this.settings.MouseWheelSmoothingMode,
-            true,
-            out var smoothingMode)
-            ? smoothingMode
-            : ScrollSmoothingMode.Exponential;
-    }
-
-    private static double InterpolateScrollProgress(ScrollSmoothingMode smoothingMode, double progress) {
-        return smoothingMode switch {
-            ScrollSmoothingMode.Linear => progress,
-            ScrollSmoothingMode.Smoothstep => progress * progress * (3.0 - 2.0 * progress),
-            ScrollSmoothingMode.Smootherstep => progress * progress * progress
-                * (progress * (progress * 6.0 - 15.0) + 10.0),
-            ScrollSmoothingMode.EaseOutCubic => 1.0 - Math.Pow(1.0 - progress, 3.0),
-            ScrollSmoothingMode.Exponential => (1.0 - Math.Exp(-6.0 * progress))
-                / (1.0 - Math.Exp(-6.0)),
-            _ => progress,
-        };
-    }
-
-    private static T? FindVisualChild<T>(DependencyObject element)
-        where T : DependencyObject {
-        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(element); ++index) {
-            var child = VisualTreeHelper.GetChild(element, index);
-            if (child is T result) {
-                return result;
-            }
-
-            var recursiveResult = MainWindow.FindVisualChild<T>(child);
-            if (recursiveResult is not null) {
-                return recursiveResult;
-            }
-        }
-        return null;
+            this.SettingsEditor);
     }
 
     private void ScheduleRender() {

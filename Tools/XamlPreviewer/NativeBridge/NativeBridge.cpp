@@ -200,6 +200,12 @@ void xr_configure_logging(const char* filePath) {
     LOG_INFO("XamlPreviewer.NativeBridge", "Logging initialized");
 }
 
+void xr_log_info(const char* message) {
+    if (message != nullptr) {
+        LOG_INFO("XamlPreviewer.Interaction", "{}", message);
+    }
+}
+
 xr_element* xr_create_element(const char* type) {
     try {
         xaml::bridge::lastError.clear();
@@ -540,6 +546,45 @@ int xr_element_bounds(const xr_element* element, xr_rect* bounds) {
         }
         const xaml::Rect elementBounds = reinterpret_cast<const xaml::Element*>(element)->Bounds();
         *bounds = {elementBounds.x, elementBounds.y, elementBounds.width, elementBounds.height};
+        return 1;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return 0;
+    }
+}
+
+int xr_set_render_offset_x(xr_element* element, float value) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (element == nullptr || !std::isfinite(value)) {
+            throw std::invalid_argument("element and finite value are required");
+        }
+        reinterpret_cast<xaml::Element*>(element)->SetRenderOffsetX(value);
+        return 1;
+    } catch (const std::exception& error) {
+        xaml::bridge::lastError = error.what();
+        return 0;
+    }
+}
+
+int xr_animate_render_offset_x(
+    xr_element* element,
+    xr_animation_controller* animations,
+    float value,
+    int durationMilliseconds) {
+    try {
+        xaml::bridge::lastError.clear();
+        if (element == nullptr || animations == nullptr || !std::isfinite(value)
+            || durationMilliseconds < 0) {
+            throw std::invalid_argument("element, animations, value and duration are required");
+        }
+        xaml::Element& target = *reinterpret_cast<xaml::Element*>(element);
+        animations->value.Animate(
+            target,
+            xaml::AnimatedProperty::renderOffsetX,
+            target.RenderOffsetX(),
+            value,
+            std::chrono::milliseconds(durationMilliseconds));
         return 1;
     } catch (const std::exception& error) {
         xaml::bridge::lastError = error.what();

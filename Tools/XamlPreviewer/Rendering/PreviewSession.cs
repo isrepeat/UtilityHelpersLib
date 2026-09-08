@@ -13,6 +13,9 @@ internal sealed class PreviewSession : IDisposable {
     private IntPtr root;
     private IntPtr animations;
     private IntPtr capturedElement;
+    private Point pointerDownPoint;
+    private (string ElementId, NativeRect Bounds)? pendingSwipe;
+    private bool isSwipeRemovalPending;
     private bool isElementInspectionEnabled;
     private bool isDisposed;
     private IReadOnlyDictionary<IntPtr, (int Line, int Column)> sourceLocations =
@@ -67,10 +70,18 @@ internal sealed class PreviewSession : IDisposable {
 
     public event EventHandler? AnimationStarted;
     public event EventHandler<string>? Tapped;
+    public event EventHandler<(string ElementId, NativeRect Bounds)>? Swiped;
     public event EventHandler<(int Line, int Column)>? ElementSelected;
 
     public void SetSourceLocations(IReadOnlyDictionary<IntPtr, (int Line, int Column)> locations) {
         this.sourceLocations = locations;
+    }
+
+    public bool TryGetElementBounds(string elementId, out NativeRect bounds) {
+        this.ThrowIfDisposed();
+        bounds = default;
+        var element = NativeRuntime.xr_find_element(this.root, elementId);
+        return element != IntPtr.Zero && NativeRuntime.xr_element_bounds(element, out bounds) != 0;
     }
 
     public void Transition(string from, string to, bool backward, bool visible) {
@@ -152,6 +163,12 @@ internal sealed class PreviewSession : IDisposable {
         var isAnimating = NativeRuntime.xr_update_animations(this.animations);
         NativeRuntime.Ensure(isAnimating >= 0);
         if (isAnimating == 0) {
+            if (this.pendingSwipe is { } swipe) {
+                this.pendingSwipe = null;
+                this.isSwipeRemovalPending = false;
+                NativeRuntime.xr_log_info($"Alarm swipe animation completed; bounds=({swipe.Bounds.X:0.0},{swipe.Bounds.Y:0.0},{swipe.Bounds.Width:0.0},{swipe.Bounds.Height:0.0}).");
+                this.Swiped?.Invoke(this, swipe);
+            }
             return false;
         }
         NativeRuntime.Ensure(NativeRuntime.xr_layout(this.root, this.renderer.Width, this.renderer.Height) != 0);
@@ -180,6 +197,9 @@ internal sealed class PreviewSession : IDisposable {
     }
 
     private void ImageMouseLeftButtonDown(object sender, MouseButtonEventArgs eventArgs) {
+        if (this.isSwipeRemovalPending) {
+            return;
+        }
         var point = eventArgs.GetPosition(this.image);
         if (this.isElementInspectionEnabled) {
             this.InspectElement(point);
@@ -191,6 +211,7 @@ internal sealed class PreviewSession : IDisposable {
             this.ScaleX(point.X),
             this.ScaleY(point.Y));
         if (this.capturedElement != IntPtr.Zero) {
+            this.pointerDownPoint = new Point(this.ScaleX(point.X), this.ScaleY(point.Y));
             this.image.CaptureMouse();
             NativeRuntime.Ensure(NativeRuntime.xr_handle_pointer_down(this.capturedElement, this.animations) != 0);
             this.Render();
@@ -209,18 +230,56 @@ internal sealed class PreviewSession : IDisposable {
         if (this.capturedElement == IntPtr.Zero) {
             return;
         }
-        var elementId = NativeRuntime.GetElementId(this.capturedElement);
-        NativeRuntime.Ensure(NativeRuntime.xr_handle_pointer_up(this.capturedElement, this.animations) != 0);
+        var capturedElement = this.capturedElement;
+        var elementId = NativeRuntime.GetElementId(capturedElement);
+        var point = eventArgs.GetPosition(this.image);
+        var pointerUpPoint = new Point(this.ScaleX(point.X), this.ScaleY(point.Y));
+        var horizontalDistance = pointerUpPoint.X - this.pointerDownPoint.X;
+        var verticalDistance = pointerUpPoint.Y - this.pointerDownPoint.Y;
+        NativeRuntime.Ensure(NativeRuntime.xr_handle_pointer_up(capturedElement, this.animations) != 0);
+        var isSwipe = Math.Abs(horizontalDistance) >= 180.0
+            && Math.Abs(horizontalDistance) > Math.Abs(verticalDistance);
+        var bounds = default(NativeRect);
+        if (isSwipe) {
+            NativeRuntime.Ensure(NativeRuntime.xr_element_bounds(capturedElement, out bounds) != 0);
+        }
         this.capturedElement = IntPtr.Zero;
         this.image.ReleaseMouseCapture();
         this.Render();
         this.AnimationStarted?.Invoke(this, EventArgs.Empty);
-        this.Tapped?.Invoke(this, elementId);
+        if (isSwipe) {
+            NativeRuntime.Ensure(NativeRuntime.xr_animate_render_offset_x(
+                capturedElement,
+                this.animations,
+                horizontalDistance < 0.0 ? -this.renderer.Width : this.renderer.Width,
+                220) != 0);
+            this.pendingSwipe = (elementId, bounds);
+            this.isSwipeRemovalPending = true;
+            NativeRuntime.xr_log_info($"Alarm swipe animation started; direction={(horizontalDistance < 0.0 ? "left" : "right")}, threshold=180.");
+            this.AnimationStarted?.Invoke(this, EventArgs.Empty);
+        } else {
+            NativeRuntime.Ensure(NativeRuntime.xr_animate_render_offset_x(
+                capturedElement,
+                this.animations,
+                0.0f,
+                180) != 0);
+            this.Tapped?.Invoke(this, elementId);
+        }
         eventArgs.Handled = true;
     }
 
     private void ImageMouseMove(object sender, MouseEventArgs eventArgs) {
         if (this.capturedElement != IntPtr.Zero) {
+            var pointerPoint = eventArgs.GetPosition(this.image);
+            var horizontalDistance = this.ScaleX(pointerPoint.X) - this.pointerDownPoint.X;
+            var verticalDistance = this.ScaleY(pointerPoint.Y) - this.pointerDownPoint.Y;
+            if (Math.Abs(horizontalDistance) > Math.Abs(verticalDistance)
+                && NativeRuntime.GetElementId(this.capturedElement) == "alarmBlock") {
+                NativeRuntime.Ensure(NativeRuntime.xr_set_render_offset_x(
+                    this.capturedElement,
+                    (float)horizontalDistance) != 0);
+                this.Render();
+            }
             return;
         }
         var point = eventArgs.GetPosition(this.image);

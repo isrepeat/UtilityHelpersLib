@@ -49,6 +49,7 @@ typedef struct xr_command {
 
 XAML_RUNTIME_BRIDGE_API const char* xr_last_error(void);
 XAML_RUNTIME_BRIDGE_API void xr_configure_logging(const char* filePath);
+XAML_RUNTIME_BRIDGE_API void xr_log_info(const char* message);
 XAML_RUNTIME_BRIDGE_API xr_element* xr_create_element(const char* type);
 XAML_RUNTIME_BRIDGE_API void xr_destroy_element(xr_element* element);
 XAML_RUNTIME_BRIDGE_API int xr_add_child(xr_element* parent, xr_element* child);
@@ -95,6 +96,12 @@ XAML_RUNTIME_BRIDGE_API int xr_layout(xr_element* root, float width, float heigh
 XAML_RUNTIME_BRIDGE_API xr_element* xr_hit_test(xr_element* root, float x, float y);
 XAML_RUNTIME_BRIDGE_API xr_element* xr_hit_test_visual(xr_element* root, float x, float y);
 XAML_RUNTIME_BRIDGE_API int xr_element_bounds(const xr_element* element, xr_rect* bounds);
+XAML_RUNTIME_BRIDGE_API int xr_set_render_offset_x(xr_element* element, float value);
+XAML_RUNTIME_BRIDGE_API int xr_animate_render_offset_x(
+    xr_element* element,
+    xr_animation_controller* animations,
+    float value,
+    int duration_milliseconds);
 XAML_RUNTIME_BRIDGE_API const char* xr_element_id(const xr_element* element);
 XAML_RUNTIME_BRIDGE_API int xr_handle_tap(
     xr_element* element,
