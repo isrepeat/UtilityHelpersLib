@@ -1058,6 +1058,19 @@ public partial class MainWindow : Window {
             return;
         }
         ScenarioInteraction.HandleTap(scenario, elementId);
+        var visualStateHost = tap["visualStateHost"]?.GetValue<string>();
+        var visualStateGroup = tap["visualStateGroup"]?.GetValue<string>();
+        var visualStatePath = tap["path"]?.GetValue<string>();
+        string? visualState = null;
+        if (visualStateHost is not null
+            && visualStateGroup is not null
+            && visualStatePath is not null
+            && scenario[visualStatePath]?.GetValue<bool>() is bool visualStateValue) {
+            visualState = tap[visualStateValue ? "visualStateTrue" : "visualStateFalse"]?.GetValue<string>();
+            if (visualState is not null) {
+                this.SetScenarioVisualState(scenario, visualStateHost, visualStateGroup, visualState);
+            }
+        }
         this.updatingEditors = true;
         try {
             this.ScenarioEditor.Text = root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
@@ -1068,11 +1081,9 @@ public partial class MainWindow : Window {
         this.isScenariosDirty = true;
         this.UpdateDocumentState();
         this.SaveScenarios("Сценарии автоматически сохранены после интерактивного действия");
-        if (tap["visualStateHost"]?.GetValue<string>() is string visualStateHost
-            && tap["visualStateGroup"]?.GetValue<string>() is string visualStateGroup
-            && tap["path"]?.GetValue<string>() is string visualStatePath
-            && scenario[visualStatePath]?.GetValue<bool>() is bool visualStateValue
-            && tap[visualStateValue ? "visualStateTrue" : "visualStateFalse"]?.GetValue<string>() is string visualState
+        if (visualStateHost is not null
+            && visualStateGroup is not null
+            && visualState is not null
             && this.previewSession?.GoToVisualState(visualStateHost, visualStateGroup, visualState) == true) {
             return;
         }
@@ -1089,6 +1100,30 @@ public partial class MainWindow : Window {
             }
         }
         this.RenderTimerTick(this, EventArgs.Empty);
+    }
+
+    private void SetScenarioVisualState(
+        JsonObject scenario,
+        string host,
+        string group,
+        string state) {
+        if (scenario["$visualStates"] is not JsonArray states) {
+            states = new JsonArray();
+            scenario["$visualStates"] = states;
+        }
+        foreach (var item in states) {
+            if (item is JsonObject visualState
+                && visualState["host"]?.GetValue<string>() == host
+                && visualState["group"]?.GetValue<string>() == group) {
+                visualState["state"] = state;
+                return;
+            }
+        }
+        states.Add(new JsonObject {
+            ["host"] = host,
+            ["group"] = group,
+            ["state"] = state
+        });
     }
 
     private void SaveScenarios(string status) {
