@@ -1,19 +1,21 @@
 #pragma once
 
+#include "XamlRuntime/ObservableCollection.h"
 #include "XamlRuntime/Storyboard.h"
 #include "XamlRuntime/Animation.h"
 
 #include <initializer_list>
-#include <cstdint>
 #include <functional>
+#include <utility>
+#include <cstdint>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 namespace xaml {
     class IRenderBackend;
     class RendererRegistry;
+    class BindingScope;
 
     struct TextGlyphMetric {
         std::string fontWeight;
@@ -95,6 +97,7 @@ namespace xaml {
     class Element {
     public:
         using Command = std::function<void()>;
+        using ItemTemplate = std::function<std::unique_ptr<Element>(const void*, BindingScope&)>;
 
         explicit Element(ElementType type);
         virtual ~Element();
@@ -276,12 +279,37 @@ namespace xaml {
         std::vector<std::unique_ptr<Element>>& Children();
         void AddChild(std::unique_ptr<Element> child);
         void RemoveChild(Element& child);
+        void RemoveChildImmediately(Element& child);
+
+        template <typename TItemsSource>
+        void SetItemsSource(const TItemsSource& value, ItemTemplate templateValue) {
+            if (this->itemsUnsubscribe) {
+                this->itemsUnsubscribe();
+            }
+            this->itemsCount = [&value]() { return value.size(); };
+            this->itemAt = [&value](size_t index) -> const void* {
+                auto iterator = value.begin();
+                std::advance(iterator, index);
+                return &*iterator;
+            };
+            this->itemTemplate = std::move(templateValue);
+            this->itemsUnsubscribe = value.Subscribe([this](CollectionChange change) {
+                this->OnItemsChanged(change);
+            });
+            this->RebuildItems();
+        }
 
         Element* Parent() const;
 
     private:
         void SetInheritedDataContext(const void* value);
         void InvalidateLayout();
+        void OnItemsChanged(CollectionChange change);
+        void RebuildItems();
+        void InsertItems(size_t index, size_t count);
+        void RemoveItems(size_t index, size_t count);
+        void ReplaceItems(size_t index, size_t count);
+        void MoveItems(size_t oldIndex, size_t index, size_t count);
 
         friend class AnimationController;
         friend class AnimationRegistry;
@@ -356,6 +384,15 @@ namespace xaml {
         Size availableSize{};
         bool layoutInvalid = true;
         std::vector<std::unique_ptr<Element>> children;
+        struct RepeatedItem {
+            Element* container = nullptr;
+            std::unique_ptr<BindingScope> bindings;
+        };
+        std::function<size_t()> itemsCount;
+        std::function<const void*(size_t)> itemAt;
+        ItemTemplate itemTemplate;
+        std::function<void()> itemsUnsubscribe;
+        std::vector<RepeatedItem> repeatedItems;
     };
 
     // Проходит от root по индексам дочерних элементов из path: {1, 1} означает

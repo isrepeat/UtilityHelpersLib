@@ -37,6 +37,7 @@
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\Animation.h" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\Binding.h" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\DependentProperty.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\ObservableCollection.h" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\ElementBuilder.h" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\XamlAttribute.h" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\Input.h" />

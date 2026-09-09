@@ -869,7 +869,13 @@ namespace {
             const Element& templateRoot = templateElement->children.front().children.front();
             const std::string sourceExpression = sourceProperty == "ItemsSource"
                 ? "itemsSource" : bindingContext + "." + sourceProperty + "()";
-            output << "            for (const auto& item : " << sourceExpression << ") {\n";
+            output << "            " << variable << "->SetItemsSource(" << sourceExpression
+                << ", [&viewModel, &" << (sourceProperty == "ItemsSource" ? "itemsSource" : bindingContext)
+                << "](const void* itemData, BindingScope& itemBindings) {\n";
+            output << "            using Item = typename std::remove_reference_t<decltype(" << sourceExpression
+                << ")>::value_type;\n";
+            output << "            const auto& item = *static_cast<const Item*>(itemData);\n";
+            output << "            BindingScope& bindings = itemBindings;\n";
             const std::string itemVariable = this->EmitElement(
                 templateRoot,
                 output,
@@ -879,8 +885,8 @@ namespace {
             if (this->AttributeValue(templateRoot, "dataContext").empty()) {
                 output << "            " << itemVariable << "->SetDataContext(static_cast<const void*>(&item));\n";
             }
-            output << "            " << variable << "->AddChild(std::move(" << itemVariable << "));\n";
-            output << "            }\n";
+            output << "            return " << itemVariable << ";\n";
+            output << "            });\n";
         }
 
         void EmitGridDefinitions(

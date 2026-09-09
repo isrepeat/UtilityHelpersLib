@@ -1,10 +1,11 @@
 #include <Helpers.Logging/Logging.h>
 
+#include "XamlRuntime/Binding.h"
 #include "XamlLayout.h"
 
 #include <algorithm>
-#include <limits>
 #include <sstream>
+#include <limits>
 
 namespace xaml::_details {
     std::vector<TextGlyphMetric> textGlyphMetrics;
@@ -444,7 +445,11 @@ namespace xaml {
         : type(type) {
     }
 
-    Element::~Element() = default;
+    Element::~Element() {
+        if (this->itemsUnsubscribe) {
+            this->itemsUnsubscribe();
+        }
+    }
 
     ElementType Element::Type() const {
         return this->type;
@@ -953,6 +958,103 @@ namespace xaml {
         } else {
             this->children.erase(found);
         }
+        this->InvalidateLayout();
+    }
+
+    void Element::RemoveChildImmediately(Element& child) {
+        const auto found = std::find_if(this->children.begin(), this->children.end(),
+            [&child](const auto& value) { return value.get() == &child; });
+        if (found == this->children.end()) {
+            return;
+        }
+        this->children.erase(found);
+        this->InvalidateLayout();
+    }
+
+    void Element::OnItemsChanged(CollectionChange change) {
+        switch (change.kind) {
+        case CollectionChangeKind::insert:
+            this->InsertItems(change.index, change.count);
+            return;
+        case CollectionChangeKind::remove:
+            this->RemoveItems(change.index, change.count);
+            return;
+        case CollectionChangeKind::replace:
+            this->ReplaceItems(change.index, change.count);
+            return;
+        case CollectionChangeKind::move:
+            this->MoveItems(change.oldIndex, change.index, change.count);
+            return;
+        case CollectionChangeKind::reset:
+            this->RebuildItems();
+            return;
+        }
+    }
+
+    void Element::RebuildItems() {
+        this->RemoveItems(0, this->repeatedItems.size());
+        if (this->itemsCount) {
+            this->InsertItems(0, this->itemsCount());
+        }
+    }
+
+    void Element::InsertItems(size_t index, size_t count) {
+        if (!this->itemAt || !this->itemTemplate || index > this->repeatedItems.size()) {
+            return;
+        }
+        for (size_t offset = 0; offset < count; ++offset) {
+            auto bindings = std::make_unique<BindingScope>();
+            std::unique_ptr<Element> container = this->itemTemplate(this->itemAt(index + offset), *bindings);
+            if (!container) {
+                continue;
+            }
+            Element* const rawContainer = container.get();
+            this->children.insert(this->children.begin() + static_cast<std::ptrdiff_t>(index + offset), std::move(container));
+            this->repeatedItems.insert(this->repeatedItems.begin() + static_cast<std::ptrdiff_t>(index + offset),
+                {rawContainer, std::move(bindings)});
+        }
+        this->InvalidateLayout();
+    }
+
+    void Element::RemoveItems(size_t index, size_t count) {
+        if (index >= this->repeatedItems.size()) {
+            return;
+        }
+        const size_t end = std::min(this->repeatedItems.size(), index + count);
+        for (size_t current = end; current > index; --current) {
+            RepeatedItem& item = this->repeatedItems[current - 1];
+            this->RemoveChildImmediately(*item.container);
+            this->repeatedItems.erase(this->repeatedItems.begin() + static_cast<std::ptrdiff_t>(current - 1));
+        }
+    }
+
+    void Element::ReplaceItems(size_t index, size_t count) {
+        this->RemoveItems(index, count);
+        this->InsertItems(index, count);
+    }
+
+    void Element::MoveItems(size_t oldIndex, size_t index, size_t count) {
+        if (count == 0 || oldIndex >= this->repeatedItems.size() || oldIndex + count > this->repeatedItems.size()) {
+            return;
+        }
+        std::vector<RepeatedItem> moved(
+            std::make_move_iterator(this->repeatedItems.begin() + static_cast<std::ptrdiff_t>(oldIndex)),
+            std::make_move_iterator(this->repeatedItems.begin() + static_cast<std::ptrdiff_t>(oldIndex + count)));
+        this->repeatedItems.erase(
+            this->repeatedItems.begin() + static_cast<std::ptrdiff_t>(oldIndex),
+            this->repeatedItems.begin() + static_cast<std::ptrdiff_t>(oldIndex + count));
+        if (index > oldIndex) {
+            index -= count;
+        }
+        this->repeatedItems.insert(this->repeatedItems.begin() + static_cast<std::ptrdiff_t>(index),
+            std::make_move_iterator(moved.begin()), std::make_move_iterator(moved.end()));
+        std::stable_sort(this->children.begin(), this->children.end(), [this](const auto& left, const auto& right) {
+            const auto leftPosition = std::find_if(this->repeatedItems.begin(), this->repeatedItems.end(),
+                [&left](const RepeatedItem& item) { return item.container == left.get(); });
+            const auto rightPosition = std::find_if(this->repeatedItems.begin(), this->repeatedItems.end(),
+                [&right](const RepeatedItem& item) { return item.container == right.get(); });
+            return leftPosition < rightPosition;
+        });
         this->InvalidateLayout();
     }
 

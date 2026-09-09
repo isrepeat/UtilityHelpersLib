@@ -1,8 +1,6 @@
 #include <Helpers.Logging/Logging.h>
 #include <HelpersNew/Geometry/ContainsPoint.h>
 
-#define NOMINMAX
-#include <Windows.h>
 #include <XamlRuntime/InteractionController.h>
 #include <XamlRuntime/ScrollController.h>
 #include <XamlRuntime/ElementBuilder.h>
@@ -13,7 +11,6 @@
 
 #include "../../../../Resources/Effects/Effects.h"
 #include "../../../../Renderer/AnimationRenderers.h"
-#include "../../../../MobileClock.UI.NativeBridge/MobileClockUiNativeBridge.h"
 #include "../../../../UI/PageTransition.h"
 #include "AngleRenderSurface.h"
 #include "NativeBridge.h"
@@ -115,6 +112,18 @@ namespace xaml::bridge::_details {
         return element;
     }
 
+    bool RemoveItem(Element& target) {
+        Element* item = &target;
+        for (Element* parent = item->Parent(); parent != nullptr; parent = parent->Parent()) {
+            if (parent->Type() == ElementType::listView) {
+                parent->RemoveChildImmediately(*item);
+                return true;
+            }
+            item = parent;
+        }
+        return false;
+    }
+
 }
 
 namespace xaml::bridge {
@@ -208,43 +217,6 @@ namespace xaml::bridge {
     };
 
     thread_local std::string lastError;
-    HMODULE mobileClockUiNativeBridgeModule = nullptr;
-    const MobileClockUiNativeBridgeApi* mobileClockUiNativeBridgeApi = nullptr;
-    MobileClockUiNativeBridge* mobileClockUiNativeBridge = nullptr;
-
-    void LoadMobileClockUiNativeBridge() {
-        static bool isRegistered = false;
-        if (isRegistered) {
-            return;
-        }
-
-        mobileClockUiNativeBridgeModule = LoadLibraryW(L"MobileClock.UI.NativeBridge.dll");
-        if (mobileClockUiNativeBridgeModule == nullptr) {
-            throw std::runtime_error("MobileClock.UI.NativeBridge.dll could not be loaded");
-        }
-
-        auto getApi = reinterpret_cast<MobileClockUiNativeBridgeGetApi>(
-            GetProcAddress(mobileClockUiNativeBridgeModule, "MobileClockUiNativeBridge_GetApi"));
-        if (getApi == nullptr) {
-            throw std::runtime_error("MobileClock.UI.NativeBridge.dll does not export its ABI entry point");
-        }
-        mobileClockUiNativeBridgeApi = getApi(1);
-        if (mobileClockUiNativeBridgeApi == nullptr || mobileClockUiNativeBridgeApi->abiVersion != 1) {
-            throw std::runtime_error("MobileClock.UI.NativeBridge.dll does not support ABI version 1");
-        }
-        mobileClockUiNativeBridge = mobileClockUiNativeBridgeApi->Create();
-        if (mobileClockUiNativeBridge == nullptr) {
-            throw std::runtime_error("Preview extension could not create ControlsRuntime");
-        }
-
-        isRegistered = true;
-    }
-
-    void UnregisterPreviewControls(Element& element) {
-        if (mobileClockUiNativeBridge != nullptr) {
-            mobileClockUiNativeBridgeApi->Detach(mobileClockUiNativeBridge, &element);
-        }
-    }
 }
 
 struct xr_animation_controller {
@@ -254,10 +226,6 @@ struct xr_animation_controller {
 
 struct xr_interaction_controller {
     xaml::InteractionController value;
-};
-
-struct xr_controls_rebuild_state {
-    MobileClockUiRebuildState* value;
 };
 
 struct xr_angle_surface {
@@ -305,76 +273,19 @@ xr_element* xr_create_element(const char* type) {
 }
 
 void xr_destroy_element(xr_element* element) {
-    if (element != nullptr) {
-        xaml::bridge::UnregisterPreviewControls(*reinterpret_cast<xaml::Element*>(element));
-    }
     delete reinterpret_cast<xaml::Element*>(element);
 }
 
-int xr_controls_attach(xr_element* root, const char* className) {
-    try {
-        xaml::bridge::lastError.clear();
-        if (root == nullptr || className == nullptr) {
-            throw std::invalid_argument("root and className are required");
-        }
-        xaml::bridge::LoadMobileClockUiNativeBridge();
-        xaml::bridge::mobileClockUiNativeBridgeApi->Attach(
-            xaml::bridge::mobileClockUiNativeBridge,
-            reinterpret_cast<xaml::Element*>(root),
-            className);
-        return 1;
-    } catch (const std::exception& error) {
-        xaml::bridge::lastError = error.what();
-        return -1;
-    }
-}
-
-xr_controls_rebuild_state* xr_controls_capture_rebuild_state(xr_element*, xr_element* target) {
+int xr_items_remove_item(xr_element* target) {
     try {
         xaml::bridge::lastError.clear();
         if (target == nullptr) {
             throw std::invalid_argument("target is required");
         }
-        xaml::bridge::LoadMobileClockUiNativeBridge();
-        MobileClockUiRebuildState* const value = xaml::bridge::mobileClockUiNativeBridgeApi->CaptureRebuildState(
-            xaml::bridge::mobileClockUiNativeBridge,
-            reinterpret_cast<xaml::Element*>(target));
-        if (value == nullptr) {
-            return nullptr;
-        }
-        return new xr_controls_rebuild_state{value};
-    } catch (const std::exception& error) {
-        xaml::bridge::lastError = error.what();
-        return nullptr;
-    }
-}
-
-int xr_controls_restore_rebuild_state(
-    xr_controls_rebuild_state* state,
-    xr_element* pageRoot,
-    xr_animation_controller* animations) {
-    try {
-        xaml::bridge::lastError.clear();
-        if (state == nullptr || pageRoot == nullptr || animations == nullptr) {
-            throw std::invalid_argument("state, pageRoot and animations are required");
-        }
-        xaml::bridge::LoadMobileClockUiNativeBridge();
-        return xaml::bridge::mobileClockUiNativeBridgeApi->RestoreRebuildState(
-            xaml::bridge::mobileClockUiNativeBridge,
-            state->value,
-            reinterpret_cast<xaml::Element*>(pageRoot),
-            &animations->value);
+        return xaml::bridge::_details::RemoveItem(*reinterpret_cast<xaml::Element*>(target)) ? 1 : 0;
     } catch (const std::exception& error) {
         xaml::bridge::lastError = error.what();
         return -1;
-    }
-}
-
-void xr_controls_rebuild_state_destroy(xr_controls_rebuild_state* state) {
-    if (state != nullptr) {
-        xaml::bridge::LoadMobileClockUiNativeBridge();
-        xaml::bridge::mobileClockUiNativeBridgeApi->DestroyRebuildState(state->value);
-        delete state;
     }
 }
 

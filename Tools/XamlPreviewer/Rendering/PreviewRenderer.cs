@@ -201,7 +201,6 @@ internal static class PreviewRenderer {
                 }
             }
             if (!string.IsNullOrEmpty(className)) {
-                NativeRuntime.Ensure(NativeRuntime.xr_controls_attach(root, className) != 0);
             }
             return root;
         }

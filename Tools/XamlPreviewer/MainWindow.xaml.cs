@@ -50,7 +50,6 @@ public partial class MainWindow : Window {
     private PreviewSession? previewSession;
     private bool isClosing;
     private PreviewSession? outgoingSession;
-    private IntPtr pendingControlsRebuildState;
     private PreviewerSettings settings = null!;
     private string? markupPath;
     private string scenariosPath = string.Empty;
@@ -343,15 +342,6 @@ public partial class MainWindow : Window {
             session.Tapped += this.PreviewSessionTapped;
             session.Panned += this.PreviewSessionPanned;
             this.previewSession = session;
-            if (this.pendingControlsRebuildState != IntPtr.Zero) {
-                try {
-                    session.RestoreControlsRebuildState(this.pendingControlsRebuildState);
-                }
-                finally {
-                    NativeRuntime.xr_controls_rebuild_state_destroy(this.pendingControlsRebuildState);
-                    this.pendingControlsRebuildState = IntPtr.Zero;
-                }
-            }
             this.previewLayer.Children.Add(session.Surface);
             this.statusPresenter.Success($"Предпросмотр: {path}");
         }
@@ -860,15 +850,6 @@ public partial class MainWindow : Window {
             session.Tapped += this.PreviewSessionTapped;
             session.Panned += this.PreviewSessionPanned;
             this.previewSession = session;
-            if (this.pendingControlsRebuildState != IntPtr.Zero) {
-                try {
-                    session.RestoreControlsRebuildState(this.pendingControlsRebuildState);
-                }
-                finally {
-                    NativeRuntime.xr_controls_rebuild_state_destroy(this.pendingControlsRebuildState);
-                    this.pendingControlsRebuildState = IntPtr.Zero;
-                }
-            }
             if (previousSession is not null && transition is not null) {
                 this.StartPageTransition(previousSession, session, transition.Value);
             } else {
@@ -941,11 +922,8 @@ public partial class MainWindow : Window {
             return;
         }
         try {
-            var state = session.CaptureControlsRebuildState(pan.Element);
-            this.pendingControlsRebuildState = state;
-            if (!this.previewGestureController.HandlePan(pan.ElementId, pan.ItemIndex)) {
-                NativeRuntime.xr_controls_rebuild_state_destroy(this.pendingControlsRebuildState);
-                this.pendingControlsRebuildState = IntPtr.Zero;
+            if (this.previewGestureController.HandlePan(pan.ElementId, pan.ItemIndex)) {
+                session.RemoveItem(pan.Element);
             }
         }
         catch (Exception exception) {
@@ -958,7 +936,7 @@ public partial class MainWindow : Window {
             ?? throw new InvalidDataException("Сценарии должны содержать JSON-объект.");
     }
 
-    private void SavePreviewScenarioChanges(JsonObject root) {
+    private void SavePreviewScenarioChanges(JsonObject root, bool renderPreview) {
         this.updatingEditors = true;
         try {
             this.ScenarioEditor.Text = root.ToJsonString(ScenarioJsonOptions);
@@ -969,7 +947,9 @@ public partial class MainWindow : Window {
         this.isScenariosDirty = true;
         this.UpdateDocumentState();
         this.SaveScenarios("Сценарии автоматически сохранены после изменения будильников");
-        this.RenderTimerTick(this, EventArgs.Empty);
+        if (renderPreview) {
+            this.RenderTimerTick(this, EventArgs.Empty);
+        }
     }
 
     private void ApplyScenarioTap(string elementId) {

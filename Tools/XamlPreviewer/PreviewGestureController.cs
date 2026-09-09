@@ -5,12 +5,12 @@ namespace XamlPreviewer;
 internal sealed class PreviewGestureController {
     private readonly Func<JsonObject> getScenarioRoot;
     private readonly Func<JsonObject, JsonObject> getSelectedScenario;
-    private readonly Action<JsonObject> saveChanges;
+    private readonly Action<JsonObject, bool> saveChanges;
 
     public PreviewGestureController(
         Func<JsonObject> getScenarioRoot,
         Func<JsonObject, JsonObject> getSelectedScenario,
-        Action<JsonObject> saveChanges) {
+        Action<JsonObject, bool> saveChanges) {
         this.getScenarioRoot = getScenarioRoot;
         this.getSelectedScenario = getSelectedScenario;
         this.saveChanges = saveChanges;
@@ -22,7 +22,7 @@ internal sealed class PreviewGestureController {
         if (!ScenarioInteraction.HandleTap(scenario, elementId)) {
             return false;
         }
-        this.saveChanges(root);
+        this.saveChanges(root, true);
         return true;
     }
 
@@ -32,7 +32,7 @@ internal sealed class PreviewGestureController {
         if (!ScenarioInteraction.HandlePan(scenario, elementId, itemIndex)) {
             return false;
         }
-        this.saveChanges(root);
+        this.saveChanges(root, false);
         return true;
     }
 
