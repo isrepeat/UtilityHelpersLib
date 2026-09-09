@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
+    <AssemblyName>XamlPreviewer</AssemblyName>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
@@ -8,12 +9,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PlatformTarget>x64</PlatformTarget>
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
-    <NativeBridgeOutputDir>$(MSBuildProjectDirectory)\..\..\!VS_TMP\Build\$(Configuration)\x64\XamlRuntime.NativeBridge\</NativeBridgeOutputDir>
-    <NativeBridgeIntermediateDir>$(MSBuildProjectDirectory)\..\..\!VS_TMP\Intermediate\$(Configuration)\x64\XamlRuntime.NativeBridge.Previewer\</NativeBridgeIntermediateDir>
-    <MobileClockUiNativeBridgeOutputDir>$(MSBuildProjectDirectory)\..\..\!VS_TMP\Build\$(Configuration)\x64\MobileClock.UI.NativeBridge\</MobileClockUiNativeBridgeOutputDir>
-    <MobileClockUiNativeBridgeIntermediateDir>$(MSBuildProjectDirectory)\..\..\!VS_TMP\Intermediate\$(Configuration)\x64\MobileClock.UI.NativeBridge\</MobileClockUiNativeBridgeIntermediateDir>
-    <MobileClockUiOutputDir>$(MSBuildProjectDirectory)\..\..\!VS_TMP\Build\$(Configuration)\x64\MobileClock.UI\</MobileClockUiOutputDir>
-    <MobileClockUiIntermediateDir>$(MSBuildProjectDirectory)\..\..\!VS_TMP\Intermediate\$(Configuration)\x64\MobileClock.UI\</MobileClockUiIntermediateDir>
+    <NativeBridgeOutputDir>$(MSBuildProjectDirectory)\..\..\..\!VS_TMP\Build\$(Configuration)\x64\XamlRuntime.NativeBridge\</NativeBridgeOutputDir>
+    <NativeBridgeIntermediateDir>$(MSBuildProjectDirectory)\..\..\..\!VS_TMP\Intermediate\$(Configuration)\x64\XamlRuntime.NativeBridge.Previewer\</NativeBridgeIntermediateDir>
     <NativeAngleZlibName>z.dll</NativeAngleZlibName>
   </PropertyGroup>
 
@@ -24,18 +21,11 @@
   <ItemGroup>
     <!-- NativeBridge — отдельный C++ проект; его NuGet restore-cache не является
          частью дерева исходников WPF-приложения. -->
-    <None Remove="NativeBridge\obj\**" />
-    <ProjectReference Include="NativeBridge\XamlRuntime.NativeBridge.vcxproj">
+    <ProjectReference Include="..\XamlPreviewer.NativeBridge\XamlPreviewer.NativeBridge.vcxproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <SetConfiguration>Configuration=$(Configuration)</SetConfiguration>
       <SetPlatform>Platform=x64</SetPlatform>
       <AdditionalProperties>Configuration=$(Configuration);Platform=x64;PreviewerNativeBridgeOutputDir=$(NativeBridgeOutputDir);PreviewerNativeBridgeIntermediateDir=$(NativeBridgeIntermediateDir)</AdditionalProperties>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\MobileClock.UI.NativeBridge\MobileClock.UI.NativeBridge.vcxproj">
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <SetConfiguration>Configuration=$(Configuration)</SetConfiguration>
-      <SetPlatform>Platform=x64</SetPlatform>
-      <AdditionalProperties>Configuration=$(Configuration);Platform=x64;PreviewerMobileClockUiNativeBridgeOutputDir=$(MobileClockUiNativeBridgeOutputDir);PreviewerMobileClockUiNativeBridgeIntermediateDir=$(MobileClockUiNativeBridgeIntermediateDir);PreviewerMobileClockUiOutputDir=$(MobileClockUiOutputDir);PreviewerMobileClockUiIntermediateDir=$(MobileClockUiIntermediateDir)</AdditionalProperties>
     </ProjectReference>
   </ItemGroup>
 
@@ -56,7 +46,7 @@
        Временный проект WPF и IntelliSense не должны сбрасывать кэш основной сборки. -->
   <Target Name="InvalidateMissingMarkupOutputs"
           BeforeTargets="MarkupCompilePass1"
-          Condition="'$(DesignTimeBuild)'!='true' and '$(MSBuildProjectName)'=='XamlPreviewer'">
+          Condition="'$(DesignTimeBuild)'!='true' and '$(AssemblyName)'=='XamlPreviewer'">
     <ItemGroup>
       <_ExpectedMarkupSource Include="@(Page->'$(IntermediateOutputPath)%(RelativeDir)%(Filename).g.cs')" />
       <_ExpectedMarkupSource Include="@(ApplicationDefinition->'$(IntermediateOutputPath)%(RelativeDir)%(Filename).g.cs')" />
@@ -71,8 +61,5 @@
     <Copy SourceFiles="$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.dll" DestinationFolder="$(OutDir)" />
     <Copy SourceFiles="$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.pdb" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.pdb')" />
     <Copy SourceFiles="$(NativeBridgeOutputDir)libEGL.dll;$(NativeBridgeOutputDir)libGLESv2.dll;$(NativeBridgeOutputDir)$(NativeAngleZlibName)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
-    <Error Condition="!Exists('$(MobileClockUiNativeBridgeOutputDir)MobileClock.UI.NativeBridge.dll')" Text="MobileClock.UI.NativeBridge.dll was not built: $(MobileClockUiNativeBridgeOutputDir)MobileClock.UI.NativeBridge.dll" />
-    <Copy SourceFiles="$(MobileClockUiNativeBridgeOutputDir)MobileClock.UI.NativeBridge.dll" DestinationFolder="$(OutDir)" />
-    <Copy SourceFiles="$(MobileClockUiNativeBridgeOutputDir)MobileClock.UI.NativeBridge.pdb" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('$(MobileClockUiNativeBridgeOutputDir)MobileClock.UI.NativeBridge.pdb')" />
   </Target>
 </Project>

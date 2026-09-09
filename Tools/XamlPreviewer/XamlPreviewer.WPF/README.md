@@ -7,7 +7,7 @@ Desktop-прототип для интерактивного просмотра 
 Запуск уже собранной Debug-конфигурации из корня репозитория:
 
 ```powershell
-Tools/XamlPreviewer/bin/Debug/net8.0-windows/XamlPreviewer.exe
+Tools/XamlPreviewer/XamlPreviewer.WPF/bin/Debug/net8.0-windows/XamlPreviewer.exe
 ```
 
 При первом запуске previewer создаёт `C:\WORK\TEST\XamlPreviewer\previewer.settings.json` и `scenarios.json` из debug-defaults, заданных в коде. Settings JSON хранит каталоги XAML и ресурсов, путь к сценариям, а также последнюю открытую страницу и сценарий. Левая панель переключается между XAML, сценариями и настройками; «Сохранить» записывает текущий документ. Изменения отображаются с задержкой 250 мс.
