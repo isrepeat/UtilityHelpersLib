@@ -40,6 +40,7 @@
             <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..;$(ProjectDir)..\..\..\HelpersNew\HelpersNew.Shared;$(ProjectDir)..\..\..\NugetProjects\XamlRuntime\Nuget\OpenGLESRenderer\OpenGLESRenderer.Shared;$(ProjectDir)..\..\..\NugetProjects\XamlRuntime\Nuget\XamlRuntime\XamlRuntime.Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
             <LanguageStandard>stdcpp17</LanguageStandard>
             <WarningLevel>Level4</WarningLevel>
+            <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
         </ClCompile>
     </ItemDefinitionGroup>
     <ItemGroup>

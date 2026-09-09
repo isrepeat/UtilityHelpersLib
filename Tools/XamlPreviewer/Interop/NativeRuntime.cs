@@ -89,6 +89,23 @@ internal static class NativeRuntime {
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_destroy_element")]
     public static extern void xr_destroy_element(IntPtr element);
 
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_controls_attach")]
+    public static extern int xr_controls_attach(
+        IntPtr root,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string className);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_controls_capture_rebuild_state")]
+    public static extern IntPtr xr_controls_capture_rebuild_state(IntPtr root, IntPtr target);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_controls_restore_rebuild_state")]
+    public static extern int xr_controls_restore_rebuild_state(
+        IntPtr state,
+        IntPtr pageRoot,
+        IntPtr animations);
+
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_controls_rebuild_state_destroy")]
+    public static extern void xr_controls_rebuild_state_destroy(IntPtr state);
+
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_add_child")]
     public static extern int xr_add_child(IntPtr parent, IntPtr child);
 

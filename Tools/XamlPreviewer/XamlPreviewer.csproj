@@ -10,6 +10,10 @@
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
     <NativeBridgeOutputDir>$(MSBuildProjectDirectory)\..\..\!VS_TMP\Build\$(Configuration)\x64\XamlRuntime.NativeBridge\</NativeBridgeOutputDir>
     <NativeBridgeIntermediateDir>$(MSBuildProjectDirectory)\..\..\!VS_TMP\Intermediate\$(Configuration)\x64\XamlRuntime.NativeBridge.Previewer\</NativeBridgeIntermediateDir>
+    <PreviewControlExtensionOutputDir>$(MSBuildProjectDirectory)\..\..\!VS_TMP\Build\$(Configuration)\x64\MobileClock.PreviewExtension\</PreviewControlExtensionOutputDir>
+    <PreviewControlExtensionIntermediateDir>$(MSBuildProjectDirectory)\..\..\!VS_TMP\Intermediate\$(Configuration)\x64\MobileClock.PreviewExtension\</PreviewControlExtensionIntermediateDir>
+    <PreviewerControlsLibraryOutputDir>$(MSBuildProjectDirectory)\..\..\!VS_TMP\Build\$(Configuration)\x64\MobileClock.Controls\</PreviewerControlsLibraryOutputDir>
+    <PreviewerControlsLibraryIntermediateDir>$(MSBuildProjectDirectory)\..\..\!VS_TMP\Intermediate\$(Configuration)\x64\MobileClock.Controls\</PreviewerControlsLibraryIntermediateDir>
     <NativeAngleZlibName>z.dll</NativeAngleZlibName>
   </PropertyGroup>
 
@@ -26,6 +30,12 @@
       <SetConfiguration>Configuration=$(Configuration)</SetConfiguration>
       <SetPlatform>Platform=x64</SetPlatform>
       <AdditionalProperties>Configuration=$(Configuration);Platform=x64;PreviewerNativeBridgeOutputDir=$(NativeBridgeOutputDir);PreviewerNativeBridgeIntermediateDir=$(NativeBridgeIntermediateDir)</AdditionalProperties>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\platform\MobileClock.PreviewExtension\MobileClock.PreviewExtension.vcxproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <SetConfiguration>Configuration=$(Configuration)</SetConfiguration>
+      <SetPlatform>Platform=x64</SetPlatform>
+      <AdditionalProperties>Configuration=$(Configuration);Platform=x64;PreviewerControlExtensionOutputDir=$(PreviewControlExtensionOutputDir);PreviewerControlExtensionIntermediateDir=$(PreviewControlExtensionIntermediateDir);PreviewerControlsLibraryOutputDir=$(PreviewerControlsLibraryOutputDir);PreviewerControlsLibraryIntermediateDir=$(PreviewerControlsLibraryIntermediateDir)</AdditionalProperties>
     </ProjectReference>
   </ItemGroup>
 
@@ -61,5 +71,8 @@
     <Copy SourceFiles="$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.dll" DestinationFolder="$(OutDir)" />
     <Copy SourceFiles="$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.pdb" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.pdb')" />
     <Copy SourceFiles="$(NativeBridgeOutputDir)libEGL.dll;$(NativeBridgeOutputDir)libGLESv2.dll;$(NativeBridgeOutputDir)$(NativeAngleZlibName)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+    <Error Condition="!Exists('$(PreviewControlExtensionOutputDir)MobileClock.PreviewExtension.dll')" Text="MobileClock.PreviewExtension.dll was not built: $(PreviewControlExtensionOutputDir)MobileClock.PreviewExtension.dll" />
+    <Copy SourceFiles="$(PreviewControlExtensionOutputDir)MobileClock.PreviewExtension.dll" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="$(PreviewControlExtensionOutputDir)MobileClock.PreviewExtension.pdb" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('$(PreviewControlExtensionOutputDir)MobileClock.PreviewExtension.pdb')" />
   </Target>
 </Project>

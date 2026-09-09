@@ -194,10 +194,14 @@ internal static class PreviewRenderer {
         }
         var root = PreviewRenderer.BuildUserControlRoot(controlDefinition, data, locations, xamlDirectory);
         try {
+            var className = userControl.Attribute(XName.Get("Class", "http://schemas.microsoft.com/winfx/2006/xaml"))?.Value;
             foreach (var attribute in invocation.Attributes()) {
                 if (!attribute.IsNamespaceDeclaration && attribute.Name.LocalName != "itemsSource") {
                     PreviewRenderer.ApplyAttribute(root, attribute.Name.LocalName, attribute.Value, data);
                 }
+            }
+            if (!string.IsNullOrEmpty(className)) {
+                NativeRuntime.Ensure(NativeRuntime.xr_controls_attach(root, className) != 0);
             }
             return root;
         }

@@ -99,6 +99,25 @@ internal sealed class PreviewSession : IDisposable {
         return element != IntPtr.Zero && NativeRuntime.xr_element_bounds(element, out bounds) != 0;
     }
 
+    public IntPtr CaptureControlsRebuildState(IntPtr target) {
+        this.ThrowIfDisposed();
+        return NativeRuntime.xr_controls_capture_rebuild_state(this.root, target);
+    }
+
+    public void RestoreControlsRebuildState(IntPtr state) {
+        this.ThrowIfDisposed();
+        if (state == IntPtr.Zero) {
+            return;
+        }
+        NativeRuntime.Ensure(NativeRuntime.xr_controls_restore_rebuild_state(
+            state,
+            this.root,
+            this.animations) > 0);
+        NativeRuntime.Ensure(NativeRuntime.xr_layout(this.root, this.renderer.Width, this.renderer.Height) != 0);
+        this.Render();
+        this.AnimationStarted?.Invoke(this, EventArgs.Empty);
+    }
+
     public void Transition(string from, string to, bool backward, bool visible) {
         this.ThrowIfDisposed();
         this.hasPointerCapture = false;

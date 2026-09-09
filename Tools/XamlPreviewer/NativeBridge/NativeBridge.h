@@ -14,6 +14,7 @@ typedef struct xr_element xr_element;
 typedef struct xr_animation_controller xr_animation_controller;
 typedef struct xr_interaction_controller xr_interaction_controller;
 typedef struct xr_angle_surface xr_angle_surface;
+typedef struct xr_controls_rebuild_state xr_controls_rebuild_state;
 
 typedef struct xr_rect {
     float x;
@@ -60,6 +61,15 @@ XAML_RUNTIME_BRIDGE_API void xr_configure_logging(const char* filePath);
 XAML_RUNTIME_BRIDGE_API void xr_log_info(const char* message);
 XAML_RUNTIME_BRIDGE_API xr_element* xr_create_element(const char* type);
 XAML_RUNTIME_BRIDGE_API void xr_destroy_element(xr_element* element);
+XAML_RUNTIME_BRIDGE_API int xr_controls_attach(xr_element* root, const char* class_name);
+XAML_RUNTIME_BRIDGE_API xr_controls_rebuild_state* xr_controls_capture_rebuild_state(
+    xr_element* root,
+    xr_element* target);
+XAML_RUNTIME_BRIDGE_API int xr_controls_restore_rebuild_state(
+    xr_controls_rebuild_state* state,
+    xr_element* page_root,
+    xr_animation_controller* animations);
+XAML_RUNTIME_BRIDGE_API void xr_controls_rebuild_state_destroy(xr_controls_rebuild_state* state);
 XAML_RUNTIME_BRIDGE_API int xr_add_child(xr_element* parent, xr_element* child);
 XAML_RUNTIME_BRIDGE_API int xr_set_attribute(
     xr_element* element,
