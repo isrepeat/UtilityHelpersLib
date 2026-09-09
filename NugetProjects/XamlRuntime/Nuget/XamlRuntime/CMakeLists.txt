@@ -4,6 +4,8 @@ add_library(utility_helpers_xaml_runtime STATIC
     XamlRuntime.Shared/XamlRuntime/DependentProperty.h
     XamlRuntime.Shared/XamlRuntime/ObservableCollection.h
     XamlRuntime.Shared/XamlRuntime/Animation.cpp
+    XamlRuntime.Shared/XamlRuntime/XamlAttribute.cpp
+    XamlRuntime.Shared/XamlRuntime/XamlAttribute.h
     XamlRuntime.Shared/XamlRuntime/VisualState.cpp
     XamlRuntime.Shared/XamlRuntime/VisualState.h
     XamlRuntime.Shared/XamlRuntime/Animation.h
@@ -32,6 +34,8 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/XamlRuntime.Shared" FILES
     XamlRuntime.Shared/XamlRuntime/DependentProperty.h
     XamlRuntime.Shared/XamlRuntime/ObservableCollection.h
     XamlRuntime.Shared/XamlRuntime/Animation.cpp
+    XamlRuntime.Shared/XamlRuntime/XamlAttribute.cpp
+    XamlRuntime.Shared/XamlRuntime/XamlAttribute.h
     XamlRuntime.Shared/XamlRuntime/VisualState.cpp
     XamlRuntime.Shared/XamlRuntime/VisualState.h
     XamlRuntime.Shared/XamlRuntime/Animation.h
