@@ -1,16 +1,16 @@
-#include <algorithm>
-#include <cctype>
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <map>
-#include <regex>
-#include <set>
-#include <sstream>
-#include <stdexcept>
-#include <string>
 #include <string_view>
+#include <filesystem>
+#include <algorithm>
+#include <stdexcept>
+#include <iostream>
+#include <sstream>
+#include <cctype>
+#include <fstream>
+#include <regex>
+#include <string>
 #include <vector>
+#include <map>
+#include <set>
 
 namespace {
     struct Element {
@@ -41,7 +41,8 @@ namespace {
             const std::filesystem::path& input,
             const std::filesystem::path& outputPath,
             const std::vector<std::string>& ignoredDirectories,
-            const std::vector<std::string>& ignoredFileSuffixes);
+            const std::vector<std::string>& ignoredFileSuffixes,
+            std::string controlIncludePrefix);
 
     private:
         static constexpr const char* namespaceUri = "urn:mobileclock:xaml";
@@ -1031,7 +1032,8 @@ namespace {
         const std::filesystem::path& input,
         const std::filesystem::path& outputPath,
         const std::vector<std::string>& ignoredDirectories,
-        const std::vector<std::string>& ignoredFileSuffixes) {
+        const std::vector<std::string>& ignoredFileSuffixes,
+        std::string controlIncludePrefix) {
         if (this->IsIgnored(input, ignoredDirectories, ignoredFileSuffixes)) {
             std::cout << "XamlCompiler: skipping " << input.string() << '\n';
             return;
@@ -1103,14 +1105,22 @@ namespace {
 
         std::ostringstream header;
         header << "// Сгенерировано XamlCompiler. Не редактировать вручную.\n"
-            << "#pragma once\n\n"
-            << "#include \"XamlRuntime/Binding.h\"\n"
-            << "#include \"XamlRuntime/XamlLayout.h\"\n"
-            << "#include <type_traits>\n";
-        for (const std::string& control : this->requiredControls) {
-            header << "#include \"UI/Controls/" << control << ".h\"\n";
+            << "#pragma once\n"
+            << "#include <XamlRuntime/XamlLayout.h>\n"
+            << "#include <XamlRuntime/Binding.h>\n\n";
+        std::vector<std::string> requiredControls(
+            this->requiredControls.begin(),
+            this->requiredControls.end());
+        std::sort(
+            requiredControls.begin(),
+            requiredControls.end(),
+            [](const std::string& left, const std::string& right) {
+                return left.size() > right.size();
+            });
+        for (const std::string& control : requiredControls) {
+            header << "#include \"" << controlIncludePrefix << "/" << control << ".h\"\n";
         }
-        header << "\n" << body.str();
+        header << "\n#include <type_traits>\n\n" << body.str();
 
         std::ostringstream output;
         output << "// Сгенерировано XamlCompiler. Не редактировать вручную.\n"
@@ -1132,12 +1142,13 @@ namespace {
 int main(int argc, char* argv[]) {
     if (argc < 3 || (argc - 3) % 2 != 0) {
         std::cerr << "Usage: XamlCompiler <input.xaml> <output.xaml.cpp> "
-            "[--ignore-directory <name>] [--ignore-file-suffix <suffix>]\n";
+            "[--control-include-prefix <path>] [--ignore-directory <name>] [--ignore-file-suffix <suffix>]\n";
         return 1;
     }
     try {
         std::vector<std::string> ignoredDirectories;
         std::vector<std::string> ignoredFileSuffixes;
+        std::string controlIncludePrefix = "UI/Controls";
         for (int index = 3; index < argc; index += 2) {
             const std::string_view option = argv[index];
             const std::string value = argv[index + 1];
@@ -1151,12 +1162,22 @@ int main(int argc, char* argv[]) {
                     throw std::runtime_error("Ignored file suffix is invalid: " + value);
                 }
                 ignoredFileSuffixes.push_back(value);
+            } else if (option == "--control-include-prefix") {
+                if (!std::regex_match(value, std::regex(R"([A-Za-z][A-Za-z0-9_./-]*)"))) {
+                    throw std::runtime_error("Control include prefix is invalid: " + value);
+                }
+                controlIncludePrefix = value;
             } else {
                 throw std::runtime_error("Unknown argument: " + std::string(argv[index]));
             }
         }
         XamlCompiler compiler;
-        compiler.Compile(argv[1], argv[2], ignoredDirectories, ignoredFileSuffixes);
+        compiler.Compile(
+            argv[1],
+            argv[2],
+            ignoredDirectories,
+            ignoredFileSuffixes,
+            std::move(controlIncludePrefix));
         return 0;
     } catch (const std::exception& error) {
         std::cerr << "XamlCompiler: " << error.what() << '\n';

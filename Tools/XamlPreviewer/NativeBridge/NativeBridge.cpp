@@ -13,7 +13,7 @@
 
 #include "../../../../Resources/Effects/Effects.h"
 #include "../../../../Renderer/AnimationRenderers.h"
-#include "../../../../platform/MobileClock.PreviewExtension/ControlsPreviewApi.h"
+#include "../../../../MobileClock.UI.NativeBridge/MobileClockUiNativeBridge.h"
 #include "../../../../UI/PageTransition.h"
 #include "AngleRenderSurface.h"
 #include "NativeBridge.h"
@@ -208,56 +208,32 @@ namespace xaml::bridge {
     };
 
     thread_local std::string lastError;
-    struct ControlsRuntimeApi {
-        decltype(&mc_controls_runtime_create) create;
-        decltype(&mc_controls_runtime_destroy) destroy;
-        decltype(&mc_controls_runtime_attach) attach;
-        decltype(&mc_controls_runtime_detach) detach;
-        decltype(&mc_controls_runtime_capture_rebuild_state) captureRebuildState;
-        decltype(&mc_controls_runtime_restore_rebuild_state) restoreRebuildState;
-        decltype(&mc_controls_rebuild_state_destroy) destroyRebuildState;
-    };
+    HMODULE mobileClockUiNativeBridgeModule = nullptr;
+    const MobileClockUiNativeBridgeApi* mobileClockUiNativeBridgeApi = nullptr;
+    MobileClockUiNativeBridge* mobileClockUiNativeBridge = nullptr;
 
-    HMODULE previewExtensionModule = nullptr;
-    ControlsRuntimeApi controlsRuntimeApi{};
-    mc_controls_runtime* controlsRuntime = nullptr;
-
-    void LoadControlsRuntime() {
+    void LoadMobileClockUiNativeBridge() {
         static bool isRegistered = false;
         if (isRegistered) {
             return;
         }
 
-        previewExtensionModule = LoadLibraryW(L"MobileClock.PreviewExtension.dll");
-        if (previewExtensionModule == nullptr) {
-            throw std::runtime_error("MobileClock.PreviewExtension.dll could not be loaded");
+        mobileClockUiNativeBridgeModule = LoadLibraryW(L"MobileClock.UI.NativeBridge.dll");
+        if (mobileClockUiNativeBridgeModule == nullptr) {
+            throw std::runtime_error("MobileClock.UI.NativeBridge.dll could not be loaded");
         }
 
-        controlsRuntimeApi.create = reinterpret_cast<decltype(controlsRuntimeApi.create)>(
-            GetProcAddress(previewExtensionModule, "mc_controls_runtime_create"));
-        controlsRuntimeApi.destroy = reinterpret_cast<decltype(controlsRuntimeApi.destroy)>(
-            GetProcAddress(previewExtensionModule, "mc_controls_runtime_destroy"));
-        controlsRuntimeApi.attach = reinterpret_cast<decltype(controlsRuntimeApi.attach)>(
-            GetProcAddress(previewExtensionModule, "mc_controls_runtime_attach"));
-        controlsRuntimeApi.detach = reinterpret_cast<decltype(controlsRuntimeApi.detach)>(
-            GetProcAddress(previewExtensionModule, "mc_controls_runtime_detach"));
-        controlsRuntimeApi.captureRebuildState = reinterpret_cast<decltype(controlsRuntimeApi.captureRebuildState)>(
-            GetProcAddress(previewExtensionModule, "mc_controls_runtime_capture_rebuild_state"));
-        controlsRuntimeApi.restoreRebuildState = reinterpret_cast<decltype(controlsRuntimeApi.restoreRebuildState)>(
-            GetProcAddress(previewExtensionModule, "mc_controls_runtime_restore_rebuild_state"));
-        controlsRuntimeApi.destroyRebuildState = reinterpret_cast<decltype(controlsRuntimeApi.destroyRebuildState)>(
-            GetProcAddress(previewExtensionModule, "mc_controls_rebuild_state_destroy"));
-        if (controlsRuntimeApi.create == nullptr
-            || controlsRuntimeApi.destroy == nullptr
-            || controlsRuntimeApi.attach == nullptr
-            || controlsRuntimeApi.detach == nullptr
-            || controlsRuntimeApi.captureRebuildState == nullptr
-            || controlsRuntimeApi.restoreRebuildState == nullptr
-            || controlsRuntimeApi.destroyRebuildState == nullptr) {
-            throw std::runtime_error("Preview extension does not export ControlsRuntime API");
+        auto getApi = reinterpret_cast<MobileClockUiNativeBridgeGetApi>(
+            GetProcAddress(mobileClockUiNativeBridgeModule, "MobileClockUiNativeBridge_GetApi"));
+        if (getApi == nullptr) {
+            throw std::runtime_error("MobileClock.UI.NativeBridge.dll does not export its ABI entry point");
         }
-        controlsRuntime = controlsRuntimeApi.create();
-        if (controlsRuntime == nullptr) {
+        mobileClockUiNativeBridgeApi = getApi(1);
+        if (mobileClockUiNativeBridgeApi == nullptr || mobileClockUiNativeBridgeApi->abiVersion != 1) {
+            throw std::runtime_error("MobileClock.UI.NativeBridge.dll does not support ABI version 1");
+        }
+        mobileClockUiNativeBridge = mobileClockUiNativeBridgeApi->Create();
+        if (mobileClockUiNativeBridge == nullptr) {
             throw std::runtime_error("Preview extension could not create ControlsRuntime");
         }
 
@@ -265,8 +241,8 @@ namespace xaml::bridge {
     }
 
     void UnregisterPreviewControls(Element& element) {
-        if (controlsRuntime != nullptr) {
-            controlsRuntimeApi.detach(controlsRuntime, &element);
+        if (mobileClockUiNativeBridge != nullptr) {
+            mobileClockUiNativeBridgeApi->Detach(mobileClockUiNativeBridge, &element);
         }
     }
 }
@@ -281,7 +257,7 @@ struct xr_interaction_controller {
 };
 
 struct xr_controls_rebuild_state {
-    mc_controls_rebuild_state* value;
+    MobileClockUiRebuildState* value;
 };
 
 struct xr_angle_surface {
@@ -341,9 +317,9 @@ int xr_controls_attach(xr_element* root, const char* className) {
         if (root == nullptr || className == nullptr) {
             throw std::invalid_argument("root and className are required");
         }
-        xaml::bridge::LoadControlsRuntime();
-        xaml::bridge::controlsRuntimeApi.attach(
-            xaml::bridge::controlsRuntime,
+        xaml::bridge::LoadMobileClockUiNativeBridge();
+        xaml::bridge::mobileClockUiNativeBridgeApi->Attach(
+            xaml::bridge::mobileClockUiNativeBridge,
             reinterpret_cast<xaml::Element*>(root),
             className);
         return 1;
@@ -359,9 +335,9 @@ xr_controls_rebuild_state* xr_controls_capture_rebuild_state(xr_element*, xr_ele
         if (target == nullptr) {
             throw std::invalid_argument("target is required");
         }
-        xaml::bridge::LoadControlsRuntime();
-        mc_controls_rebuild_state* const value = xaml::bridge::controlsRuntimeApi.captureRebuildState(
-            xaml::bridge::controlsRuntime,
+        xaml::bridge::LoadMobileClockUiNativeBridge();
+        MobileClockUiRebuildState* const value = xaml::bridge::mobileClockUiNativeBridgeApi->CaptureRebuildState(
+            xaml::bridge::mobileClockUiNativeBridge,
             reinterpret_cast<xaml::Element*>(target));
         if (value == nullptr) {
             return nullptr;
@@ -382,9 +358,9 @@ int xr_controls_restore_rebuild_state(
         if (state == nullptr || pageRoot == nullptr || animations == nullptr) {
             throw std::invalid_argument("state, pageRoot and animations are required");
         }
-        xaml::bridge::LoadControlsRuntime();
-        return xaml::bridge::controlsRuntimeApi.restoreRebuildState(
-            xaml::bridge::controlsRuntime,
+        xaml::bridge::LoadMobileClockUiNativeBridge();
+        return xaml::bridge::mobileClockUiNativeBridgeApi->RestoreRebuildState(
+            xaml::bridge::mobileClockUiNativeBridge,
             state->value,
             reinterpret_cast<xaml::Element*>(pageRoot),
             &animations->value);
@@ -396,8 +372,8 @@ int xr_controls_restore_rebuild_state(
 
 void xr_controls_rebuild_state_destroy(xr_controls_rebuild_state* state) {
     if (state != nullptr) {
-        xaml::bridge::LoadControlsRuntime();
-        xaml::bridge::controlsRuntimeApi.destroyRebuildState(state->value);
+        xaml::bridge::LoadMobileClockUiNativeBridge();
+        xaml::bridge::mobileClockUiNativeBridgeApi->DestroyRebuildState(state->value);
         delete state;
     }
 }

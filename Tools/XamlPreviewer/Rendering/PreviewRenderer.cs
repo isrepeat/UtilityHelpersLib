@@ -172,7 +172,7 @@ internal static class PreviewRenderer {
         if (string.IsNullOrEmpty(xamlDirectory)) {
             throw new InvalidDataException("Для предпросмотра UserControl требуется каталог XAML.");
         }
-        var path = Path.Combine(xamlDirectory, "Controls", invocation.Name.LocalName + ".xaml");
+        var path = PreviewRenderer.ResolveUserControlPath(xamlDirectory, invocation.Name.LocalName);
         if (!File.Exists(path)) {
             throw new InvalidDataException($"UserControl не найден: {path}.");
         }
@@ -209,6 +209,19 @@ internal static class PreviewRenderer {
             NativeRuntime.xr_destroy_element(root);
             throw;
         }
+    }
+
+    private static string ResolveUserControlPath(string xamlDirectory, string controlName) {
+        var pageControlsPath = Path.Combine(xamlDirectory, "Controls", controlName + ".xaml");
+        if (File.Exists(pageControlsPath)) {
+            return pageControlsPath;
+        }
+        return Path.GetFullPath(Path.Combine(
+            xamlDirectory,
+            "..",
+            "MobileClock.UI",
+            "Controls",
+            controlName + ".xaml"));
     }
 
     private static IReadOnlyDictionary<string, Style> ExtractStyles(XElement page) {
