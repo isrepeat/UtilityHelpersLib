@@ -9,9 +9,7 @@
 #include <XamlRuntime/Animation.h>
 #include <XamlRuntime/Input.h>
 
-#include "../../../../Resources/Effects/Effects.h"
-#include "../../../../Renderer/AnimationRenderers.h"
-#include "../../../../UI/PageTransition.h"
+#include "../../../../MobileClock.Presentation/PreviewSession.h"
 #include "AngleRenderSurface.h"
 #include "NativeBridge.h"
 
@@ -26,9 +24,6 @@
 #include <string>
 #include <vector>
 #include <cmath>
-
-// TODO: перепиши логику NativeBridge в виде базового класса, который по сути является оберткой над API XamlRuntime,
-// и дополнительного расширяющего класса, к примеру для xr_hit_test_visual.
 
 namespace xaml::bridge::_details {
     Element* FindElement(Element& element, std::string_view id) {
@@ -220,7 +215,7 @@ namespace xaml::bridge {
 }
 
 struct xr_animation_controller {
-    xaml::AnimationController value;
+    mobileclock::presentation::PreviewSession value;
     xaml::ScrollController scrollController;
 };
 
@@ -406,10 +401,7 @@ int xr_attach_animations(xr_element* root, xr_animation_controller* animations) 
         if (animations == nullptr) {
             throw std::invalid_argument("animations is required");
         }
-        auto registry = mobileclock::resources::effects::CreateAnimations();
-        mobileclock::renderer::RegisterAnimations(registry);
-        // Rebuilding the preview is not navigation. Show/Hide run on visibility changes.
-        animations->value.Attach(*reinterpret_cast<xaml::Element*>(root), registry, false);
+        animations->value.Attach(*reinterpret_cast<xaml::Element*>(root));
         return 1;
     } catch (const std::exception& error) {
         xaml::bridge::lastError = error.what();
@@ -417,23 +409,24 @@ int xr_attach_animations(xr_element* root, xr_animation_controller* animations) 
     }
 }
 
-int xr_set_page_transition(xr_element* root, const char* from, const char* to, int backward, int visible) {
+int xr_set_page_transition(
+    xr_element* root,
+    xr_animation_controller* animations,
+    const char* from,
+    const char* to,
+    int backward,
+    int visible) {
     try {
         xaml::bridge::lastError.clear();
-        if (root == nullptr || from == nullptr || to == nullptr) {
-            throw std::invalid_argument("root, from and to are required");
+        if (root == nullptr || animations == nullptr || from == nullptr || to == nullptr) {
+            throw std::invalid_argument("root, animations, from and to are required");
         }
-        const mobileclock::ui::PageTransitionData data{
+        animations->value.SetPageTransition(
+            *reinterpret_cast<xaml::Element*>(root),
             from,
             to,
-            backward != 0 ? mobileclock::ui::NavigationDirection::backward
-                          : mobileclock::ui::NavigationDirection::forward,
-        };
-        auto& page = *reinterpret_cast<xaml::Element*>(root);
-        page.SetAnimationParametersProvider([data]() {
-            return xaml::AnimationParameters::Create(data);
-        });
-        page.SetVisibility(visible != 0 ? xaml::attr::Visibility::visible : xaml::attr::Visibility::collapsed);
+            backward != 0,
+            visible != 0);
         return 1;
     } catch (const std::exception& error) {
         xaml::bridge::lastError = error.what();
@@ -827,7 +820,7 @@ int xr_animate_render_offset_x(
             throw std::invalid_argument("element, animations, value and duration are required");
         }
         xaml::Element& target = *reinterpret_cast<xaml::Element*>(element);
-        animations->value.Animate(
+        animations->value.Animations().Animate(
             target,
             xaml::AnimatedProperty::renderOffsetX,
             target.RenderOffsetX(),
@@ -858,7 +851,7 @@ int xr_handle_tap(xr_element* element, xr_animation_controller* animations) {
             return 0;
         }
         if (target.Type() == xaml::ElementType::toggleSwitch) {
-            animations->value.Start(target, xaml::AnimationTrigger::toggled);
+            animations->value.Animations().Start(target, xaml::AnimationTrigger::toggled);
         }
         return 1;
     } catch (const std::exception& error) {
@@ -874,7 +867,7 @@ int xr_handle_pointer_down(xr_element* element, xr_animation_controller* animati
             throw std::invalid_argument("element and animations are required");
         }
         xaml::Element& target = *reinterpret_cast<xaml::Element*>(element);
-        animations->value.Start(target, xaml::AnimationTrigger::pointerDown);
+        animations->value.Animations().Start(target, xaml::AnimationTrigger::pointerDown);
         return 1;
     } catch (const std::exception& error) {
         xaml::bridge::lastError = error.what();
@@ -890,7 +883,7 @@ int xr_handle_pointer_up(xr_element* element, xr_animation_controller* animation
         }
         xaml::Element& target = *reinterpret_cast<xaml::Element*>(element);
         if (target.Type() == xaml::ElementType::button) {
-            animations->value.Start(target, xaml::AnimationTrigger::pointerUp);
+            animations->value.Animations().Start(target, xaml::AnimationTrigger::pointerUp);
             return 1;
         }
         return xr_handle_tap(element, animations);
@@ -931,7 +924,11 @@ int xr_interaction_pointer_down(
     if (controller == nullptr || root == nullptr || animations == nullptr) {
         return 0;
     }
-    controller->value.PointerDown(*reinterpret_cast<xaml::Element*>(root), animations->value, x, y);
+    controller->value.PointerDown(
+        *reinterpret_cast<xaml::Element*>(root),
+        animations->value.Animations(),
+        x,
+        y);
     return controller->value.HasCapture() ? 1 : 0;
 }
 
@@ -950,7 +947,7 @@ int xr_interaction_pointer_up(
         return 0;
     }
     const xaml::GestureResult nativeResult = controller->value.PointerUp(
-        *reinterpret_cast<xaml::Element*>(root), animations->value, x, y);
+        *reinterpret_cast<xaml::Element*>(root), animations->value.Animations(), x, y);
     result->kind = static_cast<int>(nativeResult.kind);
     result->direction = static_cast<int>(nativeResult.direction);
     result->target = reinterpret_cast<xr_element*>(nativeResult.target);
@@ -995,10 +992,8 @@ int xr_update_animations(xr_animation_controller* animations) {
         if (animations == nullptr) {
             throw std::invalid_argument("animations are required");
         }
-        const bool wasAnimating = animations->value.IsAnimating();
         const bool wasScrolling = animations->scrollController.Update();
-        animations->value.Update();
-        return wasAnimating || animations->value.IsAnimating() || wasScrolling ? 1 : 0;
+        return animations->value.Update() || wasScrolling ? 1 : 0;
     } catch (const std::exception& error) {
         xaml::bridge::lastError = error.what();
         return -1;

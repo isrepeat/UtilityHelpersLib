@@ -6,8 +6,7 @@
 #include <XamlRuntime/RenderEngine.h>
 #include <XamlRuntime/XamlLayout.h>
 
-#include "../../../../Resources/Effects/Effects.h"
-#include "../../../../Resources/Effects/Shaders.h"
+#include "../../../../MobileClock.Presentation/PreviewSession.h"
 #include "AngleRenderSurface.h"
 
 #include <algorithm>
@@ -33,36 +32,6 @@ namespace xaml::bridge::_details {
         return display.get();
     }
 
-    // Повторяет демонстрационный renderer MobileClock, чтобы эффект был виден в previewer-е.
-    bool RenderWaveOutline(const Element& element, RenderContext<mobileclock::resources::effects::WaveAnimation>& context) {
-        if (element.Type() != ElementType::button) {
-            return false;
-        }
-
-        context.RenderDefaultElement();
-        mobileclock::resources::effects::RenderWave(element, context);
-
-        const float progress = context.State().progress;
-        if (progress < 0.0f || context.State().opacity <= 0.0f) {
-            return true;
-        }
-
-        const float pulse = 1.0f - std::min(progress, 1.0f);
-        const attr::Color foreground = element.Foreground();
-        const attr::Color color{
-            foreground.red,
-            foreground.green,
-            foreground.blue,
-            foreground.alpha * context.State().opacity * pulse * context.Opacity(),
-        };
-        const float thickness = 1.0f + pulse * 3.0f;
-        context.Backend().DrawRoundedRectOutline(
-            context.Bounds(),
-            color,
-            element.CornerRadius(),
-            thickness);
-        return true;
-    }
 }
 
 namespace xaml::bridge {
@@ -89,7 +58,7 @@ namespace xaml::bridge {
         EGLDisplay display = EGL_NO_DISPLAY;
         EGLSurface surface = EGL_NO_SURFACE;
         EGLContext context = EGL_NO_CONTEXT;
-        RendererRegistry renderers = mobileclock::resources::effects::CreateRenderers();
+        RendererRegistry renderers = mobileclock::presentation::PreviewSession::CreateRenderers();
         std::unique_ptr<es_renderer::OpenGlRenderer> renderer;
     };
 
@@ -167,12 +136,11 @@ namespace xaml::bridge {
             boldFontData.size(),
             blackFontData.data(),
             blackFontData.size(),
-            mobileclock::resources::effects::CreateShaderPrograms(),
+            mobileclock::presentation::PreviewSession::CreateShaderPrograms(),
             [root = std::string(resourceRoot)](std::string_view source) {
                 return utility_helpers::new_helpers::filesystem::ReadAllBytes(root + "/" + std::string(source));
             });
         xaml::SetTextGlyphMetrics(this->renderer->TextGlyphMetrics());
-        this->renderers.Register<mobileclock::resources::effects::WaveAnimation>("rendererWaveOutline", _details::RenderWaveOutline);
         if (eglMakeCurrent(
             this->display,
             EGL_NO_SURFACE,

@@ -13,7 +13,7 @@
     <PropertyGroup Label="Globals">
         <VCProjectVersion>18.0</VCProjectVersion>
         <ProjectGuid>{4F503B7D-45FB-4120-A069-6638899C08A8}</ProjectGuid>
-        <RootNamespace>XamlRuntimeNativeBridge</RootNamespace>
+        <RootNamespace>XamlPreviewerNativeBridge</RootNamespace>
         <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
     </PropertyGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -33,15 +33,21 @@
         <IntDir>$(PreviewerNativeBridgeIntermediateDir)</IntDir>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetName>XamlRuntime.NativeBridge</TargetName>
+        <TargetName>XamlPreviewer.NativeBridge</TargetName>
+        <MobileClockPresentationProject>$(ProjectDir)..\..\..\..\MobileClock.Presentation\MobileClock.Presentation.vcxproj</MobileClockPresentationProject>
+        <MobileClockPresentationLibraryDirectory>$(ProjectDir)..\..\..\..\MobileClock.Native\!VS_TMP\Build\$(Configuration)\$(Platform)\MobileClock.Presentation\</MobileClockPresentationLibraryDirectory>
     </PropertyGroup>
     <ItemDefinitionGroup>
         <ClCompile>
-            <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..;$(ProjectDir)..\..\..\HelpersNew\HelpersNew.Shared;$(ProjectDir)..\..\..\NugetProjects\XamlRuntime\Nuget\OpenGLESRenderer\OpenGLESRenderer.Shared;$(ProjectDir)..\..\..\NugetProjects\XamlRuntime\Nuget\XamlRuntime\XamlRuntime.Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+            <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\HelpersNew\HelpersNew.Shared;$(ProjectDir)..\..\..\NugetProjects\XamlRuntime\Nuget\OpenGLESRenderer\OpenGLESRenderer.Shared;$(ProjectDir)..\..\..\NugetProjects\XamlRuntime\Nuget\XamlRuntime\XamlRuntime.Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
             <LanguageStandard>stdcpp17</LanguageStandard>
             <WarningLevel>Level4</WarningLevel>
             <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
         </ClCompile>
+        <Link>
+            <AdditionalLibraryDirectories>$(MobileClockPresentationLibraryDirectory);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+            <AdditionalDependencies>MobileClock.Presentation.lib;%(AdditionalDependencies)</AdditionalDependencies>
+        </Link>
     </ItemDefinitionGroup>
     <ItemGroup>
         <PackageReference Include="ANGLE.Windows.x64" Version="1.0.0" />
@@ -49,9 +55,6 @@
     <ItemGroup>
         <ClCompile Include="AngleRenderSurface.cpp" />
         <ClCompile Include="NativeBridge.cpp" />
-        <ClCompile Include="..\..\..\..\Renderer\AnimationRenderers.cpp" />
-        <ClCompile Include="..\..\..\..\Resources\Effects\Effects.cpp" />
-        <ClCompile Include="..\..\..\..\Resources\Effects\Shaders.cpp" />
     </ItemGroup>
     <ItemGroup>
         <ClInclude Include="AngleRenderSurface.h" />
@@ -79,4 +82,7 @@
         </ProjectReference>
     </ItemGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+    <Target Name="BuildMobileClockPresentation" BeforeTargets="Link">
+        <Exec Command="&quot;$(MSBuildToolsPath)\MSBuild.exe&quot; &quot;$(MobileClockPresentationProject)&quot; /t:Build /p:Configuration=$(Configuration) /p:Platform=$(Platform) /m:1 /v:minimal" />
+    </Target>
 </Project>

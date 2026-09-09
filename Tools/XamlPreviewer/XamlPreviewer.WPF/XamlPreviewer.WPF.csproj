@@ -9,8 +9,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PlatformTarget>x64</PlatformTarget>
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
-    <NativeBridgeOutputDir>$(MSBuildProjectDirectory)\..\..\..\!VS_TMP\Build\$(Configuration)\x64\XamlRuntime.NativeBridge\</NativeBridgeOutputDir>
-    <NativeBridgeIntermediateDir>$(MSBuildProjectDirectory)\..\..\..\!VS_TMP\Intermediate\$(Configuration)\x64\XamlRuntime.NativeBridge.Previewer\</NativeBridgeIntermediateDir>
+    <NativeBridgeOutputDir>$(MSBuildProjectDirectory)\..\..\..\!VS_TMP\Build\$(Configuration)\x64\XamlPreviewer.NativeBridge\</NativeBridgeOutputDir>
+    <NativeBridgeIntermediateDir>$(MSBuildProjectDirectory)\..\..\..\!VS_TMP\Intermediate\$(Configuration)\x64\XamlPreviewer.NativeBridge\</NativeBridgeIntermediateDir>
     <NativeAngleZlibName>z.dll</NativeAngleZlibName>
   </PropertyGroup>
 
@@ -57,9 +57,9 @@
   </Target>
 
   <Target Name="CopyNativeBridge" AfterTargets="Build">
-    <Error Condition="!Exists('$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.dll')" Text="XamlRuntime.NativeBridge.dll was not built: $(NativeBridgeOutputDir)XamlRuntime.NativeBridge.dll" />
-    <Copy SourceFiles="$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.dll" DestinationFolder="$(OutDir)" />
-    <Copy SourceFiles="$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.pdb" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('$(NativeBridgeOutputDir)XamlRuntime.NativeBridge.pdb')" />
+    <Error Condition="!Exists('$(NativeBridgeOutputDir)XamlPreviewer.NativeBridge.dll')" Text="XamlPreviewer.NativeBridge.dll was not built: $(NativeBridgeOutputDir)XamlPreviewer.NativeBridge.dll" />
+    <Copy SourceFiles="$(NativeBridgeOutputDir)XamlPreviewer.NativeBridge.dll" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="$(NativeBridgeOutputDir)XamlPreviewer.NativeBridge.pdb" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('$(NativeBridgeOutputDir)XamlPreviewer.NativeBridge.pdb')" />
     <Copy SourceFiles="$(NativeBridgeOutputDir)libEGL.dll;$(NativeBridgeOutputDir)libGLESv2.dll;$(NativeBridgeOutputDir)$(NativeAngleZlibName)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
   </Target>
 </Project>

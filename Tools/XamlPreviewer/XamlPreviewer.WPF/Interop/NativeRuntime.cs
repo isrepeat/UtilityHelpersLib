@@ -75,7 +75,7 @@ internal unsafe struct NativeCommand {
 }
 
 internal static class NativeRuntime {
-    private const string Library = "XamlRuntime.NativeBridge.dll";
+    private const string Library = "XamlPreviewer.NativeBridge.dll";
 
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xr_configure_logging")]
     public static extern void xr_configure_logging([MarshalAs(UnmanagedType.LPUTF8Str)] string filePath);
@@ -117,6 +117,7 @@ internal static class NativeRuntime {
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
     public static extern int xr_set_page_transition(
         IntPtr root,
+        IntPtr animations,
         [MarshalAs(UnmanagedType.LPUTF8Str)] string from,
         [MarshalAs(UnmanagedType.LPUTF8Str)] string to,
         int backward,

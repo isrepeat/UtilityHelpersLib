@@ -73,7 +73,12 @@ XAML_RUNTIME_BRIDGE_API int xr_add_storyboard_animation(xr_element* element, int
     const char* name, const char* const* keys, const char* const* values, int count);
 XAML_RUNTIME_BRIDGE_API int xr_attach_animations(xr_element* root, xr_animation_controller* animations);
 XAML_RUNTIME_BRIDGE_API int xr_set_page_transition(
-    xr_element* root, const char* from, const char* to, int backward, int visible);
+    xr_element* root,
+    xr_animation_controller* animations,
+    const char* from,
+    const char* to,
+    int backward,
+    int visible);
 XAML_RUNTIME_BRIDGE_API int xr_add_storyboard_track(
     xr_element* element,
     int trigger,

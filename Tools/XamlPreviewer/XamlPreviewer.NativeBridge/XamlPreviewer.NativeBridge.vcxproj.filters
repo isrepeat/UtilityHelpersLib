@@ -7,15 +7,6 @@
     <ClCompile Include="NativeBridge.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\Resources\Effects\Effects.cpp">
-      <Filter>ExternalSources</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\Resources\Effects\Shaders.cpp">
-      <Filter>ExternalSources</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\Renderer\AnimationRenderers.cpp">
-      <Filter>ExternalSources</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AngleRenderSurface.h">
@@ -28,9 +19,6 @@
   <ItemGroup>
     <Filter Include="Sources">
       <UniqueIdentifier>{6f46e24c-da5e-4ffb-9a6d-ccff8b79ec54}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ExternalSources">
-      <UniqueIdentifier>{ec510d63-0e89-4358-8ba7-6980688d8ad8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

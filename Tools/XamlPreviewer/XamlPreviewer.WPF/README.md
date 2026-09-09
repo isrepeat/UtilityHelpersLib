@@ -2,7 +2,7 @@
 
 Desktop-прототип для интерактивного просмотра XAML-подобной разметки MobileClock. Решение для Visual Studio находится в `XamlPreviewer.sln`.
 
-Решение содержит C#-оболочку `XamlPreviewer` и Windows bridge `XamlRuntime.NativeBridge`. Bridge скрыто собирает и линкует общую C++-библиотеку `XamlRuntime`; она не показывается в Solution Explorer. Собирать решение нужно в конфигурации `x64`, после чего previewer запускается обычным способом из Visual Studio.
+Решение содержит C#-оболочку `XamlPreviewer` и Windows bridge `XamlPreviewer.NativeBridge`. Bridge отвечает только за ABI и ANGLE-поверхность; он ссылается на `MobileClock.Presentation`, который создаёт MobileClock-реестр эффектов, шейдеров и анимаций для той же C++-сессии предпросмотра. Собирать решение нужно в конфигурации `x64`, после чего previewer запускается обычным способом из Visual Studio.
 
 Запуск уже собранной Debug-конфигурации из корня репозитория:
 

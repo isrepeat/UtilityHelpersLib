@@ -25,7 +25,7 @@ namespace XamlPreviewer;
 /// Разбор разметки и отрисовка остаются в специализированных классах PreviewRenderer и PreviewSession.
 /// </summary>
 public partial class MainWindow : Window {
-    private const string NativeBridgeLibraryName = "XamlRuntime.NativeBridge.dll";
+    private const string NativeBridgeLibraryName = "XamlPreviewer.NativeBridge.dll";
     private const double SearchPanelOverlayHeight = 84.0;
     private static readonly JsonSerializerOptions ScenarioJsonOptions = new() {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
@@ -229,7 +229,7 @@ public partial class MainWindow : Window {
         return Path.Combine(
             configurationDirectory.FullName,
             "x64",
-            "XamlRuntime.NativeBridge",
+            "XamlPreviewer.NativeBridge",
             NativeBridgeLibraryName);
     }
 

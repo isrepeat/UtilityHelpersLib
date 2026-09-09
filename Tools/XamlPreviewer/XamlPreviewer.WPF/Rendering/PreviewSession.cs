@@ -111,7 +111,7 @@ internal sealed class PreviewSession : IDisposable {
         this.image.ReleaseMouseCapture();
         this.inspectionOutline.Visibility = Visibility.Collapsed;
         NativeRuntime.Ensure(NativeRuntime.xr_set_page_transition(
-            this.root, from, to, backward ? 1 : 0, visible ? 1 : 0) != 0);
+            this.root, this.animations, from, to, backward ? 1 : 0, visible ? 1 : 0) != 0);
         this.Render();
     }
 
