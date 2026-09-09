@@ -108,7 +108,7 @@ Alt+клик прокручивает XAML до открывающего тег�
 отключена. При потере активности окна подсветка сбрасывается.
 
 Навигация использует настоящие native Storyboard Show/Hide из XAML.
-Bridge собирает эффекты из Native/Resources/Effects и
+Bridge собирает эффекты из MobileClock.Native/Resources/Effects и
 Native/Renderer/AnimationRenderers.cpp. Изменения этих C++-файлов требуют
 пересборки NativeBridge; настройки существующих эффектов меняются в XAML.
 
@@ -144,5 +144,5 @@ direction по умолчанию forward.
 MobileClock:
 
 ```powershell
-dotnet run --project Native/Tests/XamlPreviewer/NativeTransitions.csproj -- .
+dotnet run --project MobileClock.Native/Tests/XamlPreviewer/NativeTransitions.csproj -- .
 ```

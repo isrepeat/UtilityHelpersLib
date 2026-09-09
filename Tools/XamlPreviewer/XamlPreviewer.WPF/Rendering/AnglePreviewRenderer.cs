@@ -4,7 +4,7 @@ using System.Windows.Media.Imaging;
 namespace XamlPreviewer;
 
 internal sealed class AnglePreviewRenderer : IDisposable {
-    private const string FontPath = @"C:\WORK\Android\Projects\MobileClock\app\src\main\assets\Roboto-Regular.ttf";
+    private const string FontPath = @"C:\WORK\Android\Projects\MobileClock\MobileClock.Android\src\main\assets\Roboto-Regular.ttf";
 
     private IntPtr surface;
 
