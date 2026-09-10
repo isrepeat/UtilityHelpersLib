@@ -56,6 +56,14 @@ namespace xaml {
             return result;
         }
 
+        void Clear() {
+            if (this->values.empty()) {
+                return;
+            }
+            this->values.clear();
+            this->Notify({CollectionChangeKind::reset});
+        }
+
         Unsubscribe Subscribe(ChangedHandler handler) const {
             this->handlers.push_back(std::move(handler));
             const size_t index = this->handlers.size() - 1;
