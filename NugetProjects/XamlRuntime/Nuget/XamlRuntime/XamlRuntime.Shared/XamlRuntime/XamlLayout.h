@@ -80,6 +80,19 @@ namespace xaml {
             float top = 0.0f;
             float bottom = 0.0f;
         };
+
+        enum class WireframeLineStyle {
+            solid,
+            dashed,
+        };
+
+        struct Wireframe {
+            float thickness = 0.0f;
+            WireframeLineStyle lineStyle = WireframeLineStyle::solid;
+            Color color{0.0f, 0.0f, 0.0f, 0.0f};
+            Color marginColor{0.0f, 0.0f, 0.0f, 0.0f};
+            Color paddingColor{0.0f, 0.0f, 0.0f, 0.0f};
+        };
     }
 
     struct Size {
@@ -106,6 +119,12 @@ namespace xaml {
 
         const std::string& Id() const;
         void SetId(std::string value);
+
+        int SourceLine() const;
+        int SourceColumn() const;
+        const std::string& SourcePath() const;
+        void SetSourceLocation(int line, int column);
+        void SetSourceLocation(std::string path, int line, int column);
 
         const void* DataContext() const;
         void SetDataContext(const void* value);
@@ -185,6 +204,18 @@ namespace xaml {
 
         attr::Thickness BorderThickness() const;
         void SetBorderThickness(attr::Thickness value);
+
+        const attr::Wireframe& Wireframe() const;
+        void SetWireframe(attr::Wireframe value);
+
+        bool HasInspectionWireframe() const;
+        const attr::Wireframe& InspectionWireframe() const;
+        void SetInspectionWireframe(attr::Wireframe value);
+        void ClearInspectionWireframe();
+        bool HasSelectedWireframe() const;
+        const attr::Wireframe& SelectedWireframe() const;
+        void SetSelectedWireframe(attr::Wireframe value);
+        void ClearSelectedWireframe();
 
         float CornerRadius() const;
         void SetCornerRadius(float value);
@@ -324,6 +355,9 @@ namespace xaml {
     private:
         ElementType type;
         std::string id;
+        int sourceLine = 0;
+        int sourceColumn = 0;
+        std::string sourcePath;
         const void* dataContext = nullptr;
         bool hasLocalDataContext = false;
         std::string renderer;
@@ -351,6 +385,11 @@ namespace xaml {
         attr::Thickness margin{};
         attr::Thickness padding{};
         attr::Thickness borderThickness{};
+        attr::Wireframe wireframe{};
+        bool hasInspectionWireframe = false;
+        attr::Wireframe inspectionWireframe{};
+        bool hasSelectedWireframe = false;
+        attr::Wireframe selectedWireframe{};
         float cornerRadius = 0.0f;
         float width = 0.0f;
         float height = 0.0f;

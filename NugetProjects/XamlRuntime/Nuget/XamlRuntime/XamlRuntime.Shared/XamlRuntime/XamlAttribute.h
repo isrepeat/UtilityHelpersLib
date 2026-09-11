@@ -43,6 +43,7 @@ namespace xaml {
         renderer,
         verticalScrollBarVisibility,
         horizontalScrollBarVisibility,
+        wireframe,
         count,
     };
 
@@ -70,6 +71,7 @@ namespace xaml {
         itemsSource = 1 << 15,
         renderer = 1 << 20,
         scroll = 1 << 22,
+        wireframe = 1 << 23,
     };
 
     std::optional<XamlAttribute> ParseXamlAttribute(std::string_view name);

@@ -46,6 +46,7 @@ namespace xaml {
             {XamlAttribute::renderer, XamlAttributeGroup::renderer, "renderer"},
             {XamlAttribute::verticalScrollBarVisibility, XamlAttributeGroup::scroll, "verticalScrollBarVisibility"},
             {XamlAttribute::horizontalScrollBarVisibility, XamlAttributeGroup::scroll, "horizontalScrollBarVisibility"},
+            {XamlAttribute::wireframe, XamlAttributeGroup::wireframe, "wireframe"},
         };
 
         const AttributeMapping* FindAttribute(XamlAttribute attribute) {

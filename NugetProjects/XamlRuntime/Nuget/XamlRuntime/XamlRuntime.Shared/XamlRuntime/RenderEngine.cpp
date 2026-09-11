@@ -168,6 +168,67 @@ namespace xaml::_details {
         }
     }
 
+    void RenderWireframe(
+        IRenderBackend& backend,
+        const Rect& bounds,
+        float opacity,
+        float cornerRadius,
+        const attr::Wireframe& wireframe) {
+        if (wireframe.thickness <= 0.0f || wireframe.color.alpha <= 0.0f) {
+            return;
+        }
+
+        const attr::Color color = WithOpacity(wireframe.color, opacity);
+        if (wireframe.lineStyle == attr::WireframeLineStyle::solid) {
+            backend.DrawRoundedRectOutline(bounds, color, cornerRadius, wireframe.thickness);
+            return;
+        }
+
+        const float dashLength = wireframe.thickness * 3.0f;
+        const float dashStep = dashLength * 2.0f;
+        if (dashLength <= 0.0f) {
+            return;
+        }
+        const auto drawDash = [&backend, color, &wireframe](const Rect& dashBounds) {
+            backend.DrawRoundedRect(dashBounds, color, wireframe.thickness / 2.0f);
+        };
+        for (float x = bounds.x; x < bounds.x + bounds.width; x += dashStep) {
+            const float width = std::min(dashLength, bounds.x + bounds.width - x);
+            drawDash({x, bounds.y, width, wireframe.thickness});
+            drawDash({x, bounds.y + bounds.height - wireframe.thickness, width, wireframe.thickness});
+        }
+        for (float y = bounds.y + dashStep; y < bounds.y + bounds.height - wireframe.thickness; y += dashStep) {
+            const float height = std::min(dashLength, bounds.y + bounds.height - y);
+            drawDash({bounds.x, y, wireframe.thickness, height});
+            drawDash({bounds.x + bounds.width - wireframe.thickness, y, wireframe.thickness, height});
+        }
+    }
+
+    void RenderWireframeInsets(
+        IRenderBackend& backend,
+        const Rect& bounds,
+        const attr::Thickness& thickness,
+        attr::Color color,
+        float opacity) {
+        if (color.alpha <= 0.0f) {
+            return;
+        }
+        color = WithOpacity(color, opacity);
+        backend.DrawRoundedRect({bounds.x, bounds.y, bounds.width, thickness.top}, color, 0.0f);
+        backend.DrawRoundedRect({bounds.x, bounds.y + bounds.height - thickness.bottom, bounds.width, thickness.bottom}, color, 0.0f);
+        backend.DrawRoundedRect({bounds.x, bounds.y + thickness.top, thickness.left, bounds.height - thickness.top - thickness.bottom}, color, 0.0f);
+        backend.DrawRoundedRect({bounds.x + bounds.width - thickness.right, bounds.y + thickness.top, thickness.right, bounds.height - thickness.top - thickness.bottom}, color, 0.0f);
+    }
+
+    void RenderWireframeMargin(const Element& element, IRenderBackend& backend, const Rect& bounds, float opacity, const attr::Wireframe& wireframe) {
+        const attr::Thickness margin = element.Margin();
+        RenderWireframeInsets(backend, {bounds.x - margin.left, bounds.y - margin.top, bounds.width + margin.left + margin.right, bounds.height + margin.top + margin.bottom}, margin, wireframe.marginColor, opacity);
+    }
+
+    void RenderWireframePadding(const Element& element, IRenderBackend& backend, const Rect& bounds, float opacity, const attr::Wireframe& wireframe) {
+        RenderWireframeInsets(backend, bounds, element.Padding(), wireframe.paddingColor, opacity);
+    }
+
     void RenderDefaultElement(
         const Element& element,
         IRenderBackend& backend,
@@ -227,6 +288,13 @@ namespace xaml::_details {
             ? offsetX - element.HorizontalOffset() : offsetX;
         const float childrenOffsetY = element.Type() == ElementType::scrollViewer
             ? offsetY - element.VerticalOffset() : offsetY;
+        RenderWireframeMargin(element, backend, bounds, opacity, element.Wireframe());
+        if (element.HasInspectionWireframe()) {
+            RenderWireframeMargin(element, backend, bounds, opacity, element.InspectionWireframe());
+        }
+        if (element.HasSelectedWireframe()) {
+            RenderWireframeMargin(element, backend, bounds, opacity, element.SelectedWireframe());
+        }
         backend.BeginClip(Translate(element.ClipBounds(), offsetX, offsetY));
         RenderInvocation context(backend, bounds, opacity,
             [&element, &backend, bounds, opacity]() {
@@ -253,6 +321,16 @@ namespace xaml::_details {
         }
         if (element.Type() == ElementType::scrollViewer) {
             RenderScrollBars(element, backend, bounds, opacity);
+        }
+        RenderWireframe(backend, bounds, opacity, element.CornerRadius(), element.Wireframe());
+        RenderWireframePadding(element, backend, bounds, opacity, element.Wireframe());
+        if (element.HasInspectionWireframe()) {
+            RenderWireframe(backend, bounds, opacity, element.CornerRadius(), element.InspectionWireframe());
+            RenderWireframePadding(element, backend, bounds, opacity, element.InspectionWireframe());
+        }
+        if (element.HasSelectedWireframe()) {
+            RenderWireframe(backend, bounds, opacity, element.CornerRadius(), element.SelectedWireframe());
+            RenderWireframePadding(element, backend, bounds, opacity, element.SelectedWireframe());
         }
         backend.EndClip();
     }

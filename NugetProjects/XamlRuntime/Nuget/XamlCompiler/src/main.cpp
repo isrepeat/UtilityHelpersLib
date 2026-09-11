@@ -48,6 +48,8 @@ namespace {
         static constexpr const char* namespaceUri = "urn:mobileclock:xaml";
         std::map<std::string, Style> styles;
         std::set<std::string> requiredControls;
+        const std::string* xamlSource = nullptr;
+        std::string xamlSourcePath;
 
         bool IsIgnored(
             const std::filesystem::path& input,
@@ -107,6 +109,11 @@ namespace {
         size_t LineNumber(const std::string& source, size_t offset) {
             return 1 + static_cast<size_t>(
                 std::count(source.begin(), source.begin() + offset, '\n'));
+        }
+
+        size_t ColumnNumber(const std::string& source, size_t offset) {
+            const size_t lineStart = source.rfind('\n', offset);
+            return offset - (lineStart == std::string::npos ? 0 : lineStart + 1) + 1;
         }
 
         [[noreturn]] void Fail(
@@ -268,6 +275,33 @@ namespace {
             }
             return "attr::Thickness{" + std::to_string(values[0]) + "f, " + std::to_string(values[1])
                 + "f, " + std::to_string(values[2]) + "f, " + std::to_string(values[3]) + "f}";
+        }
+
+        std::string WireframeLiteral(const std::string& value) {
+            std::istringstream input(value);
+            float thickness = 0.0f;
+            std::string lineStyle;
+            std::string color;
+            if (!(input >> thickness >> lineStyle >> color) || thickness <= 0.0f) {
+                throw std::runtime_error("wireframe must use '<thickness> <solid|dashed> <color>'");
+            }
+            if (lineStyle != "solid" && lineStyle != "dashed") {
+                throw std::runtime_error("wireframe line style must be solid or dashed");
+            }
+            std::string marginColor{"{0.0f, 0.0f, 0.0f, 0.0f}"};
+            std::string paddingColor{"{0.0f, 0.0f, 0.0f, 0.0f}"};
+            std::string flag;
+            while (input >> flag) {
+                if (flag.rfind("-m:", 0) == 0 && flag.size() > 3) {
+                    marginColor = this->ColorLiteral("wireframe margin", flag.substr(3));
+                } else if (flag.rfind("-p:", 0) == 0 && flag.size() > 3) {
+                    paddingColor = this->ColorLiteral("wireframe padding", flag.substr(3));
+                } else {
+                    throw std::runtime_error("wireframe supports only -m:<color> and -p:<color> flags");
+                }
+            }
+            return "{" + std::to_string(thickness) + "f, attr::WireframeLineStyle::" + lineStyle
+                + ", " + this->ColorLiteral("wireframe", color) + ", " + marginColor + ", " + paddingColor + "}";
         }
 
         std::string ColorLiteral(const std::string& name, const std::string& value) {
@@ -489,6 +523,8 @@ namespace {
                     << "(" << this->ThicknessLiteral(value) << ");\n";
             } else if (name == "borderThickness") {
                 output << "            " << variable << "->SetBorderThickness(" << this->ThicknessLiteral(value) << ");\n";
+            } else if (name == "wireframe") {
+                output << "            " << variable << "->SetWireframe(" << this->WireframeLiteral(value) << ");\n";
             } else if (name == "borderBrush") {
                 output << "            " << variable << "->SetBorderColor("
                     << this->ColorLiteral(name, value) << ");\n";
@@ -602,6 +638,10 @@ namespace {
                     output << ", " << bindingContext << "." << itemsSourceProperty << "()";
                 }
                 output << ", bindings);\n";
+                output << "            " << variable << "->SetSourceLocation("
+                    << "\"" << this->EscapeCpp(this->xamlSourcePath) << "\", "
+                    << this->LineNumber(*this->xamlSource, element.offset) << ", "
+                    << this->ColumnNumber(*this->xamlSource, element.offset) << ");\n";
                 std::vector<Binding> bindings;
                 for (const auto& [name, value] : element.attributes) {
                     if (name.rfind("xmlns", 0) == 0 || name == "dataContext" || name == "itemsSource") {
@@ -619,6 +659,10 @@ namespace {
             std::vector<Binding> bindings;
             output << "            auto " << variable << " = std::make_unique<Element>(ElementType::"
                 << this->ElementTypeName(element) << ");\n";
+            output << "            " << variable << "->SetSourceLocation("
+                << "\"" << this->EscapeCpp(this->xamlSourcePath) << "\", "
+                << this->LineNumber(*this->xamlSource, element.offset) << ", "
+                << this->ColumnNumber(*this->xamlSource, element.offset) << ");\n";
             std::string childBindingContext = bindingContext;
             const std::string dataContext = this->AttributeValue(element, "dataContext");
             if (!dataContext.empty()) {
@@ -1046,7 +1090,10 @@ namespace {
         }
         // Каждая XAML-страница получает собственный тип. Контроллеры работают
         // с MainPage::Create(), а не с неявной свободной функцией.
-        const Element root = this->Parse(input, this->ReadFile(input));
+        const std::string source = this->ReadFile(input);
+        this->xamlSource = &source;
+        this->xamlSourcePath = std::filesystem::absolute(input).generic_string();
+        const Element root = this->Parse(input, source);
         const auto namespaceAttribute = std::find_if(
             root.attributes.begin(),
             root.attributes.end(),

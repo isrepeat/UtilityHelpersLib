@@ -463,6 +463,28 @@ namespace xaml {
         this->id = std::move(value);
     }
 
+    int Element::SourceLine() const {
+        return this->sourceLine;
+    }
+
+    int Element::SourceColumn() const {
+        return this->sourceColumn;
+    }
+
+    const std::string& Element::SourcePath() const {
+        return this->sourcePath;
+    }
+
+    void Element::SetSourceLocation(int line, int column) {
+        this->SetSourceLocation({}, line, column);
+    }
+
+    void Element::SetSourceLocation(std::string path, int line, int column) {
+        this->sourcePath = std::move(path);
+        this->sourceLine = line;
+        this->sourceColumn = column;
+    }
+
     const void* Element::DataContext() const {
         return this->dataContext;
     }
@@ -684,6 +706,36 @@ namespace xaml {
     void Element::SetBorderThickness(attr::Thickness value) {
         this->borderThickness = value;
     }
+
+    const attr::Wireframe& Element::Wireframe() const {
+        return this->wireframe;
+    }
+
+    void Element::SetWireframe(attr::Wireframe value) {
+        this->wireframe = value;
+    }
+
+    bool Element::HasInspectionWireframe() const {
+        return this->hasInspectionWireframe;
+    }
+
+    const attr::Wireframe& Element::InspectionWireframe() const {
+        return this->inspectionWireframe;
+    }
+
+    void Element::SetInspectionWireframe(attr::Wireframe value) {
+        this->inspectionWireframe = value;
+        this->hasInspectionWireframe = true;
+    }
+
+    void Element::ClearInspectionWireframe() {
+        this->hasInspectionWireframe = false;
+    }
+
+    bool Element::HasSelectedWireframe() const { return this->hasSelectedWireframe; }
+    const attr::Wireframe& Element::SelectedWireframe() const { return this->selectedWireframe; }
+    void Element::SetSelectedWireframe(attr::Wireframe value) { this->selectedWireframe = value; this->hasSelectedWireframe = true; }
+    void Element::ClearSelectedWireframe() { this->hasSelectedWireframe = false; }
 
     float Element::CornerRadius() const {
         return this->cornerRadius;

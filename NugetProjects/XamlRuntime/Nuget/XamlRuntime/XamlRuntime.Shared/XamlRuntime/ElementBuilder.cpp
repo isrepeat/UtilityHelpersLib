@@ -15,7 +15,8 @@ namespace xaml::_details {
             | static_cast<uint32_t>(XamlAttributeGroup::layout)
             | static_cast<uint32_t>(XamlAttributeGroup::size)
             | static_cast<uint32_t>(XamlAttributeGroup::gridPosition)
-            | static_cast<uint32_t>(XamlAttributeGroup::renderer);
+            | static_cast<uint32_t>(XamlAttributeGroup::renderer)
+            | static_cast<uint32_t>(XamlAttributeGroup::wireframe);
         switch (type) {
         case ElementType::page:
             return common
@@ -231,6 +232,35 @@ namespace xaml::_details {
         }
         throw std::invalid_argument("boolean value must be True or False");
     }
+
+    attr::Wireframe ParseWireframe(std::string_view value) {
+        std::istringstream input{std::string(value)};
+        float thickness = 0.0f;
+        std::string lineStyle;
+        std::string color;
+        if (!(input >> thickness >> lineStyle >> color) || thickness <= 0.0f) {
+            throw std::invalid_argument("wireframe must use '<thickness> <solid|dashed> <color>'");
+        }
+        if (lineStyle != "solid" && lineStyle != "dashed") {
+            throw std::invalid_argument("wireframe line style must be solid or dashed");
+        }
+        attr::Wireframe wireframe{
+            thickness,
+            lineStyle == "solid" ? attr::WireframeLineStyle::solid : attr::WireframeLineStyle::dashed,
+            ParseColor(color),
+        };
+        std::string flag;
+        while (input >> flag) {
+            if (flag.rfind("-m:", 0) == 0 && flag.size() > 3) {
+                wireframe.marginColor = ParseColor(flag.substr(3));
+            } else if (flag.rfind("-p:", 0) == 0 && flag.size() > 3) {
+                wireframe.paddingColor = ParseColor(flag.substr(3));
+            } else {
+                throw std::invalid_argument("wireframe supports only -m:<color> and -p:<color> flags");
+            }
+        }
+        return wireframe;
+    }
 }
 
 namespace xaml {
@@ -387,6 +417,9 @@ namespace xaml {
             return;
         case XamlAttribute::borderThickness:
             element.SetBorderThickness(_details::ParseThickness(value));
+            return;
+        case XamlAttribute::wireframe:
+            element.SetWireframe(_details::ParseWireframe(value));
             return;
         case XamlAttribute::cornerRadius:
             element.SetCornerRadius(std::stof(std::string(value)));
