@@ -333,6 +333,7 @@ namespace xaml {
         }
 
         Element* Parent() const;
+        std::weak_ptr<void> LifetimeToken() const;
 
     private:
         void SetInheritedDataContext(const void* value);

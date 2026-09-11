@@ -1176,6 +1176,9 @@ namespace xaml {
         return this->parent;
     }
 
+    std::weak_ptr<void> Element::LifetimeToken() const {
+        return this->lifetimeToken;
+    }
 
     void Element::InvalidateLayout() {
         this->layoutInvalid = true;
