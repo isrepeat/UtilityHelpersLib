@@ -1,5 +1,6 @@
 #include "XamlLayout.h"
 #include "Animation.h"
+#include "ElementBuilder.h"
 
 #include <stdexcept>
 #include <algorithm>
@@ -470,6 +471,17 @@ namespace xaml {
             };
             return find(scope);
         };
+        for (const VisualStateSetter& setter : state->setters) {
+            Element* const target = findTarget(setter.targetName);
+            if (target == nullptr) {
+                throw std::invalid_argument("Visual state target was not found: " + setter.targetName);
+            }
+            if (setter.property == "width" && setter.value == "Auto") {
+                target->SetWidth(0.0f);
+            } else {
+                SetAttribute(*target, setter.property, setter.value);
+            }
+        }
         for (const VisualStateTrack& track : state->tracks) {
             Element* const target = findTarget(track.targetName);
             if (target == nullptr) {

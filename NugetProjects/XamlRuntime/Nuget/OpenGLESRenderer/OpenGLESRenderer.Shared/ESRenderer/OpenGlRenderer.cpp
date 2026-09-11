@@ -127,6 +127,12 @@ namespace es_renderer {
             stbtt_packedchar settingsGlyph[1]{};
         };
 
+        struct SvgTexture {
+            GLuint texture = 0;
+            int width = 0;
+            int height = 0;
+        };
+
         GLuint CompileShader(GLenum type, std::string_view source) const;
         GLuint CreateProgram(
             std::string_view vertexSource,
@@ -142,7 +148,7 @@ namespace es_renderer {
         void AppendTextQuad(std::vector<float>& vertices, const stbtt_aligned_quad& quad) const;
         const FontAtlas& GetFontAtlas(std::string_view fontWeight) const;
         GlyphReference GetGlyph(uint32_t codepoint, const FontAtlas& fontAtlas) const;
-        GLuint GetSvgTexture(std::string_view source);
+        SvgTexture GetSvgTexture(std::string_view source);
 
     private:
         int width;
@@ -154,7 +160,7 @@ namespace es_renderer {
         GLuint imageProgram = 0;
         GLuint vertexBuffer = 0;
         ResourceLoader resourceLoader;
-        std::unordered_map<std::string, GLuint> imageTextures;
+        std::unordered_map<std::string, SvgTexture> imageTextures;
         FontAtlas regularFontAtlas;
         FontAtlas boldFontAtlas;
         FontAtlas blackFontAtlas;
@@ -229,7 +235,7 @@ namespace es_renderer {
             glDeleteTextures(1, &this->blackFontAtlas.texture);
         }
         for (const auto& [source, texture] : this->imageTextures) {
-            glDeleteTextures(1, &texture);
+            glDeleteTextures(1, &texture.texture);
         }
         for (const auto& [name, program] : this->shaderPrograms) {
             glDeleteProgram(program);
@@ -689,51 +695,51 @@ namespace es_renderer {
         glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertices.size() / 4));
     }
 
-    GLuint OpenGlRenderer::Implementation::GetSvgTexture(std::string_view source) {
+    OpenGlRenderer::Implementation::SvgTexture OpenGlRenderer::Implementation::GetSvgTexture(std::string_view source) {
         const auto found = this->imageTextures.find(std::string(source));
         if (found != this->imageTextures.end()) {
             return found->second;
         }
         if (!this->resourceLoader) {
-            return 0;
+            return {};
         }
         std::vector<unsigned char> file;
         try {
             file = this->resourceLoader(source);
         } catch (...) {
-            return 0;
+            return {};
         }
         if (file.empty()) {
-            return 0;
+            return {};
         }
         file.push_back('\0');
         NSVGimage* image = nsvgParse(reinterpret_cast<char*>(file.data()), "px", 96.0f);
         if (image == nullptr || image->width <= 0.0f || image->height <= 0.0f) {
             nsvgDelete(image);
-            return 0;
+            return {};
         }
-        constexpr int textureSize = 128;
-        std::vector<unsigned char> pixels(textureSize * textureSize * 4, 0);
+        constexpr int maximumTextureSize = 128;
+        const float scale = std::min(
+            static_cast<float>(maximumTextureSize) / image->width,
+            static_cast<float>(maximumTextureSize) / image->height);
+        const int textureWidth = std::max(1, static_cast<int>(std::ceil(image->width * scale)));
+        const int textureHeight = std::max(1, static_cast<int>(std::ceil(image->height * scale)));
+        std::vector<unsigned char> pixels(textureWidth * textureHeight * 4, 0);
         NSVGrasterizer* rasterizer = nsvgCreateRasterizer();
         if (rasterizer == nullptr) {
             nsvgDelete(image);
-            return 0;
+            return {};
         }
-        const float scale = std::min(
-            static_cast<float>(textureSize) / image->width,
-            static_cast<float>(textureSize) / image->height);
-        const float offsetX = (textureSize - image->width * scale) / 2.0f;
-        const float offsetY = (textureSize - image->height * scale) / 2.0f;
         nsvgRasterize(
             rasterizer,
             image,
-            offsetX,
-            offsetY,
+            0.0f,
+            0.0f,
             scale,
             pixels.data(),
-            textureSize,
-            textureSize,
-            textureSize * 4);
+            textureWidth,
+            textureHeight,
+            textureWidth * 4);
         nsvgDeleteRasterizer(rasterizer);
         nsvgDelete(image);
         GLuint texture = 0;
@@ -744,8 +750,8 @@ namespace es_renderer {
             GL_TEXTURE_2D,
             0,
             GL_RGBA,
-            textureSize,
-            textureSize,
+            textureWidth,
+            textureHeight,
             0,
             GL_RGBA,
             GL_UNSIGNED_BYTE,
@@ -754,21 +760,22 @@ namespace es_renderer {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        this->imageTextures.emplace(source, texture);
+        const SvgTexture result{texture, textureWidth, textureHeight};
+        this->imageTextures.emplace(source, result);
         LOG_DEBUG(
             "OpenGlRenderer",
             "SVG texture loaded: source='{}', texture={}",
             source,
             texture);
-        return texture;
+        return result;
     }
 
     void OpenGlRenderer::Implementation::DrawImage(
         const xaml::Rect& bounds,
         std::string_view source,
         xaml::attr::Color tint) {
-        const GLuint texture = this->GetSvgTexture(source);
-        if (texture == 0) {
+        const SvgTexture texture = this->GetSvgTexture(source);
+        if (texture.texture == 0) {
             this->DrawOutline(bounds, tint);
             this->DrawText(
                 bounds,
@@ -781,10 +788,15 @@ namespace es_renderer {
         }
         std::vector<float> vertices;
         vertices.reserve(24);
-        const float left = bounds.x;
-        const float right = bounds.x + bounds.width;
-        const float top = bounds.y;
-        const float bottom = bounds.y + bounds.height;
+        const float scale = std::min(
+            bounds.width / static_cast<float>(texture.width),
+            bounds.height / static_cast<float>(texture.height));
+        const float imageWidth = static_cast<float>(texture.width) * scale;
+        const float imageHeight = static_cast<float>(texture.height) * scale;
+        const float left = bounds.x + (bounds.width - imageWidth) / 2.0f;
+        const float right = left + imageWidth;
+        const float top = bounds.y + (bounds.height - imageHeight) / 2.0f;
+        const float bottom = top + imageHeight;
         this->AppendTextVertex(vertices, left, top, 0.0f, 1.0f);
         this->AppendTextVertex(vertices, right, top, 1.0f, 1.0f);
         this->AppendTextVertex(vertices, right, bottom, 1.0f, 0.0f);
@@ -793,7 +805,7 @@ namespace es_renderer {
         this->AppendTextVertex(vertices, left, bottom, 0.0f, 0.0f);
         glUseProgram(this->imageProgram);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
+        glBindTexture(GL_TEXTURE_2D, texture.texture);
         glUniform1i(glGetUniformLocation(this->imageProgram, "imageTexture"), 0);
         glUniform4f(glGetUniformLocation(this->imageProgram, "tint"), tint.red, tint.green, tint.blue, tint.alpha);
         glBindBuffer(GL_ARRAY_BUFFER, this->vertexBuffer);

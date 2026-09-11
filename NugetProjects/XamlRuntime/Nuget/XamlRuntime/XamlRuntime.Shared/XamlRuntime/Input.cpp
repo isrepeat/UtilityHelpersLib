@@ -1,6 +1,7 @@
 #include <Helpers.Logging/Logging.h>
 
 #include "Input.h"
+#include "VisualState.h"
 
 namespace xaml::_details {
     bool Contains(const Rect& bounds, float x, float y) {
@@ -19,46 +20,74 @@ namespace xaml::_details {
         }
     }
 
-    Element* HitTestElement(Element& element, float x, float y, float offsetX, float offsetY) {
+    struct HitTestResult {
+        Element* interactive = nullptr;
+        bool blocksInput = false;
+    };
+
+    HitTestResult HitTestElement(Element& element, float x, float y, float offsetX, float offsetY) {
+        const VisualTransform defaults{};
+        const auto& transform = element.States().Contains<VisualTransform>()
+            ? element.State<VisualTransform>() : defaults;
+        const float renderedOffsetX = offsetX + element.RenderOffsetX() + transform.offsetX;
+        const float renderedOffsetY = offsetY + element.RenderOffsetY() + transform.offsetY;
         if (!element.CanReceiveInput()
             || !element.IsEnabled()
-            || !Contains(element.ClipBounds(), x - offsetX, y - offsetY)) {
-            return nullptr;
+            || !Contains(element.ClipBounds(), x - renderedOffsetX, y - renderedOffsetY)) {
+            return {};
         }
 
         const float childrenOffsetX = element.Type() == ElementType::scrollViewer
-            ? offsetX - element.HorizontalOffset() : offsetX;
+            ? renderedOffsetX - element.HorizontalOffset() : renderedOffsetX;
         const float childrenOffsetY = element.Type() == ElementType::scrollViewer
-            ? offsetY - element.VerticalOffset() : offsetY;
+            ? renderedOffsetY - element.VerticalOffset() : renderedOffsetY;
         std::vector<std::unique_ptr<Element>>& children = element.Children();
+        bool childBlocksInput = false;
         for (auto child = children.rbegin(); child != children.rend(); ++child) {
-            if (Element* const hit = HitTestElement(**child, x, y, childrenOffsetX, childrenOffsetY)) {
+            const HitTestResult hit = HitTestElement(**child, x, y, childrenOffsetX, childrenOffsetY);
+            if (hit.interactive != nullptr) {
                 return hit;
             }
+            if (hit.blocksInput) {
+                childBlocksInput = true;
+                break;
+            }
         }
-        return IsInteractive(element) && Contains(
-            element.Bounds(),
-            x - offsetX,
-            y - offsetY) ? &element : nullptr;
+        const bool containsPointer = Contains(
+            element.Bounds(), x - renderedOffsetX, y - renderedOffsetY);
+        if (!containsPointer) {
+            return {};
+        }
+        if (IsInteractive(element)) {
+            return {&element, true};
+        }
+        // An opaque visual surface sits above its siblings and must prevent
+        // their commands from receiving input through it.
+        return {nullptr, childBlocksInput || element.Background().alpha > 0.0f};
     }
 
     Element* HitTestVisualElement(Element& element, float x, float y, float offsetX, float offsetY) {
+        const VisualTransform defaults{};
+        const auto& transform = element.States().Contains<VisualTransform>()
+            ? element.State<VisualTransform>() : defaults;
+        const float renderedOffsetX = offsetX + element.RenderOffsetX() + transform.offsetX;
+        const float renderedOffsetY = offsetY + element.RenderOffsetY() + transform.offsetY;
         if (element.VisibilityValue() != attr::Visibility::visible
-            || !Contains(element.ClipBounds(), x - offsetX, y - offsetY)) {
+            || !Contains(element.ClipBounds(), x - renderedOffsetX, y - renderedOffsetY)) {
             return nullptr;
         }
 
         const float childrenOffsetX = element.Type() == ElementType::scrollViewer
-            ? offsetX - element.HorizontalOffset() : offsetX;
+            ? renderedOffsetX - element.HorizontalOffset() : renderedOffsetX;
         const float childrenOffsetY = element.Type() == ElementType::scrollViewer
-            ? offsetY - element.VerticalOffset() : offsetY;
+            ? renderedOffsetY - element.VerticalOffset() : renderedOffsetY;
         std::vector<std::unique_ptr<Element>>& children = element.Children();
         for (auto child = children.rbegin(); child != children.rend(); ++child) {
             if (Element* const hit = HitTestVisualElement(**child, x, y, childrenOffsetX, childrenOffsetY)) {
                 return hit;
             }
         }
-        return Contains(element.Bounds(), x - offsetX, y - offsetY) ? &element : nullptr;
+        return Contains(element.Bounds(), x - renderedOffsetX, y - renderedOffsetY) ? &element : nullptr;
     }
 }
 
@@ -68,7 +97,7 @@ namespace xaml {
     }
 
     Element* HitTest(Element& root, float x, float y) {
-        return _details::HitTestElement(root, x, y, 0.0f, 0.0f);
+        return _details::HitTestElement(root, x, y, 0.0f, 0.0f).interactive;
     }
 
     Element* HitTestVisual(Element& root, float x, float y) {

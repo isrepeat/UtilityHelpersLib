@@ -600,7 +600,10 @@ namespace xaml {
     }
 
     void Element::SetVerticalAlignment(attr::Alignment value) {
-        this->verticalAlignment = value;
+        if (this->verticalAlignment != value) {
+            this->verticalAlignment = value;
+            this->InvalidateLayout();
+        }
     }
 
     attr::Alignment Element::HorizontalAlignmentValue() const {
@@ -608,7 +611,10 @@ namespace xaml {
     }
 
     void Element::SetHorizontalAlignment(attr::Alignment value) {
-        this->horizontalAlignment = value;
+        if (this->horizontalAlignment != value) {
+            this->horizontalAlignment = value;
+            this->InvalidateLayout();
+        }
     }
 
     attr::Alignment Element::ContentAlignmentValue() const {
@@ -758,7 +764,10 @@ namespace xaml {
     }
 
     void Element::SetWidth(float value) {
-        this->width = value;
+        if (this->width != value) {
+            this->width = value;
+            this->InvalidateLayout();
+        }
     }
 
     float Element::Height() const {

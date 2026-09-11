@@ -64,9 +64,16 @@ namespace xaml {
         AnimationTrack animation;
     };
 
+    struct VisualStateSetter {
+        std::string targetName;
+        std::string property;
+        std::string value;
+    };
+
     struct VisualState {
         std::string name;
         std::vector<VisualStateTrack> tracks;
+        std::vector<VisualStateSetter> setters;
     };
 
     struct VisualStateGroup {

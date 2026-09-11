@@ -1,6 +1,12 @@
 #include "RuntimeBindingRegistry.h"
 
+#include <utility>
+
 namespace xaml::runtime {
+    RuntimeBindingRegistry::RuntimeBindingRegistry(std::shared_ptr<const RuntimeBindingRegistry> fallback)
+        : fallback(std::move(fallback)) {
+    }
+
     //
     // API
     //
@@ -37,7 +43,10 @@ namespace xaml::runtime {
 
     const RuntimeBindingRegistry::Entry* RuntimeBindingRegistry::Find(std::string_view name) const {
         const auto found = this->entries.find(name);
-        return found == this->entries.end() ? nullptr : &found->second;
+        if (found != this->entries.end()) {
+            return &found->second;
+        }
+        return this->fallback == nullptr ? nullptr : this->fallback->Find(name);
     }
 
     std::string RuntimeBindingRegistry::Available() const {
@@ -47,6 +56,11 @@ namespace xaml::runtime {
                 result += ", ";
             }
             result += pair.first;
+        }
+        const std::string fallbackEntries = this->fallback == nullptr ? "" : this->fallback->Available();
+        if (!fallbackEntries.empty()) {
+            result += result.empty() ? "" : ", ";
+            result += fallbackEntries;
         }
         return result;
     }

@@ -2,6 +2,7 @@
 #include "../Binding.h"
 
 #include <map>
+#include <memory>
 
 namespace xaml::runtime {
     class RuntimeBindingRegistry;
@@ -16,6 +17,9 @@ namespace xaml::runtime {
 
     class RuntimeBindingRegistry final {
     public:
+        RuntimeBindingRegistry() = default;
+        explicit RuntimeBindingRegistry(std::shared_ptr<const RuntimeBindingRegistry> fallback);
+
         struct Entry {
             enum class Kind { text, boolean, command, collection };
             Kind kind = Kind::text;
@@ -37,5 +41,6 @@ namespace xaml::runtime {
 
     private:
         std::map<std::string, Entry, std::less<>> entries;
+        std::shared_ptr<const RuntimeBindingRegistry> fallback;
     };
 }

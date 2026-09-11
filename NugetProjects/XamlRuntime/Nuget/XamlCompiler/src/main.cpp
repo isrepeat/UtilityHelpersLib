@@ -742,17 +742,35 @@ namespace {
                     for (size_t stateIndex = 0; stateIndex < group.children.size(); ++stateIndex) {
                         const Element& state = group.children[stateIndex];
                         const std::string stateName = this->AttributeValue(state, "name");
-                        if (state.name != "VisualState" || stateName.empty() || state.children.size() != 1
-                            || state.children.front().name != "Storyboard") {
-                            throw std::runtime_error("<VisualState> requires name and one <Storyboard>");
+                        if (state.name != "VisualState" || stateName.empty()) {
+                            throw std::runtime_error("<VisualState> requires name");
                         }
                         if (stateIndex != 0) {
                             output << ", ";
                         }
                         output << "{\"" << this->EscapeCpp(stateName) << "\", {";
-                        const Element& storyboard = state.children.front();
-                        for (size_t trackIndex = 0; trackIndex < storyboard.children.size(); ++trackIndex) {
-                            const Element& track = storyboard.children[trackIndex];
+                        const Element* storyboard = nullptr;
+                        const Element* setters = nullptr;
+                        for (const Element& child : state.children) {
+                            if (child.name == "Storyboard") {
+                                if (storyboard != nullptr) {
+                                    throw std::runtime_error("<VisualState> supports one <Storyboard>");
+                                }
+                                storyboard = &child;
+                            } else if (child.name == "Setters") {
+                                if (setters != nullptr) {
+                                    throw std::runtime_error("<VisualState> supports one <Setters>");
+                                }
+                                setters = &child;
+                            } else {
+                                throw std::runtime_error("<VisualState> supports only <Setters> and <Storyboard>");
+                            }
+                        }
+                        if (storyboard == nullptr) {
+                            throw std::runtime_error("<VisualState> requires one <Storyboard>");
+                        }
+                        for (size_t trackIndex = 0; trackIndex < storyboard->children.size(); ++trackIndex) {
+                            const Element& track = storyboard->children[trackIndex];
                             const std::string targetName = this->AttributeValue(track, "targetName");
                             const std::string property = track.name == "FloatAnimation"
                                 ? this->AttributeValue(track, "property") : "";
@@ -779,6 +797,28 @@ namespace {
                                 << ", " << (fromCurrent ? "0.0f" : this->FloatLiteral(from)) << ", " << this->FloatLiteral(to)
                                 << ", " << (fromCurrent ? "true" : "false") << ", false, std::chrono::milliseconds(" << std::stoi(duration)
                                 << "), Easing::" << easingName << "}}";
+                        }
+                        output << "}, {";
+                        if (setters != nullptr) {
+                            for (size_t setterIndex = 0; setterIndex < setters->children.size(); ++setterIndex) {
+                                const Element& setter = setters->children[setterIndex];
+                                const std::string targetName = this->AttributeValue(setter, "targetName");
+                                const std::string property = this->AttributeValue(setter, "property");
+                                const std::string value = this->AttributeValue(setter, "value");
+                                if (setter.name != "Setter" || !setter.children.empty()
+                                    || targetName.empty() || value.empty()
+                                    || (property != "width" && property != "height"
+                                        && property != "horizontalAlignment" && property != "verticalAlignment"
+                                        && property != "background")
+                                    || (property == "height" && value == "Auto")) {
+                                    throw std::runtime_error("Visual state Setter requires supported property, targetName and value");
+                                }
+                                if (setterIndex != 0) {
+                                    output << ", ";
+                                }
+                                output << "{\"" << this->EscapeCpp(targetName) << "\", \""
+                                    << this->EscapeCpp(property) << "\", \"" << this->EscapeCpp(value) << "\"}";
+                            }
                         }
                         output << "}}";
                     }

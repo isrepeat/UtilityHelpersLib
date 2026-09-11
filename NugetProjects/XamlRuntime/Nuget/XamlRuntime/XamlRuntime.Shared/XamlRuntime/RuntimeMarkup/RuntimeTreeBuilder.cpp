@@ -135,11 +135,35 @@ namespace xaml::runtime::_details {
                 }
                 VisualState item;
                 item.name = Attribute(state, "name");
-                for (const auto& storyboard : state.children) {
-                    if (storyboard.name != "Storyboard") {
-                        throw RuntimeDiagnostic(storyboard.location, "Expected Storyboard");
+                for (const auto& child : state.children) {
+                    if (child.name == "Setters") {
+                        for (const auto& setter : child.children) {
+                            const auto targetName = Attribute(setter, "targetName");
+                            const auto property = Attribute(setter, "property");
+                            const auto value = Attribute(setter, "value");
+                            if (setter.name != "Setter" || !setter.children.empty()
+                                || targetName.empty() || property.empty() || value.empty()) {
+                                throw RuntimeDiagnostic(setter.location,
+                                    "Setter requires targetName, property and value");
+                            }
+                            if (property != "width" && property != "height"
+                                && property != "horizontalAlignment" && property != "verticalAlignment"
+                                && property != "background") {
+                                throw RuntimeDiagnostic(setter.location, "Unsupported VisualState Setter property");
+                            }
+                            if ((property == "width" || property == "height") && value == "Auto") {
+                                if (property == "height") {
+                                    throw RuntimeDiagnostic(setter.location, "height Auto is not supported");
+                                }
+                            }
+                            item.setters.push_back({targetName, property, value});
+                        }
+                        continue;
                     }
-                    for (const auto& track : storyboard.children) {
+                    if (child.name != "Storyboard") {
+                        throw RuntimeDiagnostic(child.location, "Expected Setters or Storyboard");
+                    }
+                    for (const auto& track : child.children) {
                         item.tracks.push_back({Attribute(track, "targetName"), Track(track)});
                     }
                 }
@@ -176,6 +200,12 @@ namespace xaml::runtime::_details {
                     if (track.targetName.empty() || !contains(contains, element, track.targetName)) {
                         throw RuntimeDiagnostic({element.SourcePath(), element.SourceLine(), element.SourceColumn()},
                             "VisualState target '" + track.targetName + "' was not found");
+                    }
+                }
+                for (const auto& setter : state.setters) {
+                    if (setter.targetName.empty() || !contains(contains, element, setter.targetName)) {
+                        throw RuntimeDiagnostic({element.SourcePath(), element.SourceLine(), element.SourceColumn()},
+                            "VisualState target '" + setter.targetName + "' was not found");
                     }
                 }
             }
