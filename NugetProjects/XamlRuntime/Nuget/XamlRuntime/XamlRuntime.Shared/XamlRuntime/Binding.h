@@ -1,6 +1,5 @@
 #pragma once
-
-#include "XamlRuntime/XamlLayout.h"
+#include "XamlLayout.h"
 
 #include <functional>
 #include <utility>
@@ -17,6 +16,10 @@ namespace xaml {
 
         void Clear();
         void UpdateSource(Element& element) const;
+        void AddRuntimeSubscription(std::function<void()> unsubscribe);
+        void AddRuntimeSourceUpdate(Element& element, std::function<void()> update);
+        std::shared_ptr<Element*> AddRuntimeTarget(Element& element);
+        void RetargetRuntimeElement(Element& previous, Element& replacement);
 
         template <typename TViewModel, typename TGetter>
         void AddCommand(Element& element, TViewModel& viewModel, TGetter getter) {
@@ -66,5 +69,6 @@ namespace xaml {
     private:
         std::vector<std::function<void()>> unsubscriptions;
         std::vector<SourceUpdate> sourceUpdates;
+        std::vector<std::shared_ptr<Element*>> runtimeTargets;
     };
 }

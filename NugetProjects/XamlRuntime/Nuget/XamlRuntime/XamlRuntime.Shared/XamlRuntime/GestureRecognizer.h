@@ -1,6 +1,6 @@
 #pragma once
 
-#include "XamlRuntime/ScrollController.h"
+#include "ScrollController.h"
 
 #include <functional>
 

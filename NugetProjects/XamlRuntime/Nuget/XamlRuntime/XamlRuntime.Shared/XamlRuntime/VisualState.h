@@ -1,6 +1,6 @@
 #pragma once
 
-#include "XamlRuntime/Storyboard.h"
+#include "Storyboard.h"
 
 #include <initializer_list>
 #include <unordered_map>

@@ -1,5 +1,5 @@
-#include "XamlRuntime/ElementBuilder.h"
-#include "XamlRuntime/XamlAttribute.h"
+#include "ElementBuilder.h"
+#include "XamlAttribute.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -16,7 +16,8 @@ namespace xaml::_details {
             | static_cast<uint32_t>(XamlAttributeGroup::size)
             | static_cast<uint32_t>(XamlAttributeGroup::gridPosition)
             | static_cast<uint32_t>(XamlAttributeGroup::renderer)
-            | static_cast<uint32_t>(XamlAttributeGroup::wireframe);
+            | static_cast<uint32_t>(XamlAttributeGroup::wireframe)
+            | static_cast<uint32_t>(XamlAttributeGroup::command);
         switch (type) {
         case ElementType::page:
             return common

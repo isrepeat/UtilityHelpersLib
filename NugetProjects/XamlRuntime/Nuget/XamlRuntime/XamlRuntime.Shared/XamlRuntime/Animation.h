@@ -1,6 +1,5 @@
 #pragma once
-
-#include "XamlRuntime/VisualState.h"
+#include "VisualState.h"
 
 #include <unordered_map>
 #include <functional>
@@ -160,6 +159,7 @@ namespace xaml {
         }
 
         void Prepare(Element& element) const;
+        void ValidateTree(const Element& element) const;
         bool Configure(const std::string& name, AnimationInvocation& context) const;
 
     private:

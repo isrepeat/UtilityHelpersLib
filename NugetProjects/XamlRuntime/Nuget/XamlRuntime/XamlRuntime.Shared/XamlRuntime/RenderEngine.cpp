@@ -1,4 +1,4 @@
-#include "XamlRuntime/RenderEngine.h"
+#include "RenderEngine.h"
 
 #include <algorithm>
 #include <cmath>

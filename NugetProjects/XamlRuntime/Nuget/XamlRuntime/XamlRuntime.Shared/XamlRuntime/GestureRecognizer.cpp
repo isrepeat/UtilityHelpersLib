@@ -1,13 +1,13 @@
-#include "XamlRuntime/GestureRecognizer.h"
+#include "GestureRecognizer.h"
 
-#include "XamlRuntime/Animation.h"
-#include "XamlRuntime/Input.h"
-#include "XamlRuntime/ScrollController.h"
-#include "XamlRuntime/XamlLayout.h"
+#include "ScrollController.h"
+#include "XamlLayout.h"
+#include "Animation.h"
+#include "Input.h"
 
+#include <utility>
 #include <chrono>
 #include <cmath>
-#include <utility>
 
 namespace xaml {
     namespace _details {

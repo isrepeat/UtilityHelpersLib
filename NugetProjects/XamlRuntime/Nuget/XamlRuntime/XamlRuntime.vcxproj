@@ -15,7 +15,7 @@
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
     <ItemDefinitionGroup>
         <ClCompile>
-            <AdditionalIncludeDirectories>$(ProjectDir)XamlRuntime.Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+            <AdditionalIncludeDirectories>$(ProjectDir)XamlRuntime.Shared\XamlRuntime;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
             <LanguageStandard>stdcpp17</LanguageStandard>
             <WarningLevel>Level4</WarningLevel>
         </ClCompile>
@@ -47,6 +47,20 @@
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\ScrollController.h" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\XamlLayout.h" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\UserControl.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\IRuntimeReloadableControl.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeBindingContext.h" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeBindingRegistry.cpp" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeBindingRegistry.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeDiagnostics.h" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeReloadTransaction.cpp" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeReloadTransaction.h" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeTreeBuilder.cpp" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeTreeBuilder.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\XamlAst.h" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\XamlParser.cpp" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\XamlParser.h" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\XamlSchemaValidator.cpp" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\XamlSchemaValidator.h" />
         <None Include="CMakeLists.txt" />
     </ItemGroup>
     <ItemGroup>

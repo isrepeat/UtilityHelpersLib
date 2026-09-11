@@ -1,4 +1,4 @@
-#include "XamlRuntime/VisualState.h"
+#include "VisualState.h"
 
 #include <charconv>
 #include <sstream>

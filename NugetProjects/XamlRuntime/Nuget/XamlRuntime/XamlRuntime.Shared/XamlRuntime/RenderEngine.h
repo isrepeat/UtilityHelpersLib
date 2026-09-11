@@ -1,6 +1,6 @@
 #pragma once
 
-#include "XamlRuntime/XamlLayout.h"
+#include "XamlLayout.h"
 
 #include <initializer_list>
 #include <unordered_map>

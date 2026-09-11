@@ -1,8 +1,7 @@
 #pragma once
-
-#include "XamlRuntime/ObservableCollection.h"
-#include "XamlRuntime/Storyboard.h"
-#include "XamlRuntime/Animation.h"
+#include "ObservableCollection.h"
+#include "Storyboard.h"
+#include "Animation.h"
 
 #include <initializer_list>
 #include <functional>
@@ -153,6 +152,7 @@ namespace xaml {
         bool HasCommand() const;
         void SetCommand(Command value);
         void ExecuteCommand() const;
+        void SetRuntimeSourceUpdate(std::function<void()> update);
 
         attr::Color Foreground() const;
         void SetForeground(attr::Color value);
@@ -311,6 +311,8 @@ namespace xaml {
         void AddChild(std::unique_ptr<Element> child);
         void RemoveChild(Element& child);
         void RemoveChildImmediately(Element& child);
+        void SwapTreePosition(Element& other) noexcept;
+        void CopyLayoutFrom(const Element& other);
 
         template <typename TItemsSource>
         void SetItemsSource(const TItemsSource& value, ItemTemplate templateValue) {
@@ -346,6 +348,7 @@ namespace xaml {
         friend class AnimationRegistry;
         friend class AnimationInvocation;
         friend void layout(Element& root, Size availableSize);
+        friend void layoutInViewport(Element& root, Size availableSize);
         friend void Render(Element& root, IRenderBackend& backend);
         friend void Render(
             Element& root,
@@ -368,6 +371,7 @@ namespace xaml {
         std::string source;
         attr::Color tint{1.0f, 1.0f, 1.0f, 1.0f};
         Command command;
+        std::function<void()> runtimeSourceUpdate;
         attr::Color foreground{};
         attr::Orientation orientation = attr::Orientation::vertical;
         attr::Alignment verticalAlignment = attr::Alignment::center;
@@ -441,4 +445,5 @@ namespace xaml {
     void SetTextGlyphMetrics(std::vector<TextGlyphMetric> value);
 
     void layout(Element& root, Size availableSize);
+    void layoutInViewport(Element& root, Size availableSize);
 }

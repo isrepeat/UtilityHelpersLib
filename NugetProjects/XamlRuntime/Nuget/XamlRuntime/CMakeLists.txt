@@ -1,4 +1,9 @@
 add_library(utility_helpers_xaml_runtime STATIC
+    XamlRuntime.Shared/XamlRuntime/RuntimeMarkup/RuntimeReloadTransaction.cpp
+    XamlRuntime.Shared/XamlRuntime/RuntimeMarkup/XamlParser.cpp
+    XamlRuntime.Shared/XamlRuntime/RuntimeMarkup/XamlSchemaValidator.cpp
+    XamlRuntime.Shared/XamlRuntime/RuntimeMarkup/RuntimeBindingRegistry.cpp
+    XamlRuntime.Shared/XamlRuntime/RuntimeMarkup/RuntimeTreeBuilder.cpp
     XamlRuntime.Shared/XamlRuntime/Binding.cpp
     XamlRuntime.Shared/XamlRuntime/Binding.h
     XamlRuntime.Shared/XamlRuntime/DependentProperty.h
@@ -29,6 +34,11 @@ add_library(utility_helpers_xaml_runtime STATIC
 add_library(utility_helpers::xaml_runtime ALIAS utility_helpers_xaml_runtime)
 
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/XamlRuntime.Shared" FILES
+    XamlRuntime.Shared/XamlRuntime/RuntimeMarkup/RuntimeReloadTransaction.cpp
+    XamlRuntime.Shared/XamlRuntime/RuntimeMarkup/XamlParser.cpp
+    XamlRuntime.Shared/XamlRuntime/RuntimeMarkup/XamlSchemaValidator.cpp
+    XamlRuntime.Shared/XamlRuntime/RuntimeMarkup/RuntimeBindingRegistry.cpp
+    XamlRuntime.Shared/XamlRuntime/RuntimeMarkup/RuntimeTreeBuilder.cpp
     XamlRuntime.Shared/XamlRuntime/Binding.cpp
     XamlRuntime.Shared/XamlRuntime/Binding.h
     XamlRuntime.Shared/XamlRuntime/DependentProperty.h
@@ -58,6 +68,8 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/XamlRuntime.Shared" FILES
 )
 target_include_directories(utility_helpers_xaml_runtime PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/XamlRuntime.Shared>"
+    PRIVATE
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/XamlRuntime.Shared/XamlRuntime>"
 )
 target_link_libraries(utility_helpers_xaml_runtime PUBLIC utility_helpers::logging)
 set_target_properties(utility_helpers_xaml_runtime PROPERTIES

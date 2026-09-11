@@ -1,5 +1,5 @@
-#include "XamlRuntime/XamlLayout.h"
-#include "XamlRuntime/Animation.h"
+#include "XamlLayout.h"
+#include "Animation.h"
 
 #include <stdexcept>
 #include <algorithm>
@@ -194,6 +194,35 @@ namespace xaml {
         if (fallback != this->handlers.end()) {
             fallback->second.validate(AnimationSettings{});
             element.States().Prepare(this->states, fallback->second.stateType);
+        }
+    }
+
+    void AnimationRegistry::ValidateTree(const Element& element) const {
+        const auto validate = [this, &element](const AnimationTrack& track) {
+            if (track.name.empty()) {
+                return;
+            }
+            const auto found = this->handlers.find(track.name);
+            if (found == this->handlers.end()) {
+                throw std::invalid_argument(element.SourcePath() + ":" + std::to_string(element.SourceLine())
+                    + ":" + std::to_string(element.SourceColumn()) + ": Unknown animation '" + track.name + "'");
+            }
+            found->second.validate(track.settings);
+        };
+        for (const auto& storyboard : element.Storyboards()) {
+            for (const auto& track : storyboard.tracks) {
+                validate(track);
+            }
+        }
+        for (const auto& group : element.VisualStateGroups()) {
+            for (const auto& state : group.states) {
+                for (const auto& track : state.tracks) {
+                    validate(track.animation);
+                }
+            }
+        }
+        for (const auto& child : element.Children()) {
+            this->ValidateTree(*child);
         }
     }
 

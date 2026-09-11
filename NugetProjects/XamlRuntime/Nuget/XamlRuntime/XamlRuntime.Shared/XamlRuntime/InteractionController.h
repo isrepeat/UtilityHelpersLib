@@ -1,6 +1,6 @@
 #pragma once
 
-#include "XamlRuntime/GestureRecognizer.h"
+#include "GestureRecognizer.h"
 
 #include <functional>
 #include <memory>

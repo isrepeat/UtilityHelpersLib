@@ -1,6 +1,6 @@
 #pragma once
 
-#include "XamlRuntime/XamlLayout.h"
+#include "XamlLayout.h"
 
 namespace xaml {
     bool IsInteractive(const Element& element);

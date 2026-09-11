@@ -1,7 +1,7 @@
 #include <Helpers.Logging/Logging.h>
 
-#include "XamlRuntime/Binding.h"
 #include "XamlLayout.h"
+#include "Binding.h"
 
 #include <algorithm>
 #include <sstream>
@@ -566,9 +566,16 @@ namespace xaml {
     }
 
     void Element::ExecuteCommand() const {
+        if (this->runtimeSourceUpdate) {
+            this->runtimeSourceUpdate();
+        }
         if (this->command) {
             this->command();
         }
+    }
+
+    void Element::SetRuntimeSourceUpdate(std::function<void()> update) {
+        this->runtimeSourceUpdate = std::move(update);
     }
 
     attr::Color Element::Foreground() const {
@@ -1023,6 +1030,51 @@ namespace xaml {
         this->InvalidateLayout();
     }
 
+    void Element::SwapTreePosition(Element& other) noexcept {
+        if (this->parent == nullptr || other.parent == nullptr) {
+            return;
+        }
+        auto& first = this->parent->children;
+        auto& second = other.parent->children;
+        const auto left = std::find_if(first.begin(), first.end(), [this](const auto& child) { return child.get() == this; });
+        const auto right = std::find_if(second.begin(), second.end(), [&other](const auto& child) { return child.get() == &other; });
+        std::swap(*left, *right);
+        std::swap(this->parent, other.parent);
+        this->parent->InvalidateLayout();
+        other.parent->InvalidateLayout();
+    }
+
+    void Element::CopyLayoutFrom(const Element& other) {
+        this->id = other.id;
+        this->renderer = other.renderer;
+        this->wireframe = other.wireframe;
+        this->rows = other.rows;
+        this->columns = other.columns;
+        this->storyboards = other.storyboards;
+        this->visualStateGroups = other.visualStateGroups;
+        this->sourcePath = other.sourcePath;
+        this->sourceLine = other.sourceLine;
+        this->sourceColumn = other.sourceColumn;
+        this->margin = other.margin;
+        this->padding = other.padding;
+        this->width = other.width;
+        this->height = other.height;
+        this->verticalAlignment = other.verticalAlignment;
+        this->horizontalAlignment = other.horizontalAlignment;
+        this->gridRow = other.gridRow;
+        this->gridColumn = other.gridColumn;
+        this->background = other.background;
+        this->borderColor = other.borderColor;
+        this->borderThickness = other.borderThickness;
+        this->cornerRadius = other.cornerRadius;
+        this->opacity = other.opacity;
+        this->visibility = other.visibility;
+        this->isEnabled = other.isEnabled;
+        this->command = other.command;
+        this->runtimeSourceUpdate = other.runtimeSourceUpdate;
+        this->InvalidateLayout();
+    }
+
     void Element::OnItemsChanged(CollectionChange change) {
         switch (change.kind) {
         case CollectionChangeKind::insert:
@@ -1114,6 +1166,7 @@ namespace xaml {
         return this->parent;
     }
 
+
     void Element::InvalidateLayout() {
         this->layoutInvalid = true;
         if (this->parent != nullptr) {
@@ -1131,6 +1184,14 @@ namespace xaml {
 
     void SetTextGlyphMetrics(std::vector<TextGlyphMetric> value) {
         _details::textGlyphMetrics = std::move(value);
+    }
+
+    void layoutInViewport(Element& root, Size availableSize) {
+        _details::measure(root);
+        const Rect bounds{0.0f, 0.0f, availableSize.width, availableSize.height};
+        _details::arrange(root, bounds, bounds);
+        root.availableSize = availableSize;
+        root.layoutInvalid = false;
     }
 
     void layout(Element& root, Size availableSize) {

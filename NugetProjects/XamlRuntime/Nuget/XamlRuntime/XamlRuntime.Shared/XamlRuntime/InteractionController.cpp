@@ -1,8 +1,8 @@
-#include "XamlRuntime/InteractionController.h"
+#include "InteractionController.h"
 
-#include "XamlRuntime/Animation.h"
-#include "XamlRuntime/Input.h"
-#include "XamlRuntime/XamlLayout.h"
+#include "XamlLayout.h"
+#include "Animation.h"
+#include "Input.h"
 
 #include <algorithm>
 

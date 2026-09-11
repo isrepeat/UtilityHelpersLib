@@ -1,6 +1,6 @@
-#include "XamlRuntime/ScrollController.h"
+#include "ScrollController.h"
 
-#include "XamlRuntime/XamlLayout.h"
+#include "XamlLayout.h"
 
 #include <algorithm>
 #include <cmath>

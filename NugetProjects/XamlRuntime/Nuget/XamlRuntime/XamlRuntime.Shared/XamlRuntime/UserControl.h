@@ -1,6 +1,5 @@
 #pragma once
-
-#include "XamlRuntime/XamlLayout.h"
+#include "XamlLayout.h"
 
 #include <memory>
 
@@ -14,6 +13,7 @@ namespace xaml {
 
     protected:
         void InitializeComponent(std::unique_ptr<Element> content);
+        void ReplaceContent(std::unique_ptr<Element> content);
         virtual void OnInitialized();
 
     private:

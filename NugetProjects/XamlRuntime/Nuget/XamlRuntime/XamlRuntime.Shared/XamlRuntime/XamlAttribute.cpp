@@ -1,4 +1,4 @@
-#include "XamlRuntime/XamlAttribute.h"
+#include "XamlAttribute.h"
 
 namespace xaml {
     namespace _details {
