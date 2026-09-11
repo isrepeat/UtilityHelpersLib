@@ -1,7 +1,7 @@
-#include "RuntimeMarkup/RuntimeTreeBuilder.h"
+#include "RuntimeTreeBuilder.h"
 
-#include "RuntimeMarkup/XamlSchemaValidator.h"
-#include "RuntimeMarkup/RuntimeDiagnostics.h"
+#include "XamlSchemaValidator.h"
+#include "RuntimeDiagnostics.h"
 #include "ElementBuilder.h"
 
 #include <algorithm>

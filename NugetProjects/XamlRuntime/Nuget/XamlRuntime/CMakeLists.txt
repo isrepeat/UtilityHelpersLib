@@ -4,6 +4,7 @@ add_library(utility_helpers_xaml_runtime STATIC
     XamlRuntime.Shared/XamlRuntime/RuntimeMarkup/XamlSchemaValidator.cpp
     XamlRuntime.Shared/XamlRuntime/RuntimeMarkup/RuntimeBindingRegistry.cpp
     XamlRuntime.Shared/XamlRuntime/RuntimeMarkup/RuntimeTreeBuilder.cpp
+    XamlRuntime.Shared/XamlRuntime/RuntimeMarkup/RuntimeBindingPublisher.h
     XamlRuntime.Shared/XamlRuntime/Binding.cpp
     XamlRuntime.Shared/XamlRuntime/Binding.h
     XamlRuntime.Shared/XamlRuntime/DependentProperty.h
@@ -39,6 +40,7 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/XamlRuntime.Shared" FILES
     XamlRuntime.Shared/XamlRuntime/RuntimeMarkup/XamlSchemaValidator.cpp
     XamlRuntime.Shared/XamlRuntime/RuntimeMarkup/RuntimeBindingRegistry.cpp
     XamlRuntime.Shared/XamlRuntime/RuntimeMarkup/RuntimeTreeBuilder.cpp
+    XamlRuntime.Shared/XamlRuntime/RuntimeMarkup/RuntimeBindingPublisher.h
     XamlRuntime.Shared/XamlRuntime/Binding.cpp
     XamlRuntime.Shared/XamlRuntime/Binding.h
     XamlRuntime.Shared/XamlRuntime/DependentProperty.h

@@ -49,6 +49,7 @@
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\UserControl.h" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\IRuntimeReloadableControl.h" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeBindingContext.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeBindingPublisher.h" />
         <ClCompile Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeBindingRegistry.cpp" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeBindingRegistry.h" />
         <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeDiagnostics.h" />

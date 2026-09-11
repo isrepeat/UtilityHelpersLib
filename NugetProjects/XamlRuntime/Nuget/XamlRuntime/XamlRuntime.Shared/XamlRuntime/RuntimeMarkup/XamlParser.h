@@ -1,5 +1,5 @@
 #pragma once
-#include "RuntimeMarkup/XamlAst.h"
+#include "XamlAst.h"
 
 #include <string_view>
 #include <map>

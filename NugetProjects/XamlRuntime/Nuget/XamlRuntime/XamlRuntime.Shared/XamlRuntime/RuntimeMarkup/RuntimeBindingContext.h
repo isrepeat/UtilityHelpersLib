@@ -1,6 +1,6 @@
 #pragma once
-#include "RuntimeMarkup/RuntimeBindingRegistry.h"
-#include "RuntimeMarkup/XamlAst.h"
+#include "RuntimeBindingRegistry.h"
+#include "XamlAst.h"
 
 namespace xaml::runtime {
     struct RuntimeBindingContext {

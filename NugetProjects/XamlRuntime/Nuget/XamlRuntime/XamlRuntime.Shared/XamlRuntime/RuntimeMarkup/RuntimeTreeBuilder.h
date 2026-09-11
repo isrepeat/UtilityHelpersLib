@@ -1,5 +1,5 @@
 #pragma once
-#include "RuntimeMarkup/RuntimeBindingContext.h"
+#include "RuntimeBindingContext.h"
 
 namespace xaml::runtime {
     struct RuntimeBuildResult {

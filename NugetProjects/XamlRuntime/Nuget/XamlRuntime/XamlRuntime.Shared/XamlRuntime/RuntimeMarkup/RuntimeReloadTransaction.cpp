@@ -1,7 +1,7 @@
-#include "RuntimeMarkup/RuntimeReloadTransaction.h"
+#include "RuntimeReloadTransaction.h"
 
-#include "RuntimeMarkup/RuntimeDiagnostics.h"
-#include "RuntimeMarkup/XamlParser.h"
+#include "RuntimeDiagnostics.h"
+#include "XamlParser.h"
 
 namespace xaml::runtime::_details {
     void Collect(const Element& node, std::map<std::string, const Element*>& elements) {

@@ -1,6 +1,6 @@
-#include "RuntimeMarkup/XamlSchemaValidator.h"
+#include "XamlSchemaValidator.h"
 
-#include "RuntimeMarkup/RuntimeDiagnostics.h"
+#include "RuntimeDiagnostics.h"
 #include "ElementBuilder.h"
 
 #include <algorithm>

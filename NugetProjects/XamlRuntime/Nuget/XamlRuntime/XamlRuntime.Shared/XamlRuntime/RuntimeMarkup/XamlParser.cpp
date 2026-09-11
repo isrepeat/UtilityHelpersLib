@@ -1,6 +1,6 @@
-#include "RuntimeMarkup/XamlParser.h"
+#include "XamlParser.h"
 
-#include "RuntimeMarkup/RuntimeDiagnostics.h"
+#include "RuntimeDiagnostics.h"
 
 #include <cctype>
 #include <set>

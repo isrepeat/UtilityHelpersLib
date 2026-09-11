@@ -1,4 +1,4 @@
-#include "RuntimeMarkup/RuntimeBindingRegistry.h"
+#include "RuntimeBindingRegistry.h"
 
 namespace xaml::runtime {
     //
