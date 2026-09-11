@@ -138,7 +138,8 @@ namespace xaml::_details {
         }
         // Первый проход вычисляет требуемый размер снизу вверх. Точная
         // метрика шрифта появится позже; пока ширина текста оценивается.
-        if (element.Type() == ElementType::textBlock || element.Type() == ElementType::button) {
+        if (element.Type() == ElementType::textBlock
+            || (element.Type() == ElementType::button && element.Children().empty())) {
             Size result{
                 std::max(1.0f, static_cast<float>(utf8Length(element.Text())) * element.FontSize() * 0.55f),
                 textHeight(element),
@@ -230,7 +231,7 @@ namespace xaml::_details {
             return result;
         }
 
-        if (element.Type() == ElementType::border) {
+        if (element.Type() == ElementType::border || element.Type() == ElementType::button) {
             Size result{};
             if (!element.Children().empty()) {
                 result = measure(*element.Children().front());
@@ -384,7 +385,7 @@ namespace xaml::_details {
             }
             return;
         }
-        if (element.Type() == ElementType::border) {
+        if (element.Type() == ElementType::border || element.Type() == ElementType::button) {
             if (!element.Children().empty()) {
                 Element& child = *element.Children().front();
                 const Size childSize = child.DesiredSize();

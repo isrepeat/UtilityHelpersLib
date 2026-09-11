@@ -112,8 +112,8 @@ namespace xaml::_details {
             return child != ElementType::page;
         case ElementType::border:
         case ElementType::scrollViewer:
-            return child != ElementType::page;
         case ElementType::button:
+            return child != ElementType::page;
         case ElementType::iconButton:
         case ElementType::textBlock:
         case ElementType::toggleSwitch:
@@ -481,7 +481,8 @@ namespace xaml {
             throw std::invalid_argument(
                 _details::ElementTypeName(parent.Type()) + " cannot contain " + _details::ElementTypeName(child.Type()));
         }
-        if ((parent.Type() == ElementType::border || parent.Type() == ElementType::scrollViewer)
+        if ((parent.Type() == ElementType::border || parent.Type() == ElementType::scrollViewer
+            || parent.Type() == ElementType::button)
             && !parent.Children().empty()) {
             throw std::invalid_argument(_details::ElementTypeName(parent.Type()) + " can contain only one child");
         }
