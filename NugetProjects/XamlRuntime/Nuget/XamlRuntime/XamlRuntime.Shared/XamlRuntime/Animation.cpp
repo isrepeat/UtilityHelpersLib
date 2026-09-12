@@ -417,18 +417,18 @@ namespace xaml {
             if (storyboard.tracks.empty()) {
                 handled = true;
             }
-            handled = StartTracks(target, storyboard.tracks, trigger, true) || handled;
+            handled = StartTracks(target, storyboard.tracks, trigger, true, fromHidden) || handled;
         }
         return handled;
     }
 
     bool AnimationController::StartTracks(Element& target, const std::vector<AnimationTrack>& tracks,
-        AnimationTrigger trigger, bool useTransitions) {
+        AnimationTrigger trigger, bool useTransitions, bool fromHidden) {
         bool handled = false;
         static const AnimationRegistry emptyRegistry;
         for (const AnimationTrack& track : tracks) {
             if (!track.name.empty()) {
-                AnimationInvocation context(target, trigger, false, &track.settings);
+                AnimationInvocation context(target, trigger, fromHidden, &track.settings);
                 const auto& registry = target.animationState.registry ? *target.animationState.registry : emptyRegistry;
                 handled = registry.Configure(track.name, context) || handled;
                 continue;
@@ -437,7 +437,8 @@ namespace xaml {
             AddPropertyTrack(target, track.property,
                 track.fromCurrent ? _details::AnimatedValue(target, track.property, trigger) : track.from,
                 track.toToggleState ? (target.IsOn() ? 1.0f : 0.0f) : track.to,
-                useTransitions ? track.duration : std::chrono::milliseconds(0), track.easing, false);
+                useTransitions ? track.duration : std::chrono::milliseconds(0), track.easing,
+                trigger == AnimationTrigger::show || trigger == AnimationTrigger::hide);
         }
         return handled;
     }

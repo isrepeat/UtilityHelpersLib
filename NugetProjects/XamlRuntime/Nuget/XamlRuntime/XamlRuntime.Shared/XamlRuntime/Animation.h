@@ -209,7 +209,7 @@ namespace xaml {
         void TrackRoot(Element& root);
         static bool StartStoryboards(Element& element, AnimationTrigger trigger, bool fromHidden);
         static bool StartTracks(Element& target, const std::vector<AnimationTrack>& tracks,
-            AnimationTrigger trigger, bool useTransitions);
+            AnimationTrigger trigger, bool useTransitions, bool fromHidden = false);
         static void AddPropertyTrack(Element& target, AnimatedProperty property, float from, float to,
             std::chrono::milliseconds duration, Easing easing, bool presence);
         static void Configure(Element& element, AnimationTrigger trigger, bool fromHidden);
