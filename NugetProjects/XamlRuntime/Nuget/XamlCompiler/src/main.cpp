@@ -772,14 +772,35 @@ namespace {
                         for (size_t trackIndex = 0; trackIndex < storyboard->children.size(); ++trackIndex) {
                             const Element& track = storyboard->children[trackIndex];
                             const std::string targetName = this->AttributeValue(track, "targetName");
+                            const std::string animationName = track.name == "Animation"
+                                ? this->AttributeValue(track, "name") : "";
+                            if (!track.children.empty() || targetName.empty()
+                                || (track.name != "Animation" && track.name != "FloatAnimation")
+                                || (track.name == "Animation" && animationName.empty())) {
+                                throw std::runtime_error("Visual state Animation requires targetName and name");
+                            }
+                            if (trackIndex != 0) {
+                                output << ", ";
+                            }
+                            if (track.name == "Animation") {
+                                output << "{\"" << this->EscapeCpp(targetName) << "\", [] { AnimationTrack track; track.name = \""
+                                    << this->EscapeCpp(animationName) << "\";";
+                                for (const auto& [key, value] : track.attributes) {
+                                    if (key != "name" && key != "targetName") {
+                                        output << " track.settings.Set(\"" << this->EscapeCpp(key)
+                                            << "\", \"" << this->EscapeCpp(value) << "\");";
+                                    }
+                                }
+                                output << " return track; }()}";
+                                continue;
+                            }
                             const std::string property = track.name == "FloatAnimation"
                                 ? this->AttributeValue(track, "property") : "";
                             const std::string from = this->AttributeValue(track, "from");
                             const std::string to = this->AttributeValue(track, "to");
                             const std::string duration = this->AttributeValue(track, "duration");
                             const std::string easing = this->AttributeValue(track, "easing");
-                            if (!track.children.empty() || targetName.empty()
-                                || (property != "opacity" && property != "renderOffsetX" && property != "renderOffsetY"
+                            if ((property != "opacity" && property != "renderOffsetX" && property != "renderOffsetY"
                                     && property != "height" && property != "toggleProgress" && property != "pressProgress")
                                 || from.empty() || to.empty() || duration.empty()) {
                                 throw std::runtime_error("Visual state FloatAnimation requires targetName, supported property, from, to and duration");
@@ -788,9 +809,6 @@ namespace {
                                 : easing == "Linear" ? "linear" : "";
                             if (easingName.empty()) {
                                 throw std::runtime_error("Visual state animation easing must be Linear or CubicOut");
-                            }
-                            if (trackIndex != 0) {
-                                output << ", ";
                             }
                             const bool fromCurrent = from == "Current";
                             output << "{\"" << this->EscapeCpp(targetName) << "\", {AnimatedProperty::" << property
@@ -953,9 +971,15 @@ namespace {
             const Element& templateRoot = templateElement->children.front().children.front();
             const std::string sourceExpression = sourceProperty == "ItemsSource"
                 ? "itemsSource" : bindingContext + "." + sourceProperty + "()";
-            output << "            " << variable << "->SetItemsSource(" << sourceExpression
-                << ", [&viewModel, &" << (sourceProperty == "ItemsSource" ? "itemsSource" : bindingContext)
-                << "](const void* itemData, BindingScope& itemBindings) {\n";
+            output << "            " << variable << "->SetItemsSource(" << sourceExpression << ", [";
+            if (sourceProperty == "ItemsSource") {
+                output << "&viewModel, &itemsSource";
+            } else if (bindingContext == "viewModel") {
+                output << "&viewModel";
+            } else {
+                output << "&viewModel, &" << bindingContext;
+            }
+            output << "](const void* itemData, BindingScope& itemBindings) {\n";
             output << "            using Item = typename std::remove_reference_t<decltype(" << sourceExpression
                 << ")>::value_type;\n";
             output << "            const auto& item = *static_cast<const Item*>(itemData);\n";

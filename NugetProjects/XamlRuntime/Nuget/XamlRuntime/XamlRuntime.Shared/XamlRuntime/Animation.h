@@ -98,6 +98,7 @@ namespace xaml {
         using AnimationInvocation::Trigger;
         using AnimationInvocation::IsStartingFromHidden;
         using AnimationInvocation::Parameters;
+        using AnimationInvocation::Settings;
         using AnimationInvocation::AnimateProperty;
         using AnimationInvocation::Transform;
         using AnimationInvocation::AnimateTransform;
