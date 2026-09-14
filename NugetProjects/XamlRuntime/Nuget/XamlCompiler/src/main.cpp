@@ -73,7 +73,7 @@ namespace {
         }
 
         std::string UserControlName(const Element& element) {
-            static constexpr std::string_view prefix = "controls:";
+            static constexpr std::string_view prefix = "control:";
             if (element.name.rfind(prefix, 0) != 0) {
                 return {};
             }
@@ -632,7 +632,7 @@ namespace {
                     && !this->TryGetBindingSource(itemsSource, itemsSourceProperty)) {
                     throw std::runtime_error("UserControl itemsSource must use {Binding Property}");
                 }
-                output << "            auto " << variable << " = mobileclock::ui::controls::" << userControlName
+                output << "            auto " << variable << " = mobileclock::ui::control::" << userControlName
                     << "::Create(" << childBindingContext;
                 if (!itemsSourceProperty.empty()) {
                     output << ", " << bindingContext << "." << itemsSourceProperty << "()";
@@ -1181,9 +1181,9 @@ namespace {
         Element rootElement = root;
         if (isUserControl) {
             const std::string className = this->AttributeValue(root, "x:Class");
-            if (className != "mobileclock::ui::controls::" + typeName) {
+            if (className != "mobileclock::ui::control::" + typeName) {
                 throw std::runtime_error(
-                    "<UserControl> requires x:Class=\"mobileclock::ui::controls::" + typeName + "\"");
+                    "<UserControl> requires x:Class=\"mobileclock::ui::control::" + typeName + "\"");
             }
             std::vector<Element> content;
             for (const Element& child : root.children) {
@@ -1265,7 +1265,7 @@ int main(int argc, char* argv[]) {
     try {
         std::vector<std::string> ignoredDirectories;
         std::vector<std::string> ignoredFileSuffixes;
-        std::string controlIncludePrefix = "UI/Controls";
+        std::string controlIncludePrefix = "UI/Control";
         for (int index = 3; index < argc; index += 2) {
             const std::string_view option = argv[index];
             const std::string value = argv[index + 1];

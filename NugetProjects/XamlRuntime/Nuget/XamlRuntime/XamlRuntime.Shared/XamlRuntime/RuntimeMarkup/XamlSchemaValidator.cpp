@@ -25,10 +25,10 @@ namespace xaml::runtime::_details {
     }
 
     void ValidateNode(const XamlElementNode& node, const std::set<std::string>& controls) {
-        if (node.nameSpace != "urn:mobileclock:xaml" && node.nameSpace != "using:mobileclock.ui.controls") {
+        if (node.nameSpace != "urn:mobileclock:xaml" && node.nameSpace != "using:mobileclock.ui.control") {
             throw RuntimeDiagnostic(node.location, "Unsupported namespace '" + node.nameSpace + "'");
         }
-        const bool control = node.nameSpace == "using:mobileclock.ui.controls";
+        const bool control = node.nameSpace == "using:mobileclock.ui.control";
         if (control && controls.count(node.name) == 0) {
             throw RuntimeDiagnostic(node.location, "Native control '" + node.name + "' is not registered");
         }
@@ -106,7 +106,7 @@ namespace xaml::runtime::_details {
             }
             ValidateNode(child, controls);
             try {
-                auto entry = std::make_unique<Element>(child.nameSpace == "using:mobileclock.ui.controls"
+                auto entry = std::make_unique<Element>(child.nameSpace == "using:mobileclock.ui.control"
                     ? ElementType::grid : ParseElementType(child.name));
                 ValidateChild(scratch, *entry);
                 scratch.AddChild(std::move(entry));

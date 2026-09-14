@@ -239,7 +239,7 @@ namespace xaml::runtime {
 
     std::unique_ptr<Element> RuntimeTreeBuilder::BuildElement(const XamlElementNode& node,
         const RuntimeBindingContext& context, BindingScope& bindings) {
-        const bool control = node.nameSpace == "using:mobileclock.ui.controls";
+        const bool control = node.nameSpace == "using:mobileclock.ui.control";
         auto element = control ? context.controls.at(node.name)(bindings)
             : std::make_unique<Element>(ParseElementType(node.name));
         element->SetSourceLocation(node.location.path, node.location.line, node.location.column);
