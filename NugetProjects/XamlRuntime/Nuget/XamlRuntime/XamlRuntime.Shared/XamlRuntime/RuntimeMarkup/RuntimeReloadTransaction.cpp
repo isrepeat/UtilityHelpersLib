@@ -35,7 +35,7 @@ namespace xaml::runtime {
     RuntimeBuildResult RuntimeReloadTransaction::Prepare(std::string_view markup, std::string_view sourcePath,
         const RuntimeBindingContext& context, const Element& previous, Size availableSize) {
         const auto ast = XamlParser{}.Parse(markup, sourcePath);
-        if (ast.name != "Page" || ast.nameSpace != "urn:mobileclock:xaml") {
+        if (ast.name != "Page" || ast.nameSpace != context.xamlNamespace) {
             throw RuntimeDiagnostic(ast.location, "Page markup requires a Page root");
         }
         auto result = RuntimeTreeBuilder{}.BuildPage(ast, context, availableSize);

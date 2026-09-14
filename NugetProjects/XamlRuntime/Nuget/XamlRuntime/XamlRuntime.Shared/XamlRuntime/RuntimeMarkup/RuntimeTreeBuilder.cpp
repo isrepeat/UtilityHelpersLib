@@ -226,7 +226,11 @@ namespace xaml::runtime {
         for (const auto& control : context.controls) {
             controls.insert(control.first);
         }
-        XamlSchemaValidator{}.Validate(root, controls);
+        XamlSchemaValidator{}.Validate(
+            root,
+            context.xamlNamespace,
+            context.controlXmlNamespace,
+            controls);
         RuntimeBuildResult result;
         // BindingScope владеет подписками и целевыми элементами. Он передаётся вместе
         // с корнем, чтобы подписки старого дерева уничтожились при его замене.
@@ -239,7 +243,8 @@ namespace xaml::runtime {
 
     std::unique_ptr<Element> RuntimeTreeBuilder::BuildElement(const XamlElementNode& node,
         const RuntimeBindingContext& context, BindingScope& bindings) {
-        const bool control = node.nameSpace == "using:mobileclock.ui.control";
+        const bool control = !context.controlXmlNamespace.empty()
+            && node.nameSpace == context.controlXmlNamespace;
         auto element = control ? context.controls.at(node.name)(bindings)
             : std::make_unique<Element>(ParseElementType(node.name));
         element->SetSourceLocation(node.location.path, node.location.line, node.location.column);
@@ -285,12 +290,16 @@ namespace xaml::runtime {
                 const auto descriptor = entry->collection;
                 // Проверяем весь шаблон даже у пустой коллекции, чтобы ошибка была
                 // показана сразу, а не при появлении первого элемента.
-                RuntimeBindingContext itemContext{descriptor.itemBindings(nullptr), context.owner + " item", context.controls};
+                RuntimeBindingContext itemContext = context;
+                itemContext.bindings = descriptor.itemBindings(nullptr);
+                itemContext.owner += " item";
                 BindingScope probeBindings;
                 auto probe = this->BuildElement(itemNode, itemContext, probeBindings);
                 _details::ValidateStateTargets(*probe);
                 descriptor.bind(*element, [descriptor, itemNode, context](const void* item, BindingScope& scope) {
-                    RuntimeBindingContext itemContext{descriptor.itemBindings(item), context.owner + " item", context.controls};
+                    RuntimeBindingContext itemContext = context;
+                    itemContext.bindings = descriptor.itemBindings(item);
+                    itemContext.owner += " item";
                     auto result = RuntimeTreeBuilder{}.BuildElement(itemNode, itemContext, scope);
                     result->SetDataContext(item);
                     return result;

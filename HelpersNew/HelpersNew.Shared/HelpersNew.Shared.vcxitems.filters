@@ -4,11 +4,14 @@
         <Filter Include="HelpersNew"><UniqueIdentifier>{AF5E3C6D-45F9-4B65-8DCB-2D72D9E8F484}</UniqueIdentifier></Filter>
         <Filter Include="HelpersNew\Filesystem"><UniqueIdentifier>{57E1C173-08A5-4E14-9E12-178BA3A75622}</UniqueIdentifier></Filter>
         <Filter Include="HelpersNew\Geometry"><UniqueIdentifier>{66B9D84A-8B67-427A-82DB-738F835E2606}</UniqueIdentifier></Filter>
+        <Filter Include="HelpersNew\Platform"><UniqueIdentifier>{CDC0E3BE-9ED2-4D04-B2AF-6B68A0A348B7}</UniqueIdentifier></Filter>
+        <Filter Include="HelpersNew\Platform\Windows"><UniqueIdentifier>{B0D71CD7-3A21-4B87-88C5-1A3A3DD650F3}</UniqueIdentifier></Filter>
     </ItemGroup>
     <ItemGroup>
         <ClCompile Include="$(MSBuildThisFileDirectory)HelpersNew\Filesystem\ReadAllBytes.cpp"><Filter>HelpersNew\Filesystem</Filter></ClCompile>
         <ClCompile Include="$(MSBuildThisFileDirectory)HelpersNew\Geometry\ContainsPoint.cpp"><Filter>HelpersNew\Geometry</Filter></ClCompile>
         <ClInclude Include="$(MSBuildThisFileDirectory)HelpersNew\Filesystem\ReadAllBytes.h"><Filter>HelpersNew\Filesystem</Filter></ClInclude>
         <ClInclude Include="$(MSBuildThisFileDirectory)HelpersNew\Geometry\ContainsPoint.h"><Filter>HelpersNew\Geometry</Filter></ClInclude>
+        <ClInclude Include="$(MSBuildThisFileDirectory)HelpersNew\Platform\Windows\WindowsApi.h"><Filter>HelpersNew\Platform\Windows</Filter></ClInclude>
     </ItemGroup>
 </Project>

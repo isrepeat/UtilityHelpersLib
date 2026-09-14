@@ -14,5 +14,6 @@
         <ClCompile Include="$(MSBuildThisFileDirectory)HelpersNew\Geometry\ContainsPoint.cpp" />
         <ClInclude Include="$(MSBuildThisFileDirectory)HelpersNew\Filesystem\ReadAllBytes.h" />
         <ClInclude Include="$(MSBuildThisFileDirectory)HelpersNew\Geometry\ContainsPoint.h" />
+        <ClInclude Include="$(MSBuildThisFileDirectory)HelpersNew\Platform\Windows\WindowsApi.h" />
     </ItemGroup>
 </Project>

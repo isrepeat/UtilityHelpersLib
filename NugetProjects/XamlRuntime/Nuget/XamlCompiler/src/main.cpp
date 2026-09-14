@@ -42,14 +42,19 @@ namespace {
             const std::filesystem::path& outputPath,
             const std::vector<std::string>& ignoredDirectories,
             const std::vector<std::string>& ignoredFileSuffixes,
+            std::string xamlNamespace,
+            std::string controlXmlPrefix,
+            std::string controlCppNamespace,
             std::string controlIncludePrefix);
 
     private:
-        static constexpr const char* namespaceUri = "urn:mobileclock:xaml";
         std::map<std::string, Style> styles;
         std::set<std::string> requiredControls;
         const std::string* xamlSource = nullptr;
         std::string xamlSourcePath;
+        std::string xamlNamespace;
+        std::string controlXmlPrefix;
+        std::string controlCppNamespace;
 
         bool IsIgnored(
             const std::filesystem::path& input,
@@ -73,7 +78,7 @@ namespace {
         }
 
         std::string UserControlName(const Element& element) {
-            static constexpr std::string_view prefix = "control:";
+            const std::string prefix = this->controlXmlPrefix + ":";
             if (element.name.rfind(prefix, 0) != 0) {
                 return {};
             }
@@ -632,7 +637,10 @@ namespace {
                     && !this->TryGetBindingSource(itemsSource, itemsSourceProperty)) {
                     throw std::runtime_error("UserControl itemsSource must use {Binding Property}");
                 }
-                output << "            auto " << variable << " = mobileclock::ui::control::" << userControlName
+                if (this->controlCppNamespace.empty()) {
+                    throw std::runtime_error("Custom control requires --control-cpp-namespace");
+                }
+                output << "            auto " << variable << " = " << this->controlCppNamespace << "::" << userControlName
                     << "::Create(" << childBindingContext;
                 if (!itemsSourceProperty.empty()) {
                     output << ", " << bindingContext << "." << itemsSourceProperty << "()";
@@ -1147,7 +1155,13 @@ namespace {
         const std::filesystem::path& outputPath,
         const std::vector<std::string>& ignoredDirectories,
         const std::vector<std::string>& ignoredFileSuffixes,
+        std::string xamlNamespace,
+        std::string controlXmlPrefix,
+        std::string controlCppNamespace,
         std::string controlIncludePrefix) {
+        this->xamlNamespace = std::move(xamlNamespace);
+        this->controlXmlPrefix = std::move(controlXmlPrefix);
+        this->controlCppNamespace = std::move(controlCppNamespace);
         if (this->IsIgnored(input, ignoredDirectories, ignoredFileSuffixes)) {
             std::cout << "XamlCompiler: skipping " << input.string() << '\n';
             return;
@@ -1163,9 +1177,9 @@ namespace {
             root.attributes.end(),
             [](const auto& attribute) { return attribute.first == "xmlns"; });
         if (namespaceAttribute == root.attributes.end()
-            || namespaceAttribute->second != XamlCompiler::namespaceUri) {
+            || namespaceAttribute->second != this->xamlNamespace) {
             throw std::runtime_error(
-                "Root element must use xmlns=\"urn:mobileclock:xaml\"");
+                "Root element must use xmlns=\"" + this->xamlNamespace + "\"");
         }
         const bool isPage = root.name == "Page";
         const bool isUserControl = root.name == "UserControl";
@@ -1181,9 +1195,12 @@ namespace {
         Element rootElement = root;
         if (isUserControl) {
             const std::string className = this->AttributeValue(root, "x:Class");
-            if (className != "mobileclock::ui::control::" + typeName) {
+            if (this->controlCppNamespace.empty()) {
+                throw std::runtime_error("UserControl requires --control-cpp-namespace");
+            }
+            if (className != this->controlCppNamespace + "::" + typeName) {
                 throw std::runtime_error(
-                    "<UserControl> requires x:Class=\"mobileclock::ui::control::" + typeName + "\"");
+                    "<UserControl> requires x:Class=\"" + this->controlCppNamespace + "::" + typeName + "\"");
             }
             std::vector<Element> content;
             for (const Element& child : root.children) {
@@ -1259,13 +1276,18 @@ namespace {
 int main(int argc, char* argv[]) {
     if (argc < 3 || (argc - 3) % 2 != 0) {
         std::cerr << "Usage: XamlCompiler <input.xaml> <output.xaml.cpp> "
-            "[--control-include-prefix <path>] [--ignore-directory <name>] [--ignore-file-suffix <suffix>]\n";
+            "[--xaml-namespace <uri>] [--control-xml-prefix <prefix>] "
+            "[--control-cpp-namespace <namespace>] [--control-include-prefix <path>] "
+            "[--ignore-directory <name>] [--ignore-file-suffix <suffix>]\n";
         return 1;
     }
     try {
         std::vector<std::string> ignoredDirectories;
         std::vector<std::string> ignoredFileSuffixes;
-        std::string controlIncludePrefix = "UI/Control";
+        std::string xamlNamespace = "urn:xaml";
+        std::string controlXmlPrefix;
+        std::string controlCppNamespace;
+        std::string controlIncludePrefix;
         for (int index = 3; index < argc; index += 2) {
             const std::string_view option = argv[index];
             const std::string value = argv[index + 1];
@@ -1279,6 +1301,21 @@ int main(int argc, char* argv[]) {
                     throw std::runtime_error("Ignored file suffix is invalid: " + value);
                 }
                 ignoredFileSuffixes.push_back(value);
+            } else if (option == "--xaml-namespace") {
+                if (value.empty()) {
+                    throw std::runtime_error("XAML namespace cannot be empty");
+                }
+                xamlNamespace = value;
+            } else if (option == "--control-xml-prefix") {
+                if (!std::regex_match(value, std::regex(R"([A-Za-z][A-Za-z0-9_.-]*)"))) {
+                    throw std::runtime_error("Control XML prefix is invalid: " + value);
+                }
+                controlXmlPrefix = value;
+            } else if (option == "--control-cpp-namespace") {
+                if (!std::regex_match(value, std::regex(R"([A-Za-z][A-Za-z0-9_:]*)"))) {
+                    throw std::runtime_error("Control C++ namespace is invalid: " + value);
+                }
+                controlCppNamespace = value;
             } else if (option == "--control-include-prefix") {
                 if (!std::regex_match(value, std::regex(R"([A-Za-z][A-Za-z0-9_./-]*)"))) {
                     throw std::runtime_error("Control include prefix is invalid: " + value);
@@ -1294,6 +1331,9 @@ int main(int argc, char* argv[]) {
             argv[2],
             ignoredDirectories,
             ignoredFileSuffixes,
+            std::move(xamlNamespace),
+            std::move(controlXmlPrefix),
+            std::move(controlCppNamespace),
             std::move(controlIncludePrefix));
         return 0;
     } catch (const std::exception& error) {

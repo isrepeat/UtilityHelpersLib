@@ -1,10 +1,15 @@
-add_library(utility_helpers_new STATIC
-    HelpersNew.Shared/HelpersNew/Filesystem/ReadAllBytes.cpp
-    HelpersNew.Shared/HelpersNew/Filesystem/ReadAllBytes.h
-    HelpersNew.Shared/HelpersNew/Geometry/ContainsPoint.cpp
-    HelpersNew.Shared/HelpersNew/Geometry/ContainsPoint.h
+file(GLOB_RECURSE utility_helpers_new_source_files CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/HelpersNew.Shared/HelpersNew/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/HelpersNew.Shared/HelpersNew/*.h"
 )
+
+add_library(utility_helpers_new STATIC ${utility_helpers_new_source_files})
 add_library(utility_helpers::new ALIAS utility_helpers_new)
+
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/HelpersNew.Shared" FILES
+    ${utility_helpers_new_source_files}
+)
+
 target_include_directories(utility_helpers_new PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/HelpersNew.Shared>"
 )

@@ -24,11 +24,15 @@ namespace xaml::runtime::_details {
         }
     }
 
-    void ValidateNode(const XamlElementNode& node, const std::set<std::string>& controls) {
-        if (node.nameSpace != "urn:mobileclock:xaml" && node.nameSpace != "using:mobileclock.ui.control") {
+    void ValidateNode(
+        const XamlElementNode& node,
+        std::string_view xamlNamespace,
+        std::string_view controlXmlNamespace,
+        const std::set<std::string>& controls) {
+        if (node.nameSpace != xamlNamespace && node.nameSpace != controlXmlNamespace) {
             throw RuntimeDiagnostic(node.location, "Unsupported namespace '" + node.nameSpace + "'");
         }
-        const bool control = node.nameSpace == "using:mobileclock.ui.control";
+        const bool control = !controlXmlNamespace.empty() && node.nameSpace == controlXmlNamespace;
         if (control && controls.count(node.name) == 0) {
             throw RuntimeDiagnostic(node.location, "Native control '" + node.name + "' is not registered");
         }
@@ -72,7 +76,7 @@ namespace xaml::runtime::_details {
             const bool storyboards = child.name == node.name + ".Storyboards";
             const bool states = child.name == "VisualStateManager.VisualStateGroups";
             if (rows || columns || templateProperty || storyboards || states) {
-                if (child.nameSpace != "urn:mobileclock:xaml" || !child.attributes.empty()
+                if (child.nameSpace != xamlNamespace || !child.attributes.empty()
                     || !properties.insert(rows ? "rows" : columns ? "columns" : child.name).second) {
                     throw RuntimeDiagnostic(child.location, "Invalid or duplicate property element");
                 }
@@ -97,16 +101,17 @@ namespace xaml::runtime::_details {
                         || !child.children[0].attributes.empty()) {
                         throw RuntimeDiagnostic(child.location, "ListView.ItemTemplate requires one DataTemplate with one root");
                     }
-                    ValidateNode(child.children[0].children[0], controls);
+                    ValidateNode(child.children[0].children[0], xamlNamespace, controlXmlNamespace, controls);
                 }
                 continue;
             }
             if (control) {
                 throw RuntimeDiagnostic(child.location, "Native control content must be edited in its template file");
             }
-            ValidateNode(child, controls);
+            ValidateNode(child, xamlNamespace, controlXmlNamespace, controls);
             try {
-                auto entry = std::make_unique<Element>(child.nameSpace == "using:mobileclock.ui.control"
+                auto entry = std::make_unique<Element>(
+                    !controlXmlNamespace.empty() && child.nameSpace == controlXmlNamespace
                     ? ElementType::grid : ParseElementType(child.name));
                 ValidateChild(scratch, *entry);
                 scratch.AddChild(std::move(entry));
@@ -121,7 +126,11 @@ namespace xaml::runtime {
     //
     // API
     //
-    void XamlSchemaValidator::Validate(const XamlElementNode& root, const std::set<std::string>& controls) {
-        _details::ValidateNode(root, controls);
+    void XamlSchemaValidator::Validate(
+        const XamlElementNode& root,
+        std::string_view xamlNamespace,
+        std::string_view controlXmlNamespace,
+        const std::set<std::string>& controls) {
+        _details::ValidateNode(root, xamlNamespace, controlXmlNamespace, controls);
     }
 }
