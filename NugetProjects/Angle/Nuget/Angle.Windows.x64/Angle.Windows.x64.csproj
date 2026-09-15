@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <PackageId>ANGLE.Windows.x64</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>MobileClock</Authors>
+    <Description>ANGLE release binaries and MSBuild integration for desktop x64 applications.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- Проект не компилирует исходный код: его единственный результат — nupkg
+         с готовой release-сборкой ANGLE. -->
+    <NoBuild>true</NoBuild>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <!-- vcpkg из установленного Visual Studio; свойство можно переопределить,
+         если используется другой экземпляр vcpkg. -->
+    <VcpkgRoot Condition="'$(VcpkgRoot)'==''">$(VSInstallDir)VC\vcpkg\</VcpkgRoot>
+    <VcpkgExecutable>$(VcpkgRoot)vcpkg.exe</VcpkgExecutable>
+    <!-- Устанавливаем зависимости в общий временный каталог NugetProjects.
+         Отдельный подкаталог исключает конфликт с другими manifest-пакетами. -->
+    <AngleVcpkgInstalledDir>$(__NugetBuildDirRoot)\vcpkg_installed\ANGLE.Windows.x64</AngleVcpkgInstalledDir>
+    <AngleVcpkgTriplet>x64-windows</AngleVcpkgTriplet>
+    <AngleVcpkgPackageDir>$(AngleVcpkgInstalledDir)\$(AngleVcpkgTriplet)\</AngleVcpkgPackageDir>
+  </PropertyGroup>
+
+  <!-- Перед упаковкой устанавливаем зависимости из vcpkg.json. В nupkg попадают
+       уже готовые release-библиотеки, поэтому потребителю пакета vcpkg не нужен. -->
+  <Target Name="InstallAngleDependencies" BeforeTargets="GenerateNuspec">
+    <Error Condition="!Exists('$(VcpkgExecutable)')"
+           Text="vcpkg was not found at $(VcpkgExecutable). Build this project from Visual Studio with the C++ workload installed, or set VcpkgRoot." />
+    <Exec Command="&quot;$(VcpkgExecutable)&quot; install --x-manifest-root=&quot;$(MSBuildProjectDirectory)&quot; --x-install-root=&quot;$(AngleVcpkgInstalledDir)&quot; --triplet $(AngleVcpkgTriplet)" />
+  </Target>
+
+  <ItemGroup>
+    <!-- NuGet автоматически импортирует файл из build/native. Он добавляет
+         include/lib-пути и копирует runtime DLL в output native-проекта. -->
+    <None Include="build\native\ANGLE.Windows.x64.targets"
+          Pack="true"
+          PackagePath="build\native\ANGLE.Windows.x64.targets" />
+    <None Include="README.md"
+          Pack="true"
+          PackagePath="" />
+    <!-- Заголовки и import-библиотеки нужны линкеру потребителя. -->
+    <None Include="$(AngleVcpkgPackageDir)include\**\*"
+          Pack="true"
+          PackagePath="build\native\include" />
+    <None Include="$(AngleVcpkgPackageDir)lib\libEGL.lib"
+          Pack="true"
+          PackagePath="build\native\lib\x64" />
+    <None Include="$(AngleVcpkgPackageDir)lib\libGLESv2.lib"
+          Pack="true"
+          PackagePath="build\native\lib\x64" />
+    <!-- Runtime-библиотеки требуются загрузчику Windows при запуске bridge. -->
+    <None Include="$(AngleVcpkgPackageDir)bin\libEGL.dll"
+          Pack="true"
+          PackagePath="runtimes\win-x64\native" />
+    <None Include="$(AngleVcpkgPackageDir)bin\libGLESv2.dll"
+          Pack="true"
+          PackagePath="runtimes\win-x64\native" />
+    <None Include="$(AngleVcpkgPackageDir)bin\z.dll"
+          Pack="true"
+          PackagePath="runtimes\win-x64\native" />
+  </ItemGroup>
+</Project>

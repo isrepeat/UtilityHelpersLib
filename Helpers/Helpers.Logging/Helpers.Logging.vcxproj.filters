@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <ItemGroup>
+        <Filter Include="Helpers.Logging">
+            <UniqueIdentifier>{85FE8A08-2CC4-4407-8E10-3386E0BA9EA7}</UniqueIdentifier>
+        </Filter>
+        <Filter Include="Helpers.Logging\platform">
+            <UniqueIdentifier>{4E4D885E-687F-4CF3-8DD3-73117A8E9506}</UniqueIdentifier>
+        </Filter>
+        <Filter Include="Helpers.Logging\platform\Windows">
+            <UniqueIdentifier>{037D251B-D237-44B7-B144-1C21A333C1A8}</UniqueIdentifier>
+        </Filter>
+        <Filter Include="Helpers.Logging\platform\Android">
+            <UniqueIdentifier>{88E1D4FA-16BE-43C8-94DD-15D472CAC4D6}</UniqueIdentifier>
+        </Filter>
+    </ItemGroup>
+    <ItemGroup>
+        <ClCompile Include="Helpers.Logging\Logging.cpp">
+            <Filter>Helpers.Logging</Filter>
+        </ClCompile>
+        <ClCompile Include="Helpers.Logging\platform\Android\LoggingBackend.cpp">
+            <Filter>Helpers.Logging\platform\Android</Filter>
+        </ClCompile>
+        <ClCompile Include="Helpers.Logging\platform\Windows\LoggingBackend.cpp">
+            <Filter>Helpers.Logging\platform\Windows</Filter>
+        </ClCompile>
+        <ClInclude Include="Helpers.Logging\Logging.h">
+            <Filter>Helpers.Logging</Filter>
+        </ClInclude>
+        <ClInclude Include="Helpers.Logging\LoggingBackend.h">
+            <Filter>Helpers.Logging</Filter>
+        </ClInclude>
+        <None Include="CMakeLists.txt">
+            <Filter>Helpers.Logging</Filter>
+        </None>
+    </ItemGroup>
+</Project>

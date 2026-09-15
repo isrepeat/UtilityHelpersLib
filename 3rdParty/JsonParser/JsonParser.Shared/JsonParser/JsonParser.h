@@ -12,7 +12,6 @@
 #define JS_STL_SET 1
 #include <JsonParser/json_struct/json_struct.h> // https://github.com/jorgen/json_struct
 #include "Helpers/Singleton.hpp"
-#include <format>
 
 namespace JS {
     //
@@ -74,12 +73,14 @@ namespace JS {
             ParserCodePageState(int newCodePage)
                 : prevCodePage{ ParserCodePageController::GetInstance().GetActiveCodePage() }
             {
-                LoggerCallback::SafeInvoke(std::format("Set parser codePage = {} (before = {})", newCodePage, this->prevCodePage));
+                LoggerCallback::SafeInvoke(
+                    "Set parser codePage = " + std::to_string(newCodePage)
+                    + " (before = " + std::to_string(this->prevCodePage) + ")");
                 ParserCodePageController::GetInstance().SetActiveCodePage(newCodePage);
             }
             ~ParserCodePageState() {
                 if (!this->isMoved) {
-                    LoggerCallback::SafeInvoke(std::format("Return parser codePage to {}", this->prevCodePage));
+                    LoggerCallback::SafeInvoke("Return parser codePage to " + std::to_string(this->prevCodePage));
                     ParserCodePageController::GetInstance().SetActiveCodePage(this->prevCodePage);
                 }
             }

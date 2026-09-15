@@ -119,6 +119,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Templates", "Templates", "{
 		Scripts\Templates\UpdateUtilityHelpersSubmodulesForCurrentDir.bat = Scripts\Templates\UpdateUtilityHelpersSubmodulesForCurrentDir.bat
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HelpersNew", "HelpersNew", "{4D74E5A8-5AA9-4BEA-8DA0-0D59B8734E39}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HelpersNew.Shared", "HelpersNew\HelpersNew.Shared\HelpersNew.Shared.vcxitems", "{4E7C807B-B124-4795-A77E-FB4794B64672}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HelpersNew.st", "HelpersNew\HelpersNew.st\HelpersNew.st.vcxproj", "{D8067C05-636F-4E85-A1BC-13F4D279C338}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -361,6 +367,26 @@ Global
 		{D52F7AC6-8A94-4332-9B40-F5E898479C68}.Release|x64.Build.0 = Release|Any CPU
 		{D52F7AC6-8A94-4332-9B40-F5E898479C68}.Release|x86.ActiveCfg = Release|Any CPU
 		{D52F7AC6-8A94-4332-9B40-F5E898479C68}.Release|x86.Build.0 = Release|Any CPU
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Debug|Any CPU.Build.0 = Debug|x64
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Debug|ARM.ActiveCfg = Debug|x64
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Debug|ARM.Build.0 = Debug|x64
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Debug|ARM64.ActiveCfg = Debug|x64
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Debug|ARM64.Build.0 = Debug|x64
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Debug|x64.ActiveCfg = Debug|x64
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Debug|x64.Build.0 = Debug|x64
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Debug|x86.ActiveCfg = Debug|x64
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Debug|x86.Build.0 = Debug|x64
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Release|Any CPU.ActiveCfg = Release|x64
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Release|Any CPU.Build.0 = Release|x64
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Release|ARM.ActiveCfg = Release|x64
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Release|ARM.Build.0 = Release|x64
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Release|ARM64.ActiveCfg = Release|x64
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Release|ARM64.Build.0 = Release|x64
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Release|x64.ActiveCfg = Release|x64
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Release|x64.Build.0 = Release|x64
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Release|x86.ActiveCfg = Release|x64
+		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Release|x86.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -402,11 +428,14 @@ Global
 		{D52F7AC6-8A94-4332-9B40-F5E898479C68} = {17B40609-A6C7-4BD8-A744-9BF915D7D554}
 		{C07AED25-F071-4AA5-B251-02EB51B50FE4} = {6A397F96-97EC-46B4-AE3E-B1A336C8FC01}
 		{C4D39B3C-7BB8-451E-8613-035F3443B006} = {6A397F96-97EC-46B4-AE3E-B1A336C8FC01}
+		{D8067C05-636F-4E85-A1BC-13F4D279C338} = {4D74E5A8-5AA9-4BEA-8DA0-0D59B8734E39}
+		{4E7C807B-B124-4795-A77E-FB4794B64672} = {4D74E5A8-5AA9-4BEA-8DA0-0D59B8734E39}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A114CB48-500F-4E4B-BC01-3ACE75DCCC4F}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		HelpersNew\HelpersNew.Shared\HelpersNew.Shared.vcxitems*{d8067c05-636f-4e85-a1bc-13f4d279c338}*SharedItemsImports = 4
 		3rdParty\3rdParty_Packages_Includes\3rdParty.Includes\3rdParty.Includes.vcxitems*{0061e887-26e6-40e8-9fa6-ca2c7fc73967}*SharedItemsImports = 4
 		MediaRecorderCore\MediaRecorderCore.Shared.UWP\MediaRecorderCore.Shared.UWP.vcxitems*{0429d5ce-1aaa-4141-83d3-b4329c7cb48e}*SharedItemsImports = 4
 		MediaRecorderCore\MediaRecorderCore\MediaRecorderCore.vcxitems*{0429d5ce-1aaa-4141-83d3-b4329c7cb48e}*SharedItemsImports = 4

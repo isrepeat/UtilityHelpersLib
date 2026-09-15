@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <ItemGroup Label="ProjectConfigurations">
+        <ProjectConfiguration Include="Debug|x64"><Configuration>Debug</Configuration><Platform>x64</Platform></ProjectConfiguration>
+        <ProjectConfiguration Include="Release|x64"><Configuration>Release</Configuration><Platform>x64</Platform></ProjectConfiguration>
+    </ItemGroup>
+    <PropertyGroup Label="Globals">
+        <VCProjectVersion>18.0</VCProjectVersion>
+        <ProjectGuid>{D437B9D5-30FC-41B2-9D3B-6B34E2DECD06}</ProjectGuid>
+        <RootNamespace>UtilityHelpersLogging</RootNamespace>
+    </PropertyGroup>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration"><ConfigurationType>StaticLibrary</ConfigurationType><UseDebugLibraries>true</UseDebugLibraries><PlatformToolset>v145</PlatformToolset></PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration"><ConfigurationType>StaticLibrary</ConfigurationType><UseDebugLibraries>false</UseDebugLibraries><PlatformToolset>v145</PlatformToolset></PropertyGroup>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+    <ItemDefinitionGroup>
+        <ClCompile>
+            <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\3rdParty\Spdlog\Spdlog.Shared\Spdlog;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+            <LanguageStandard>stdcpp17</LanguageStandard>
+            <WarningLevel>Level4</WarningLevel>
+        </ClCompile>
+    </ItemDefinitionGroup>
+    <ItemGroup>
+        <ClCompile Include="Helpers.Logging\Logging.cpp" />
+        <ClCompile Include="Helpers.Logging\platform\Android\LoggingBackend.cpp">
+            <ExcludedFromBuild>true</ExcludedFromBuild>
+        </ClCompile>
+        <ClCompile Include="Helpers.Logging\platform\Windows\LoggingBackend.cpp" />
+        <ClInclude Include="Helpers.Logging\Logging.h" />
+        <ClInclude Include="Helpers.Logging\LoggingBackend.h" />
+        <None Include="CMakeLists.txt" />
+    </ItemGroup>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+    <Import Project="Helpers.Logging.targets"
+            Condition="'$(_IsLocal)'!='True'" />
+</Project>

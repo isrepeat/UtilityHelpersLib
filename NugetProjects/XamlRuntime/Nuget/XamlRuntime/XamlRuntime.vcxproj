@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <ItemGroup Label="ProjectConfigurations">
+        <ProjectConfiguration Include="Debug|x64"><Configuration>Debug</Configuration><Platform>x64</Platform></ProjectConfiguration>
+        <ProjectConfiguration Include="Release|x64"><Configuration>Release</Configuration><Platform>x64</Platform></ProjectConfiguration>
+    </ItemGroup>
+    <PropertyGroup Label="Globals">
+        <VCProjectVersion>18.0</VCProjectVersion>
+        <ProjectGuid>{D5B97C3C-3A64-4A72-A71C-1186767DB3B1}</ProjectGuid>
+        <RootNamespace>XamlRuntime</RootNamespace>
+    </PropertyGroup>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration"><ConfigurationType>StaticLibrary</ConfigurationType><UseDebugLibraries>true</UseDebugLibraries><PlatformToolset>v145</PlatformToolset></PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration"><ConfigurationType>StaticLibrary</ConfigurationType><UseDebugLibraries>false</UseDebugLibraries><PlatformToolset>v145</PlatformToolset></PropertyGroup>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+    <ItemDefinitionGroup>
+        <ClCompile>
+            <AdditionalIncludeDirectories>$(ProjectDir)XamlRuntime.Shared\XamlRuntime;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+            <LanguageStandard>stdcpp17</LanguageStandard>
+            <WarningLevel>Level4</WarningLevel>
+        </ClCompile>
+    </ItemDefinitionGroup>
+    <ItemGroup>
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\VisualState.cpp" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\Animation.cpp" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\Binding.cpp" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\ElementBuilder.cpp" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\XamlAttribute.cpp" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\Input.cpp" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\GestureRecognizer.cpp" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\InteractionController.cpp" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\RenderEngine.cpp" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\ScrollController.cpp" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\XamlLayout.cpp" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\UserControl.cpp" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\VisualState.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\Animation.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\Binding.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\DependentProperty.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\ObservableCollection.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\ElementBuilder.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\XamlAttribute.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\Input.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\GestureRecognizer.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\InteractionController.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RenderEngine.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\ScrollController.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\XamlLayout.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\UserControl.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\IRuntimeReloadableControl.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeBindingContext.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeBindingPublisher.h" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeBindingRegistry.cpp" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeBindingRegistry.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeDiagnostics.h" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeReloadTransaction.cpp" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeReloadTransaction.h" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeTreeBuilder.cpp" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\RuntimeTreeBuilder.h" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\XamlAst.h" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\XamlParser.cpp" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\XamlParser.h" />
+        <ClCompile Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\XamlSchemaValidator.cpp" />
+        <ClInclude Include="XamlRuntime.Shared\XamlRuntime\RuntimeMarkup\XamlSchemaValidator.h" />
+        <None Include="CMakeLists.txt" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="$(ProjectDir)..\..\..\..\Helpers\Helpers.Logging\Helpers.Logging.vcxproj">
+            <Project>{D437B9D5-30FC-41B2-9D3B-6B34E2DECD06}</Project>
+            <SetConfiguration>Configuration=$(Configuration)</SetConfiguration>
+            <SetPlatform>Platform=x64</SetPlatform>
+            <AdditionalProperties>Configuration=$(Configuration);Platform=x64</AdditionalProperties>
+        </ProjectReference>
+    </ItemGroup>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>
