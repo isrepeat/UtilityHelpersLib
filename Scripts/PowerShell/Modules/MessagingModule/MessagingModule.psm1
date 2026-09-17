@@ -2,7 +2,6 @@ function NewLine {
     Write-Host ""
 }
 
-
 function Message {
     param(
         [Parameter(Position = 0, Mandatory = $true)]
@@ -30,7 +29,6 @@ function MessageAction {
     Message -color Yellow -text $text
 }
 
-
 function TestColoredMessagePalette {
     $colors = @(
         "DarkBlue", "DarkGreen", "DarkCyan", "DarkRed", "DarkMagenta", "DarkYellow", "Gray",
@@ -45,7 +43,6 @@ function TestColoredMessagePalette {
     }
 }
 
-
 function WrapInQuotesIfNeeded {
     param ([string]$text)
 
@@ -55,7 +52,6 @@ function WrapInQuotesIfNeeded {
 
     return '"' + $text + '"'
 }
-
 
 Export-ModuleMember -Function @(
     'Message',

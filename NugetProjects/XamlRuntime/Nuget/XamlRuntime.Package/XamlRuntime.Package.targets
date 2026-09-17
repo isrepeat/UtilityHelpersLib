@@ -1,0 +1,20 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <!-- Pack may run only after Nuget.XamlRuntime.Pack.ps1 has produced the
+         complete staging tree from native Windows and Android artifacts. -->
+    <Target Name="ValidateXamlRuntimePackageStaging" BeforeTargets="GenerateNuspec">
+        <Error Condition="!Exists('$(NuspecFile)')" Text="XamlRuntime staging structure was not prepared: $(NuspecFile)" />
+    </Target>
+
+    <!-- Do not add the generated tree as a project-level None glob: Visual
+         Studio expands such globs while loading the solution. The files are
+         needed only by NuGet Pack, so enumerate them immediately before its
+         package-file collection target. -->
+    <Target Name="CollectXamlRuntimePackageFiles" BeforeTargets="_GetPackageFiles">
+        <ItemGroup>
+            <None Include="$(XamlRuntimePackageStagingDirectory)\**\*">
+                <Pack>true</Pack>
+                <PackagePath>%(RecursiveDir)</PackagePath>
+            </None>
+        </ItemGroup>
+    </Target>
+</Project>

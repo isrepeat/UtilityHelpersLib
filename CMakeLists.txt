@@ -6,9 +6,10 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     project(utility_helpers LANGUAGES CXX)
 endif()
 
-# Каждый сторонний компонент сам описывает CMake-таргеты рядом с исходниками.
-add_subdirectory(3rdParty/Spdlog/Spdlog.Shared)
-add_subdirectory(Helpers/Helpers.Logging)
-add_subdirectory(NugetProjects/XamlRuntime/Nuget/XamlRuntime)
+# XamlRuntime всегда приходит готовым NuGet-пакетом: его config создаёт
+# imported CMake targets для Runtime, Renderer, Logging и ANGLE.
+if (NOT EXISTS "${XAML_RUNTIME_PACKAGE_ROOT}/build/native/cmake/XamlRuntimeConfig.cmake")
+    message(FATAL_ERROR "Set XAML_RUNTIME_PACKAGE_ROOT to the extracted XamlRuntime NuGet package.")
+endif()
+include("${XAML_RUNTIME_PACKAGE_ROOT}/build/native/cmake/XamlRuntimeConfig.cmake")
 add_subdirectory(HelpersNew)
-add_subdirectory(NugetProjects/XamlRuntime/Nuget/OpenGLESRenderer)

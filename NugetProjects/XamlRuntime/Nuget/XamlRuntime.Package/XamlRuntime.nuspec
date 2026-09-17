@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+    <metadata>
+        <id>XamlRuntime</id>
+        <version>1.0.1</version>
+        <title>XamlRuntime</title>
+        <authors>DCT.C++Team</authors>
+        <owners>DCT</owners>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>Native XAML runtime, OpenGL ES renderer and Windows markup compiler.</description>
+        <readme>README.md</readme>
+    </metadata>
+</package>
