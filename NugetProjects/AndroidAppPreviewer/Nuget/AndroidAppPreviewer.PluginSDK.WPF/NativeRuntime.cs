@@ -118,13 +118,13 @@ namespace AndroidAppPreviewerPluginSDK {
         private static extern uint xp_get_abi_version();
 
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xp_get_navigation_graph")]
-        public static extern int xp_get_navigation_graph(IntPtr session, [Out] StringBuilder graphJson, int capacity);
+        private static extern int xp_get_navigation_graph(IntPtr session, [Out] byte[] graphJson, int capacity);
 
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xp_get_plugin_info")]
-        public static extern int xp_get_plugin_info([Out] StringBuilder pluginInfoJson, int capacity);
+        private static extern int xp_get_plugin_info([Out] byte[] pluginInfoJson, int capacity);
 
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xp_get_initial_page_id")]
-        public static extern int xp_get_initial_page_id(IntPtr session, [Out] StringBuilder pageId, int capacity);
+        private static extern int xp_get_initial_page_id(IntPtr session, [Out] byte[] pageId, int capacity);
 
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xp_navigate")]
         public static extern int xp_navigate(IntPtr session, [MarshalAs(UnmanagedType.LPUTF8Str)] string transitionIds);
@@ -149,7 +149,7 @@ namespace AndroidAppPreviewerPluginSDK {
         public static extern int xp_session_load_page(IntPtr session, [MarshalAs(UnmanagedType.LPUTF8Str)] string page);
 
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xp_session_current_page")]
-        public static extern int xp_session_current_page(IntPtr session, [Out] StringBuilder page, int capacity);
+        private static extern int xp_session_current_page(IntPtr session, [Out] byte[] page, int capacity);
 
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = "xp_session_is_transitioning")]
         public static extern int xp_session_is_transitioning(IntPtr session);
@@ -462,8 +462,31 @@ namespace AndroidAppPreviewerPluginSDK {
             }
         }
 
+        public static string GetNavigationGraph(IntPtr session) {
+            return NativeRuntime.ReadUtf8(value => NativeRuntime.xp_get_navigation_graph(session, value, value.Length));
+        }
+
+        public static string GetPluginInfo() {
+            return NativeRuntime.ReadUtf8(value => NativeRuntime.xp_get_plugin_info(value, value.Length));
+        }
+
+        public static string GetInitialPageId(IntPtr session) {
+            return NativeRuntime.ReadUtf8(value => NativeRuntime.xp_get_initial_page_id(session, value, value.Length));
+        }
+
+        public static string GetSessionCurrentPage(IntPtr session) {
+            return NativeRuntime.ReadUtf8(value => NativeRuntime.xp_session_current_page(session, value, value.Length));
+        }
+
         public static string GetLastError() {
             return Marshal.PtrToStringUTF8(NativeRuntime.xp_last_error()) ?? "Unknown XamlRuntime error.";
+        }
+
+        private static string ReadUtf8(Func<byte[], int> operation) {
+            var value = new byte[16384];
+            Ensure(operation(value) != 0);
+            var length = Array.IndexOf(value, (byte)0);
+            return Encoding.UTF8.GetString(value, 0, length < 0 ? value.Length : length);
         }
 
 

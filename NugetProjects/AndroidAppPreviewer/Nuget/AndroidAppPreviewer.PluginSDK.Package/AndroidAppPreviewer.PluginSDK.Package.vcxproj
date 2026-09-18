@@ -19,7 +19,7 @@
     </ItemGroup>
     <PropertyGroup>
         <PackageId>AndroidAppPreviewer.PluginSDK</PackageId>
-        <PackageVersion Condition="'$(PackageVersion)'==''">1.0.5</PackageVersion>
+        <PackageVersion Condition="'$(PackageVersion)'==''">1.0.6</PackageVersion>
         <PluginSdkPackageStagingDirectory>$(MSBuildProjectDirectory)\!NUGET_STAGING</PluginSdkPackageStagingDirectory>
         <NuspecFile>$(PluginSdkPackageStagingDirectory)\AndroidAppPreviewer.PluginSDK.nuspec</NuspecFile>
         <NuspecBasePath>$(PluginSdkPackageStagingDirectory)</NuspecBasePath>
