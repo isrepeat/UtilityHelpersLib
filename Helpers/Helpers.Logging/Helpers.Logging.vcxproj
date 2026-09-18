@@ -20,6 +20,11 @@
         <OutDir>$(MSBuildThisFileDirectory)..\..\NugetProjects\!NUGET_TMP\Build\$(Configuration)\$(Platform)\$(MSBuildProjectName)\</OutDir>
         <IntDir>$(MSBuildThisFileDirectory)..\..\NugetProjects\!NUGET_TMP\Intermediate\$(Configuration)\$(Platform)\$(MSBuildProjectName)\</IntDir>
     </PropertyGroup>
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+        <ClCompile>
+            <ProgramDataBaseFileName>$(OutDir)$(MSBuildProjectName).pdb</ProgramDataBaseFileName>
+        </ClCompile>
+    </ItemDefinitionGroup>
     <ItemDefinitionGroup>
         <ClCompile>
             <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\3rdParty\Spdlog\Spdlog.Shared\Spdlog;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

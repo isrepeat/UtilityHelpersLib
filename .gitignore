@@ -29,6 +29,7 @@ bld/
 [Ll]og/
 CodeAnalyzer/!VS_TMP/
 NugetProjects/!NUGET_TMP/
+NugetProjects/XamlRuntime/Nuget/XamlRuntime.Package/!NUGET_TMP/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/

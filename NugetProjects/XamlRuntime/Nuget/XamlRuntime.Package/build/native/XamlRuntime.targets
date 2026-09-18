@@ -10,6 +10,8 @@
         <XamlRuntimeLibraryDirectory>$(XamlRuntimePackageRoot)runtimes\win-$(XamlRuntimePlatform)\native\$(XamlRuntimeConfiguration)</XamlRuntimeLibraryDirectory>
         <XamlRuntimeCompilerPath>$(XamlRuntimePackageRoot)tools\win-x64\XamlCompiler.exe</XamlRuntimeCompilerPath>
         <XamlRuntimeAngleRuntimeDirectory>$(XamlRuntimeLibraryDirectory)</XamlRuntimeAngleRuntimeDirectory>
+        <XamlRuntimeAngleZlibRuntimeFile Condition="'$(XamlRuntimeConfiguration)' == 'Debug'">zd.dll</XamlRuntimeAngleZlibRuntimeFile>
+        <XamlRuntimeAngleZlibRuntimeFile Condition="'$(XamlRuntimeAngleZlibRuntimeFile)' == ''">z.dll</XamlRuntimeAngleZlibRuntimeFile>
     </PropertyGroup>
 
     <!-- Expose package headers and static libraries to native C++ consumers. -->
@@ -30,7 +32,12 @@
     <ItemGroup>
         <XamlRuntimeAngleRuntime Include="$(XamlRuntimeAngleRuntimeDirectory)\libEGL.dll" />
         <XamlRuntimeAngleRuntime Include="$(XamlRuntimeAngleRuntimeDirectory)\libGLESv2.dll" />
-        <XamlRuntimeAngleRuntime Include="$(XamlRuntimeAngleRuntimeDirectory)\z.dll" />
+        <XamlRuntimeAngleRuntime Include="$(XamlRuntimeAngleRuntimeDirectory)\$(XamlRuntimeAngleZlibRuntimeFile)" />
+        <!-- ANGLE PDBs are intentionally not deployed yet. Uncomment these
+             items when debugging the third-party EGL/GLES implementation. -->
+        <!-- <XamlRuntimeAngleRuntime Include="$(XamlRuntimeAngleRuntimeDirectory)\libEGL.pdb" Condition="'$(XamlRuntimeConfiguration)' == 'Debug'" /> -->
+        <!-- <XamlRuntimeAngleRuntime Include="$(XamlRuntimeAngleRuntimeDirectory)\libGLESv2.pdb" Condition="'$(XamlRuntimeConfiguration)' == 'Debug'" /> -->
+        <!-- <XamlRuntimeAngleRuntime Include="$(XamlRuntimeAngleRuntimeDirectory)\zd.pdb" Condition="'$(XamlRuntimeConfiguration)' == 'Debug'" /> -->
         <ContentWithTargetPath Include="@(XamlRuntimeAngleRuntime)">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <TargetPath>%(Filename)%(Extension)</TargetPath>

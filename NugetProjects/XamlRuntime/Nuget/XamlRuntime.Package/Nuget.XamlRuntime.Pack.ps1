@@ -172,6 +172,8 @@ $packagingRoot = Join-Path $runtimeRoot 'Nuget\XamlRuntime.Package'
 $stagingRoot = Join-Path $packagingRoot '!NUGET_STAGING'
 $nativeBuildRoot = Join-Path $utilityRoot 'NugetProjects\!NUGET_TMP\Build'
 $angleManifestRoot = Join-Path $packagingRoot 'ThirdParty\ANGLE'
+$angleRecipesSourceRoot = Join-Path $angleManifestRoot 'CustomRecipes'
+$angleOverlayPortsRoot = Join-Path $packagingRoot '!NUGET_TMP\ANGLE\CustomRecipes'
 $angleInstallRoot = Join-Path $runtimeRoot '!NUGET_TMP\ANGLE\vcpkg_installed'
 $anglePackageRoot = Join-Path $angleInstallRoot 'x64-windows'
 $nuspecPath = Join-Path $packagingRoot 'XamlRuntime.nuspec'
@@ -180,7 +182,8 @@ $packageVersion = Get-NextPackageVersion $nuspecPath
 # NuGet CLI packing and MSBuild package projects publish to the same feed.
 $feedRoot = if ([string]::IsNullOrWhiteSpace($env:UH_NUGET_FEED)) { 'C:\NugetFeed' } else { $env:UH_NUGET_FEED }
 $Version = $packageVersion.Version
-m::Message -color Blue -text "XamlRuntime package [$Configuration, version $Version]"
+$packageConfigurations = @('Debug', 'Release')
+m::Message -color Blue -text "XamlRuntime package [Debug, Release, version $Version]"
 $msBuild = Find-MsBuild
 $cmake = Find-CMake
 $ninja = Find-Ninja
@@ -191,6 +194,10 @@ if (-not (Test-Path -LiteralPath (Join-Path $angleManifestRoot 'vcpkg.json'))) {
     m::MessageError "ANGLE vcpkg manifest was not found: $angleManifestRoot"
     throw "ANGLE vcpkg manifest was not found: $angleManifestRoot"
 }
+if (-not (Test-Path -LiteralPath (Join-Path $angleRecipesSourceRoot 'angle\portfile.cmake'))) {
+    m::MessageError "ANGLE custom recipe was not found: $angleRecipesSourceRoot"
+    throw "ANGLE custom recipe was not found: $angleRecipesSourceRoot"
+}
 
 # Staging-дерево является единственным источником содержимого пакета. Его
 # всегда пересоздаём, чтобы в .nupkg не попали файлы от предыдущей сборки.
@@ -198,8 +205,19 @@ m::MessageAction 'Prepare package staging directory...'
 Remove-Item -LiteralPath $stagingRoot -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path $stagingRoot, $feedRoot -Force | Out-Null
 
+# Patch-формат требует завершающий перевод строки. В репозитории текстовые
+# файлы намеренно не имеют завершающего whitespace, поэтому перед vcpkg
+# готовим из рецепта временную рабочую копию с корректным окончанием patch-файлов.
+Remove-Item -LiteralPath $angleOverlayPortsRoot -Recurse -Force -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Path (Split-Path -Parent $angleOverlayPortsRoot) -Force | Out-Null
+Copy-Item -LiteralPath $angleRecipesSourceRoot -Destination $angleOverlayPortsRoot -Recurse -Force
+Get-ChildItem -LiteralPath $angleOverlayPortsRoot -Filter '*.patch' -File -Recurse | ForEach-Object {
+    $patchContent = [System.IO.File]::ReadAllText($_.FullName).TrimEnd([char]13, [char]10)
+    [System.IO.File]::WriteAllText($_.FullName, "$patchContent`n", [System.Text.UTF8Encoding]::new($false))
+}
+
 m::MessageAction 'Install ANGLE through the XamlRuntime vcpkg manifest...'
-& $vcpkg install "--x-manifest-root=$angleManifestRoot" "--x-install-root=$angleInstallRoot" '--triplet' 'x64-windows'
+& $vcpkg install "--x-manifest-root=$angleManifestRoot" "--overlay-ports=$angleOverlayPortsRoot" "--x-install-root=$angleInstallRoot" '--triplet' 'x64-windows'
 if ($LASTEXITCODE -ne 0) {
     m::MessageError 'vcpkg failed to install ANGLE.'
     throw 'vcpkg failed to install ANGLE.'
@@ -212,58 +230,75 @@ $windowsProjects = @(
     'NugetProjects\XamlRuntime\Nuget\XamlCompiler\XamlCompiler.vcxproj'
 )
 # Нативные проекты собираются в изолированную директорию !NUGET_TMP, чтобы
-# packaging не менял обычные выходные каталоги разработки.
-m::MessageAction 'Build Windows native artifacts...'
-foreach ($relativeProjectPath in $windowsProjects) {
-    $projectPath = Join-Path $utilityRoot $relativeProjectPath
-    $projectName = [System.IO.Path]::GetFileNameWithoutExtension($relativeProjectPath)
-    m::Message -color DarkGray -text $relativeProjectPath
-    & $msBuild $projectPath "/t:Build" "/p:Configuration=$Configuration" '/p:Platform=x64' '/p:XamlRuntimePackageBuild=true' '-verbosity:minimal'
-    if ($LASTEXITCODE -ne 0) {
-        m::MessageError "Windows build failed: $projectPath"
-        throw "Windows build failed: $projectPath"
+# packaging не менял обычные выходные каталоги разработки. Один пакет содержит
+# обе Windows-конфигурации: Debug-потребитель не может корректно линковать
+# Release-статические библиотеки, и наоборот.
+foreach ($buildConfiguration in $packageConfigurations) {
+    m::MessageAction "Build Windows native artifacts [$buildConfiguration]..."
+    foreach ($relativeProjectPath in $windowsProjects) {
+        $projectPath = Join-Path $utilityRoot $relativeProjectPath
+        m::Message -color DarkGray -text $relativeProjectPath
+        & $msBuild $projectPath "/t:Build" "/p:Configuration=$buildConfiguration" '/p:Platform=x64' '/p:XamlRuntimePackageBuild=true' '-verbosity:minimal'
+        if ($LASTEXITCODE -ne 0) {
+            m::MessageError "Windows build failed: $projectPath"
+            throw "Windows build failed: $projectPath"
+        }
+    }
+
+    # Windows-библиотеки, компилятор XAML и весь runtime ANGLE кладём вместе:
+    # потребителю достаточно подключить один пакет XamlRuntime.
+    $windowsOutput = Join-Path $stagingRoot "runtimes\win-x64\native\$buildConfiguration"
+    $angleRuntimeDirectory = if ($buildConfiguration -eq 'Debug') { Join-Path $anglePackageRoot 'debug' } else { $anglePackageRoot }
+    $zRuntimeFile = if ($buildConfiguration -eq 'Debug') { 'zd.dll' } else { 'z.dll' }
+    New-Item -ItemType Directory -Path $windowsOutput, (Join-Path $stagingRoot 'tools\win-x64') -Force | Out-Null
+    Copy-Item (Join-Path $nativeBuildRoot "$buildConfiguration\x64\XamlRuntime\XamlRuntime.lib") $windowsOutput
+    Copy-Item (Join-Path $nativeBuildRoot "$buildConfiguration\x64\OpenGLESRenderer\OpenGLESRenderer.lib") $windowsOutput
+    Copy-Item (Join-Path $nativeBuildRoot "$buildConfiguration\x64\Helpers.Logging\Helpers.Logging.lib") $windowsOutput
+    Copy-Item (Join-Path $nativeBuildRoot "$buildConfiguration\x64\XamlCompiler\XamlCompiler.exe") (Join-Path $stagingRoot 'tools\win-x64')
+    Copy-Item (Join-Path $angleRuntimeDirectory 'lib\libEGL.lib') $windowsOutput
+    Copy-Item (Join-Path $angleRuntimeDirectory 'lib\libGLESv2.lib') $windowsOutput
+    Copy-Item (Join-Path $angleRuntimeDirectory 'bin\libEGL.dll') $windowsOutput
+    Copy-Item (Join-Path $angleRuntimeDirectory 'bin\libGLESv2.dll') $windowsOutput
+    Copy-Item (Join-Path $angleRuntimeDirectory "bin\$zRuntimeFile") $windowsOutput
+    if ($buildConfiguration -eq 'Debug') {
+        # Debug archive symbols are useful while stepping from a consumer DLL
+        # into our XamlRuntime code. Keep our PDBs in the package; ANGLE PDBs
+        # remain disabled until its third-party source debugging is needed.
+        Copy-Item (Join-Path $nativeBuildRoot 'Debug\x64\Helpers.Logging\Helpers.Logging.pdb') $windowsOutput
+        Copy-Item (Join-Path $nativeBuildRoot 'Debug\x64\XamlRuntime\XamlRuntime.pdb') $windowsOutput
+        Copy-Item (Join-Path $nativeBuildRoot 'Debug\x64\OpenGLESRenderer\OpenGLESRenderer.pdb') $windowsOutput
+        Copy-Item (Join-Path $nativeBuildRoot 'Debug\x64\XamlCompiler\XamlCompiler.pdb') (Join-Path $stagingRoot 'tools\win-x64')
+        # Copy-Item (Join-Path $angleRuntimeDirectory 'bin\*.pdb') $windowsOutput
     }
 }
-
-# Windows-библиотеки, компилятор XAML и весь runtime ANGLE кладём вместе:
-# потребителю достаточно подключить один пакет XamlRuntime.
-$windowsOutput = Join-Path $stagingRoot "runtimes\win-x64\native\$Configuration"
-New-Item -ItemType Directory -Path $windowsOutput, (Join-Path $stagingRoot 'tools\win-x64') -Force | Out-Null
-Copy-Item (Join-Path $nativeBuildRoot "$Configuration\x64\XamlRuntime\XamlRuntime.lib") $windowsOutput
-Copy-Item (Join-Path $nativeBuildRoot "$Configuration\x64\OpenGLESRenderer\OpenGLESRenderer.lib") $windowsOutput
-Copy-Item (Join-Path $nativeBuildRoot "$Configuration\x64\Helpers.Logging\Helpers.Logging.lib") $windowsOutput
-Copy-Item (Join-Path $nativeBuildRoot "$Configuration\x64\XamlCompiler\XamlCompiler.exe") (Join-Path $stagingRoot 'tools\win-x64')
-Copy-Item (Join-Path $anglePackageRoot 'lib\libEGL.lib') $windowsOutput
-Copy-Item (Join-Path $anglePackageRoot 'lib\libGLESv2.lib') $windowsOutput
-Copy-Item (Join-Path $anglePackageRoot 'bin\libEGL.dll') $windowsOutput
-Copy-Item (Join-Path $anglePackageRoot 'bin\libGLESv2.dll') $windowsOutput
-Copy-Item (Join-Path $anglePackageRoot 'bin\z.dll') $windowsOutput
 
 # Для каждой ABI создаётся независимый CMake build-dir. CMake install сразу
 # раскладывает статические Android-библиотеки по стандартному runtimes/<RID>.
 $abiToRid = @{ 'arm64-v8a' = 'android-arm64'; 'armeabi-v7a' = 'android-arm'; 'x86_64' = 'android-x64' }
-foreach ($abi in $AndroidAbis) {
-    if (-not $abiToRid.ContainsKey($abi)) {
-        m::MessageError "Unsupported Android ABI: $abi"
-        throw "Unsupported Android ABI: $abi"
-    }
-    m::MessageAction "Build Android artifacts [$abi]..."
-    $buildDirectory = Join-Path $runtimeRoot "!NUGET_TMP\Android\$abi\$Configuration"
-    $installDirectory = Join-Path $stagingRoot "runtimes\$($abiToRid[$abi])\native\$Configuration"
-    & $cmake '-S' (Join-Path $packagingRoot 'Android') '-B' $buildDirectory '-G' 'Ninja' "-DCMAKE_MAKE_PROGRAM=$ninja" "-DCMAKE_TOOLCHAIN_FILE=$AndroidNdkRoot\build\cmake\android.toolchain.cmake" "-DANDROID_ABI=$abi" "-DANDROID_PLATFORM=android-$AndroidApi" "-DCMAKE_BUILD_TYPE=$Configuration"
-    if ($LASTEXITCODE -ne 0) {
-        m::MessageError "Android CMake configure failed for $abi"
-        throw "Android CMake configure failed for $abi"
-    }
-    & $cmake '--build' $buildDirectory '--target' 'utility_helpers_xaml_runtime' 'utility_helpers_open_gles_renderer'
-    if ($LASTEXITCODE -ne 0) {
-        m::MessageError "Android CMake build failed for $abi"
-        throw "Android CMake build failed for $abi"
-    }
-    & $cmake '--install' $buildDirectory '--prefix' $installDirectory
-    if ($LASTEXITCODE -ne 0) {
-        m::MessageError "Android CMake install failed for $abi"
-        throw "Android CMake install failed for $abi"
+foreach ($buildConfiguration in $packageConfigurations) {
+    foreach ($abi in $AndroidAbis) {
+        if (-not $abiToRid.ContainsKey($abi)) {
+            m::MessageError "Unsupported Android ABI: $abi"
+            throw "Unsupported Android ABI: $abi"
+        }
+        m::MessageAction "Build Android artifacts [$abi, $buildConfiguration]..."
+        $buildDirectory = Join-Path $runtimeRoot "!NUGET_TMP\Android\$abi\$buildConfiguration"
+        $installDirectory = Join-Path $stagingRoot "runtimes\$($abiToRid[$abi])\native\$buildConfiguration"
+        & $cmake '-S' (Join-Path $packagingRoot 'Android') '-B' $buildDirectory '-G' 'Ninja' "-DCMAKE_MAKE_PROGRAM=$ninja" "-DCMAKE_TOOLCHAIN_FILE=$AndroidNdkRoot\build\cmake\android.toolchain.cmake" "-DANDROID_ABI=$abi" "-DANDROID_PLATFORM=android-$AndroidApi" "-DCMAKE_BUILD_TYPE=$buildConfiguration"
+        if ($LASTEXITCODE -ne 0) {
+            m::MessageError "Android CMake configure failed for $abi"
+            throw "Android CMake configure failed for $abi"
+        }
+        & $cmake '--build' $buildDirectory '--target' 'utility_helpers_xaml_runtime' 'utility_helpers_open_gles_renderer'
+        if ($LASTEXITCODE -ne 0) {
+            m::MessageError "Android CMake build failed for $abi"
+            throw "Android CMake build failed for $abi"
+        }
+        & $cmake '--install' $buildDirectory '--prefix' $installDirectory
+        if ($LASTEXITCODE -ne 0) {
+            m::MessageError "Android CMake install failed for $abi"
+            throw "Android CMake install failed for $abi"
+        }
     }
 }
 

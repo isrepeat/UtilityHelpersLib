@@ -15,9 +15,6 @@ if (WIN32)
     set_target_properties(XamlRuntime::Runtime PROPERTIES IMPORTED_LOCATION "${_xaml_runtime_library_directory}/XamlRuntime.lib" INTERFACE_INCLUDE_DIRECTORIES "${_xaml_runtime_prefix}/build/native/include" INTERFACE_LINK_LIBRARIES "XamlRuntime::Logging")
     add_library(XamlRuntime::OpenGLESRenderer STATIC IMPORTED GLOBAL)
     set_target_properties(XamlRuntime::OpenGLESRenderer PROPERTIES IMPORTED_LOCATION "${_xaml_runtime_library_directory}/OpenGLESRenderer.lib" INTERFACE_INCLUDE_DIRECTORIES "${_xaml_runtime_prefix}/build/native/include" INTERFACE_LINK_LIBRARIES "XamlRuntime::Runtime;${_xaml_runtime_library_directory}/libEGL.lib;${_xaml_runtime_library_directory}/libGLESv2.lib")
-    add_library(utility_helpers::logging ALIAS XamlRuntime::Logging)
-    add_library(utility_helpers::xaml_runtime ALIAS XamlRuntime::Runtime)
-    add_library(utility_helpers::open_gles_renderer ALIAS XamlRuntime::OpenGLESRenderer)
     return()
 endif()
 if (NOT ANDROID)
@@ -69,6 +66,3 @@ set_target_properties(XamlRuntime::OpenGLESRenderer PROPERTIES
     IMPORTED_LOCATION "${_xaml_runtime_library_directory}/libOpenGLESRenderer.a"
     INTERFACE_INCLUDE_DIRECTORIES "${_xaml_runtime_prefix}/build/native/include"
     INTERFACE_LINK_LIBRARIES "XamlRuntime::Runtime;GLESv3")
-add_library(utility_helpers::logging ALIAS XamlRuntime::Logging)
-add_library(utility_helpers::xaml_runtime ALIAS XamlRuntime::Runtime)
-add_library(utility_helpers::open_gles_renderer ALIAS XamlRuntime::OpenGLESRenderer)
