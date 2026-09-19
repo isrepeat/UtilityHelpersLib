@@ -15,6 +15,10 @@ if ([string]::IsNullOrWhiteSpace($FeedRoot)) {
 $stagingRoot = Join-Path $packageRoot '!NUGET_STAGING'
 $managedProject = Join-Path $packageRoot '..\AndroidAppPreviewer.PluginSDK.WPF\AndroidAppPreviewer.PluginSDK.WPF.csproj'
 $nugetProjectsRoot = Resolve-Path (Join-Path $packageRoot '..\..\..')
+$nuget = Get-Command nuget.exe -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source
+if ([string]::IsNullOrWhiteSpace($nuget) -or -not (Test-Path -LiteralPath $nuget)) {
+    throw 'nuget.exe was not found. Install the official NuGet CLI and make it available in PATH.'
+}
 Remove-Item -LiteralPath $stagingRoot -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path (Join-Path $stagingRoot 'build\native\include\AndroidAppPreviewer.PluginSDK'), (Join-Path $stagingRoot 'build\native\cmake'), (Join-Path $stagingRoot 'lib\net8.0'), $FeedRoot -Force | Out-Null
 Copy-Item -LiteralPath $headerPath -Destination (Join-Path $stagingRoot 'build\native\include\AndroidAppPreviewer.PluginSDK\AndroidAppPreviewerPlugin.h')
@@ -31,15 +35,7 @@ if (-not (Test-Path -LiteralPath $managedAssembly -PathType Leaf)) {
 }
 Copy-Item -LiteralPath $managedAssembly -Destination (Join-Path $stagingRoot 'lib\net8.0\AndroidAppPreviewer.PluginSDK.dll')
 
-$vsWhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
-if (-not (Test-Path -LiteralPath $vsWhere)) {
-    throw "vswhere.exe was not found: $vsWhere"
-}
-$msBuild = & $vsWhere -latest -products * -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' | Select-Object -First 1
-if ([string]::IsNullOrWhiteSpace($msBuild)) {
-    throw 'MSBuild.exe was not found.'
-}
-& $msBuild (Join-Path $packageRoot 'AndroidAppPreviewer.PluginSDK.Package.vcxproj') '/t:Pack' '/p:Configuration=Release' '/p:Platform=x64' "/p:PackageOutputPath=$FeedRoot"
+& $nuget pack (Join-Path $stagingRoot 'AndroidAppPreviewer.PluginSDK.nuspec') '-BasePath' $stagingRoot '-OutputDirectory' $FeedRoot '-NoPackageAnalysis' '-NonInteractive'
 if ($LASTEXITCODE -ne 0) {
-    throw 'NuGet package creation failed.'
+    throw 'NuGet CLI package creation failed.'
 }

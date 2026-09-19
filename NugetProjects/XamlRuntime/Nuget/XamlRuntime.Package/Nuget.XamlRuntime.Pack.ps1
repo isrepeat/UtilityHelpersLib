@@ -39,6 +39,15 @@ function Find-MsBuild {
     return $path
 }
 
+function Find-NuGet {
+    $command = Get-Command nuget.exe -ErrorAction SilentlyContinue
+    if ($null -eq $command -or -not (Test-Path -LiteralPath $command.Source)) {
+        m::MessageError 'nuget.exe was not found. Install the official NuGet CLI and make it available in PATH.'
+        throw 'nuget.exe was not found.'
+    }
+    return $command.Source
+}
+
 # Android-проекты конфигурируются CMake, поэтому CMake должен быть доступен из PATH.
 function Find-CMake {
     $command = Get-Command cmake.exe -ErrorAction SilentlyContinue
@@ -105,6 +114,15 @@ function Resolve-AndroidNdkRoot([string]$utilityRoot, [string]$requestedPath) {
     }
     if (-not [string]::IsNullOrWhiteSpace($env:ANDROID_NDK_ROOT)) {
         $candidates.Add($env:ANDROID_NDK_ROOT)
+    }
+    # Visual Studio installs its selected Android NDK under Program Files (x86),
+    # whereas Android Studio normally uses LOCALAPPDATA\Android\Sdk\ndk.
+    # Support both layouts without requiring a per-user environment variable.
+    $visualStudioAndroidNdkDirectory = Join-Path ${env:ProgramFiles(x86)} 'Android\AndroidNDK'
+    if (Test-Path -LiteralPath $visualStudioAndroidNdkDirectory) {
+        Get-ChildItem -LiteralPath $visualStudioAndroidNdkDirectory -Directory | Sort-Object Name -Descending | ForEach-Object {
+            $candidates.Add($_.FullName)
+        }
     }
     $localAndroidNdkDirectory = Join-Path $env:LOCALAPPDATA 'Android\Sdk\ndk'
     if (Test-Path -LiteralPath $localAndroidNdkDirectory) {
@@ -173,8 +191,12 @@ $stagingRoot = Join-Path $packagingRoot '!NUGET_STAGING'
 $nativeBuildRoot = Join-Path $utilityRoot 'NugetProjects\!NUGET_TMP\Build'
 $angleManifestRoot = Join-Path $packagingRoot 'ThirdParty\ANGLE'
 $angleRecipesSourceRoot = Join-Path $angleManifestRoot 'CustomRecipes'
-$angleOverlayPortsRoot = Join-Path $packagingRoot '!NUGET_TMP\ANGLE\CustomRecipes'
-$angleInstallRoot = Join-Path $runtimeRoot '!NUGET_TMP\ANGLE\vcpkg_installed'
+# vcpkg собирает сразу Debug и Release для одного triplet. Держим его общий
+# working/install root в Debug-ветке общего Build-дерева, а готовые бинарники
+# ниже копируются в соответствующие Debug и Release каталоги.
+$angleBuildRoot = Join-Path $nativeBuildRoot 'Debug\x64\XamlRuntime\ANGLE'
+$angleOverlayPortsRoot = Join-Path $angleBuildRoot 'CustomRecipes'
+$angleInstallRoot = Join-Path $angleBuildRoot 'vcpkg_installed'
 $anglePackageRoot = Join-Path $angleInstallRoot 'x64-windows'
 $nuspecPath = Join-Path $packagingRoot 'XamlRuntime.nuspec'
 $packageVersion = Get-NextPackageVersion $nuspecPath
@@ -183,8 +205,39 @@ $packageVersion = Get-NextPackageVersion $nuspecPath
 $feedRoot = if ([string]::IsNullOrWhiteSpace($env:UH_NUGET_FEED)) { 'C:\NugetFeed' } else { $env:UH_NUGET_FEED }
 $Version = $packageVersion.Version
 $packageConfigurations = @('Debug', 'Release')
+
+# Держим результат ANGLE вместе с остальными нативными выходами NuGet-сборки.
+# vcpkg по-прежнему использует своё installed-дерево (в нём также находятся
+# заголовки и лицензия), но потребляемые .lib/.dll всегда лежат в Build.
+function Get-AngleArtifactDirectory([string]$buildConfiguration) {
+    return Join-Path $nativeBuildRoot "$buildConfiguration\x64\XamlRuntime\ANGLE"
+}
+
+# ANGLE содержит очень глубокое дерево исходников. Передаём vcpkg короткий
+# временный путь к тому же Build-каталогу, иначе Ninja упрётся в MAX_PATH.
+function New-TemporarySubstDrive([string]$targetPath) {
+    foreach ($letter in @('Z', 'Y', 'X', 'W', 'V', 'U', 'T')) {
+        $drive = "$letter`:"
+        if (Test-Path -LiteralPath "$drive\") {
+            continue
+        }
+        & subst $drive $targetPath
+        if ($LASTEXITCODE -eq 0) {
+            return $drive
+        }
+    }
+    throw 'No free drive letter is available for the temporary ANGLE build path.'
+}
+
+function Remove-TemporarySubstDrive([string]$drive) {
+    if (-not [string]::IsNullOrWhiteSpace($drive)) {
+        & subst $drive /d
+    }
+}
+
 m::Message -color Blue -text "XamlRuntime package [Debug, Release, version $Version]"
 $msBuild = Find-MsBuild
+$nuget = Find-NuGet
 $cmake = Find-CMake
 $ninja = Find-Ninja
 $vcpkg = Find-Vcpkg
@@ -208,19 +261,43 @@ New-Item -ItemType Directory -Path $stagingRoot, $feedRoot -Force | Out-Null
 # Patch-формат требует завершающий перевод строки. В репозитории текстовые
 # файлы намеренно не имеют завершающего whitespace, поэтому перед vcpkg
 # готовим из рецепта временную рабочую копию с корректным окончанием patch-файлов.
-Remove-Item -LiteralPath $angleOverlayPortsRoot -Recurse -Force -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Path (Split-Path -Parent $angleOverlayPortsRoot) -Force | Out-Null
-Copy-Item -LiteralPath $angleRecipesSourceRoot -Destination $angleOverlayPortsRoot -Recurse -Force
-Get-ChildItem -LiteralPath $angleOverlayPortsRoot -Filter '*.patch' -File -Recurse | ForEach-Object {
-    $patchContent = [System.IO.File]::ReadAllText($_.FullName).TrimEnd([char]13, [char]10)
-    [System.IO.File]::WriteAllText($_.FullName, "$patchContent`n", [System.Text.UTF8Encoding]::new($false))
+$angleSubstDrive = New-TemporarySubstDrive $nativeBuildRoot
+try {
+    $shortAngleBuildRoot = Join-Path "$angleSubstDrive\" 'Debug\x64\XamlRuntime\ANGLE'
+    $shortAngleOverlayPortsRoot = Join-Path $shortAngleBuildRoot 'CustomRecipes'
+    $shortAngleInstallRoot = Join-Path $shortAngleBuildRoot 'vcpkg_installed'
+    Remove-Item -LiteralPath $shortAngleOverlayPortsRoot -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Path (Split-Path -Parent $shortAngleOverlayPortsRoot) -Force | Out-Null
+    Copy-Item -LiteralPath $angleRecipesSourceRoot -Destination $shortAngleOverlayPortsRoot -Recurse -Force
+    Get-ChildItem -LiteralPath $shortAngleOverlayPortsRoot -Filter '*.patch' -File -Recurse | ForEach-Object {
+        $patchContent = [System.IO.File]::ReadAllText($_.FullName).TrimEnd([char]13, [char]10)
+        [System.IO.File]::WriteAllText($_.FullName, "$patchContent`n", [System.Text.UTF8Encoding]::new($false))
+    }
+
+    m::MessageAction 'Install ANGLE through the XamlRuntime vcpkg manifest...'
+    & $vcpkg install "--x-manifest-root=$angleManifestRoot" "--overlay-ports=$shortAngleOverlayPortsRoot" "--x-install-root=$shortAngleInstallRoot" '--triplet' 'x64-windows'
+    if ($LASTEXITCODE -ne 0) {
+        m::MessageError 'vcpkg failed to install ANGLE.'
+        throw 'vcpkg failed to install ANGLE.'
+    }
+} finally {
+    Remove-TemporarySubstDrive $angleSubstDrive
 }
 
-m::MessageAction 'Install ANGLE through the XamlRuntime vcpkg manifest...'
-& $vcpkg install "--x-manifest-root=$angleManifestRoot" "--overlay-ports=$angleOverlayPortsRoot" "--x-install-root=$angleInstallRoot" '--triplet' 'x64-windows'
-if ($LASTEXITCODE -ne 0) {
-    m::MessageError 'vcpkg failed to install ANGLE.'
-    throw 'vcpkg failed to install ANGLE.'
+# vcpkg кладёт Debug под x64-windows\debug, а Release — прямо в x64-windows.
+# Копируем конечные библиотеки в общий Build-каталог, где уже находятся
+# XamlRuntime и OpenGLESRenderer. Это делает пути артефактов стабильными для
+# ручной диагностики и для последующей упаковки.
+foreach ($buildConfiguration in $packageConfigurations) {
+    $angleRuntimeDirectory = if ($buildConfiguration -eq 'Debug') { Join-Path $anglePackageRoot 'debug' } else { $anglePackageRoot }
+    $zRuntimeFile = if ($buildConfiguration -eq 'Debug') { 'zd.dll' } else { 'z.dll' }
+    $angleArtifactDirectory = Get-AngleArtifactDirectory $buildConfiguration
+    New-Item -ItemType Directory -Path $angleArtifactDirectory -Force | Out-Null
+    Copy-Item (Join-Path $angleRuntimeDirectory 'lib\libEGL.lib') $angleArtifactDirectory -Force
+    Copy-Item (Join-Path $angleRuntimeDirectory 'lib\libGLESv2.lib') $angleArtifactDirectory -Force
+    Copy-Item (Join-Path $angleRuntimeDirectory 'bin\libEGL.dll') $angleArtifactDirectory -Force
+    Copy-Item (Join-Path $angleRuntimeDirectory 'bin\libGLESv2.dll') $angleArtifactDirectory -Force
+    Copy-Item (Join-Path $angleRuntimeDirectory "bin\$zRuntimeFile") $angleArtifactDirectory -Force
 }
 
 $windowsProjects = @(
@@ -235,10 +312,11 @@ $windowsProjects = @(
 # Release-статические библиотеки, и наоборот.
 foreach ($buildConfiguration in $packageConfigurations) {
     m::MessageAction "Build Windows native artifacts [$buildConfiguration]..."
+    $angleIncludeDirectory = Join-Path $anglePackageRoot 'include'
     foreach ($relativeProjectPath in $windowsProjects) {
         $projectPath = Join-Path $utilityRoot $relativeProjectPath
         m::Message -color DarkGray -text $relativeProjectPath
-        & $msBuild $projectPath "/t:Build" "/p:Configuration=$buildConfiguration" '/p:Platform=x64' '/p:XamlRuntimePackageBuild=true' '-verbosity:minimal'
+        & $msBuild $projectPath "/t:Build" "/p:Configuration=$buildConfiguration" '/p:Platform=x64' '/p:XamlRuntimePackageBuild=true' "/p:XamlRuntimeAngleIncludeDirectory=$angleIncludeDirectory" '-verbosity:minimal'
         if ($LASTEXITCODE -ne 0) {
             m::MessageError "Windows build failed: $projectPath"
             throw "Windows build failed: $projectPath"
@@ -248,18 +326,17 @@ foreach ($buildConfiguration in $packageConfigurations) {
     # Windows-библиотеки, компилятор XAML и весь runtime ANGLE кладём вместе:
     # потребителю достаточно подключить один пакет XamlRuntime.
     $windowsOutput = Join-Path $stagingRoot "runtimes\win-x64\native\$buildConfiguration"
-    $angleRuntimeDirectory = if ($buildConfiguration -eq 'Debug') { Join-Path $anglePackageRoot 'debug' } else { $anglePackageRoot }
-    $zRuntimeFile = if ($buildConfiguration -eq 'Debug') { 'zd.dll' } else { 'z.dll' }
+    $angleArtifactDirectory = Get-AngleArtifactDirectory $buildConfiguration
     New-Item -ItemType Directory -Path $windowsOutput, (Join-Path $stagingRoot 'tools\win-x64') -Force | Out-Null
     Copy-Item (Join-Path $nativeBuildRoot "$buildConfiguration\x64\XamlRuntime\XamlRuntime.lib") $windowsOutput
     Copy-Item (Join-Path $nativeBuildRoot "$buildConfiguration\x64\OpenGLESRenderer\OpenGLESRenderer.lib") $windowsOutput
     Copy-Item (Join-Path $nativeBuildRoot "$buildConfiguration\x64\Helpers.Logging\Helpers.Logging.lib") $windowsOutput
     Copy-Item (Join-Path $nativeBuildRoot "$buildConfiguration\x64\XamlCompiler\XamlCompiler.exe") (Join-Path $stagingRoot 'tools\win-x64')
-    Copy-Item (Join-Path $angleRuntimeDirectory 'lib\libEGL.lib') $windowsOutput
-    Copy-Item (Join-Path $angleRuntimeDirectory 'lib\libGLESv2.lib') $windowsOutput
-    Copy-Item (Join-Path $angleRuntimeDirectory 'bin\libEGL.dll') $windowsOutput
-    Copy-Item (Join-Path $angleRuntimeDirectory 'bin\libGLESv2.dll') $windowsOutput
-    Copy-Item (Join-Path $angleRuntimeDirectory "bin\$zRuntimeFile") $windowsOutput
+    Copy-Item (Join-Path $angleArtifactDirectory 'libEGL.lib') $windowsOutput
+    Copy-Item (Join-Path $angleArtifactDirectory 'libGLESv2.lib') $windowsOutput
+    Copy-Item (Join-Path $angleArtifactDirectory 'libEGL.dll') $windowsOutput
+    Copy-Item (Join-Path $angleArtifactDirectory 'libGLESv2.dll') $windowsOutput
+    Copy-Item (Join-Path $angleArtifactDirectory $(if ($buildConfiguration -eq 'Debug') { 'zd.dll' } else { 'z.dll' })) $windowsOutput
     if ($buildConfiguration -eq 'Debug') {
         # Debug archive symbols are useful while stepping from a consumer DLL
         # into our XamlRuntime code. Keep our PDBs in the package; ANGLE PDBs
@@ -317,17 +394,16 @@ Copy-Item (Join-Path $anglePackageRoot 'share\angle\copyright') (Join-Path $stag
 Copy-Item (Join-Path $packagingRoot 'build\native\XamlRuntime.targets') (Join-Path $stagingRoot 'build\native\XamlRuntime.targets')
 New-Item -ItemType Directory -Path (Join-Path $stagingRoot 'build\native\cmake') -Force | Out-Null
 Copy-Item (Join-Path $packagingRoot 'cmake\XamlRuntimeConfig.cmake') (Join-Path $stagingRoot 'build\native\cmake\XamlRuntimeConfig.cmake')
-Copy-Item (Join-Path $runtimeRoot 'README.md') (Join-Path $stagingRoot 'README.md')
 [System.IO.File]::WriteAllText((Join-Path $stagingRoot 'XamlRuntime.nuspec'), $packageVersion.NuspecContent, [System.Text.UTF8Encoding]::new($false))
 
 # Параметр -SkipPackage оставлен для диагностики staging-дерева без создания
 # .nupkg; штатный release-скрипт этот режим не использует.
 if (-not $SkipPackage) {
-    m::MessageAction 'Create NuGet package through MSBuild...'
-    & $msBuild (Join-Path $packagingRoot 'XamlRuntime.Package.vcxproj') '/t:Pack' "/p:Configuration=$Configuration" '/p:Platform=x64' "/p:PackageVersion=$Version" "/p:PackageOutputPath=$feedRoot" '-verbosity:minimal'
+    m::MessageAction 'Create NuGet package through NuGet CLI...'
+    & $nuget pack (Join-Path $stagingRoot 'XamlRuntime.nuspec') '-BasePath' $stagingRoot '-OutputDirectory' $feedRoot '-Version' $Version '-NoPackageAnalysis' '-NonInteractive'
     if ($LASTEXITCODE -ne 0) {
-        m::MessageError 'MSBuild NuGet Pack failed.'
-        throw 'MSBuild NuGet Pack failed.'
+        m::MessageError 'NuGet CLI pack failed.'
+        throw 'NuGet CLI pack failed.'
     }
     $packagePath = Join-Path $feedRoot "XamlRuntime.$Version.nupkg"
     if (-not (Test-Path -LiteralPath $packagePath -PathType Leaf)) {

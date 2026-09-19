@@ -20,7 +20,7 @@
     </ItemDefinitionGroup>
     <ItemDefinitionGroup>
         <ClCompile>
-            <AdditionalIncludeDirectories>$(ProjectDir)OpenGLESRenderer.Shared;$(ProjectDir)..\XamlRuntime\XamlRuntime.Shared;$(ProjectDir)..\..\..\..\Helpers\Helpers.Logging;$(ProjectDir)..\..\..\..\3rdParty\Spdlog\Spdlog.Shared\Spdlog;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+            <AdditionalIncludeDirectories>$(XamlRuntimeAngleIncludeDirectory);$(ProjectDir)OpenGLESRenderer.Shared;$(ProjectDir)..\XamlRuntime\XamlRuntime.Shared;$(ProjectDir)..\..\..\..\Helpers\Helpers.Logging;$(ProjectDir)..\..\..\..\3rdParty\Spdlog\Spdlog.Shared\Spdlog;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
             <LanguageStandard>stdcpp17</LanguageStandard>
             <WarningLevel>Level4</WarningLevel>
         </ClCompile>

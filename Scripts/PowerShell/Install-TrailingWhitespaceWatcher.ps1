@@ -6,6 +6,16 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+$elevationModulePath = Join-Path $PSScriptRoot 'Modules\ElevationModule\ElevationModule.psm1'
+Import-Module -Name $elevationModulePath -Force
+$scriptArguments = @()
+if ($PSBoundParameters.ContainsKey('ConfigurationPath')) {
+    $scriptArguments += @('-ConfigurationPath', $ConfigurationPath)
+}
+if (Restart-PowerShellScriptElevated -ScriptPath $PSCommandPath -ScriptArguments $scriptArguments) {
+    return
+}
+
 $runnerPath = Join-Path $PSScriptRoot 'Run-TrailingWhitespaceWatcher.vbs'
 $taskName = 'UtilityHelpersLib Trailing Whitespace Watcher'
 $action = New-ScheduledTaskAction -Execute 'wscript.exe' -Argument "`"$runnerPath`""
