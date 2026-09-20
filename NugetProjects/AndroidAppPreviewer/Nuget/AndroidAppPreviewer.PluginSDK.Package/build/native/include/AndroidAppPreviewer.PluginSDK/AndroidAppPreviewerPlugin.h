@@ -23,6 +23,7 @@ ANDROID_APP_PREVIEWER_PLUGIN_API const char* xp_get_last_error(void);
 ANDROID_APP_PREVIEWER_PLUGIN_API int xp_get_plugin_info(char* pluginInfoJson, int capacity);
 ANDROID_APP_PREVIEWER_PLUGIN_API int xp_get_initial_page_id(void* session, char* pageId, int capacity);
 ANDROID_APP_PREVIEWER_PLUGIN_API int xp_get_navigation_graph(void* session, char* graphJson, int capacity);
+ANDROID_APP_PREVIEWER_PLUGIN_API int xp_navigate(void* session, const char* navigationRequestJson);
 typedef struct xp_element xp_element;
 typedef struct xp_animation_controller xp_animation_controller;
 typedef struct xp_interaction_controller xp_interaction_controller;
