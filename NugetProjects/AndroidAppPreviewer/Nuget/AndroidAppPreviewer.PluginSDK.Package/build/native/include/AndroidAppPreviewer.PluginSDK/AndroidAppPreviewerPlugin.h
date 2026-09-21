@@ -1,4 +1,5 @@
 #pragma once
+
 #include <stdint.h>
 
 #ifdef _WIN32
@@ -7,57 +8,51 @@
 #define ANDROID_APP_PREVIEWER_PLUGIN_API
 #endif
 
+#if defined(_MSC_VER)
+#define XP_PLUGIN_CALL __cdecl
+#else
+#define XP_PLUGIN_CALL
+#endif
+
 #ifdef __cplusplus
 namespace AndroidAppPreviewerPluginSDK {
 extern "C" {
 #endif
 
-enum { 
-    xaml_previewer_plugin_abi_version = 3
+enum {
+    android_app_previewer_plugin_abi_version = 1,
+    android_app_previewer_plugin_api_version = 1
 };
 
-// All strings crossing this ABI are UTF-8 and copied into caller-owned buffers.
-// All exported operations use the xp_* prefix; plugin-owned handles are opaque.
-ANDROID_APP_PREVIEWER_PLUGIN_API uint32_t xp_get_abi_version(void);
-ANDROID_APP_PREVIEWER_PLUGIN_API const char* xp_get_last_error(void);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_get_plugin_info(char* pluginInfoJson, int capacity);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_get_initial_page_id(void* session, char* pageId, int capacity);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_get_navigation_graph(void* session, char* graphJson, int capacity);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_navigate(void* session, const char* navigationRequestJson);
 typedef struct xp_element xp_element;
 typedef struct xp_animation_controller xp_animation_controller;
 typedef struct xp_interaction_controller xp_interaction_controller;
 typedef struct xp_angle_surface xp_angle_surface;
 typedef struct xp_session xp_session;
-
 typedef struct xp_rect {
     float x;
     float y;
     float width;
     float height;
 } xp_rect;
-
-typedef struct xp_session_inspection_result {
-    int line;
-    int column;
-    char sourcePath[1024];
-    xp_rect bounds;
-} xp_session_inspection_result;
-
 typedef struct xp_color {
     float red;
     float green;
     float blue;
     float alpha;
 } xp_color;
-
+typedef struct xp_session_inspection_result {
+    int line;
+    int column;
+    char sourcePath[1024];
+    xp_rect bounds;
+} xp_session_inspection_result;
 typedef struct xp_interaction_result {
     int kind;
     int direction;
-    xp_element* target;
+    xp_element *target;
     int item_index;
 } xp_interaction_result;
-
 typedef enum xp_command_type {
     xp_command_type_begin_clip,
     xp_command_type_end_clip,
@@ -65,9 +60,8 @@ typedef enum xp_command_type {
     xp_command_type_rounded_rect,
     xp_command_type_rounded_rect_outline,
     xp_command_type_text,
-    xp_command_type_image,
+    xp_command_type_image
 } xp_command_type;
-
 typedef struct xp_command {
     int type;
     xp_rect bounds;
@@ -77,217 +71,151 @@ typedef struct xp_command {
     char auxiliary[128];
 } xp_command;
 
-ANDROID_APP_PREVIEWER_PLUGIN_API const char* xp_last_error(void);
-ANDROID_APP_PREVIEWER_PLUGIN_API xp_session* xp_create_session(int width, int height);
-ANDROID_APP_PREVIEWER_PLUGIN_API void xp_destroy_session(xp_session* session);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_load_page(xp_session* session, const char* page);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_current_page(xp_session* session, char* page, int capacity);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_is_transitioning(xp_session* session);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_navigate_preview_route(xp_session* session, const char* target);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_navigate_preview_route_path(xp_session* session, const char* path);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_preview_route_graph(xp_session* session, char* graph, int capacity);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_preview_page_title(xp_session* session, const char* page, char* title, int capacity);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_apply_preview_scenario(
-    xp_session* session,
-    const char* page,
-    const char* json);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_export_preview_state(xp_session* session);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_can_save_preview_state(xp_session* session);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_reload_markup(xp_session* session, const char* page, const char* markup, const char* sourcePath);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_resize(xp_session* session, int width, int height);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_set_animation_playback_rate(xp_session* session, float value);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_set_status(xp_session* session, const char* value);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_pointer_down(xp_session* session, float x, float y);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_pointer_move(xp_session* session, float x, float y);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_pointer_up(xp_session* session, float x, float y);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_pointer_cancel(xp_session* session);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_cursor_kind(xp_session* session, float x, float y);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_inspect(
-    xp_session* session,
-    float x,
-    float y,
-    xp_session_inspection_result* result);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_set_inspection_wireframe(
-    xp_session* session,
-    float thickness,
-    int lineStyle,
-    xp_color color,
-    xp_color marginColor,
-    xp_color paddingColor);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_set_selected_wireframe(
-    xp_session* session,
-    float thickness,
-    int lineStyle,
-    xp_color color,
-    xp_color marginColor,
-    xp_color paddingColor);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_clear_inspection_wireframe(xp_session* session);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_clear_selected_inspection_element(xp_session* session);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_select_inspection_element(
-    xp_session* session,
-    const char* sourcePath,
-    int line,
-    int column);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_pin_inspection_element(xp_session* session);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_update(xp_session* session);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_session_render_angle_surface(
-    xp_session* session,
-    xp_angle_surface* surface,
-    unsigned char* destination,
-    int destinationStride,
-    int destinationCapacity);
-ANDROID_APP_PREVIEWER_PLUGIN_API void xp_configure_logging(const char* filePath);
-ANDROID_APP_PREVIEWER_PLUGIN_API void xp_log_info(const char* message);
-ANDROID_APP_PREVIEWER_PLUGIN_API xp_element* xp_create_element(const char* type);
-ANDROID_APP_PREVIEWER_PLUGIN_API void xp_destroy_element(xp_element* element);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_items_remove_item(xp_element* target);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_add_child(xp_element* parent, xp_element* child);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_set_attribute(
-    xp_element* element,
-    const char* name,
-    const char* value);
-ANDROID_APP_PREVIEWER_PLUGIN_API xp_element* xp_find_element(xp_element* root, const char* id);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_find_element_count(xp_element* root, const char* id);
-ANDROID_APP_PREVIEWER_PLUGIN_API xp_element* xp_find_element_at(xp_element* root, const char* id, int index);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_add_storyboard_animation(xp_element* element, int trigger,
-    const char* name, const char* const* keys, const char* const* values, int count);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_attach_animations(xp_element* root, xp_animation_controller* animations);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_set_page_transition(
-    xp_element* root,
-    xp_animation_controller* animations,
-    const char* from,
-    const char* to,
-    int backward,
-    int visible);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_add_storyboard_track(
-    xp_element* element,
-    int trigger,
-    int property,
-    float from,
-    float to,
-    int durationMilliseconds,
-    int easing);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_add_visual_state_track(
-    xp_element* scope,
-    const char* groupName,
-    const char* stateName,
-    const char* targetName,
-    int property,
-    float from,
-    float to,
-    int durationMilliseconds,
-    int easing);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_go_to_visual_state(
-    xp_element* scope,
-    const char* groupName,
-    const char* stateName,
-    int useTransitions);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_supported_attribute_count(const char* elementType);
-ANDROID_APP_PREVIEWER_PLUGIN_API const char* xp_supported_attribute_name(
-    const char* elementType,
-    int index);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_supported_element_count(void);
-ANDROID_APP_PREVIEWER_PLUGIN_API const char* xp_supported_element_name(int index);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_layout(xp_element* root, float width, float height);
-ANDROID_APP_PREVIEWER_PLUGIN_API xp_element* xp_hit_test(xp_element* root, float x, float y);
-ANDROID_APP_PREVIEWER_PLUGIN_API xp_element* xp_hit_test_visual(xp_element* root, float x, float y);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_hit_test_cursor_kind(xp_element* root, float x, float y);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_element_bounds(const xp_element* element, xp_rect* bounds);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_get_scroll_offsets(
-    xp_element* root,
-    const char* scroll_viewer_id,
-    float* horizontal_offset,
-    float* vertical_offset);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_set_scroll_offsets(
-    xp_element* root,
-    const char* scroll_viewer_id,
-    float horizontal_offset,
-    float vertical_offset);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_scroll_by(xp_element* root, float x, float y, float horizontalDelta, float verticalDelta);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_scroll_begin(
-    xp_element* root,
-    xp_animation_controller* animations,
-    float x,
-    float y);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_scroll_drag(xp_animation_controller* animations, float verticalDelta);
-ANDROID_APP_PREVIEWER_PLUGIN_API void xp_scroll_end(xp_animation_controller* animations);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_set_render_offset_x(xp_element* element, float value);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_animate_render_offset_x(
-    xp_element* element,
-    xp_animation_controller* animations,
-    float value,
-    int duration_milliseconds);
-ANDROID_APP_PREVIEWER_PLUGIN_API const char* xp_element_id(const xp_element* element);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_handle_tap(
-    xp_element* element,
-    xp_animation_controller* animations);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_handle_pointer_down(
-    xp_element* element,
-    xp_animation_controller* animations);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_handle_pointer_up(
-    xp_element* element,
-    xp_animation_controller* animations);
-ANDROID_APP_PREVIEWER_PLUGIN_API xp_animation_controller* xp_create_animation_controller(void);
-ANDROID_APP_PREVIEWER_PLUGIN_API void xp_destroy_animation_controller(
-    xp_animation_controller* animations);
-ANDROID_APP_PREVIEWER_PLUGIN_API xp_interaction_controller* xp_create_interaction_controller(void);
-ANDROID_APP_PREVIEWER_PLUGIN_API void xp_destroy_interaction_controller(
-    xp_interaction_controller* controller);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_interaction_pointer_down(
-    xp_interaction_controller* controller,
-    xp_element* root,
-    xp_animation_controller* animations,
-    float x,
-    float y);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_interaction_pointer_move(
-    xp_interaction_controller* controller,
-    float x,
-    float y);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_interaction_pointer_up(
-    xp_interaction_controller* controller,
-    xp_element* root,
-    xp_animation_controller* animations,
-    float x,
-    float y,
-    xp_interaction_result* result);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_interaction_scroll_wheel(
-    xp_interaction_controller* controller,
-    xp_element* root,
-    float x,
-    float y,
-    float horizontal_delta,
-    float vertical_delta);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_interaction_update(xp_interaction_controller* controller);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_set_animation_playback_rate(
-    xp_animation_controller* animations,
-    float playbackRate);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_update_animations(xp_animation_controller* animations);
-ANDROID_APP_PREVIEWER_PLUGIN_API xp_angle_surface* xp_create_angle_surface(
-    int width,
-    int height,
-    const char* fontPath,
-    const char* resourceRoot);
-ANDROID_APP_PREVIEWER_PLUGIN_API void xp_destroy_angle_surface(xp_angle_surface* surface);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_render_angle_surface(
-    xp_angle_surface* surface,
-    const xp_element* root,
-    unsigned char* destination,
-    int destinationStride,
-    int destinationCapacity);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_render(
-    const xp_element* root,
-    xp_command* destination,
-    int capacity);
-ANDROID_APP_PREVIEWER_PLUGIN_API int xp_render_angle(
-    const xp_element* root,
-    const char* fontPath,
-    int width,
-    int height,
-    const char* resourceRoot,
-    unsigned char* destination,
-    int destinationStride,
-    int destinationCapacity);
+// Все строки ABI имеют UTF-8. Поля добавляются только в конец таблицы.
+typedef struct xp_metadata_api {
+    uint32_t version;
+    uint32_t size;
+    uint32_t(XP_PLUGIN_CALL *get_abi_version)(void);
+    const char *(XP_PLUGIN_CALL *last_error)(void);
+    int(XP_PLUGIN_CALL *get_plugin_info)(char *, int);
+    int(XP_PLUGIN_CALL *get_initial_page_id)(void *, char *, int);
+    int(XP_PLUGIN_CALL *get_navigation_graph)(void *, char *, int);
+    int(XP_PLUGIN_CALL *navigate)(void *, const char *);
+} xp_metadata_api;
 
+typedef struct xp_session_api {
+    uint32_t version;
+    uint32_t size;
+    xp_session *(XP_PLUGIN_CALL *create)(int, int);
+    void(XP_PLUGIN_CALL *destroy)(xp_session *);
+    int(XP_PLUGIN_CALL *load_page)(xp_session *, const char *);
+    int(XP_PLUGIN_CALL *current_page)(xp_session *, char *, int);
+    int(XP_PLUGIN_CALL *is_transitioning)(xp_session *);
+    int(XP_PLUGIN_CALL *navigate_preview_route)(xp_session *, const char *);
+    int(XP_PLUGIN_CALL *navigate_preview_route_path)(xp_session *, const char *);
+    int(XP_PLUGIN_CALL *preview_route_graph)(xp_session *, char *, int);
+    int(XP_PLUGIN_CALL *preview_page_title)(xp_session *, const char *, char *, int);
+    int(XP_PLUGIN_CALL *apply_preview_scenario)(xp_session *, const char *, const char *);
+    int(XP_PLUGIN_CALL *export_preview_state)(xp_session *);
+    int(XP_PLUGIN_CALL *can_save_preview_state)(xp_session *);
+    int(XP_PLUGIN_CALL *reload_markup)(xp_session *, const char *, const char *, const char *);
+    int(XP_PLUGIN_CALL *resize)(xp_session *, int, int);
+    int(XP_PLUGIN_CALL *set_animation_playback_rate)(xp_session *, float);
+    int(XP_PLUGIN_CALL *set_status)(xp_session *, const char *);
+    int(XP_PLUGIN_CALL *pointer_down)(xp_session *, float, float);
+    int(XP_PLUGIN_CALL *pointer_move)(xp_session *, float, float);
+    int(XP_PLUGIN_CALL *pointer_up)(xp_session *, float, float);
+    int(XP_PLUGIN_CALL *pointer_cancel)(xp_session *);
+    int(XP_PLUGIN_CALL *cursor_kind)(xp_session *, float, float);
+    int(XP_PLUGIN_CALL *inspect)(xp_session *, float, float, xp_session_inspection_result *);
+    int(XP_PLUGIN_CALL *set_inspection_wireframe)(xp_session *, float, int, xp_color, xp_color, xp_color);
+    int(XP_PLUGIN_CALL *set_selected_wireframe)(xp_session *, float, int, xp_color, xp_color, xp_color);
+    int(XP_PLUGIN_CALL *clear_inspection_wireframe)(xp_session *);
+    int(XP_PLUGIN_CALL *clear_selected_inspection_element)(xp_session *);
+    int(XP_PLUGIN_CALL *select_inspection_element)(xp_session *, const char *, int, int);
+    int(XP_PLUGIN_CALL *pin_inspection_element)(xp_session *);
+    int(XP_PLUGIN_CALL *update)(xp_session *);
+    int(XP_PLUGIN_CALL *render_angle_surface)(xp_session *, xp_angle_surface *, unsigned char *, int, int);
+} xp_session_api;
+
+typedef struct xp_element_api {
+    uint32_t version;
+    uint32_t size;
+    xp_element *(XP_PLUGIN_CALL *create)(const char *);
+    void(XP_PLUGIN_CALL *destroy)(xp_element *);
+    int(XP_PLUGIN_CALL *items_remove_item)(xp_element *);
+    int(XP_PLUGIN_CALL *add_child)(xp_element *, xp_element *);
+    int(XP_PLUGIN_CALL *set_attribute)(xp_element *, const char *, const char *);
+    xp_element *(XP_PLUGIN_CALL *find)(xp_element *, const char *);
+    int(XP_PLUGIN_CALL *find_count)(xp_element *, const char *);
+    xp_element *(XP_PLUGIN_CALL *find_at)(xp_element *, const char *, int);
+    int(XP_PLUGIN_CALL *layout)(xp_element *, float, float);
+    xp_element *(XP_PLUGIN_CALL *hit_test)(xp_element *, float, float);
+    xp_element *(XP_PLUGIN_CALL *hit_test_visual)(xp_element *, float, float);
+    int(XP_PLUGIN_CALL *hit_test_cursor_kind)(xp_element *, float, float);
+    int(XP_PLUGIN_CALL *bounds)(const xp_element *, xp_rect *);
+    const char *(XP_PLUGIN_CALL *id)(const xp_element *);
+    int(XP_PLUGIN_CALL *get_scroll_offsets)(xp_element *, const char *, float *, float *);
+    int(XP_PLUGIN_CALL *set_scroll_offsets)(xp_element *, const char *, float, float);
+    int(XP_PLUGIN_CALL *scroll_by)(xp_element *, float, float, float, float);
+} xp_element_api;
+
+typedef struct xp_interaction_api {
+    uint32_t version;
+    uint32_t size;
+    int(XP_PLUGIN_CALL *add_storyboard_animation)(xp_element *, int, const char *, const char *const *,
+                                                  const char *const *, int);
+    int(XP_PLUGIN_CALL *attach_animations)(xp_element *, xp_animation_controller *);
+    int(XP_PLUGIN_CALL *set_page_transition)(xp_element *, xp_animation_controller *, const char *, const char *, int,
+                                             int);
+    int(XP_PLUGIN_CALL *add_storyboard_track)(xp_element *, int, int, float, float, int, int);
+    int(XP_PLUGIN_CALL *add_visual_state_track)(xp_element *, const char *, const char *, const char *, int, float,
+                                                float, int, int);
+    int(XP_PLUGIN_CALL *go_to_visual_state)(xp_element *, const char *, const char *, int);
+    int(XP_PLUGIN_CALL *scroll_begin)(xp_element *, xp_animation_controller *, float, float);
+    int(XP_PLUGIN_CALL *scroll_drag)(xp_animation_controller *, float);
+    void(XP_PLUGIN_CALL *scroll_end)(xp_animation_controller *);
+    int(XP_PLUGIN_CALL *set_render_offset_x)(xp_element *, float);
+    int(XP_PLUGIN_CALL *animate_render_offset_x)(xp_element *, xp_animation_controller *, float, int);
+    int(XP_PLUGIN_CALL *handle_tap)(xp_element *, xp_animation_controller *);
+    int(XP_PLUGIN_CALL *handle_pointer_down)(xp_element *, xp_animation_controller *);
+    int(XP_PLUGIN_CALL *handle_pointer_up)(xp_element *, xp_animation_controller *);
+    xp_animation_controller *(XP_PLUGIN_CALL *create_animation_controller)(void);
+    void(XP_PLUGIN_CALL *destroy_animation_controller)(xp_animation_controller *);
+    xp_interaction_controller *(XP_PLUGIN_CALL *create_interaction_controller)(void);
+    void(XP_PLUGIN_CALL *destroy_interaction_controller)(xp_interaction_controller *);
+    int(XP_PLUGIN_CALL *pointer_down)(xp_interaction_controller *, xp_element *, xp_animation_controller *, float,
+                                      float);
+    int(XP_PLUGIN_CALL *pointer_move)(xp_interaction_controller *, float, float);
+    int(XP_PLUGIN_CALL *pointer_up)(xp_interaction_controller *, xp_element *, xp_animation_controller *, float, float,
+                                    xp_interaction_result *);
+    int(XP_PLUGIN_CALL *scroll_wheel)(xp_interaction_controller *, xp_element *, float, float, float, float);
+    int(XP_PLUGIN_CALL *update)(xp_interaction_controller *);
+    int(XP_PLUGIN_CALL *set_animation_playback_rate)(xp_animation_controller *, float);
+    int(XP_PLUGIN_CALL *update_animations)(xp_animation_controller *);
+} xp_interaction_api;
+
+typedef struct xp_rendering_api {
+    uint32_t version;
+    uint32_t size;
+    xp_angle_surface *(XP_PLUGIN_CALL *create_angle_surface)(int, int, const char *, const char *);
+    void(XP_PLUGIN_CALL *destroy_angle_surface)(xp_angle_surface *);
+    int(XP_PLUGIN_CALL *render_angle_surface)(xp_angle_surface *, const xp_element *, unsigned char *, int, int);
+    int(XP_PLUGIN_CALL *render)(const xp_element *, xp_command *, int);
+    int(XP_PLUGIN_CALL *render_angle)(const xp_element *, const char *, int, int, const char *, unsigned char *, int,
+                                      int);
+} xp_rendering_api;
+
+typedef struct xp_xaml_completion_api {
+    uint32_t version;
+    uint32_t size;
+    int(XP_PLUGIN_CALL* xaml_supported_attribute_count)(const char*);
+    const char* (XP_PLUGIN_CALL* xaml_supported_attribute_name)(const char*, int);
+    int(XP_PLUGIN_CALL* xaml_supported_element_count)(void);
+    const char* (XP_PLUGIN_CALL* xaml_supported_element_name)(int);
+} xp_xaml_completion_api;
+
+typedef struct xp_logging_api {
+    uint32_t version;
+    uint32_t size;
+    void(XP_PLUGIN_CALL *configure)(const char *);
+    void(XP_PLUGIN_CALL *info)(const char *);
+} xp_logging_api;
+
+typedef struct xp_plugin_api {
+    uint32_t version;
+    uint32_t size;
+    xp_metadata_api metadata;
+    xp_session_api session;
+    xp_element_api element;
+    xp_xaml_completion_api xaml_completion;
+    xp_interaction_api interaction;
+    xp_rendering_api rendering;
+    xp_logging_api logging;
+} xp_plugin_api;
+
+// Единственный экспорт DLL. nullptr означает неподдерживаемую версию ABI.
+ANDROID_APP_PREVIEWER_PLUGIN_API const xp_plugin_api *XP_PLUGIN_CALL xp_get_api(uint32_t requestedVersion);
 
 #ifdef __cplusplus
 } // extern "C"
