@@ -126,13 +126,13 @@ namespace AndroidAppPreviewerPluginSDK {
             //
             public static class Session {
                 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-                public delegate IntPtr xp_create_session_v1(int width, int height);
+                public delegate IntPtr xp_create_session(int width, int height);
 
                 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-                public delegate void xp_destroy_session_v1(IntPtr session);
+                public delegate void xp_destroy_session(IntPtr session);
 
                 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-                public delegate int xp_session_load_page_v1(IntPtr session, [MarshalAs(UnmanagedType.LPUTF8Str)] string page);
+                public delegate int xp_session_load_page(IntPtr session, [MarshalAs(UnmanagedType.LPUTF8Str)] string page);
 
                 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
                 public delegate int xp_session_current_page(IntPtr session, [Out] byte[] page, int capacity);
@@ -238,10 +238,10 @@ namespace AndroidAppPreviewerPluginSDK {
                 public delegate int xp_session_pin_inspection_element(IntPtr session);
 
                 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-                public delegate int xp_session_update_v1(IntPtr session);
+                public delegate int xp_session_update(IntPtr session);
 
                 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-                public delegate int xp_session_render_angle_surface_v1(IntPtr session, IntPtr surface, [Out] byte[] pixels, int stride, int capacity);
+                public delegate int xp_session_render_angle_surface(IntPtr session, IntPtr surface, [Out] byte[] pixels, int stride, int capacity);
             }
 
             //
@@ -409,17 +409,17 @@ namespace AndroidAppPreviewerPluginSDK {
             //
             public static class Rendering {
                 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-                public delegate IntPtr xp_create_angle_surface_v1(
+                public delegate IntPtr xp_create_angle_surface(
                     int width,
                     int height,
                     [MarshalAs(UnmanagedType.LPUTF8Str)] string fontPath,
                     [MarshalAs(UnmanagedType.LPUTF8Str)] string resourceRoot);
 
                 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-                public delegate void xp_destroy_angle_surface_v1(IntPtr surface);
+                public delegate void xp_destroy_angle_surface(IntPtr surface);
 
                 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-                public delegate int xp_render_angle_surface_v1(
+                public delegate int xp_render_angle_surface(
                     IntPtr surface,
                     IntPtr root,
                     [Out] byte[] pixels,
@@ -531,7 +531,7 @@ namespace AndroidAppPreviewerPluginSDK {
             tableAddress = IntPtr.Add(tableAddress, (int)metadata.Size);
             var session = NativeRuntime.ReadTable(tableAddress, 30);
             tableAddress = IntPtr.Add(tableAddress, (int)session.Size);
-            var element = NativeRuntime.ReadTable(tableAddress, 16);
+            var element = NativeRuntime.ReadTable(tableAddress, 17);
             tableAddress = IntPtr.Add(tableAddress, (int)element.Size);
             var interaction = NativeRuntime.ReadTable(tableAddress, 25);
             tableAddress = IntPtr.Add(tableAddress, (int)interaction.Size);
@@ -545,10 +545,10 @@ namespace AndroidAppPreviewerPluginSDK {
             }
             NativeRuntime.functionPointers.Clear();
             NativeRuntime.AddFunctions(metadata, "metadata", "xp_get_abi_version", "xp_last_error", "xp_get_plugin_info", "xp_get_initial_page_id", "xp_get_navigation_graph", "xp_navigate");
-            NativeRuntime.AddFunctions(session, "session", "xp_create_session_v1", "xp_destroy_session_v1", "xp_session_load_page_v1", "xp_session_current_page", "xp_session_is_transitioning", "xp_session_navigate_preview_route", "xp_session_navigate_preview_route_path", "xp_session_preview_route_graph", "xp_session_preview_page_title", "xp_session_apply_preview_scenario", "xp_session_export_preview_state", "xp_session_can_save_preview_state", "xp_session_reload_markup", "xp_session_resize", "xp_session_set_animation_playback_rate", "xp_session_set_status", "xp_session_pointer_down", "xp_session_pointer_move", "xp_session_pointer_up", "xp_session_pointer_cancel", "xp_session_cursor_kind", "xp_session_inspect", "xp_session_set_inspection_wireframe", "xp_session_set_selected_wireframe", "xp_session_clear_inspection_wireframe", "xp_session_clear_selected_inspection_element", "xp_session_select_inspection_element", "xp_session_pin_inspection_element", "xp_session_update_v1", "xp_session_render_angle_surface_v1");
+            NativeRuntime.AddFunctions(session, "session", "xp_create_session", "xp_destroy_session", "xp_session_load_page", "xp_session_current_page", "xp_session_is_transitioning", "xp_session_navigate_preview_route", "xp_session_navigate_preview_route_path", "xp_session_preview_route_graph", "xp_session_preview_page_title", "xp_session_apply_preview_scenario", "xp_session_export_preview_state", "xp_session_can_save_preview_state", "xp_session_reload_markup", "xp_session_resize", "xp_session_set_animation_playback_rate", "xp_session_set_status", "xp_session_pointer_down", "xp_session_pointer_move", "xp_session_pointer_up", "xp_session_pointer_cancel", "xp_session_cursor_kind", "xp_session_inspect", "xp_session_set_inspection_wireframe", "xp_session_set_selected_wireframe", "xp_session_clear_inspection_wireframe", "xp_session_clear_selected_inspection_element", "xp_session_select_inspection_element", "xp_session_pin_inspection_element", "xp_session_update", "xp_session_render_angle_surface");
             NativeRuntime.AddFunctions(element, "element", "xp_create_element", "xp_destroy_element", "xp_items_remove_item", "xp_add_child", "xp_set_attribute", "xp_find_element", "xp_find_element_count", "xp_find_element_at", "xp_layout", "xp_hit_test", "xp_hit_test_visual", "xp_hit_test_cursor_kind", "xp_element_bounds", "xp_element_id", "xp_get_scroll_offsets", "xp_set_scroll_offsets", "xp_scroll_by");
             NativeRuntime.AddFunctions(interaction, "interaction", "xp_add_storyboard_animation", "xp_attach_animations", "xp_set_page_transition", "xp_add_storyboard_track", "xp_add_visual_state_track", "xp_go_to_visual_state", "xp_scroll_begin", "xp_scroll_drag", "xp_scroll_end", "xp_set_render_offset_x", "xp_animate_render_offset_x", "xp_handle_tap", "xp_handle_pointer_down", "xp_handle_pointer_up", "xp_create_animation_controller", "xp_destroy_animation_controller", "xp_create_interaction_controller", "xp_destroy_interaction_controller", "xp_interaction_pointer_down", "xp_interaction_pointer_move", "xp_interaction_pointer_up", "xp_interaction_scroll_wheel", "xp_interaction_update", "xp_set_animation_playback_rate", "xp_update_animations");
-            NativeRuntime.AddFunctions(rendering, "rendering", "xp_create_angle_surface_v1", "xp_destroy_angle_surface_v1", "xp_render_angle_surface_v1", "xp_render", "xp_render_angle");
+            NativeRuntime.AddFunctions(rendering, "rendering", "xp_create_angle_surface", "xp_destroy_angle_surface", "xp_render_angle_surface", "xp_render", "xp_render_angle");
             NativeRuntime.AddFunctions(xamlCompletion, "xaml_completion", "xp_xaml_supported_attribute_count", "xp_xaml_supported_attribute_name", "xp_xaml_supported_element_count", "xp_xaml_supported_element_name");
             NativeRuntime.AddFunctions(logging, "logging", "xp_configure_logging", "xp_log_info");
         }
@@ -644,20 +644,16 @@ namespace AndroidAppPreviewerPluginSDK {
             }
 
             public static class Session {
-                public static IntPtr xp_create_session_v1(int width, int height) {
-                    return NativeRuntime.Get<Delegates.Session.xp_create_session_v1>("xp_create_session")(width, height);
+                public static IntPtr xp_create_session(int width, int height) {
+                    return NativeRuntime.Get<Delegates.Session.xp_create_session>("xp_create_session")(width, height);
                 }
 
-                public static void xp_destroy_session_v1(IntPtr session) {
-                    NativeRuntime.Get<Delegates.Session.xp_destroy_session_v1>("xp_destroy_session")(session);
+                public static void xp_destroy_session(IntPtr session) {
+                    NativeRuntime.Get<Delegates.Session.xp_destroy_session>("xp_destroy_session")(session);
                 }
 
-                public static int xp_session_load_page_v1(IntPtr session, [MarshalAs(UnmanagedType.LPUTF8Str)] string page) {
-                    return NativeRuntime.Get<Delegates.Session.xp_session_load_page_v1>("xp_session_load_page")(session, page);
-                }
-
-                public static int xp_session_load_page(IntPtr session, string page) {
-                    return NativeRuntime.Methods.Session.xp_session_load_page_v1(session, page);
+                public static int xp_session_load_page(IntPtr session, [MarshalAs(UnmanagedType.LPUTF8Str)] string page) {
+                    return NativeRuntime.Get<Delegates.Session.xp_session_load_page>("xp_session_load_page")(session, page);
                 }
 
                 public static int xp_session_current_page(IntPtr session, [Out] byte[] page, int capacity) {
@@ -787,21 +783,14 @@ namespace AndroidAppPreviewerPluginSDK {
                     return NativeRuntime.Get<Delegates.Session.xp_session_pin_inspection_element>("xp_session_pin_inspection_element")(session);
                 }
 
-                public static int xp_session_update_v1(IntPtr session) {
-                    return NativeRuntime.Get<Delegates.Session.xp_session_update_v1>("xp_session_update")(session);
-                }
-
                 public static int xp_session_update(IntPtr session) {
-                    return NativeRuntime.Methods.Session.xp_session_update_v1(session);
+                    return NativeRuntime.Get<Delegates.Session.xp_session_update>("xp_session_update")(session);
                 }
 
-                public static int xp_session_render_angle_surface_v1(IntPtr session, IntPtr surface, [Out] byte[] pixels, int stride, int capacity) {
-                    return NativeRuntime.Get<Delegates.Session.xp_session_render_angle_surface_v1>("xp_session_render_angle_surface")(session, surface, pixels, stride, capacity);
+                public static int xp_session_render_angle_surface(IntPtr session, IntPtr surface, [Out] byte[] pixels, int stride, int capacity) {
+                    return NativeRuntime.Get<Delegates.Session.xp_session_render_angle_surface>("xp_session_render_angle_surface")(session, surface, pixels, stride, capacity);
                 }
 
-                public static int xp_session_render_angle_surface(IntPtr session, IntPtr surface, byte[] pixels, int stride, int capacity) {
-                    return NativeRuntime.Methods.Session.xp_session_render_angle_surface_v1(session, surface, pixels, stride, capacity);
-                }
             }
 
             public static class Element {
@@ -886,11 +875,11 @@ namespace AndroidAppPreviewerPluginSDK {
 
             public static class Interaction {
                 public static IntPtr xp_create_session(int width, int height) {
-                    return NativeRuntime.Methods.Session.xp_create_session_v1(width, height);
+                    return NativeRuntime.Methods.Session.xp_create_session(width, height);
                 }
 
                 public static void xp_destroy_session(IntPtr session) {
-                    NativeRuntime.Methods.Session.xp_destroy_session_v1(session);
+                    NativeRuntime.Methods.Session.xp_destroy_session(session);
                 }
 
                 public static int xp_add_storyboard_animation(IntPtr element, int trigger,
@@ -1026,37 +1015,25 @@ namespace AndroidAppPreviewerPluginSDK {
             }
 
             public static class Rendering {
-                public static IntPtr xp_create_angle_surface_v1(
+                public static IntPtr xp_create_angle_surface(
                     int width,
                     int height,
                     [MarshalAs(UnmanagedType.LPUTF8Str)] string fontPath,
                     [MarshalAs(UnmanagedType.LPUTF8Str)] string resourceRoot) {
-                    return NativeRuntime.Get<Delegates.Rendering.xp_create_angle_surface_v1>("xp_create_angle_surface")(width, height, fontPath, resourceRoot);
-                }
-
-                public static IntPtr xp_create_angle_surface(int width, int height, string fontPath, string resourceRoot) {
-                    return NativeRuntime.Methods.Rendering.xp_create_angle_surface_v1(width, height, fontPath, resourceRoot);
-                }
-
-                public static void xp_destroy_angle_surface_v1(IntPtr surface) {
-                    NativeRuntime.Get<Delegates.Rendering.xp_destroy_angle_surface_v1>("xp_destroy_angle_surface")(surface);
+                    return NativeRuntime.Get<Delegates.Rendering.xp_create_angle_surface>("xp_create_angle_surface")(width, height, fontPath, resourceRoot);
                 }
 
                 public static void xp_destroy_angle_surface(IntPtr surface) {
-                    NativeRuntime.Methods.Rendering.xp_destroy_angle_surface_v1(surface);
+                    NativeRuntime.Get<Delegates.Rendering.xp_destroy_angle_surface>("xp_destroy_angle_surface")(surface);
                 }
 
-                public static int xp_render_angle_surface_v1(
+                public static int xp_render_angle_surface(
                     IntPtr surface,
                     IntPtr root,
                     [Out] byte[] pixels,
                     int stride,
                     int capacity) {
-                    return NativeRuntime.Get<Delegates.Rendering.xp_render_angle_surface_v1>("xp_render_angle_surface")(surface, root, pixels, stride, capacity);
-                }
-
-                public static int xp_render_angle_surface(IntPtr surface, IntPtr root, byte[] pixels, int stride, int capacity) {
-                    return NativeRuntime.Methods.Rendering.xp_render_angle_surface_v1(surface, root, pixels, stride, capacity);
+                    return NativeRuntime.Get<Delegates.Rendering.xp_render_angle_surface>("xp_render_angle_surface")(surface, root, pixels, stride, capacity);
                 }
 
                 public static int xp_render(IntPtr root, [Out] NativeCommand[]? commands, int capacity) {
