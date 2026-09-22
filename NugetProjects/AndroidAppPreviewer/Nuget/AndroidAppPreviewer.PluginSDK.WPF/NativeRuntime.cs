@@ -533,12 +533,12 @@ namespace AndroidAppPreviewerPluginSDK {
             tableAddress = IntPtr.Add(tableAddress, (int)session.Size);
             var element = NativeRuntime.ReadTable(tableAddress, 16);
             tableAddress = IntPtr.Add(tableAddress, (int)element.Size);
-            var xamlCompletion = NativeRuntime.ReadTable(tableAddress, 4);
-            tableAddress = IntPtr.Add(tableAddress, (int)xamlCompletion.Size);
             var interaction = NativeRuntime.ReadTable(tableAddress, 25);
             tableAddress = IntPtr.Add(tableAddress, (int)interaction.Size);
             var rendering = NativeRuntime.ReadTable(tableAddress, 5);
             tableAddress = IntPtr.Add(tableAddress, (int)rendering.Size);
+            var xamlCompletion = NativeRuntime.ReadTable(tableAddress, 4);
+            tableAddress = IntPtr.Add(tableAddress, (int)xamlCompletion.Size);
             var logging = NativeRuntime.ReadTable(tableAddress, 2);
             if (rootSize < tableAddress.ToInt64() - fnApiAddress.ToInt64() + logging.Size) {
                 throw new InvalidOperationException("Preview-plugin вернул неполную корневую таблицу ABI v1.");
@@ -547,9 +547,9 @@ namespace AndroidAppPreviewerPluginSDK {
             NativeRuntime.AddFunctions(metadata, "metadata", "xp_get_abi_version", "xp_last_error", "xp_get_plugin_info", "xp_get_initial_page_id", "xp_get_navigation_graph", "xp_navigate");
             NativeRuntime.AddFunctions(session, "session", "xp_create_session_v1", "xp_destroy_session_v1", "xp_session_load_page_v1", "xp_session_current_page", "xp_session_is_transitioning", "xp_session_navigate_preview_route", "xp_session_navigate_preview_route_path", "xp_session_preview_route_graph", "xp_session_preview_page_title", "xp_session_apply_preview_scenario", "xp_session_export_preview_state", "xp_session_can_save_preview_state", "xp_session_reload_markup", "xp_session_resize", "xp_session_set_animation_playback_rate", "xp_session_set_status", "xp_session_pointer_down", "xp_session_pointer_move", "xp_session_pointer_up", "xp_session_pointer_cancel", "xp_session_cursor_kind", "xp_session_inspect", "xp_session_set_inspection_wireframe", "xp_session_set_selected_wireframe", "xp_session_clear_inspection_wireframe", "xp_session_clear_selected_inspection_element", "xp_session_select_inspection_element", "xp_session_pin_inspection_element", "xp_session_update_v1", "xp_session_render_angle_surface_v1");
             NativeRuntime.AddFunctions(element, "element", "xp_create_element", "xp_destroy_element", "xp_items_remove_item", "xp_add_child", "xp_set_attribute", "xp_find_element", "xp_find_element_count", "xp_find_element_at", "xp_layout", "xp_hit_test", "xp_hit_test_visual", "xp_hit_test_cursor_kind", "xp_element_bounds", "xp_element_id", "xp_get_scroll_offsets", "xp_set_scroll_offsets", "xp_scroll_by");
-            NativeRuntime.AddFunctions(xamlCompletion, "xaml_completion", "xp_xaml_supported_attribute_count", "xp_xaml_supported_attribute_name", "xp_xaml_supported_element_count", "xp_xaml_supported_element_name");
             NativeRuntime.AddFunctions(interaction, "interaction", "xp_add_storyboard_animation", "xp_attach_animations", "xp_set_page_transition", "xp_add_storyboard_track", "xp_add_visual_state_track", "xp_go_to_visual_state", "xp_scroll_begin", "xp_scroll_drag", "xp_scroll_end", "xp_set_render_offset_x", "xp_animate_render_offset_x", "xp_handle_tap", "xp_handle_pointer_down", "xp_handle_pointer_up", "xp_create_animation_controller", "xp_destroy_animation_controller", "xp_create_interaction_controller", "xp_destroy_interaction_controller", "xp_interaction_pointer_down", "xp_interaction_pointer_move", "xp_interaction_pointer_up", "xp_interaction_scroll_wheel", "xp_interaction_update", "xp_set_animation_playback_rate", "xp_update_animations");
             NativeRuntime.AddFunctions(rendering, "rendering", "xp_create_angle_surface_v1", "xp_destroy_angle_surface_v1", "xp_render_angle_surface_v1", "xp_render", "xp_render_angle");
+            NativeRuntime.AddFunctions(xamlCompletion, "xaml_completion", "xp_xaml_supported_attribute_count", "xp_xaml_supported_attribute_name", "xp_xaml_supported_element_count", "xp_xaml_supported_element_name");
             NativeRuntime.AddFunctions(logging, "logging", "xp_configure_logging", "xp_log_info");
         }
 

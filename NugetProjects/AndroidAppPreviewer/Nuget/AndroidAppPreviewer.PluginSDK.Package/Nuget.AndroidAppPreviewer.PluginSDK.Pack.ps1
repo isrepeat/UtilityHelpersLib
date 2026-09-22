@@ -35,7 +35,7 @@ if (-not (Test-Path -LiteralPath $managedAssembly -PathType Leaf)) {
 }
 Copy-Item -LiteralPath $managedAssembly -Destination (Join-Path $stagingRoot 'lib\net8.0\AndroidAppPreviewer.PluginSDK.dll')
 
-& $nuget pack (Join-Path $stagingRoot 'AndroidAppPreviewer.PluginSDK.nuspec') '-BasePath' $stagingRoot '-OutputDirectory' $FeedRoot '-NoPackageAnalysis' '-NonInteractive'
+& $nuget pack (Join-Path $stagingRoot 'AndroidAppPreviewer.PluginSDK.nuspec') '-BasePath' $stagingRoot '-OutputDirectory' $FeedRoot '-NoPackageAnalysis' '-NonInteractive' '-ForceEnglishOutput'
 if ($LASTEXITCODE -ne 0) {
     throw 'NuGet CLI package creation failed.'
 }

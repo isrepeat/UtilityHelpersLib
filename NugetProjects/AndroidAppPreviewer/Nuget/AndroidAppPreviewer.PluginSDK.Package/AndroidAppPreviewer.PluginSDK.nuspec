@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
     <metadata>
         <id>AndroidAppPreviewer.PluginSDK</id>
-        <version>2.0.1</version>
+        <version>2.0.2</version>
         <title>Android App Previewer Plugin SDK</title>
         <authors>DCT.C++Team</authors>
         <owners>DCT</owners>

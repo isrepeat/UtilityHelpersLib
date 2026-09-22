@@ -400,7 +400,7 @@ Copy-Item (Join-Path $packagingRoot 'cmake\XamlRuntimeConfig.cmake') (Join-Path 
 # .nupkg; штатный release-скрипт этот режим не использует.
 if (-not $SkipPackage) {
     m::MessageAction 'Create NuGet package through NuGet CLI...'
-    & $nuget pack (Join-Path $stagingRoot 'XamlRuntime.nuspec') '-BasePath' $stagingRoot '-OutputDirectory' $feedRoot '-Version' $Version '-NoPackageAnalysis' '-NonInteractive'
+    & $nuget pack (Join-Path $stagingRoot 'XamlRuntime.nuspec') '-BasePath' $stagingRoot '-OutputDirectory' $feedRoot '-Version' $Version '-NoPackageAnalysis' '-NonInteractive' '-ForceEnglishOutput'
     if ($LASTEXITCODE -ne 0) {
         m::MessageError 'NuGet CLI pack failed.'
         throw 'NuGet CLI pack failed.'
