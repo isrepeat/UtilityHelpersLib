@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
     <metadata>
         <id>XamlRuntime</id>
-        <version>1.0.17</version>
+        <version>1.0.21</version>
         <title>XamlRuntime</title>
         <authors>DCT.C++Team</authors>
         <owners>DCT</owners>

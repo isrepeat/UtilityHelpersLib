@@ -22,6 +22,7 @@ namespace es_renderer {
         struct ShaderRoles {
             static constexpr char text[] = "core.text";
             static constexpr char solid[] = "core.solid";
+            static constexpr char roundedRectangle[] = "core.roundedRectangle";
             static constexpr char image[] = "core.image";
         };
         // Дополнительные программы хоста и явные подмены стандартных ролей.

@@ -19,13 +19,13 @@
 
 #include <unordered_map>
 #include <algorithm>
-#include <chrono>
 #include <stdexcept>
 #include <cstdint>
 #include <cstring>
 #include <limits>
 #include <string>
 #include <vector>
+#include <array>
 #include <cmath>
 
 namespace es_renderer::_details {
@@ -90,7 +90,7 @@ namespace es_renderer {
         Implementation(const Implementation&) = delete;
         Implementation& operator=(const Implementation&) = delete;
 
-        void BeginFrame();
+        void BeginFrame() const;
         std::vector<xaml::TextGlyphMetric> TextGlyphMetrics() const;
         void BeginClip(const xaml::Rect& bounds) const;
         void EndClip() const;
@@ -114,56 +114,6 @@ namespace es_renderer {
             xaml::attr::Alignment horizontalAlignment);
         void DrawImage(const xaml::Rect& bounds, std::string_view source, xaml::attr::Color tint);
         void ApplyClip(const xaml::Rect& bounds) const;
-
-    private:
-#if defined(_DEBUG)
-        enum class DrawOperation {
-            outline,
-            roundedRectangle,
-            shader,
-            text,
-            image,
-            clip,
-        };
-
-        struct FrameTiming {
-            std::chrono::nanoseconds outline{};
-            std::chrono::nanoseconds roundedRectangle{};
-            std::chrono::nanoseconds shader{};
-            std::chrono::nanoseconds text{};
-            std::chrono::nanoseconds image{};
-            std::chrono::nanoseconds clip{};
-            size_t outlineCount = 0;
-            size_t roundedRectangleCount = 0;
-            size_t shaderCount = 0;
-            size_t textCount = 0;
-            size_t imageCount = 0;
-            size_t clipCount = 0;
-        };
-
-        class DrawTimingScope {
-        public:
-            DrawTimingScope(Implementation& implementation, DrawOperation operation)
-                : implementation(implementation)
-                , operation(operation)
-                , startedAt(std::chrono::steady_clock::now()) {
-            }
-
-            ~DrawTimingScope() {
-                this->implementation.RecordDrawTiming(
-                    this->operation,
-                    std::chrono::steady_clock::now() - this->startedAt);
-            }
-
-        private:
-            Implementation& implementation;
-            DrawOperation operation;
-            std::chrono::steady_clock::time_point startedAt;
-        };
-
-        void RecordDrawTiming(DrawOperation operation, std::chrono::nanoseconds elapsed);
-        void LogFrameTiming();
-#endif
 
     private:
         struct GlyphReference {
@@ -206,6 +156,12 @@ namespace es_renderer {
         int height;
         GLuint textProgram = 0;
         GLuint solidProgram = 0;
+        GLint solidColorLocation = -1;
+        GLuint roundedRectangleProgram = 0;
+        GLint roundedRectangleSizeLocation = -1;
+        GLint roundedRectangleRadiusLocation = -1;
+        GLint roundedRectangleBorderThicknessLocation = -1;
+        GLint roundedRectangleColorLocation = -1;
         std::unordered_map<std::string, GLuint> shaderPrograms;
         mutable std::vector<xaml::Rect> clipStack;
         GLuint imageProgram = 0;
@@ -215,12 +171,6 @@ namespace es_renderer {
         FontAtlas regularFontAtlas;
         FontAtlas boldFontAtlas;
         FontAtlas blackFontAtlas;
-#if defined(_DEBUG)
-        FrameTiming frameTiming;
-        FrameTiming totalFrameTiming;
-        std::chrono::steady_clock::time_point frameTimingWindowStartedAt = std::chrono::steady_clock::now();
-        size_t timedFrameCount = 0;
-#endif
     };
 
     OpenGlRenderer::Implementation::Implementation(
@@ -254,6 +204,11 @@ namespace es_renderer {
             ShaderProgramSource{_details::TextVertexShader, _details::TextFragmentShader});
         shaderPrograms.try_emplace(ShaderRoles::solid,
             ShaderProgramSource{_details::SolidVertexShader, _details::SolidFragmentShader});
+        shaderPrograms.try_emplace(ShaderRoles::roundedRectangle,
+            ShaderProgramSource{
+                _details::RoundedRectangleVertexShader,
+                _details::RoundedRectangleFragmentShader,
+            });
         shaderPrograms.try_emplace(ShaderRoles::image,
             ShaderProgramSource{_details::ImageVertexShader, _details::ImageFragmentShader});
         for (const auto& [name, source] : shaderPrograms) {
@@ -266,7 +221,21 @@ namespace es_renderer {
         }
         this->textProgram = this->shaderPrograms.at(ShaderRoles::text);
         this->solidProgram = this->shaderPrograms.at(ShaderRoles::solid);
+        this->solidColorLocation = glGetUniformLocation(this->solidProgram, "color");
+        this->roundedRectangleProgram = this->shaderPrograms.at(ShaderRoles::roundedRectangle);
         this->imageProgram = this->shaderPrograms.at(ShaderRoles::image);
+        this->roundedRectangleSizeLocation = glGetUniformLocation(
+            this->roundedRectangleProgram,
+            "size");
+        this->roundedRectangleRadiusLocation = glGetUniformLocation(
+            this->roundedRectangleProgram,
+            "radius");
+        this->roundedRectangleBorderThicknessLocation = glGetUniformLocation(
+            this->roundedRectangleProgram,
+            "borderThickness");
+        this->roundedRectangleColorLocation = glGetUniformLocation(
+            this->roundedRectangleProgram,
+            "color");
         glGenBuffers(1, &this->vertexBuffer);
         this->CreateFontAtlas(regularFontData, this->regularFontAtlas);
         this->CreateFontAtlas(boldFontData, this->boldFontAtlas);
@@ -302,91 +271,7 @@ namespace es_renderer {
         }
     }
 
-#if defined(_DEBUG)
-    void OpenGlRenderer::Implementation::RecordDrawTiming(
-        DrawOperation operation,
-        std::chrono::nanoseconds elapsed) {
-        switch (operation) {
-        case DrawOperation::outline:
-            this->frameTiming.outline += elapsed;
-            ++this->frameTiming.outlineCount;
-            break;
-        case DrawOperation::roundedRectangle:
-            this->frameTiming.roundedRectangle += elapsed;
-            ++this->frameTiming.roundedRectangleCount;
-            break;
-        case DrawOperation::shader:
-            this->frameTiming.shader += elapsed;
-            ++this->frameTiming.shaderCount;
-            break;
-        case DrawOperation::text:
-            this->frameTiming.text += elapsed;
-            ++this->frameTiming.textCount;
-            break;
-        case DrawOperation::image:
-            this->frameTiming.image += elapsed;
-            ++this->frameTiming.imageCount;
-            break;
-        case DrawOperation::clip:
-            this->frameTiming.clip += elapsed;
-            ++this->frameTiming.clipCount;
-            break;
-        }
-    }
-
-    void OpenGlRenderer::Implementation::LogFrameTiming() {
-        const auto now = std::chrono::steady_clock::now();
-        if (this->timedFrameCount != 0) {
-            this->totalFrameTiming.outline += this->frameTiming.outline;
-            this->totalFrameTiming.roundedRectangle += this->frameTiming.roundedRectangle;
-            this->totalFrameTiming.shader += this->frameTiming.shader;
-            this->totalFrameTiming.text += this->frameTiming.text;
-            this->totalFrameTiming.image += this->frameTiming.image;
-            this->totalFrameTiming.clip += this->frameTiming.clip;
-            this->totalFrameTiming.outlineCount += this->frameTiming.outlineCount;
-            this->totalFrameTiming.roundedRectangleCount += this->frameTiming.roundedRectangleCount;
-            this->totalFrameTiming.shaderCount += this->frameTiming.shaderCount;
-            this->totalFrameTiming.textCount += this->frameTiming.textCount;
-            this->totalFrameTiming.imageCount += this->frameTiming.imageCount;
-            this->totalFrameTiming.clipCount += this->frameTiming.clipCount;
-        }
-        ++this->timedFrameCount;
-
-        const auto elapsed = now - this->frameTimingWindowStartedAt;
-        if (elapsed < std::chrono::seconds(1)) {
-            return;
-        }
-        const double frames = static_cast<double>(this->timedFrameCount);
-        const auto average = [frames](std::chrono::nanoseconds duration) {
-            return std::chrono::duration<double, std::milli>(duration).count() / frames;
-        };
-        LOG_INFO(
-            "OpenGlRenderer",
-            "OpenGL command timing: frames={}; outline={:.2f} ms ({}); roundedRect={:.2f} ms ({}); shader={:.2f} ms ({}); text={:.2f} ms ({}); image={:.2f} ms ({}); clip={:.2f} ms ({})",
-            this->timedFrameCount,
-            average(this->totalFrameTiming.outline),
-            this->totalFrameTiming.outlineCount / this->timedFrameCount,
-            average(this->totalFrameTiming.roundedRectangle),
-            this->totalFrameTiming.roundedRectangleCount / this->timedFrameCount,
-            average(this->totalFrameTiming.shader),
-            this->totalFrameTiming.shaderCount / this->timedFrameCount,
-            average(this->totalFrameTiming.text),
-            this->totalFrameTiming.textCount / this->timedFrameCount,
-            average(this->totalFrameTiming.image),
-            this->totalFrameTiming.imageCount / this->timedFrameCount,
-            average(this->totalFrameTiming.clip),
-            this->totalFrameTiming.clipCount / this->timedFrameCount);
-        this->totalFrameTiming = {};
-        this->timedFrameCount = 0;
-        this->frameTimingWindowStartedAt = now;
-    }
-#endif
-
-    void OpenGlRenderer::Implementation::BeginFrame() {
-#if defined(_DEBUG)
-        this->LogFrameTiming();
-        this->frameTiming = {};
-#endif
+    void OpenGlRenderer::Implementation::BeginFrame() const {
         glViewport(0, 0, this->width, this->height);
         glDisable(GL_SCISSOR_TEST);
         this->clipStack.clear();
@@ -513,9 +398,6 @@ namespace es_renderer {
     }
 
     void OpenGlRenderer::Implementation::EndClip() const {
-#if defined(_DEBUG)
-        DrawTimingScope timing(*const_cast<Implementation*>(this), DrawOperation::clip);
-#endif
         if (this->clipStack.empty()) {
             return;
         }
@@ -530,9 +412,6 @@ namespace es_renderer {
     void OpenGlRenderer::Implementation::DrawOutline(
         const xaml::Rect& bounds,
         xaml::attr::Color color) {
-#if defined(_DEBUG)
-        DrawTimingScope timing(*this, DrawOperation::outline);
-#endif
         std::vector<float> vertices;
         vertices.reserve(8);
         this->AppendPosition(vertices, bounds.x, bounds.y);
@@ -545,7 +424,7 @@ namespace es_renderer {
 
         glUseProgram(this->solidProgram);
         glUniform4f(
-            glGetUniformLocation(this->solidProgram, "color"),
+            this->solidColorLocation,
             color.red,
             color.green,
             color.blue,
@@ -568,11 +447,6 @@ namespace es_renderer {
         float cornerRadius,
         bool outline,
         float thickness) {
-#if defined(_DEBUG)
-        DrawTimingScope timing(*this, DrawOperation::roundedRectangle);
-#endif
-        constexpr int segmentsPerCorner = 8;
-        constexpr float pi = 3.14159265358979323846f;
         // Радиус ограничивается половиной каждой стороны: иначе дуги углов
         // пересекаются на очень узких прямоугольниках.
         const float maximumRadius = std::max(
@@ -583,89 +457,64 @@ namespace es_renderer {
         if (outline && borderThickness <= 0.0f) {
             return;
         }
-        std::vector<float> vertices;
-        vertices.reserve((outline ? 66 : 34) * 2);
-        // Для заливки центр вместе с обходом границы образует triangle fan;
-        // для контура требуются только точки по периметру.
-        if (!outline) {
-            this->AppendPosition(
-                vertices,
-                bounds.x + bounds.width / 2.0f,
-                bounds.y + bounds.height / 2.0f);
-        }
-        const float centers[][2] = {
-            {bounds.x + bounds.width - radius, bounds.y + radius},
-            {
-                bounds.x + bounds.width - radius,
-                bounds.y + bounds.height - radius,
-            },
-            {bounds.x + radius, bounds.y + bounds.height - radius},
-            {bounds.x + radius, bounds.y + radius},
-        };
-        const float innerRadius = std::max(0.0f, radius - borderThickness);
-        const float innerCenters[][2] = {
-            {
-                bounds.x + bounds.width - borderThickness - innerRadius,
-                bounds.y + borderThickness + innerRadius,
-            },
-            {
-                bounds.x + bounds.width - borderThickness - innerRadius,
-                bounds.y + bounds.height - borderThickness - innerRadius,
-            },
-            {
-                bounds.x + borderThickness + innerRadius,
-                bounds.y + bounds.height - borderThickness - innerRadius,
-            },
-            {
-                bounds.x + borderThickness + innerRadius,
-                bounds.y + borderThickness + innerRadius,
-            },
-        };
-        for (int corner = 0; corner < 4; ++corner) {
-            const float startAngle = -pi / 2.0f + static_cast<float>(corner) * pi / 2.0f;
-            for (int segment = 0; segment <= segmentsPerCorner; ++segment) {
-                const float angle = startAngle
-                    + static_cast<float>(segment) * pi / (2.0f * segmentsPerCorner);
-                float cosine = std::cos(angle);
-                float sine = std::sin(angle);
-                if (std::abs(cosine) < 0.000001f) {
-                    cosine = 0.0f;
-                }
-                if (std::abs(sine) < 0.000001f) {
-                    sine = 0.0f;
-                }
-                if (std::abs(std::abs(cosine) - 1.0f) < 0.000001f) {
-                    cosine = cosine < 0.0f ? -1.0f : 1.0f;
-                }
-                if (std::abs(std::abs(sine) - 1.0f) < 0.000001f) {
-                    sine = sine < 0.0f ? -1.0f : 1.0f;
-                }
-                this->AppendPosition(
-                    vertices,
-                    centers[corner][0] + cosine * radius,
-                    centers[corner][1] + sine * radius);
-                if (outline) {
-                    this->AppendPosition(
-                        vertices,
-                        innerCenters[corner][0] + cosine * innerRadius,
-                        innerCenters[corner][1] + sine * innerRadius);
-                }
+        // У прямоугольника без скругления нет дуг: не строим геометрию из
+        // десятков вершин и не выполняем sin/cos для каждой из них.
+        if (radius == 0.0f) {
+            const std::array<float, 8> vertices{
+                bounds.x * 2.0f / this->width - 1.0f,
+                1.0f - bounds.y * 2.0f / this->height,
+                (bounds.x + bounds.width) * 2.0f / this->width - 1.0f,
+                1.0f - bounds.y * 2.0f / this->height,
+                (bounds.x + bounds.width) * 2.0f / this->width - 1.0f,
+                1.0f - (bounds.y + bounds.height) * 2.0f / this->height,
+                bounds.x * 2.0f / this->width - 1.0f,
+                1.0f - (bounds.y + bounds.height) * 2.0f / this->height,
+            };
+            glUseProgram(this->solidProgram);
+            glUniform4f(
+                this->solidColorLocation,
+                color.red,
+                color.green,
+                color.blue,
+                color.alpha);
+            glBindBuffer(GL_ARRAY_BUFFER, this->vertexBuffer);
+            glBufferData(
+                GL_ARRAY_BUFFER,
+                static_cast<GLsizeiptr>(vertices.size() * sizeof(float)),
+                vertices.data(),
+                GL_DYNAMIC_DRAW);
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), nullptr);
+            if (outline) {
+                glLineWidth(borderThickness);
+                glDrawArrays(GL_LINE_LOOP, 0, 4);
             }
+            else {
+                glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+            }
+            return;
         }
-        // GL_TRIANGLE_FAN и GL_TRIANGLE_STRIP не замыкают контур неявно.
-        // Повторяем первую точку (и пару точек у обводки), чтобы отрисовать
-        // последний сегмент между верхним левым углом и началом контура.
-        this->AppendPosition(vertices, centers[0][0], bounds.y);
-        if (outline) {
-            this->AppendPosition(
-                vertices,
-                innerCenters[0][0],
-                bounds.y + borderThickness);
-        }
-
-        glUseProgram(this->solidProgram);
+        const std::array<float, 24> vertices{
+            bounds.x * 2.0f / this->width - 1.0f, 1.0f - bounds.y * 2.0f / this->height, 0.0f, 0.0f,
+            (bounds.x + bounds.width) * 2.0f / this->width - 1.0f, 1.0f - bounds.y * 2.0f / this->height, bounds.width, 0.0f,
+            (bounds.x + bounds.width) * 2.0f / this->width - 1.0f, 1.0f - (bounds.y + bounds.height) * 2.0f / this->height, bounds.width, bounds.height,
+            bounds.x * 2.0f / this->width - 1.0f, 1.0f - bounds.y * 2.0f / this->height, 0.0f, 0.0f,
+            (bounds.x + bounds.width) * 2.0f / this->width - 1.0f, 1.0f - (bounds.y + bounds.height) * 2.0f / this->height, bounds.width, bounds.height,
+            bounds.x * 2.0f / this->width - 1.0f, 1.0f - (bounds.y + bounds.height) * 2.0f / this->height, 0.0f, bounds.height,
+        };
+        glUseProgram(this->roundedRectangleProgram);
+        glUniform2f(
+            this->roundedRectangleSizeLocation,
+            bounds.width,
+            bounds.height);
+        glUniform1f(
+            this->roundedRectangleRadiusLocation,
+            radius);
+        glUniform1f(
+            this->roundedRectangleBorderThicknessLocation,
+            outline ? borderThickness : 0.0f);
         glUniform4f(
-            glGetUniformLocation(this->solidProgram, "color"),
+            this->roundedRectangleColorLocation,
             color.red,
             color.green,
             color.blue,
@@ -677,22 +526,22 @@ namespace es_renderer {
             vertices.data(),
             GL_DYNAMIC_DRAW);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), nullptr);
-        if (outline) {
-            glDrawArrays(GL_TRIANGLE_STRIP, 0, static_cast<GLsizei>(vertices.size() / 2));
-        }
-        else {
-            glDrawArrays(GL_TRIANGLE_FAN, 0, static_cast<GLsizei>(vertices.size() / 2));
-        }
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), nullptr);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(
+            1,
+            2,
+            GL_FLOAT,
+            GL_FALSE,
+            4 * sizeof(float),
+            reinterpret_cast<void*>(2 * sizeof(float)));
+        glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
     void OpenGlRenderer::Implementation::DrawShader(
         std::string_view shaderName,
         const xaml::Rect& bounds,
         std::initializer_list<xaml::ShaderUniform> uniforms) {
-#if defined(_DEBUG)
-        DrawTimingScope timing(*this, DrawOperation::shader);
-#endif
         const auto found = this->shaderPrograms.find(std::string(shaderName));
         if (found == this->shaderPrograms.end()) {
             LOG_ERROR("OpenGlRenderer", "Shader program is not registered: {}", shaderName);
@@ -756,9 +605,6 @@ namespace es_renderer {
         float fontSize,
         std::string_view fontWeight,
         xaml::attr::Alignment horizontalAlignment) {
-#if defined(_DEBUG)
-        DrawTimingScope timing(*this, DrawOperation::text);
-#endif
         if (text.empty()) {
             return;
         }
@@ -930,9 +776,6 @@ namespace es_renderer {
         const xaml::Rect& bounds,
         std::string_view source,
         xaml::attr::Color tint) {
-#if defined(_DEBUG)
-        DrawTimingScope timing(*this, DrawOperation::image);
-#endif
         const SvgTexture texture = this->GetSvgTexture(source);
         if (texture.texture == 0) {
             this->DrawOutline(bounds, tint);
@@ -977,9 +820,6 @@ namespace es_renderer {
     }
 
     void OpenGlRenderer::Implementation::BeginClip(const xaml::Rect& bounds) const {
-#if defined(_DEBUG)
-        DrawTimingScope timing(*const_cast<Implementation*>(this), DrawOperation::clip);
-#endif
         xaml::Rect clipped = bounds;
         if (!this->clipStack.empty()) {
             const xaml::Rect& parent = this->clipStack.back();

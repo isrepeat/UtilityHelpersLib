@@ -42,6 +42,46 @@ namespace es_renderer::_details {
         }
     )";
 
+    // Скругление рассчитывается для прямоугольника из двух треугольников.
+    // Это дешевле, чем строить на CPU дуги для каждого угла каждого элемента.
+    const char RoundedRectangleVertexShader[] = R"(#version 300 es
+        layout (location = 0) in vec2 position;
+        layout (location = 1) in vec2 localPosition;
+        out vec2 point;
+        void main() {
+            point = localPosition;
+            gl_Position = vec4(position, 0.0, 1.0);
+        }
+    )";
+
+    const char RoundedRectangleFragmentShader[] = R"(#version 300 es
+        precision mediump float;
+        in vec2 point;
+        uniform vec2 size;
+        uniform float radius;
+        uniform float borderThickness;
+        uniform vec4 color;
+        out vec4 fragmentColor;
+
+        float roundedBoxDistance(vec2 localPoint, vec2 boxSize, float cornerRadius) {
+            vec2 halfSize = boxSize * 0.5;
+            vec2 delta = abs(localPoint - halfSize) - (halfSize - vec2(cornerRadius));
+            return length(max(delta, 0.0)) + min(max(delta.x, delta.y), 0.0) - cornerRadius;
+        }
+
+        void main() {
+            float distance = roundedBoxDistance(point, size, radius);
+            float edge = max(fwidth(distance), 0.001);
+            float outerAlpha = 1.0 - smoothstep(-edge, edge, distance);
+            if (borderThickness <= 0.0) {
+                fragmentColor = vec4(color.rgb, color.a * outerAlpha);
+                return;
+            }
+            float innerAlpha = smoothstep(-borderThickness - edge, -borderThickness + edge, distance);
+            fragmentColor = vec4(color.rgb, color.a * outerAlpha * innerAlpha);
+        }
+    )";
+
     const char ImageVertexShader[] = R"(#version 300 es
         layout (location = 0) in vec2 position;
         layout (location = 1) in vec2 textureCoordinate;
