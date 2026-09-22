@@ -19,6 +19,7 @@
 
 #include <unordered_map>
 #include <algorithm>
+#include <chrono>
 #include <stdexcept>
 #include <cstdint>
 #include <cstring>
@@ -89,7 +90,7 @@ namespace es_renderer {
         Implementation(const Implementation&) = delete;
         Implementation& operator=(const Implementation&) = delete;
 
-        void BeginFrame() const;
+        void BeginFrame();
         std::vector<xaml::TextGlyphMetric> TextGlyphMetrics() const;
         void BeginClip(const xaml::Rect& bounds) const;
         void EndClip() const;
@@ -113,6 +114,56 @@ namespace es_renderer {
             xaml::attr::Alignment horizontalAlignment);
         void DrawImage(const xaml::Rect& bounds, std::string_view source, xaml::attr::Color tint);
         void ApplyClip(const xaml::Rect& bounds) const;
+
+    private:
+#if defined(_DEBUG)
+        enum class DrawOperation {
+            outline,
+            roundedRectangle,
+            shader,
+            text,
+            image,
+            clip,
+        };
+
+        struct FrameTiming {
+            std::chrono::nanoseconds outline{};
+            std::chrono::nanoseconds roundedRectangle{};
+            std::chrono::nanoseconds shader{};
+            std::chrono::nanoseconds text{};
+            std::chrono::nanoseconds image{};
+            std::chrono::nanoseconds clip{};
+            size_t outlineCount = 0;
+            size_t roundedRectangleCount = 0;
+            size_t shaderCount = 0;
+            size_t textCount = 0;
+            size_t imageCount = 0;
+            size_t clipCount = 0;
+        };
+
+        class DrawTimingScope {
+        public:
+            DrawTimingScope(Implementation& implementation, DrawOperation operation)
+                : implementation(implementation)
+                , operation(operation)
+                , startedAt(std::chrono::steady_clock::now()) {
+            }
+
+            ~DrawTimingScope() {
+                this->implementation.RecordDrawTiming(
+                    this->operation,
+                    std::chrono::steady_clock::now() - this->startedAt);
+            }
+
+        private:
+            Implementation& implementation;
+            DrawOperation operation;
+            std::chrono::steady_clock::time_point startedAt;
+        };
+
+        void RecordDrawTiming(DrawOperation operation, std::chrono::nanoseconds elapsed);
+        void LogFrameTiming();
+#endif
 
     private:
         struct GlyphReference {
@@ -164,6 +215,12 @@ namespace es_renderer {
         FontAtlas regularFontAtlas;
         FontAtlas boldFontAtlas;
         FontAtlas blackFontAtlas;
+#if defined(_DEBUG)
+        FrameTiming frameTiming;
+        FrameTiming totalFrameTiming;
+        std::chrono::steady_clock::time_point frameTimingWindowStartedAt = std::chrono::steady_clock::now();
+        size_t timedFrameCount = 0;
+#endif
     };
 
     OpenGlRenderer::Implementation::Implementation(
@@ -245,7 +302,91 @@ namespace es_renderer {
         }
     }
 
-    void OpenGlRenderer::Implementation::BeginFrame() const {
+#if defined(_DEBUG)
+    void OpenGlRenderer::Implementation::RecordDrawTiming(
+        DrawOperation operation,
+        std::chrono::nanoseconds elapsed) {
+        switch (operation) {
+        case DrawOperation::outline:
+            this->frameTiming.outline += elapsed;
+            ++this->frameTiming.outlineCount;
+            break;
+        case DrawOperation::roundedRectangle:
+            this->frameTiming.roundedRectangle += elapsed;
+            ++this->frameTiming.roundedRectangleCount;
+            break;
+        case DrawOperation::shader:
+            this->frameTiming.shader += elapsed;
+            ++this->frameTiming.shaderCount;
+            break;
+        case DrawOperation::text:
+            this->frameTiming.text += elapsed;
+            ++this->frameTiming.textCount;
+            break;
+        case DrawOperation::image:
+            this->frameTiming.image += elapsed;
+            ++this->frameTiming.imageCount;
+            break;
+        case DrawOperation::clip:
+            this->frameTiming.clip += elapsed;
+            ++this->frameTiming.clipCount;
+            break;
+        }
+    }
+
+    void OpenGlRenderer::Implementation::LogFrameTiming() {
+        const auto now = std::chrono::steady_clock::now();
+        if (this->timedFrameCount != 0) {
+            this->totalFrameTiming.outline += this->frameTiming.outline;
+            this->totalFrameTiming.roundedRectangle += this->frameTiming.roundedRectangle;
+            this->totalFrameTiming.shader += this->frameTiming.shader;
+            this->totalFrameTiming.text += this->frameTiming.text;
+            this->totalFrameTiming.image += this->frameTiming.image;
+            this->totalFrameTiming.clip += this->frameTiming.clip;
+            this->totalFrameTiming.outlineCount += this->frameTiming.outlineCount;
+            this->totalFrameTiming.roundedRectangleCount += this->frameTiming.roundedRectangleCount;
+            this->totalFrameTiming.shaderCount += this->frameTiming.shaderCount;
+            this->totalFrameTiming.textCount += this->frameTiming.textCount;
+            this->totalFrameTiming.imageCount += this->frameTiming.imageCount;
+            this->totalFrameTiming.clipCount += this->frameTiming.clipCount;
+        }
+        ++this->timedFrameCount;
+
+        const auto elapsed = now - this->frameTimingWindowStartedAt;
+        if (elapsed < std::chrono::seconds(1)) {
+            return;
+        }
+        const double frames = static_cast<double>(this->timedFrameCount);
+        const auto average = [frames](std::chrono::nanoseconds duration) {
+            return std::chrono::duration<double, std::milli>(duration).count() / frames;
+        };
+        LOG_INFO(
+            "OpenGlRenderer",
+            "OpenGL command timing: frames={}; outline={:.2f} ms ({}); roundedRect={:.2f} ms ({}); shader={:.2f} ms ({}); text={:.2f} ms ({}); image={:.2f} ms ({}); clip={:.2f} ms ({})",
+            this->timedFrameCount,
+            average(this->totalFrameTiming.outline),
+            this->totalFrameTiming.outlineCount / this->timedFrameCount,
+            average(this->totalFrameTiming.roundedRectangle),
+            this->totalFrameTiming.roundedRectangleCount / this->timedFrameCount,
+            average(this->totalFrameTiming.shader),
+            this->totalFrameTiming.shaderCount / this->timedFrameCount,
+            average(this->totalFrameTiming.text),
+            this->totalFrameTiming.textCount / this->timedFrameCount,
+            average(this->totalFrameTiming.image),
+            this->totalFrameTiming.imageCount / this->timedFrameCount,
+            average(this->totalFrameTiming.clip),
+            this->totalFrameTiming.clipCount / this->timedFrameCount);
+        this->totalFrameTiming = {};
+        this->timedFrameCount = 0;
+        this->frameTimingWindowStartedAt = now;
+    }
+#endif
+
+    void OpenGlRenderer::Implementation::BeginFrame() {
+#if defined(_DEBUG)
+        this->LogFrameTiming();
+        this->frameTiming = {};
+#endif
         glViewport(0, 0, this->width, this->height);
         glDisable(GL_SCISSOR_TEST);
         this->clipStack.clear();
@@ -372,6 +513,9 @@ namespace es_renderer {
     }
 
     void OpenGlRenderer::Implementation::EndClip() const {
+#if defined(_DEBUG)
+        DrawTimingScope timing(*const_cast<Implementation*>(this), DrawOperation::clip);
+#endif
         if (this->clipStack.empty()) {
             return;
         }
@@ -386,6 +530,9 @@ namespace es_renderer {
     void OpenGlRenderer::Implementation::DrawOutline(
         const xaml::Rect& bounds,
         xaml::attr::Color color) {
+#if defined(_DEBUG)
+        DrawTimingScope timing(*this, DrawOperation::outline);
+#endif
         std::vector<float> vertices;
         vertices.reserve(8);
         this->AppendPosition(vertices, bounds.x, bounds.y);
@@ -421,6 +568,9 @@ namespace es_renderer {
         float cornerRadius,
         bool outline,
         float thickness) {
+#if defined(_DEBUG)
+        DrawTimingScope timing(*this, DrawOperation::roundedRectangle);
+#endif
         constexpr int segmentsPerCorner = 8;
         constexpr float pi = 3.14159265358979323846f;
         // Радиус ограничивается половиной каждой стороны: иначе дуги углов
@@ -540,6 +690,9 @@ namespace es_renderer {
         std::string_view shaderName,
         const xaml::Rect& bounds,
         std::initializer_list<xaml::ShaderUniform> uniforms) {
+#if defined(_DEBUG)
+        DrawTimingScope timing(*this, DrawOperation::shader);
+#endif
         const auto found = this->shaderPrograms.find(std::string(shaderName));
         if (found == this->shaderPrograms.end()) {
             LOG_ERROR("OpenGlRenderer", "Shader program is not registered: {}", shaderName);
@@ -603,6 +756,9 @@ namespace es_renderer {
         float fontSize,
         std::string_view fontWeight,
         xaml::attr::Alignment horizontalAlignment) {
+#if defined(_DEBUG)
+        DrawTimingScope timing(*this, DrawOperation::text);
+#endif
         if (text.empty()) {
             return;
         }
@@ -774,6 +930,9 @@ namespace es_renderer {
         const xaml::Rect& bounds,
         std::string_view source,
         xaml::attr::Color tint) {
+#if defined(_DEBUG)
+        DrawTimingScope timing(*this, DrawOperation::image);
+#endif
         const SvgTexture texture = this->GetSvgTexture(source);
         if (texture.texture == 0) {
             this->DrawOutline(bounds, tint);
@@ -818,6 +977,9 @@ namespace es_renderer {
     }
 
     void OpenGlRenderer::Implementation::BeginClip(const xaml::Rect& bounds) const {
+#if defined(_DEBUG)
+        DrawTimingScope timing(*const_cast<Implementation*>(this), DrawOperation::clip);
+#endif
         xaml::Rect clipped = bounds;
         if (!this->clipStack.empty()) {
             const xaml::Rect& parent = this->clipStack.back();
