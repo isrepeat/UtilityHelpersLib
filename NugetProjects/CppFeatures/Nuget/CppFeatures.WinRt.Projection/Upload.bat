@@ -4,6 +4,7 @@ set NUGETFILE=CppFeatures.1.0.3.nupkg
 set PATH=%PATH%;%~dp0
 
 setlocal
+chcp 65001 >nul
 :PROMPT
 SET /P AREYOUSURE=Upload %NUGETFILE% (Y/[N])?
 IF /I "%AREYOUSURE%" NEQ "Y" GOTO END

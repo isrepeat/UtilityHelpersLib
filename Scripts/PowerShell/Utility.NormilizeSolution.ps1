@@ -1,10 +1,15 @@
-# Назначаем рабочим каталогом текущий каталог скрипта 
-# (все относительные пути далее будут относительно этого каталога).
+п»ї# РќР°Р·РЅР°С‡Р°РµРј СЂР°Р±РѕС‡РёРј РєР°С‚Р°Р»РѕРіРѕРј С‚РµРєСѓС‰РёР№ РєР°С‚Р°Р»РѕРі СЃРєСЂРёРїС‚Р°
+# (РІСЃРµ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅС‹Рµ РїСѓС‚Рё РґР°Р»РµРµ Р±СѓРґСѓС‚ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ СЌС‚РѕРіРѕ РєР°С‚Р°Р»РѕРіР°).
+$utf8Encoding = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8Encoding
+[Console]::OutputEncoding = $utf8Encoding
+$OutputEncoding = $utf8Encoding
+
 $callerLocation = Get-Location
 Set-Location -Path $PSScriptRoot
 
-# Добавляем в PSModulePath путь к кастомным модулям,
-# чтобы подключить их по названию модуля (вместо абсолютного пути).
+# Р”РѕР±Р°РІР»СЏРµРј РІ PSModulePath РїСѓС‚СЊ Рє РєР°СЃС‚РѕРјРЅС‹Рј РјРѕРґСѓР»СЏРј,
+# С‡С‚РѕР±С‹ РїРѕРґРєР»СЋС‡РёС‚СЊ РёС… РїРѕ РЅР°Р·РІР°РЅРёСЋ РјРѕРґСѓР»СЏ (РІРјРµСЃС‚Рѕ Р°Р±СЃРѕР»СЋС‚РЅРѕРіРѕ РїСѓС‚Рё).
 $modulePath = Join-Path $PSScriptRoot "Modules"
 if (-not ($env:PSModulePath -split ';' | Where-Object { $_ -eq $modulePath })) {
     $env:PSModulePath = "$modulePath;$env:PSModulePath"
@@ -22,8 +27,8 @@ if (-not (Test-Path $solutionInjectorExe)) {
     exit 1
 }
 
-# Назначаем рабочим каталогом каталог caller'а чтобы все относительные пути 
-# далее в скрипте и в solutionInjectorExe были относительна caller'а.
+# РќР°Р·РЅР°С‡Р°РµРј СЂР°Р±РѕС‡РёРј РєР°С‚Р°Р»РѕРіРѕРј РєР°С‚Р°Р»РѕРі caller'Р° С‡С‚РѕР±С‹ РІСЃРµ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅС‹Рµ РїСѓС‚Рё
+# РґР°Р»РµРµ РІ СЃРєСЂРёРїС‚Рµ Рё РІ solutionInjectorExe Р±С‹Р»Рё РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅР° caller'Р°.
 Set-Location -Path $callerLocation
 
 $sourceSolutionPath = '"..\UtilityHelpersLib.sln"'

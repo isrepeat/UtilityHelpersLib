@@ -1,6 +1,7 @@
 #include "RenderEngine.h"
 
 #include <algorithm>
+#include <vector>
 #include <cmath>
 
 namespace xaml::_details {
@@ -229,6 +230,63 @@ namespace xaml::_details {
         RenderWireframeInsets(backend, bounds, element.Padding(), wireframe.paddingColor, opacity);
     }
 
+    struct InspectionWireframe final {
+        const Element& element;
+        Rect bounds;
+        float opacity;
+    };
+
+    void RenderInspectionWireframes(
+        const std::vector<InspectionWireframe>& wireframes,
+        IRenderBackend& backend) {
+        // Инспекционные рамки рисуются после основного дерева без clip-областей.
+        // Иначе собственный clip элемента и отрисовка соседей могут обрезать
+        // стороны рамки или перекрыть её содержимым.
+        for (const InspectionWireframe& wireframe : wireframes) {
+            const Element& element = wireframe.element;
+            if (element.HasInspectionWireframe()) {
+                RenderWireframeMargin(
+                    element,
+                    backend,
+                    wireframe.bounds,
+                    wireframe.opacity,
+                    element.InspectionWireframe());
+                RenderWireframe(
+                    backend,
+                    wireframe.bounds,
+                    wireframe.opacity,
+                    element.CornerRadius(),
+                    element.InspectionWireframe());
+                RenderWireframePadding(
+                    element,
+                    backend,
+                    wireframe.bounds,
+                    wireframe.opacity,
+                    element.InspectionWireframe());
+            }
+            if (element.HasSelectedWireframe()) {
+                RenderWireframeMargin(
+                    element,
+                    backend,
+                    wireframe.bounds,
+                    wireframe.opacity,
+                    element.SelectedWireframe());
+                RenderWireframe(
+                    backend,
+                    wireframe.bounds,
+                    wireframe.opacity,
+                    element.CornerRadius(),
+                    element.SelectedWireframe());
+                RenderWireframePadding(
+                    element,
+                    backend,
+                    wireframe.bounds,
+                    wireframe.opacity,
+                    element.SelectedWireframe());
+            }
+        }
+    }
+
     void RenderDefaultElement(
         const Element& element,
         IRenderBackend& backend,
@@ -272,7 +330,8 @@ namespace xaml::_details {
         const RendererRegistry* renderers,
         float inheritedOffsetX,
         float inheritedOffsetY,
-        float inheritedOpacity) {
+        float inheritedOpacity,
+        std::vector<InspectionWireframe>& inspectionWireframes) {
         if (!element.IsPresent()) {
             return;
         }
@@ -289,18 +348,15 @@ namespace xaml::_details {
         const float childrenOffsetY = element.Type() == ElementType::scrollViewer
             ? offsetY - element.VerticalOffset() : offsetY;
         RenderWireframeMargin(element, backend, bounds, opacity, element.Wireframe());
-        if (element.HasInspectionWireframe()) {
-            RenderWireframeMargin(element, backend, bounds, opacity, element.InspectionWireframe());
-        }
-        if (element.HasSelectedWireframe()) {
-            RenderWireframeMargin(element, backend, bounds, opacity, element.SelectedWireframe());
+        if (element.HasInspectionWireframe() || element.HasSelectedWireframe()) {
+            inspectionWireframes.push_back({element, bounds, opacity});
         }
         backend.BeginClip(Translate(element.ClipBounds(), offsetX, offsetY));
         RenderInvocation context(backend, bounds, opacity,
             [&element, &backend, bounds, opacity]() {
                 RenderDefaultElement(element, backend, bounds, opacity);
             },
-            [&element, &backend, renderers, childrenOffsetX, childrenOffsetY, opacity]() {
+            [&element, &backend, renderers, childrenOffsetX, childrenOffsetY, opacity, &inspectionWireframes]() {
                 for (const auto& child : element.Children()) {
                     RenderElement(
                         *child,
@@ -308,7 +364,8 @@ namespace xaml::_details {
                         renderers,
                         childrenOffsetX,
                         childrenOffsetY,
-                        opacity);
+                        opacity,
+                        inspectionWireframes);
                 }
             });
         try {
@@ -324,14 +381,6 @@ namespace xaml::_details {
         }
         RenderWireframe(backend, bounds, opacity, element.CornerRadius(), element.Wireframe());
         RenderWireframePadding(element, backend, bounds, opacity, element.Wireframe());
-        if (element.HasInspectionWireframe()) {
-            RenderWireframe(backend, bounds, opacity, element.CornerRadius(), element.InspectionWireframe());
-            RenderWireframePadding(element, backend, bounds, opacity, element.InspectionWireframe());
-        }
-        if (element.HasSelectedWireframe()) {
-            RenderWireframe(backend, bounds, opacity, element.CornerRadius(), element.SelectedWireframe());
-            RenderWireframePadding(element, backend, bounds, opacity, element.SelectedWireframe());
-        }
         backend.EndClip();
     }
 }
@@ -410,7 +459,9 @@ namespace xaml {
         if (root.layoutInvalid) {
             layout(root, root.availableSize);
         }
-        _details::RenderElement(root, backend, nullptr, 0.0f, 0.0f, 1.0f);
+        std::vector<_details::InspectionWireframe> inspectionWireframes;
+        _details::RenderElement(root, backend, nullptr, 0.0f, 0.0f, 1.0f, inspectionWireframes);
+        _details::RenderInspectionWireframes(inspectionWireframes, backend);
     }
 
     void Render(Element& root, IRenderBackend& backend, const RendererRegistry& renderers) {
@@ -418,6 +469,8 @@ namespace xaml {
         if (root.layoutInvalid) {
             layout(root, root.availableSize);
         }
-        _details::RenderElement(root, backend, &renderers, 0.0f, 0.0f, 1.0f);
+        std::vector<_details::InspectionWireframe> inspectionWireframes;
+        _details::RenderElement(root, backend, &renderers, 0.0f, 0.0f, 1.0f, inspectionWireframes);
+        _details::RenderInspectionWireframes(inspectionWireframes, backend);
     }
 }

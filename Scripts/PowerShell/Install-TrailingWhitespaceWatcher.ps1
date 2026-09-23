@@ -1,10 +1,15 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [string]$ConfigurationPath
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+$utf8Encoding = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8Encoding
+[Console]::OutputEncoding = $utf8Encoding
+$OutputEncoding = $utf8Encoding
 
 $elevationModulePath = Join-Path $PSScriptRoot 'Modules\ElevationModule\ElevationModule.psm1'
 Import-Module -Name $elevationModulePath -Force

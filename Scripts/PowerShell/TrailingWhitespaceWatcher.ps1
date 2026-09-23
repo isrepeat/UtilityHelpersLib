@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [string]$ConfigurationPath
 )
@@ -28,6 +28,11 @@ extensions and CMakeLists.txt file name.
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+$utf8Encoding = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8Encoding
+[Console]::OutputEncoding = $utf8Encoding
+$OutputEncoding = $utf8Encoding
 
 function Find-ConfigurationPath {
     param([string]$StartDirectory)

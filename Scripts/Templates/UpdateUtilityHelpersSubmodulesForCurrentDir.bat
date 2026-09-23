@@ -1,5 +1,6 @@
 @ECHO OFF
 SETLOCAL
+chcp 65001 >nul
 
 REM ============================================================================
 REM UpdateUtilityHelpersSubmodulesForCurrentDir.bat
@@ -80,4 +81,3 @@ IF NOT "%RESULT%"=="0" (
 )
 PAUSE
 ENDLOCAL & EXIT /B %RESULT%
-

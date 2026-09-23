@@ -1,6 +1,7 @@
 @echo off
 setlocal
 set "elevation_module=%~dp0PowerShell\Modules\ElevationModule\ElevationModule.psm1"
+chcp 65001 >nul
 set "elevated_command=/c ""%~f0"""
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Import-Module -Name $env:elevation_module -Force; if (Test-Administrator) { exit 0 }; Start-ElevatedProcess -FilePath $env:ComSpec -ArgumentList $env:elevated_command; exit 2"

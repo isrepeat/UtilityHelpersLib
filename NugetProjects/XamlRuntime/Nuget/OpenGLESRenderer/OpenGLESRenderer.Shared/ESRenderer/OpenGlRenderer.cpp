@@ -457,9 +457,10 @@ namespace es_renderer {
         if (outline && borderThickness <= 0.0f) {
             return;
         }
-        // У прямоугольника без скругления нет дуг: не строим геометрию из
-        // десятков вершин и не выполняем sin/cos для каждой из них.
-        if (radius == 0.0f) {
+        // Заливка прямоугольника без скругления не требует shader-пути. Контур
+        // всё же рисуем шейдером: GL_LINE_LOOP не гарантирует заданную ширину
+        // линии в ANGLE и даёт другой результат, чем скруглённая рамка.
+        if (radius == 0.0f && !outline) {
             const std::array<float, 8> vertices{
                 bounds.x * 2.0f / this->width - 1.0f,
                 1.0f - bounds.y * 2.0f / this->height,
@@ -485,13 +486,7 @@ namespace es_renderer {
                 GL_DYNAMIC_DRAW);
             glEnableVertexAttribArray(0);
             glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), nullptr);
-            if (outline) {
-                glLineWidth(borderThickness);
-                glDrawArrays(GL_LINE_LOOP, 0, 4);
-            }
-            else {
-                glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-            }
+            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
             return;
         }
         const std::array<float, 24> vertices{

@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
     [string]$UtilityHelpersRoot,
@@ -16,6 +16,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$utf8Encoding = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8Encoding
+[Console]::OutputEncoding = $utf8Encoding
+$OutputEncoding = $utf8Encoding
 $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
 # Корень UtilityHelpersLib передаёт запускающий .cmd через %~dp0. Поэтому

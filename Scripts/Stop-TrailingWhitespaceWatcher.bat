@@ -1,6 +1,7 @@
 @echo off
 setlocal
 set "watcher_script=%~dp0PowerShell\TrailingWhitespaceWatcher.ps1"
+chcp 65001 >nul
 schtasks.exe /Change /TN "UtilityHelpersLib Trailing Whitespace Watcher" /Disable
 set "task_exit_code=%errorlevel%"
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference = 'Stop'; $watcherScript = [System.IO.Path]::GetFullPath($env:watcher_script); Get-CimInstance Win32_Process -Filter \"Name = 'powershell.exe'\" | Where-Object { $_.CommandLine -like ('*' + $watcherScript + '*') } | ForEach-Object { Invoke-CimMethod -InputObject $_ -MethodName Terminate | Out-Null }"

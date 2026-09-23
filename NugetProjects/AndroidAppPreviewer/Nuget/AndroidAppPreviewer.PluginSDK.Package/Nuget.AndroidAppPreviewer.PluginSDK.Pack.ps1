@@ -1,7 +1,12 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([string]$FeedRoot = $env:UH_NUGET_FEED)
 
 $ErrorActionPreference = 'Stop'
+
+$utf8Encoding = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8Encoding
+[Console]::OutputEncoding = $utf8Encoding
+$OutputEncoding = $utf8Encoding
 $packageRoot = $PSScriptRoot
 $headerPath = Join-Path $packageRoot 'build\native\include\AndroidAppPreviewer.PluginSDK\AndroidAppPreviewerPlugin.h'
 if (-not (Test-Path -LiteralPath $headerPath -PathType Leaf)) {
