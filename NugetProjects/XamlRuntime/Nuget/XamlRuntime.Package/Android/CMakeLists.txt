@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.22)
+project(XamlRuntimePackage LANGUAGES CXX)
+
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/../../../../../3rdParty/Spdlog/Spdlog.Shared" spdlog)
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/../../../../../Helpers/Helpers.Logging" logging)
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/../../XamlRuntime" runtime)
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/../../OpenGLESRenderer" renderer)
+
+set_target_properties(utility_helpers_xaml_runtime PROPERTIES OUTPUT_NAME XamlRuntime)
+set_target_properties(utility_helpers_open_gles_renderer PROPERTIES OUTPUT_NAME OpenGLESRenderer)
+set_target_properties(utility_helpers_logging PROPERTIES OUTPUT_NAME Helpers.Logging)
+install(TARGETS utility_helpers_logging ARCHIVE DESTINATION .)
+install(TARGETS utility_helpers_xaml_runtime ARCHIVE DESTINATION .)
+install(TARGETS utility_helpers_open_gles_renderer ARCHIVE DESTINATION .)

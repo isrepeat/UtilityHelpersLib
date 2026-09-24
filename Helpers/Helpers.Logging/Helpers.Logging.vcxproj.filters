@@ -18,10 +18,10 @@
         <ClCompile Include="Helpers.Logging\Logging.cpp">
             <Filter>Helpers.Logging</Filter>
         </ClCompile>
-        <ClCompile Include="Helpers.Logging\platform\Android\LoggingBackend.cpp">
+        <ClCompile Include="Helpers.Logging\platform\Android\LoggingBackend.Android.cpp">
             <Filter>Helpers.Logging\platform\Android</Filter>
         </ClCompile>
-        <ClCompile Include="Helpers.Logging\platform\Windows\LoggingBackend.cpp">
+        <ClCompile Include="Helpers.Logging\platform\Windows\LoggingBackend.Windows.cpp">
             <Filter>Helpers.Logging\platform\Windows</Filter>
         </ClCompile>
         <ClInclude Include="Helpers.Logging\Logging.h">

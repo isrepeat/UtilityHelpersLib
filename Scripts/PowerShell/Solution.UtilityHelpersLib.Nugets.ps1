@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
     [string]$SolutionTarget,
@@ -11,6 +11,11 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+$utf8Encoding = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8Encoding
+[Console]::OutputEncoding = $utf8Encoding
+$OutputEncoding = $utf8Encoding
 
 $modulePath = Join-Path $PSScriptRoot 'Modules\MessagingModule\MessagingModule.psm1'
 Import-Module -Name $modulePath -Prefix m:: -ErrorAction Stop

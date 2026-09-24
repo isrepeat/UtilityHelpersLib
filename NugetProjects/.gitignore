@@ -1,0 +1,4 @@
+# Generated NuGet package staging trees. The leading exclamation mark is part
+# of the directory name, so it must be escaped in a Git ignore pattern.
+\!NUGET_STAGING/
+XamlRuntime/\!NUGET_TMP/

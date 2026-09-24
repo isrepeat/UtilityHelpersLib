@@ -4,6 +4,7 @@ set NUGETFILE=CrashHandling.1.2.1.nupkg
 set PATH=%PATH%;%~dp0
 
 setlocal
+chcp 65001 >nul
 :PROMPT
 SET /P AREYOUSURE=Upload %NUGETFILE% (Y/[N])?
 IF /I "%AREYOUSURE%" NEQ "Y" GOTO END

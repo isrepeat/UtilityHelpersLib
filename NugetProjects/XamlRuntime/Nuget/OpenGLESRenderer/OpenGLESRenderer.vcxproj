@@ -13,16 +13,23 @@
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration"><ConfigurationType>StaticLibrary</ConfigurationType><UseDebugLibraries>true</UseDebugLibraries><PlatformToolset>v145</PlatformToolset></PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration"><ConfigurationType>StaticLibrary</ConfigurationType><UseDebugLibraries>false</UseDebugLibraries><PlatformToolset>v145</PlatformToolset></PropertyGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+    <PropertyGroup>
+        <!-- При упаковке путь передаёт скрипт. В IDE используем тот же ANGLE,
+             который подготовила последняя локальная сборка XamlRuntime. -->
+        <XamlRuntimeAngleIncludeDirectory Condition="'$(XamlRuntimeAngleIncludeDirectory)'==''">$(ProjectDir)..\..\..\!NUGET_TMP\Build\Debug\x64\XamlRuntime\ANGLE\vcpkg_installed\x64-windows\include</XamlRuntimeAngleIncludeDirectory>
+    </PropertyGroup>
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+        <ClCompile>
+            <ProgramDataBaseFileName>$(OutDir)$(MSBuildProjectName).pdb</ProgramDataBaseFileName>
+        </ClCompile>
+    </ItemDefinitionGroup>
     <ItemDefinitionGroup>
         <ClCompile>
-            <AdditionalIncludeDirectories>$(ProjectDir)OpenGLESRenderer.Shared;$(ProjectDir)..\XamlRuntime\XamlRuntime.Shared;$(ProjectDir)..\..\..\..\Helpers\Helpers.Logging;$(ProjectDir)..\..\..\..\3rdParty\Spdlog\Spdlog.Shared\Spdlog;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+            <AdditionalIncludeDirectories>$(XamlRuntimeAngleIncludeDirectory);$(ProjectDir)OpenGLESRenderer.Shared;$(ProjectDir)..\XamlRuntime\XamlRuntime.Shared;$(ProjectDir)..\..\..\..\Helpers\Helpers.Logging;$(ProjectDir)..\..\..\..\3rdParty\Spdlog\Spdlog.Shared\Spdlog;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
             <LanguageStandard>stdcpp17</LanguageStandard>
             <WarningLevel>Level4</WarningLevel>
         </ClCompile>
     </ItemDefinitionGroup>
-    <ItemGroup>
-        <PackageReference Include="ANGLE.Windows.x64" Version="1.0.0" />
-    </ItemGroup>
     <ItemGroup>
         <ClCompile Include="OpenGLESRenderer.Shared\ESRenderer\OpenGlRenderer.cpp" />
         <ClInclude Include="OpenGLESRenderer.Shared\ESRenderer\OpenGlRenderer.h" />

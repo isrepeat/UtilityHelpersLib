@@ -32,8 +32,10 @@
     </PropertyGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
     <PropertyGroup>
-        <OutDir>$(SolutionDir)out\$(Configuration)\</OutDir>
-        <IntDir>$(SolutionDir)out\obj\$(Configuration)\</IntDir>
+        <OutDir Condition="'$(XamlRuntimePackageBuild)' != 'true'">$(SolutionDir)out\$(Configuration)\</OutDir>
+        <IntDir Condition="'$(XamlRuntimePackageBuild)' != 'true'">$(SolutionDir)out\obj\$(Configuration)\</IntDir>
+        <OutDir Condition="'$(XamlRuntimePackageBuild)' == 'true'">$(__NugetBuildDirRoot)\Build\$(Configuration)\$(Platform)\$(MSBuildProjectName)\</OutDir>
+        <IntDir Condition="'$(XamlRuntimePackageBuild)' == 'true'">$(__NugetBuildDirRoot)\Intermediate\$(Configuration)\$(Platform)\$(MSBuildProjectName)\</IntDir>
         <TargetName>XamlCompiler</TargetName>
     </PropertyGroup>
     <ItemDefinitionGroup>

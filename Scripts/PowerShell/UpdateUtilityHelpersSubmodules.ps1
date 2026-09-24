@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Updates UtilityHelpersLib gitlinks in projects found at a scan root.
 
@@ -34,6 +34,11 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+$utf8Encoding = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8Encoding
+[Console]::OutputEncoding = $utf8Encoding
+$OutputEncoding = $utf8Encoding
 
 function Write-Info {
     param([string]$Message)

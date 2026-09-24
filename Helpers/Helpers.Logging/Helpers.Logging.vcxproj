@@ -13,6 +13,18 @@
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration"><ConfigurationType>StaticLibrary</ConfigurationType><UseDebugLibraries>true</UseDebugLibraries><PlatformToolset>v145</PlatformToolset></PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration"><ConfigurationType>StaticLibrary</ConfigurationType><UseDebugLibraries>false</UseDebugLibraries><PlatformToolset>v145</PlatformToolset></PropertyGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+    <!-- XamlRuntime packaging builds this dependency through several project
+         references. Give it one project-specific artifact location so those
+         references reuse the same .obj and .lib instead of rebuilding it. -->
+    <PropertyGroup Condition="'$(XamlRuntimePackageBuild)'=='true'">
+        <OutDir>$(MSBuildThisFileDirectory)..\..\NugetProjects\!NUGET_TMP\Build\$(Configuration)\$(Platform)\$(MSBuildProjectName)\</OutDir>
+        <IntDir>$(MSBuildThisFileDirectory)..\..\NugetProjects\!NUGET_TMP\Intermediate\$(Configuration)\$(Platform)\$(MSBuildProjectName)\</IntDir>
+    </PropertyGroup>
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+        <ClCompile>
+            <ProgramDataBaseFileName>$(OutDir)$(MSBuildProjectName).pdb</ProgramDataBaseFileName>
+        </ClCompile>
+    </ItemDefinitionGroup>
     <ItemDefinitionGroup>
         <ClCompile>
             <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\3rdParty\Spdlog\Spdlog.Shared\Spdlog;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -22,10 +34,8 @@
     </ItemDefinitionGroup>
     <ItemGroup>
         <ClCompile Include="Helpers.Logging\Logging.cpp" />
-        <ClCompile Include="Helpers.Logging\platform\Android\LoggingBackend.cpp">
-            <ExcludedFromBuild>true</ExcludedFromBuild>
-        </ClCompile>
-        <ClCompile Include="Helpers.Logging\platform\Windows\LoggingBackend.cpp" />
+        <ClCompile Include="Helpers.Logging\platform\Android\LoggingBackend.Android.cpp" />
+        <ClCompile Include="Helpers.Logging\platform\Windows\LoggingBackend.Windows.cpp" />
         <ClInclude Include="Helpers.Logging\Logging.h" />
         <ClInclude Include="Helpers.Logging\LoggingBackend.h" />
         <None Include="CMakeLists.txt" />

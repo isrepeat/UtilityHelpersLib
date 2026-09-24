@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <!-- The package supplies all native artifacts, including ANGLE. -->
+    <PropertyGroup>
+        <XamlRuntimePackageRoot>$(MSBuildThisFileDirectory)..\..\</XamlRuntimePackageRoot>
+        <XamlRuntimePlatform Condition="'$(Platform)' == 'Win32'">x86</XamlRuntimePlatform>
+        <XamlRuntimePlatform Condition="'$(Platform)' != 'Win32'">$(Platform)</XamlRuntimePlatform>
+        <XamlRuntimeConfiguration Condition="'$(Configuration)' == ''">Release</XamlRuntimeConfiguration>
+        <XamlRuntimeIncludeDirectory>$(XamlRuntimePackageRoot)build\native\include</XamlRuntimeIncludeDirectory>
+        <XamlRuntimeLibraryDirectory>$(XamlRuntimePackageRoot)runtimes\win-$(XamlRuntimePlatform)\native\$(XamlRuntimeConfiguration)</XamlRuntimeLibraryDirectory>
+        <XamlRuntimeCompilerPath>$(XamlRuntimePackageRoot)tools\win-x64\XamlCompiler.exe</XamlRuntimeCompilerPath>
+        <XamlRuntimeAngleRuntimeDirectory>$(XamlRuntimeLibraryDirectory)</XamlRuntimeAngleRuntimeDirectory>
+        <XamlRuntimeAngleZlibRuntimeFile Condition="'$(XamlRuntimeConfiguration)' == 'Debug'">zd.dll</XamlRuntimeAngleZlibRuntimeFile>
+        <XamlRuntimeAngleZlibRuntimeFile Condition="'$(XamlRuntimeAngleZlibRuntimeFile)' == ''">z.dll</XamlRuntimeAngleZlibRuntimeFile>
+    </PropertyGroup>
+
+    <!-- Expose package headers and static libraries to native C++ consumers. -->
+    <ItemDefinitionGroup>
+        <ClCompile>
+            <AdditionalIncludeDirectories>$(XamlRuntimeIncludeDirectory);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+        </ClCompile>
+        <Link>
+            <AdditionalLibraryDirectories>$(XamlRuntimeLibraryDirectory);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+            <AdditionalDependencies>XamlRuntime.lib;OpenGLESRenderer.lib;Helpers.Logging.lib;libEGL.lib;libGLESv2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+        </Link>
+        <Lib>
+            <AdditionalDependencies>$(XamlRuntimeLibraryDirectory)\XamlRuntime\XamlRuntime.lib;$(XamlRuntimeLibraryDirectory)\OpenGLESRenderer\OpenGLESRenderer.lib;$(XamlRuntimeLibraryDirectory)\Helpers.Logging\Helpers.Logging.lib;%(AdditionalDependencies)</AdditionalDependencies>
+        </Lib>
+    </ItemDefinitionGroup>
+
+    <!-- EGL/GLES are dynamically loaded by ANGLE at runtime. -->
+    <ItemGroup>
+        <XamlRuntimeAngleRuntime Include="$(XamlRuntimeAngleRuntimeDirectory)\libEGL.dll" />
+        <XamlRuntimeAngleRuntime Include="$(XamlRuntimeAngleRuntimeDirectory)\libGLESv2.dll" />
+        <XamlRuntimeAngleRuntime Include="$(XamlRuntimeAngleRuntimeDirectory)\$(XamlRuntimeAngleZlibRuntimeFile)" />
+        <!-- ANGLE PDBs are intentionally not deployed yet. Uncomment these
+             items when debugging the third-party EGL/GLES implementation. -->
+        <!-- <XamlRuntimeAngleRuntime Include="$(XamlRuntimeAngleRuntimeDirectory)\libEGL.pdb" Condition="'$(XamlRuntimeConfiguration)' == 'Debug'" /> -->
+        <!-- <XamlRuntimeAngleRuntime Include="$(XamlRuntimeAngleRuntimeDirectory)\libGLESv2.pdb" Condition="'$(XamlRuntimeConfiguration)' == 'Debug'" /> -->
+        <!-- <XamlRuntimeAngleRuntime Include="$(XamlRuntimeAngleRuntimeDirectory)\zd.pdb" Condition="'$(XamlRuntimeConfiguration)' == 'Debug'" /> -->
+        <ContentWithTargetPath Include="@(XamlRuntimeAngleRuntime)">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <TargetPath>%(Filename)%(Extension)</TargetPath>
+        </ContentWithTargetPath>
+    </ItemGroup>
+</Project>

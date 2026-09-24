@@ -25,6 +25,7 @@
 #include <limits>
 #include <string>
 #include <vector>
+#include <array>
 #include <cmath>
 
 namespace es_renderer::_details {
@@ -155,6 +156,12 @@ namespace es_renderer {
         int height;
         GLuint textProgram = 0;
         GLuint solidProgram = 0;
+        GLint solidColorLocation = -1;
+        GLuint roundedRectangleProgram = 0;
+        GLint roundedRectangleSizeLocation = -1;
+        GLint roundedRectangleRadiusLocation = -1;
+        GLint roundedRectangleBorderThicknessLocation = -1;
+        GLint roundedRectangleColorLocation = -1;
         std::unordered_map<std::string, GLuint> shaderPrograms;
         mutable std::vector<xaml::Rect> clipStack;
         GLuint imageProgram = 0;
@@ -197,6 +204,11 @@ namespace es_renderer {
             ShaderProgramSource{_details::TextVertexShader, _details::TextFragmentShader});
         shaderPrograms.try_emplace(ShaderRoles::solid,
             ShaderProgramSource{_details::SolidVertexShader, _details::SolidFragmentShader});
+        shaderPrograms.try_emplace(ShaderRoles::roundedRectangle,
+            ShaderProgramSource{
+                _details::RoundedRectangleVertexShader,
+                _details::RoundedRectangleFragmentShader,
+            });
         shaderPrograms.try_emplace(ShaderRoles::image,
             ShaderProgramSource{_details::ImageVertexShader, _details::ImageFragmentShader});
         for (const auto& [name, source] : shaderPrograms) {
@@ -209,7 +221,21 @@ namespace es_renderer {
         }
         this->textProgram = this->shaderPrograms.at(ShaderRoles::text);
         this->solidProgram = this->shaderPrograms.at(ShaderRoles::solid);
+        this->solidColorLocation = glGetUniformLocation(this->solidProgram, "color");
+        this->roundedRectangleProgram = this->shaderPrograms.at(ShaderRoles::roundedRectangle);
         this->imageProgram = this->shaderPrograms.at(ShaderRoles::image);
+        this->roundedRectangleSizeLocation = glGetUniformLocation(
+            this->roundedRectangleProgram,
+            "size");
+        this->roundedRectangleRadiusLocation = glGetUniformLocation(
+            this->roundedRectangleProgram,
+            "radius");
+        this->roundedRectangleBorderThicknessLocation = glGetUniformLocation(
+            this->roundedRectangleProgram,
+            "borderThickness");
+        this->roundedRectangleColorLocation = glGetUniformLocation(
+            this->roundedRectangleProgram,
+            "color");
         glGenBuffers(1, &this->vertexBuffer);
         this->CreateFontAtlas(regularFontData, this->regularFontAtlas);
         this->CreateFontAtlas(boldFontData, this->boldFontAtlas);
@@ -398,7 +424,7 @@ namespace es_renderer {
 
         glUseProgram(this->solidProgram);
         glUniform4f(
-            glGetUniformLocation(this->solidProgram, "color"),
+            this->solidColorLocation,
             color.red,
             color.green,
             color.blue,
@@ -421,8 +447,6 @@ namespace es_renderer {
         float cornerRadius,
         bool outline,
         float thickness) {
-        constexpr int segmentsPerCorner = 8;
-        constexpr float pi = 3.14159265358979323846f;
         // Радиус ограничивается половиной каждой стороны: иначе дуги углов
         // пересекаются на очень узких прямоугольниках.
         const float maximumRadius = std::max(
@@ -433,89 +457,59 @@ namespace es_renderer {
         if (outline && borderThickness <= 0.0f) {
             return;
         }
-        std::vector<float> vertices;
-        vertices.reserve((outline ? 66 : 34) * 2);
-        // Для заливки центр вместе с обходом границы образует triangle fan;
-        // для контура требуются только точки по периметру.
-        if (!outline) {
-            this->AppendPosition(
-                vertices,
-                bounds.x + bounds.width / 2.0f,
-                bounds.y + bounds.height / 2.0f);
+        // Заливка прямоугольника без скругления не требует shader-пути. Контур
+        // всё же рисуем шейдером: GL_LINE_LOOP не гарантирует заданную ширину
+        // линии в ANGLE и даёт другой результат, чем скруглённая рамка.
+        if (radius == 0.0f && !outline) {
+            const std::array<float, 8> vertices{
+                bounds.x * 2.0f / this->width - 1.0f,
+                1.0f - bounds.y * 2.0f / this->height,
+                (bounds.x + bounds.width) * 2.0f / this->width - 1.0f,
+                1.0f - bounds.y * 2.0f / this->height,
+                (bounds.x + bounds.width) * 2.0f / this->width - 1.0f,
+                1.0f - (bounds.y + bounds.height) * 2.0f / this->height,
+                bounds.x * 2.0f / this->width - 1.0f,
+                1.0f - (bounds.y + bounds.height) * 2.0f / this->height,
+            };
+            glUseProgram(this->solidProgram);
+            glUniform4f(
+                this->solidColorLocation,
+                color.red,
+                color.green,
+                color.blue,
+                color.alpha);
+            glBindBuffer(GL_ARRAY_BUFFER, this->vertexBuffer);
+            glBufferData(
+                GL_ARRAY_BUFFER,
+                static_cast<GLsizeiptr>(vertices.size() * sizeof(float)),
+                vertices.data(),
+                GL_DYNAMIC_DRAW);
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), nullptr);
+            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+            return;
         }
-        const float centers[][2] = {
-            {bounds.x + bounds.width - radius, bounds.y + radius},
-            {
-                bounds.x + bounds.width - radius,
-                bounds.y + bounds.height - radius,
-            },
-            {bounds.x + radius, bounds.y + bounds.height - radius},
-            {bounds.x + radius, bounds.y + radius},
+        const std::array<float, 24> vertices{
+            bounds.x * 2.0f / this->width - 1.0f, 1.0f - bounds.y * 2.0f / this->height, 0.0f, 0.0f,
+            (bounds.x + bounds.width) * 2.0f / this->width - 1.0f, 1.0f - bounds.y * 2.0f / this->height, bounds.width, 0.0f,
+            (bounds.x + bounds.width) * 2.0f / this->width - 1.0f, 1.0f - (bounds.y + bounds.height) * 2.0f / this->height, bounds.width, bounds.height,
+            bounds.x * 2.0f / this->width - 1.0f, 1.0f - bounds.y * 2.0f / this->height, 0.0f, 0.0f,
+            (bounds.x + bounds.width) * 2.0f / this->width - 1.0f, 1.0f - (bounds.y + bounds.height) * 2.0f / this->height, bounds.width, bounds.height,
+            bounds.x * 2.0f / this->width - 1.0f, 1.0f - (bounds.y + bounds.height) * 2.0f / this->height, 0.0f, bounds.height,
         };
-        const float innerRadius = std::max(0.0f, radius - borderThickness);
-        const float innerCenters[][2] = {
-            {
-                bounds.x + bounds.width - borderThickness - innerRadius,
-                bounds.y + borderThickness + innerRadius,
-            },
-            {
-                bounds.x + bounds.width - borderThickness - innerRadius,
-                bounds.y + bounds.height - borderThickness - innerRadius,
-            },
-            {
-                bounds.x + borderThickness + innerRadius,
-                bounds.y + bounds.height - borderThickness - innerRadius,
-            },
-            {
-                bounds.x + borderThickness + innerRadius,
-                bounds.y + borderThickness + innerRadius,
-            },
-        };
-        for (int corner = 0; corner < 4; ++corner) {
-            const float startAngle = -pi / 2.0f + static_cast<float>(corner) * pi / 2.0f;
-            for (int segment = 0; segment <= segmentsPerCorner; ++segment) {
-                const float angle = startAngle
-                    + static_cast<float>(segment) * pi / (2.0f * segmentsPerCorner);
-                float cosine = std::cos(angle);
-                float sine = std::sin(angle);
-                if (std::abs(cosine) < 0.000001f) {
-                    cosine = 0.0f;
-                }
-                if (std::abs(sine) < 0.000001f) {
-                    sine = 0.0f;
-                }
-                if (std::abs(std::abs(cosine) - 1.0f) < 0.000001f) {
-                    cosine = cosine < 0.0f ? -1.0f : 1.0f;
-                }
-                if (std::abs(std::abs(sine) - 1.0f) < 0.000001f) {
-                    sine = sine < 0.0f ? -1.0f : 1.0f;
-                }
-                this->AppendPosition(
-                    vertices,
-                    centers[corner][0] + cosine * radius,
-                    centers[corner][1] + sine * radius);
-                if (outline) {
-                    this->AppendPosition(
-                        vertices,
-                        innerCenters[corner][0] + cosine * innerRadius,
-                        innerCenters[corner][1] + sine * innerRadius);
-                }
-            }
-        }
-        // GL_TRIANGLE_FAN и GL_TRIANGLE_STRIP не замыкают контур неявно.
-        // Повторяем первую точку (и пару точек у обводки), чтобы отрисовать
-        // последний сегмент между верхним левым углом и началом контура.
-        this->AppendPosition(vertices, centers[0][0], bounds.y);
-        if (outline) {
-            this->AppendPosition(
-                vertices,
-                innerCenters[0][0],
-                bounds.y + borderThickness);
-        }
-
-        glUseProgram(this->solidProgram);
+        glUseProgram(this->roundedRectangleProgram);
+        glUniform2f(
+            this->roundedRectangleSizeLocation,
+            bounds.width,
+            bounds.height);
+        glUniform1f(
+            this->roundedRectangleRadiusLocation,
+            radius);
+        glUniform1f(
+            this->roundedRectangleBorderThicknessLocation,
+            outline ? borderThickness : 0.0f);
         glUniform4f(
-            glGetUniformLocation(this->solidProgram, "color"),
+            this->roundedRectangleColorLocation,
             color.red,
             color.green,
             color.blue,
@@ -527,13 +521,16 @@ namespace es_renderer {
             vertices.data(),
             GL_DYNAMIC_DRAW);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), nullptr);
-        if (outline) {
-            glDrawArrays(GL_TRIANGLE_STRIP, 0, static_cast<GLsizei>(vertices.size() / 2));
-        }
-        else {
-            glDrawArrays(GL_TRIANGLE_FAN, 0, static_cast<GLsizei>(vertices.size() / 2));
-        }
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), nullptr);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(
+            1,
+            2,
+            GL_FLOAT,
+            GL_FALSE,
+            4 * sizeof(float),
+            reinterpret_cast<void*>(2 * sizeof(float)));
+        glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
     void OpenGlRenderer::Implementation::DrawShader(

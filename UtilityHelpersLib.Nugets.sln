@@ -5,9 +5,16 @@ VisualStudioVersion = 18.9.12105.275
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "!Scripts", "!Scripts", "{D00E7632-E134-49A1-B9D0-878E959F6514}"
 	ProjectSection(SolutionItems) = preProject
-		Scripts\Nuget.CppFeatures.Build.Release.cmd = Scripts\Nuget.CppFeatures.Build.Release.cmd
-		Scripts\Nuget.CrashHandling.Build.Release.cmd = Scripts\Nuget.CrashHandling.Build.Release.cmd
+		Scripts\Nuget.AndroidAppPreviewer.PluginSDK.Pack.cmd = Scripts\Nuget.AndroidAppPreviewer.PluginSDK.Pack.cmd
+		Scripts\Nuget.CppFeatures.Pack.Release.cmd = Scripts\Nuget.CppFeatures.Pack.Release.cmd
+		Scripts\Nuget.CrashHandling.Pack.Release.cmd = Scripts\Nuget.CrashHandling.Pack.Release.cmd
+		Scripts\Nuget.XamlRuntime.Pack.cmd = Scripts\Nuget.XamlRuntime.Pack.cmd
 		Scripts\Solution.UtilityHelpersLib.Nugets.cmd = Scripts\Solution.UtilityHelpersLib.Nugets.cmd
+		Scripts\Start-TrailingWhitespaceWatcher.bat = Scripts\Start-TrailingWhitespaceWatcher.bat
+		Scripts\Stop-TrailingWhitespaceWatcher.bat = Scripts\Stop-TrailingWhitespaceWatcher.bat
+		Scripts\Utility.InjectCppDependenciesToSolution.cmd = Scripts\Utility.InjectCppDependenciesToSolution.cmd
+		Scripts\Utility.InjectCsDependenciesToSolution.cmd = Scripts\Utility.InjectCsDependenciesToSolution.cmd
+		Scripts\Utility.NormilizeSolution.cmd = Scripts\Utility.NormilizeSolution.cmd
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NugetProjects", "NugetProjects", "{5ED3376F-7EBD-4E7B-8B3F-E256D8E1505C}"
@@ -57,14 +64,27 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestCrashHandling", "NugetP
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PowerShell", "PowerShell", "{C07AED25-F071-4AA5-B251-02EB51B50FE4}"
 	ProjectSection(SolutionItems) = preProject
-		Scripts\PowerShell\Nuget.CppFeatures.Build.Release.ps1 = Scripts\PowerShell\Nuget.CppFeatures.Build.Release.ps1
-		Scripts\PowerShell\Nuget.CrashHandling.Build.Release.ps1 = Scripts\PowerShell\Nuget.CrashHandling.Build.Release.ps1
+		Scripts\PowerShell\AutoPrMerge.ps1 = Scripts\PowerShell\AutoPrMerge.ps1
+		Scripts\PowerShell\Install-TrailingWhitespaceWatcher.ps1 = Scripts\PowerShell\Install-TrailingWhitespaceWatcher.ps1
+		Scripts\PowerShell\Nuget.CppFeatures.Pack.Release.ps1 = Scripts\PowerShell\Nuget.CppFeatures.Pack.Release.ps1
+		Scripts\PowerShell\Nuget.CrashHandling.Pack.Release.ps1 = Scripts\PowerShell\Nuget.CrashHandling.Pack.Release.ps1
+		Scripts\PowerShell\Run-TrailingWhitespaceWatcher.vbs = Scripts\PowerShell\Run-TrailingWhitespaceWatcher.vbs
 		Scripts\PowerShell\Solution.UtilityHelpersLib.Nugets.ps1 = Scripts\PowerShell\Solution.UtilityHelpersLib.Nugets.ps1
+		Scripts\PowerShell\TrailingWhitespaceWatcher.ps1 = Scripts\PowerShell\TrailingWhitespaceWatcher.ps1
+		Scripts\PowerShell\UpdateUtilityHelpersSubmodules.ps1 = Scripts\PowerShell\UpdateUtilityHelpersSubmodules.ps1
+		Scripts\PowerShell\Utility.InjectCppDependenciesToSolution.ps1 = Scripts\PowerShell\Utility.InjectCppDependenciesToSolution.ps1
+		Scripts\PowerShell\Utility.InjectCsDependenciesToSolution.ps1 = Scripts\PowerShell\Utility.InjectCsDependenciesToSolution.ps1
+		Scripts\PowerShell\Utility.NormilizeSolution.ps1 = Scripts\PowerShell\Utility.NormilizeSolution.ps1
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{A64A39B6-232E-4107-A4D9-A863DE82481F}"
 	ProjectSection(SolutionItems) = preProject
 		Scripts\PowerShell\Modules\MessagingModule\MessagingModule.psm1 = Scripts\PowerShell\Modules\MessagingModule\MessagingModule.psm1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Templates", "Templates", "{6CC49D0A-BFFE-4DDE-9C41-9014DD2D931A}"
+	ProjectSection(SolutionItems) = preProject
+		Scripts\Templates\UpdateUtilityHelpersSubmodulesForCurrentDir.bat = Scripts\Templates\UpdateUtilityHelpersSubmodulesForCurrentDir.bat
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UtilityHelpersLib", "UtilityHelpersLib", "{5AEDE6CA-4DB9-4920-813C-37E0E24753B3}"
@@ -103,6 +123,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "XamlRuntime", "XamlRuntime"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nuget", "Nuget", "{E49EBE06-18DC-4FE6-9CDD-FEBB08608AE9}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XamlRuntime.Package", "NugetProjects\XamlRuntime\Nuget\XamlRuntime.Package\XamlRuntime.Package.vcxproj", "{9B03EED5-FC73-481A-89E8-CB80DFD1B6B6}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{A8C37B50-4716-4E04-9554-92A8AD1D1DD2}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XamlRuntime", "NugetProjects\XamlRuntime\Nuget\XamlRuntime\XamlRuntime.vcxproj", "{D5B97C3C-3A64-4A72-A71C-1186767DB3B1}"
@@ -121,17 +143,17 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "HelpersCs.Diagnostic", "Hel
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "HelpersCs.Visual", "HelpersCs\HelpersCs.Visual\HelpersCs.Visual.shproj", "{86AC5B14-7FBA-4D5B-B711-90E3F7798E0C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Angle", "Angle", "{A7745604-D5C4-DD4F-56E0-281152A17ABB}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nuget", "Nuget", "{28B52AB8-B982-B7FC-988C-25B48BA3F5C1}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Angle.Windows.x64", "NugetProjects\Angle\Nuget\Angle.Windows.x64\Angle.Windows.x64.csproj", "{47766066-175C-4446-B06B-9FFD9563912F}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HelpersNew", "HelpersNew", "{4D74E5A8-5AA9-4BEA-8DA0-0D59B8734E39}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HelpersNew.Shared", "HelpersNew\HelpersNew.Shared\HelpersNew.Shared.vcxitems", "{4E7C807B-B124-4795-A77E-FB4794B64672}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HelpersNew.st", "HelpersNew\HelpersNew.st\HelpersNew.st.vcxproj", "{D8067C05-636F-4E85-A1BC-13F4D279C338}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AndroidAppPreviewer", "AndroidAppPreviewer", "{24B9776B-90C7-97F3-DD58-50603FDFA8C2}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AndroidAppPreviewer.PluginSDK.Package", "NugetProjects\AndroidAppPreviewer\Nuget\AndroidAppPreviewer.PluginSDK.Package\AndroidAppPreviewer.PluginSDK.Package.vcxproj", "{F507F677-1AFE-4ED3-838F-E30A42B66B1C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AndroidAppPreviewer.PluginSDK.WPF", "NugetProjects\AndroidAppPreviewer\Nuget\AndroidAppPreviewer.PluginSDK.WPF\AndroidAppPreviewer.PluginSDK.WPF.csproj", "{8740FED9-BB1C-4A40-AB98-B47E0866B071}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -369,6 +391,22 @@ Global
 		{298AB331-24AA-4F41-916E-2206023F8085}.Release|x64.Build.0 = Release|x64
 		{298AB331-24AA-4F41-916E-2206023F8085}.Release|x86.ActiveCfg = Release|Win32
 		{298AB331-24AA-4F41-916E-2206023F8085}.Release|x86.Build.0 = Release|Win32
+		{9B03EED5-FC73-481A-89E8-CB80DFD1B6B6}.Debug|Any CPU.ActiveCfg = Release|x64
+		{9B03EED5-FC73-481A-89E8-CB80DFD1B6B6}.Debug|Any CPU.Build.0 = Release|x64
+		{9B03EED5-FC73-481A-89E8-CB80DFD1B6B6}.Debug|Win32.ActiveCfg = Release|x64
+		{9B03EED5-FC73-481A-89E8-CB80DFD1B6B6}.Debug|Win32.Build.0 = Release|x64
+		{9B03EED5-FC73-481A-89E8-CB80DFD1B6B6}.Debug|x64.ActiveCfg = Release|x64
+		{9B03EED5-FC73-481A-89E8-CB80DFD1B6B6}.Debug|x64.Build.0 = Release|x64
+		{9B03EED5-FC73-481A-89E8-CB80DFD1B6B6}.Debug|x86.ActiveCfg = Release|x64
+		{9B03EED5-FC73-481A-89E8-CB80DFD1B6B6}.Debug|x86.Build.0 = Release|x64
+		{9B03EED5-FC73-481A-89E8-CB80DFD1B6B6}.Release|Any CPU.ActiveCfg = Release|x64
+		{9B03EED5-FC73-481A-89E8-CB80DFD1B6B6}.Release|Any CPU.Build.0 = Release|x64
+		{9B03EED5-FC73-481A-89E8-CB80DFD1B6B6}.Release|Win32.ActiveCfg = Release|x64
+		{9B03EED5-FC73-481A-89E8-CB80DFD1B6B6}.Release|Win32.Build.0 = Release|x64
+		{9B03EED5-FC73-481A-89E8-CB80DFD1B6B6}.Release|x64.ActiveCfg = Release|x64
+		{9B03EED5-FC73-481A-89E8-CB80DFD1B6B6}.Release|x64.Build.0 = Release|x64
+		{9B03EED5-FC73-481A-89E8-CB80DFD1B6B6}.Release|x86.ActiveCfg = Release|x64
+		{9B03EED5-FC73-481A-89E8-CB80DFD1B6B6}.Release|x86.Build.0 = Release|x64
 		{D5B97C3C-3A64-4A72-A71C-1186767DB3B1}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{D5B97C3C-3A64-4A72-A71C-1186767DB3B1}.Debug|Any CPU.Build.0 = Debug|x64
 		{D5B97C3C-3A64-4A72-A71C-1186767DB3B1}.Debug|Win32.ActiveCfg = Debug|x64
@@ -417,22 +455,6 @@ Global
 		{5A6E06B9-0AFB-4401-957B-6D6A02F123DD}.Release|x64.Build.0 = Release|x64
 		{5A6E06B9-0AFB-4401-957B-6D6A02F123DD}.Release|x86.ActiveCfg = Release|Win32
 		{5A6E06B9-0AFB-4401-957B-6D6A02F123DD}.Release|x86.Build.0 = Release|Win32
-		{47766066-175C-4446-B06B-9FFD9563912F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{47766066-175C-4446-B06B-9FFD9563912F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{47766066-175C-4446-B06B-9FFD9563912F}.Debug|Win32.ActiveCfg = Debug|Any CPU
-		{47766066-175C-4446-B06B-9FFD9563912F}.Debug|Win32.Build.0 = Debug|Any CPU
-		{47766066-175C-4446-B06B-9FFD9563912F}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{47766066-175C-4446-B06B-9FFD9563912F}.Debug|x64.Build.0 = Debug|Any CPU
-		{47766066-175C-4446-B06B-9FFD9563912F}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{47766066-175C-4446-B06B-9FFD9563912F}.Debug|x86.Build.0 = Debug|Any CPU
-		{47766066-175C-4446-B06B-9FFD9563912F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{47766066-175C-4446-B06B-9FFD9563912F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{47766066-175C-4446-B06B-9FFD9563912F}.Release|Win32.ActiveCfg = Release|Any CPU
-		{47766066-175C-4446-B06B-9FFD9563912F}.Release|Win32.Build.0 = Release|Any CPU
-		{47766066-175C-4446-B06B-9FFD9563912F}.Release|x64.ActiveCfg = Release|Any CPU
-		{47766066-175C-4446-B06B-9FFD9563912F}.Release|x64.Build.0 = Release|Any CPU
-		{47766066-175C-4446-B06B-9FFD9563912F}.Release|x86.ActiveCfg = Release|Any CPU
-		{47766066-175C-4446-B06B-9FFD9563912F}.Release|x86.Build.0 = Release|Any CPU
 		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Debug|Any CPU.Build.0 = Debug|x64
 		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Debug|Win32.ActiveCfg = Debug|x64
@@ -449,6 +471,38 @@ Global
 		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Release|x64.Build.0 = Release|x64
 		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Release|x86.ActiveCfg = Release|x64
 		{D8067C05-636F-4E85-A1BC-13F4D279C338}.Release|x86.Build.0 = Release|x64
+		{F507F677-1AFE-4ED3-838F-E30A42B66B1C}.Debug|Any CPU.ActiveCfg = Release|x64
+		{F507F677-1AFE-4ED3-838F-E30A42B66B1C}.Debug|Any CPU.Build.0 = Release|x64
+		{F507F677-1AFE-4ED3-838F-E30A42B66B1C}.Debug|Win32.ActiveCfg = Release|x64
+		{F507F677-1AFE-4ED3-838F-E30A42B66B1C}.Debug|Win32.Build.0 = Release|x64
+		{F507F677-1AFE-4ED3-838F-E30A42B66B1C}.Debug|x64.ActiveCfg = Release|x64
+		{F507F677-1AFE-4ED3-838F-E30A42B66B1C}.Debug|x64.Build.0 = Release|x64
+		{F507F677-1AFE-4ED3-838F-E30A42B66B1C}.Debug|x86.ActiveCfg = Release|x64
+		{F507F677-1AFE-4ED3-838F-E30A42B66B1C}.Debug|x86.Build.0 = Release|x64
+		{F507F677-1AFE-4ED3-838F-E30A42B66B1C}.Release|Any CPU.ActiveCfg = Release|x64
+		{F507F677-1AFE-4ED3-838F-E30A42B66B1C}.Release|Any CPU.Build.0 = Release|x64
+		{F507F677-1AFE-4ED3-838F-E30A42B66B1C}.Release|Win32.ActiveCfg = Release|x64
+		{F507F677-1AFE-4ED3-838F-E30A42B66B1C}.Release|Win32.Build.0 = Release|x64
+		{F507F677-1AFE-4ED3-838F-E30A42B66B1C}.Release|x64.ActiveCfg = Release|x64
+		{F507F677-1AFE-4ED3-838F-E30A42B66B1C}.Release|x64.Build.0 = Release|x64
+		{F507F677-1AFE-4ED3-838F-E30A42B66B1C}.Release|x86.ActiveCfg = Release|x64
+		{F507F677-1AFE-4ED3-838F-E30A42B66B1C}.Release|x86.Build.0 = Release|x64
+		{8740FED9-BB1C-4A40-AB98-B47E0866B071}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8740FED9-BB1C-4A40-AB98-B47E0866B071}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8740FED9-BB1C-4A40-AB98-B47E0866B071}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{8740FED9-BB1C-4A40-AB98-B47E0866B071}.Debug|Win32.Build.0 = Debug|Any CPU
+		{8740FED9-BB1C-4A40-AB98-B47E0866B071}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8740FED9-BB1C-4A40-AB98-B47E0866B071}.Debug|x64.Build.0 = Debug|Any CPU
+		{8740FED9-BB1C-4A40-AB98-B47E0866B071}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8740FED9-BB1C-4A40-AB98-B47E0866B071}.Debug|x86.Build.0 = Debug|Any CPU
+		{8740FED9-BB1C-4A40-AB98-B47E0866B071}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8740FED9-BB1C-4A40-AB98-B47E0866B071}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8740FED9-BB1C-4A40-AB98-B47E0866B071}.Release|Win32.ActiveCfg = Release|Any CPU
+		{8740FED9-BB1C-4A40-AB98-B47E0866B071}.Release|Win32.Build.0 = Release|Any CPU
+		{8740FED9-BB1C-4A40-AB98-B47E0866B071}.Release|x64.ActiveCfg = Release|Any CPU
+		{8740FED9-BB1C-4A40-AB98-B47E0866B071}.Release|x64.Build.0 = Release|Any CPU
+		{8740FED9-BB1C-4A40-AB98-B47E0866B071}.Release|x86.ActiveCfg = Release|Any CPU
+		{8740FED9-BB1C-4A40-AB98-B47E0866B071}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -474,6 +528,7 @@ Global
 		{CFFFE637-69F3-475C-8CDD-61125B6BE3CC} = {94A013B8-2E04-4FC1-A80D-192911E4EDCE}
 		{C07AED25-F071-4AA5-B251-02EB51B50FE4} = {D00E7632-E134-49A1-B9D0-878E959F6514}
 		{A64A39B6-232E-4107-A4D9-A863DE82481F} = {C07AED25-F071-4AA5-B251-02EB51B50FE4}
+		{6CC49D0A-BFFE-4DDE-9C41-9014DD2D931A} = {D00E7632-E134-49A1-B9D0-878E959F6514}
 		{7A0CA0F0-0BE7-4EBD-AB3F-F62F26E5B398} = {5AEDE6CA-4DB9-4920-813C-37E0E24753B3}
 		{27032BEF-A111-4E76-8365-B362FB70CD39} = {7A0CA0F0-0BE7-4EBD-AB3F-F62F26E5B398}
 		{853963E9-3915-42D1-9F61-D25909CF0CFF} = {7A0CA0F0-0BE7-4EBD-AB3F-F62F26E5B398}
@@ -491,6 +546,7 @@ Global
 		{298AB331-24AA-4F41-916E-2206023F8085} = {4A5644B4-23EF-48F7-8F3E-45A0EBE5C607}
 		{B7889CA8-C1C7-423C-86D2-DB5DA94637A3} = {5ED3376F-7EBD-4E7B-8B3F-E256D8E1505C}
 		{E49EBE06-18DC-4FE6-9CDD-FEBB08608AE9} = {B7889CA8-C1C7-423C-86D2-DB5DA94637A3}
+		{9B03EED5-FC73-481A-89E8-CB80DFD1B6B6} = {E49EBE06-18DC-4FE6-9CDD-FEBB08608AE9}
 		{A8C37B50-4716-4E04-9554-92A8AD1D1DD2} = {B7889CA8-C1C7-423C-86D2-DB5DA94637A3}
 		{D5B97C3C-3A64-4A72-A71C-1186767DB3B1} = {E49EBE06-18DC-4FE6-9CDD-FEBB08608AE9}
 		{A91C166B-24A1-4E60-8EF7-E2D89673515C} = {E49EBE06-18DC-4FE6-9CDD-FEBB08608AE9}
@@ -500,12 +556,12 @@ Global
 		{CD563DC0-5C5F-423C-B1CE-74B120659770} = {F1B4D38D-BA09-4048-A514-C94292450E70}
 		{5DC1B831-8A22-4C59-9D3F-B081E2F6AF36} = {F1B4D38D-BA09-4048-A514-C94292450E70}
 		{86AC5B14-7FBA-4D5B-B711-90E3F7798E0C} = {F1B4D38D-BA09-4048-A514-C94292450E70}
-		{A7745604-D5C4-DD4F-56E0-281152A17ABB} = {5ED3376F-7EBD-4E7B-8B3F-E256D8E1505C}
-		{28B52AB8-B982-B7FC-988C-25B48BA3F5C1} = {A7745604-D5C4-DD4F-56E0-281152A17ABB}
-		{47766066-175C-4446-B06B-9FFD9563912F} = {28B52AB8-B982-B7FC-988C-25B48BA3F5C1}
 		{4D74E5A8-5AA9-4BEA-8DA0-0D59B8734E39} = {5AEDE6CA-4DB9-4920-813C-37E0E24753B3}
 		{4E7C807B-B124-4795-A77E-FB4794B64672} = {4D74E5A8-5AA9-4BEA-8DA0-0D59B8734E39}
 		{D8067C05-636F-4E85-A1BC-13F4D279C338} = {4D74E5A8-5AA9-4BEA-8DA0-0D59B8734E39}
+		{24B9776B-90C7-97F3-DD58-50603FDFA8C2} = {5ED3376F-7EBD-4E7B-8B3F-E256D8E1505C}
+		{F507F677-1AFE-4ED3-838F-E30A42B66B1C} = {24B9776B-90C7-97F3-DD58-50603FDFA8C2}
+		{8740FED9-BB1C-4A40-AB98-B47E0866B071} = {24B9776B-90C7-97F3-DD58-50603FDFA8C2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {71A91AB0-90CD-4ACF-8D59-60382FE9FB7C}

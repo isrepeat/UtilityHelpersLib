@@ -1,5 +1,6 @@
 @ECHO OFF
 SETLOCAL ENABLEDELAYEDEXPANSION
+chcp 65001 >nul
 REM ===============================================================
 REM AutoPrMerge.bat
 REM - Searches for %_SUBMODULE_NAME%.sln (independent of submodule folder name)
