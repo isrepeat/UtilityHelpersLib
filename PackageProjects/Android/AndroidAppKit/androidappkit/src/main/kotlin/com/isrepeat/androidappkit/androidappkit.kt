@@ -61,6 +61,7 @@ object androidappkit {
         data class GoogleDriveUpdateConfiguration(
             val driveFolderPath: List<String>,
             val apkNamePattern: Regex,
+            val versionCodeFromName: (MatchResult) -> Long,
             val updaterPackage: String,
             val updaterActivity: String,
             val updaterPermission: String,
@@ -84,6 +85,7 @@ object androidappkit {
                 com.isrepeat.androidappkit.update.GoogleDriveUpdateConfiguration(
                     configuration.driveFolderPath,
                     configuration.apkNamePattern,
+                    configuration.versionCodeFromName,
                     configuration.updaterPackage,
                     configuration.updaterActivity,
                     configuration.updaterPermission,

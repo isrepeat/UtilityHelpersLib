@@ -65,7 +65,7 @@ function Get-NextPackageVersion {
     $artifactPath = Join-Path (Join-Path $PackagesFeedPath $PackageGroup.Replace('.', '\')) $ArtifactId
     $patches = if (Test-Path -LiteralPath $artifactPath -PathType Container) {
         Get-ChildItem -LiteralPath $artifactPath -Directory | ForEach-Object {
-            $versionMatch = [regex]::Match($_.Name, "^$([regex]::Escape($baseVersion))\\.(\\d+)$")
+            $versionMatch = [regex]::Match($_.Name, "^$([regex]::Escape($baseVersion))\.(\d+)$")
             if ($versionMatch.Success) { [int]$versionMatch.Groups[1].Value }
         }
     }

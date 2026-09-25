@@ -49,7 +49,7 @@ class GoogleDriveUpdateController(
     private fun download(token: String): java.io.File? {
         val client = com.isrepeat.androidcoresdk.androidcoresdk.drive.GoogleDriveClient(token)
         val candidate = client.listFiles(client.ensureFolderPath(configuration.driveFolderPath))
-            .mapNotNull { file -> configuration.apkNamePattern.matchEntire(file.name)?.groupValues?.get(1)?.toLongOrNull()?.let { file to it } }
+            .mapNotNull { file -> configuration.apkNamePattern.matchEntire(file.name)?.let { file to configuration.versionCodeFromName(it) } }
             .maxByOrNull { it.second } ?: return null
         val apk = java.io.File(activity.cacheDir, "self-updates/update.apk").apply { parentFile?.mkdirs() }
         try {

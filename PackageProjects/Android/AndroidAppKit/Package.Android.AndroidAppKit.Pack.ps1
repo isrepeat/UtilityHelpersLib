@@ -30,13 +30,14 @@ function Get-NextPackageVersion {
     $artifactPath = Join-Path (Join-Path $PackagesFeedPath $PackageGroup.Replace('.', '\')) $ArtifactId
     $patches = if (Test-Path -LiteralPath $artifactPath -PathType Container) {
         Get-ChildItem -LiteralPath $artifactPath -Directory | ForEach-Object {
-            $match = [regex]::Match($_.Name, "^$([regex]::Escape($baseVersion))\.(\d+)$")
-            if ($match.Success) { [int]$match.Groups[1].Value }
+            $versionMatch = [regex]::Match($_.Name, "^$([regex]::Escape($baseVersion))\.(\d+)$")
+            if ($versionMatch.Success) { [int]$versionMatch.Groups[1].Value }
         }
     }
     $maximumPatch = ($patches | Measure-Object -Maximum).Maximum
     if ($null -eq $maximumPatch) { $maximumPatch = 0 }
-    return "$baseVersion.$($maximumPatch + 1)"
+    $nextPatch = $maximumPatch + 1
+    return "$baseVersion.$nextPatch"
 }
 
 $ErrorActionPreference = 'Stop'
