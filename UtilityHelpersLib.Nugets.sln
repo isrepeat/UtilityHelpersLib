@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.9.12105.275
@@ -154,6 +154,143 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AndroidAppPreviewer.PluginSDK.Package", "NugetProjects\AndroidAppPreviewer\Nuget\AndroidAppPreviewer.PluginSDK.Package\AndroidAppPreviewer.PluginSDK.Package.vcxproj", "{F507F677-1AFE-4ED3-838F-E30A42B66B1C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AndroidAppPreviewer.PluginSDK.WPF", "NugetProjects\AndroidAppPreviewer\Nuget\AndroidAppPreviewer.PluginSDK.WPF\AndroidAppPreviewer.PluginSDK.WPF.csproj", "{8740FED9-BB1C-4A40-AB98-B47E0866B071}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Android", "Android", "{3FC1304D-35C5-4385-9704-55E42BB47AA1}"
+	ProjectSection(SolutionItems) = preProject
+		Scripts\Android\Package.Android.AndroidCoreSdk.Pack.cmd = Scripts\Android\Package.Android.AndroidCoreSdk.Pack.cmd
+		Scripts\Android\Package.Android.AndroidAppKit.Pack.cmd = Scripts\Android\Package.Android.AndroidAppKit.Pack.cmd
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Gradle", "Gradle", "{CD5EA2C6-AC10-4D11-8C1F-3B3C3AD0A151}"
+	ProjectSection(SolutionItems) = preProject
+		Scripts\Android\Gradle\gradlew = Scripts\Android\Gradle\gradlew
+		Scripts\Android\Gradle\gradlew.bat = Scripts\Android\Gradle\gradlew.bat
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "wrapper", "wrapper", "{C46408C6-177D-4BE8-92E8-C02F4F4325AB}"
+	ProjectSection(SolutionItems) = preProject
+		Scripts\Android\Gradle\gradle\wrapper\gradle-wrapper.properties = Scripts\Android\Gradle\gradle\wrapper\gradle-wrapper.properties
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PackageProjects", "PackageProjects", "{DFAFDDDC-CDCD-47EA-8C13-557D3F9C67E6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Android", "Android", "{129B032C-4821-4785-8CBB-DAF53CA908B0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AndroidCoreSdk", "AndroidCoreSdk", "{95E66412-2164-4DD4-AF5D-F7E38D858831}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidCoreSdk\build.gradle.kts = PackageProjects\Android\AndroidCoreSdk\build.gradle.kts
+		PackageProjects\Android\AndroidCoreSdk\gradle.properties = PackageProjects\Android\AndroidCoreSdk\gradle.properties
+		PackageProjects\Android\AndroidCoreSdk\Package.Android.AndroidCoreSdk.Pack.ps1 = PackageProjects\Android\AndroidCoreSdk\Package.Android.AndroidCoreSdk.Pack.ps1
+		PackageProjects\Android\AndroidCoreSdk\README.md = PackageProjects\Android\AndroidCoreSdk\README.md
+		PackageProjects\Android\AndroidCoreSdk\settings.gradle.kts = PackageProjects\Android\AndroidCoreSdk\settings.gradle.kts
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "androidcoresdk", "androidcoresdk", "{D6C76247-C52E-42A2-9CD0-833FB7CAD671}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\build.gradle.kts = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\build.gradle.kts
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3F87FBCD-7B16-42D8-8774-828ACD4FD939}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "main", "main", "{E243796E-888E-4353-87A2-71E762F9063D}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\AndroidManifest.xml = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\AndroidManifest.xml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "kotlin", "kotlin", "{1665F8BB-0964-47DE-8BDB-E22DDE54B263}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "com", "com", "{FFCDC4FF-FFC8-4C20-B646-C82F26FBBFCE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "isrepeat", "isrepeat", "{D4193B01-7C4A-44DD-BB38-5E3CE5E14F13}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "androidcoresdk", "androidcoresdk", "{D1E94A20-A1CD-4A43-91FF-B49D57A2B8AF}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\androidcoresdk.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\androidcoresdk.kt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "coroutines", "coroutines", "{A10F9B5A-51B1-4A3D-9409-3C37331B52F1}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\coroutines\CancellableContinuationCompletion.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\coroutines\CancellableContinuationCompletion.kt
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\coroutines\LifecycleCoroutineRunner.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\coroutines\LifecycleCoroutineRunner.kt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "drive", "drive", "{D4713D9B-2A34-48E5-9D0A-FB9BEAFB2D84}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\drive\GoogleDriveClient.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\drive\GoogleDriveClient.kt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "logging", "logging", "{6C7256D7-2735-479B-9F71-F8815794C5D2}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\logging\MediaStoreSessionLog.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\logging\MediaStoreSessionLog.kt
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\logging\SdkLogger.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\logging\SdkLogger.kt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "media", "media", "{5D1412F1-9DBF-4354-84D1-DF7415CBF884}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\media\ScreenshotCapture.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\media\ScreenshotCapture.kt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nativeui", "nativeui", "{C79E8FB5-8AE0-43A3-BA6F-F6E8D2C8728B}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\nativeui\NativeMessageDispatcher.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\nativeui\NativeMessageDispatcher.kt
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\nativeui\NativeRenderHost.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\nativeui\NativeRenderHost.kt
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\nativeui\NativeRenderSurfaceView.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\nativeui\NativeRenderSurfaceView.kt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AndroidAppKit", "AndroidAppKit", "{E718F83B-A594-43A9-9A30-C30D680E9B5B}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidAppKit\build.gradle.kts = PackageProjects\Android\AndroidAppKit\build.gradle.kts
+		PackageProjects\Android\AndroidAppKit\gradle.properties = PackageProjects\Android\AndroidAppKit\gradle.properties
+		PackageProjects\Android\AndroidAppKit\Package.Android.AndroidAppKit.Pack.ps1 = PackageProjects\Android\AndroidAppKit\Package.Android.AndroidAppKit.Pack.ps1
+		PackageProjects\Android\AndroidAppKit\settings.gradle.kts = PackageProjects\Android\AndroidAppKit\settings.gradle.kts
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "androidappkit", "androidappkit", "{756C0E3C-D1BA-4070-B86C-EDEAEAC8D2D1}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidAppKit\androidappkit\build.gradle.kts = PackageProjects\Android\AndroidAppKit\androidappkit\build.gradle.kts
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{AA0E59E1-2EC8-4F4C-98E7-CFC20A302E63}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "main", "main", "{4B35329D-D480-4BEE-9B66-CE630914DADA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "kotlin", "kotlin", "{9E64B7F7-9FA9-41C0-9F5A-AE6422F5C82F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "com", "com", "{7AD55CB1-9C2F-41CB-9A4F-EED81FEAF562}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "isrepeat", "isrepeat", "{D833FE5A-C6B6-4F23-8DCD-D464FB1306A3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "androidappkit", "androidappkit", "{0F0B784A-BFAE-4131-9F3D-26E9C83C187A}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\androidappkit.kt = PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\androidappkit.kt
+		PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\AppKit.kt = PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\AppKit.kt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "diagnostics", "diagnostics", "{D10C4D75-517F-47D5-81EB-219407BD39DE}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\diagnostics\AppDiagnostics.kt = PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\diagnostics\AppDiagnostics.kt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "drive", "drive", "{EF28C0CA-989E-4915-B257-D373B620A11E}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\drive\GoogleDriveUploader.kt = PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\drive\GoogleDriveUploader.kt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "logging", "logging", "{71EDC238-EBED-4B77-B231-8E8F03D7D1E1}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\logging\NativeSessionLog.kt = PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\logging\NativeSessionLog.kt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "media", "media", "{1CA0DA5A-24C5-43F5-868A-8FB1782BDE2F}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\media\SurfaceScreenshotCapture.kt = PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\media\SurfaceScreenshotCapture.kt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "update", "update", "{F0E66120-F0C1-456A-9CC7-516640629B0E}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\update\GoogleDriveUpdateConfiguration.kt = PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\update\GoogleDriveUpdateConfiguration.kt
+		PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\update\GoogleDriveUpdateController.kt = PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\update\GoogleDriveUpdateController.kt
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -562,6 +699,36 @@ Global
 		{24B9776B-90C7-97F3-DD58-50603FDFA8C2} = {5ED3376F-7EBD-4E7B-8B3F-E256D8E1505C}
 		{F507F677-1AFE-4ED3-838F-E30A42B66B1C} = {24B9776B-90C7-97F3-DD58-50603FDFA8C2}
 		{8740FED9-BB1C-4A40-AB98-B47E0866B071} = {24B9776B-90C7-97F3-DD58-50603FDFA8C2}
+		{3FC1304D-35C5-4385-9704-55E42BB47AA1} = {D00E7632-E134-49A1-B9D0-878E959F6514}
+		{CD5EA2C6-AC10-4D11-8C1F-3B3C3AD0A151} = {3FC1304D-35C5-4385-9704-55E42BB47AA1}
+		{C46408C6-177D-4BE8-92E8-C02F4F4325AB} = {CD5EA2C6-AC10-4D11-8C1F-3B3C3AD0A151}
+		{129B032C-4821-4785-8CBB-DAF53CA908B0} = {DFAFDDDC-CDCD-47EA-8C13-557D3F9C67E6}
+		{95E66412-2164-4DD4-AF5D-F7E38D858831} = {129B032C-4821-4785-8CBB-DAF53CA908B0}
+		{D6C76247-C52E-42A2-9CD0-833FB7CAD671} = {95E66412-2164-4DD4-AF5D-F7E38D858831}
+		{3F87FBCD-7B16-42D8-8774-828ACD4FD939} = {D6C76247-C52E-42A2-9CD0-833FB7CAD671}
+		{E243796E-888E-4353-87A2-71E762F9063D} = {3F87FBCD-7B16-42D8-8774-828ACD4FD939}
+		{1665F8BB-0964-47DE-8BDB-E22DDE54B263} = {E243796E-888E-4353-87A2-71E762F9063D}
+		{FFCDC4FF-FFC8-4C20-B646-C82F26FBBFCE} = {1665F8BB-0964-47DE-8BDB-E22DDE54B263}
+		{D4193B01-7C4A-44DD-BB38-5E3CE5E14F13} = {FFCDC4FF-FFC8-4C20-B646-C82F26FBBFCE}
+		{D1E94A20-A1CD-4A43-91FF-B49D57A2B8AF} = {D4193B01-7C4A-44DD-BB38-5E3CE5E14F13}
+		{A10F9B5A-51B1-4A3D-9409-3C37331B52F1} = {D1E94A20-A1CD-4A43-91FF-B49D57A2B8AF}
+		{D4713D9B-2A34-48E5-9D0A-FB9BEAFB2D84} = {D1E94A20-A1CD-4A43-91FF-B49D57A2B8AF}
+		{6C7256D7-2735-479B-9F71-F8815794C5D2} = {D1E94A20-A1CD-4A43-91FF-B49D57A2B8AF}
+		{5D1412F1-9DBF-4354-84D1-DF7415CBF884} = {D1E94A20-A1CD-4A43-91FF-B49D57A2B8AF}
+		{C79E8FB5-8AE0-43A3-BA6F-F6E8D2C8728B} = {D1E94A20-A1CD-4A43-91FF-B49D57A2B8AF}
+		{E718F83B-A594-43A9-9A30-C30D680E9B5B} = {129B032C-4821-4785-8CBB-DAF53CA908B0}
+		{756C0E3C-D1BA-4070-B86C-EDEAEAC8D2D1} = {E718F83B-A594-43A9-9A30-C30D680E9B5B}
+		{AA0E59E1-2EC8-4F4C-98E7-CFC20A302E63} = {756C0E3C-D1BA-4070-B86C-EDEAEAC8D2D1}
+		{4B35329D-D480-4BEE-9B66-CE630914DADA} = {AA0E59E1-2EC8-4F4C-98E7-CFC20A302E63}
+		{9E64B7F7-9FA9-41C0-9F5A-AE6422F5C82F} = {4B35329D-D480-4BEE-9B66-CE630914DADA}
+		{7AD55CB1-9C2F-41CB-9A4F-EED81FEAF562} = {9E64B7F7-9FA9-41C0-9F5A-AE6422F5C82F}
+		{D833FE5A-C6B6-4F23-8DCD-D464FB1306A3} = {7AD55CB1-9C2F-41CB-9A4F-EED81FEAF562}
+		{0F0B784A-BFAE-4131-9F3D-26E9C83C187A} = {D833FE5A-C6B6-4F23-8DCD-D464FB1306A3}
+		{D10C4D75-517F-47D5-81EB-219407BD39DE} = {0F0B784A-BFAE-4131-9F3D-26E9C83C187A}
+		{EF28C0CA-989E-4915-B257-D373B620A11E} = {0F0B784A-BFAE-4131-9F3D-26E9C83C187A}
+		{71EDC238-EBED-4B77-B231-8E8F03D7D1E1} = {0F0B784A-BFAE-4131-9F3D-26E9C83C187A}
+		{1CA0DA5A-24C5-43F5-868A-8FB1782BDE2F} = {0F0B784A-BFAE-4131-9F3D-26E9C83C187A}
+		{F0E66120-F0C1-456A-9CC7-516640629B0E} = {0F0B784A-BFAE-4131-9F3D-26E9C83C187A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {71A91AB0-90CD-4ACF-8D59-60382FE9FB7C}
