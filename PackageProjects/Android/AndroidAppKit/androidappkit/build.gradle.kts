@@ -4,7 +4,9 @@ plugins {
 }
 
 group = providers.gradleProperty("packageGroup").get()
-version = providers.gradleProperty("packageVersion").get()
+version = providers.gradleProperty("packageVersion")
+    .orElse(providers.gradleProperty("packageVersionBase").map { "$it.0" })
+    .get()
 
 android {
     namespace = "com.isrepeat.androidappkit"

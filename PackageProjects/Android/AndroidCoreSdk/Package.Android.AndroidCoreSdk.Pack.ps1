@@ -49,25 +49,30 @@ function Resolve-AndroidSdk {
 
 function Get-NextPackageVersion {
     param(
-        [Parameter(Mandatory)] [string]$PropertiesPath
+        [Parameter(Mandatory)] [string]$PropertiesPath,
+        [Parameter(Mandatory)] [string]$PackagesFeedPath,
+        [Parameter(Mandatory)] [string]$PackageGroup,
+        [Parameter(Mandatory)] [string]$ArtifactId
     )
 
     $content = [System.IO.File]::ReadAllText($PropertiesPath)
-    $match = [regex]::Match($content, '(?m)^packageVersion=(\d+)\.(\d+)\.(\d+)$')
+    $match = [regex]::Match($content, '(?m)^packageVersionBase=(\d+)\.(\d+)$')
     if (-not $match.Success) {
-        throw "packageVersion must use the major.minor.patch format in $PropertiesPath."
+        throw "packageVersionBase must use the major.minor format in $PropertiesPath."
     }
 
-    $currentVersion = $match.Value.Substring('packageVersion='.Length)
-    $nextVersion = "{0}.{1}.{2}" -f @(
-        $match.Groups[1].Value,
-        $match.Groups[2].Value,
-        ([int]$match.Groups[3].Value + 1)
-    )
-    return [pscustomobject]@{
-        Current = $currentVersion
-        Next = $nextVersion
+    $baseVersion = "$($match.Groups[1].Value).$($match.Groups[2].Value)"
+    $artifactPath = Join-Path (Join-Path $PackagesFeedPath $PackageGroup.Replace('.', '\')) $ArtifactId
+    $patches = if (Test-Path -LiteralPath $artifactPath -PathType Container) {
+        Get-ChildItem -LiteralPath $artifactPath -Directory | ForEach-Object {
+            $versionMatch = [regex]::Match($_.Name, "^$([regex]::Escape($baseVersion))\\.(\\d+)$")
+            if ($versionMatch.Success) { [int]$versionMatch.Groups[1].Value }
+        }
     }
+    $maximumPatch = ($patches | Measure-Object -Maximum).Maximum
+    if ($null -eq $maximumPatch) { $maximumPatch = 0 }
+    $nextPatch = $maximumPatch + 1
+    return "$baseVersion.$nextPatch"
 }
 
 function Get-GradleProperty {
@@ -85,29 +90,6 @@ function Get-GradleProperty {
     return $match.Groups[1].Value.Trim()
 }
 
-function Set-PackageVersion {
-    param(
-        [Parameter(Mandatory)] [string]$PropertiesPath,
-        [Parameter(Mandatory)] [string]$CurrentVersion,
-        [Parameter(Mandatory)] [string]$NextVersion
-    )
-
-    $content = [System.IO.File]::ReadAllText($PropertiesPath)
-    $updatedContent = $content.Replace(
-        "packageVersion=$CurrentVersion",
-        "packageVersion=$NextVersion"
-    ).TrimEnd([char[]]@(13, 10, 9, 32))
-    if ($updatedContent -eq $content) {
-        throw "packageVersion=$CurrentVersion was not found in $PropertiesPath."
-    }
-
-    [System.IO.File]::WriteAllText(
-        $PropertiesPath,
-        $updatedContent,
-        [System.Text.UTF8Encoding]::new($false)
-    )
-}
-
 $exitCode = 1
 $locationChanged = $false
 
@@ -120,9 +102,9 @@ try {
     }
 
     $propertiesPath = Join-Path $PSScriptRoot 'gradle.properties'
-    $packageVersion = Get-NextPackageVersion $propertiesPath
     $packagesFeedPath = Get-GradleProperty $propertiesPath 'androidPackagesFeedPath'
     $packageGroup = Get-GradleProperty $propertiesPath 'packageGroup'
+    $nextVersion = Get-NextPackageVersion $propertiesPath $packagesFeedPath $packageGroup 'androidcoresdk'
 
     $javaHome = Resolve-JavaHome
     $androidSdk = Resolve-AndroidSdk
@@ -133,19 +115,18 @@ try {
 
     Push-Location -LiteralPath $PSScriptRoot
     $locationChanged = $true
-    Write-Host "Publishing AndroidCoreSdk $($packageVersion.Current) -> $($packageVersion.Next)"
-    & $wrapperPath "-PpackageVersion=$($packageVersion.Next)" `
+    Write-Host "Publishing AndroidCoreSdk $nextVersion"
+    & $wrapperPath "-PpackageVersion=$nextVersion" `
         :androidcoresdk:publishReleasePublicationToAndroidPackagesFeedRepository
     $exitCode = $LASTEXITCODE
     if ($exitCode -eq 0) {
-        Set-PackageVersion $propertiesPath $packageVersion.Current $packageVersion.Next
         $packagePath = Join-Path "$packagesFeedPath\$($packageGroup.Replace('.', '\'))\androidcoresdk" `
-            "$($packageVersion.Next)\androidcoresdk-$($packageVersion.Next).aar"
+            "$nextVersion\androidcoresdk-$nextVersion.aar"
         if (-not (Test-Path -LiteralPath $packagePath -PathType Leaf)) {
             throw "Published AAR was not found: $packagePath"
         }
 
-        Write-Host "Package version: $($packageVersion.Next)"
+        Write-Host "Package version: $nextVersion"
         Write-Host "Package file: $packagePath"
     }
 }

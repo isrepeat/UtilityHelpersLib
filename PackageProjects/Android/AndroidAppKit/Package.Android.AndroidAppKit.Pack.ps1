@@ -16,16 +16,37 @@ function Resolve-AndroidSdk {
     throw 'Android SDK was not found. Set ANDROID_HOME or install Android SDK platform tools.'
 }
 
+function Get-GradleProperty {
+    param([string]$PropertiesPath, [string]$Name)
+    $match = [regex]::Match([System.IO.File]::ReadAllText($PropertiesPath), "(?m)^$([regex]::Escape($Name))=(.+)$")
+    if (-not $match.Success) { throw "$Name was not found in $PropertiesPath." }
+    return $match.Groups[1].Value.Trim()
+}
+
+function Get-NextPackageVersion {
+    param([string]$PropertiesPath, [string]$PackagesFeedPath, [string]$PackageGroup, [string]$ArtifactId)
+    $baseVersion = Get-GradleProperty $PropertiesPath 'packageVersionBase'
+    if ($baseVersion -notmatch '^\d+\.\d+$') { throw "packageVersionBase must use the major.minor format in $PropertiesPath." }
+    $artifactPath = Join-Path (Join-Path $PackagesFeedPath $PackageGroup.Replace('.', '\')) $ArtifactId
+    $patches = if (Test-Path -LiteralPath $artifactPath -PathType Container) {
+        Get-ChildItem -LiteralPath $artifactPath -Directory | ForEach-Object {
+            $match = [regex]::Match($_.Name, "^$([regex]::Escape($baseVersion))\.(\d+)$")
+            if ($match.Success) { [int]$match.Groups[1].Value }
+        }
+    }
+    $maximumPatch = ($patches | Measure-Object -Maximum).Maximum
+    if ($null -eq $maximumPatch) { $maximumPatch = 0 }
+    return "$baseVersion.$($maximumPatch + 1)"
+}
+
 $ErrorActionPreference = 'Stop'
 $exitCode = 1
 
 try {
     $propertiesPath = Join-Path $PSScriptRoot 'gradle.properties'
-    $content = [System.IO.File]::ReadAllText($propertiesPath)
-    $match = [regex]::Match($content, '(?m)^packageVersion=(\d+)\.(\d+)\.(\d+)$')
-    if (-not $match.Success) { throw "packageVersion is invalid in $propertiesPath" }
-    $currentVersion = $match.Groups[0].Value.Substring('packageVersion='.Length)
-    $nextVersion = "$($match.Groups[1].Value).$($match.Groups[2].Value).$([int]$match.Groups[3].Value + 1)"
+    $feed = Get-GradleProperty $propertiesPath 'androidPackagesFeedPath'
+    $group = Get-GradleProperty $propertiesPath 'packageGroup'
+    $nextVersion = Get-NextPackageVersion $propertiesPath $feed $group 'androidappkit'
     $javaHome = Resolve-JavaHome
     $androidSdk = Resolve-AndroidSdk
     $env:JAVA_HOME = $javaHome
@@ -39,11 +60,7 @@ try {
         & $wrapper "-PpackageVersion=$nextVersion" ':androidappkit:publishReleasePublicationToAndroidPackagesFeedRepository'
         if ($LASTEXITCODE -ne 0) { throw "Gradle exited with $LASTEXITCODE" }
     } finally { Pop-Location }
-    $updated = $content.Replace("packageVersion=$currentVersion", "packageVersion=$nextVersion").TrimEnd([char[]]@(13, 10, 9, 32))
-    [System.IO.File]::WriteAllText($propertiesPath, $updated, [System.Text.UTF8Encoding]::new($false))
-    $feed = [regex]::Match($content, '(?m)^androidPackagesFeedPath=(.+)$').Groups[1].Value.Trim()
-    $group = [regex]::Match($content, '(?m)^packageGroup=(.+)$').Groups[1].Value.Trim().Replace('.', '\\')
-    $aar = Join-Path "$feed\\$group\\androidappkit\\$nextVersion" "androidappkit-$nextVersion.aar"
+    $aar = Join-Path "$feed\\$($group.Replace('.', '\\'))\\androidappkit\\$nextVersion" "androidappkit-$nextVersion.aar"
     if (-not (Test-Path -LiteralPath $aar -PathType Leaf)) { throw "Published AAR was not found: $aar" }
     Write-Host "Package file: $aar"
     Write-Host "Published AndroidAppKit $nextVersion"
