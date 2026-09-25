@@ -32,6 +32,13 @@ android {
     }
 }
 
+dependencies {
+    // Публичные API SDK используют эти Android-библиотеки.
+    api("androidx.activity:activity-ktx:1.8.0")
+    api("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
+    api("com.google.android.gms:play-services-auth:21.3.0")
+}
+
 publishing {
     publications {
         register<MavenPublication>("release") {

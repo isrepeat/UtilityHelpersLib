@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.9.12105.275
@@ -204,7 +204,36 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "isrepeat", "isrepeat", "{D4
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "androidcoresdk", "androidcoresdk", "{D1E94A20-A1CD-4A43-91FF-B49D57A2B8AF}"
 	ProjectSection(SolutionItems) = preProject
-		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\HelloWorld.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\HelloWorld.kt
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\androidcoresdk.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\androidcoresdk.kt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "coroutines", "coroutines", "{A10F9B5A-51B1-4A3D-9409-3C37331B52F1}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\coroutines\CancellableContinuationCompletion.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\coroutines\CancellableContinuationCompletion.kt
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\coroutines\LifecycleCoroutineRunner.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\coroutines\LifecycleCoroutineRunner.kt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "drive", "drive", "{D4713D9B-2A34-48E5-9D0A-FB9BEAFB2D84}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\drive\GoogleDriveClient.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\drive\GoogleDriveClient.kt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "logging", "logging", "{6C7256D7-2735-479B-9F71-F8815794C5D2}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\logging\MediaStoreSessionLog.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\logging\MediaStoreSessionLog.kt
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\logging\SdkLogger.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\logging\SdkLogger.kt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "media", "media", "{5D1412F1-9DBF-4354-84D1-DF7415CBF884}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\media\ScreenshotCapture.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\media\ScreenshotCapture.kt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nativeui", "nativeui", "{C79E8FB5-8AE0-43A3-BA6F-F6E8D2C8728B}"
+	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\nativeui\NativeMessageDispatcher.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\nativeui\NativeMessageDispatcher.kt
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\nativeui\NativeRenderHost.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\nativeui\NativeRenderHost.kt
+		PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\nativeui\NativeRenderSurfaceView.kt = PackageProjects\Android\AndroidCoreSdk\androidcoresdk\src\main\kotlin\com\isrepeat\androidcoresdk\nativeui\NativeRenderSurfaceView.kt
 	EndProjectSection
 EndProject
 Global
@@ -579,19 +608,6 @@ Global
 		{6FAB1C14-C0B3-46D2-AFB1-5B3AC9CD8507} = {608D2A76-0AAD-4B8C-BAB6-0D409414530A}
 		{CFFFE637-69F3-475C-8CDD-61125B6BE3CC} = {94A013B8-2E04-4FC1-A80D-192911E4EDCE}
 		{C07AED25-F071-4AA5-B251-02EB51B50FE4} = {D00E7632-E134-49A1-B9D0-878E959F6514}
-		{3FC1304D-35C5-4385-9704-55E42BB47AA1} = {D00E7632-E134-49A1-B9D0-878E959F6514}
-		{CD5EA2C6-AC10-4D11-8C1F-3B3C3AD0A151} = {3FC1304D-35C5-4385-9704-55E42BB47AA1}
-		{C46408C6-177D-4BE8-92E8-C02F4F4325AB} = {CD5EA2C6-AC10-4D11-8C1F-3B3C3AD0A151}
-		{DFAFDDDC-CDCD-47EA-8C13-557D3F9C67E6} = {5ED3376F-7EBD-4E7B-8B3F-E256D8E1505C}
-		{129B032C-4821-4785-8CBB-DAF53CA908B0} = {DFAFDDDC-CDCD-47EA-8C13-557D3F9C67E6}
-		{95E66412-2164-4DD4-AF5D-F7E38D858831} = {129B032C-4821-4785-8CBB-DAF53CA908B0}
-		{D6C76247-C52E-42A2-9CD0-833FB7CAD671} = {95E66412-2164-4DD4-AF5D-F7E38D858831}
-		{3F87FBCD-7B16-42D8-8774-828ACD4FD939} = {D6C76247-C52E-42A2-9CD0-833FB7CAD671}
-		{E243796E-888E-4353-87A2-71E762F9063D} = {3F87FBCD-7B16-42D8-8774-828ACD4FD939}
-		{1665F8BB-0964-47DE-8BDB-E22DDE54B263} = {E243796E-888E-4353-87A2-71E762F9063D}
-		{FFCDC4FF-FFC8-4C20-B646-C82F26FBBFCE} = {1665F8BB-0964-47DE-8BDB-E22DDE54B263}
-		{D4193B01-7C4A-44DD-BB38-5E3CE5E14F13} = {FFCDC4FF-FFC8-4C20-B646-C82F26FBBFCE}
-		{D1E94A20-A1CD-4A43-91FF-B49D57A2B8AF} = {D4193B01-7C4A-44DD-BB38-5E3CE5E14F13}
 		{A64A39B6-232E-4107-A4D9-A863DE82481F} = {C07AED25-F071-4AA5-B251-02EB51B50FE4}
 		{6CC49D0A-BFFE-4DDE-9C41-9014DD2D931A} = {D00E7632-E134-49A1-B9D0-878E959F6514}
 		{7A0CA0F0-0BE7-4EBD-AB3F-F62F26E5B398} = {5AEDE6CA-4DB9-4920-813C-37E0E24753B3}
@@ -627,6 +643,23 @@ Global
 		{24B9776B-90C7-97F3-DD58-50603FDFA8C2} = {5ED3376F-7EBD-4E7B-8B3F-E256D8E1505C}
 		{F507F677-1AFE-4ED3-838F-E30A42B66B1C} = {24B9776B-90C7-97F3-DD58-50603FDFA8C2}
 		{8740FED9-BB1C-4A40-AB98-B47E0866B071} = {24B9776B-90C7-97F3-DD58-50603FDFA8C2}
+		{3FC1304D-35C5-4385-9704-55E42BB47AA1} = {D00E7632-E134-49A1-B9D0-878E959F6514}
+		{CD5EA2C6-AC10-4D11-8C1F-3B3C3AD0A151} = {3FC1304D-35C5-4385-9704-55E42BB47AA1}
+		{C46408C6-177D-4BE8-92E8-C02F4F4325AB} = {CD5EA2C6-AC10-4D11-8C1F-3B3C3AD0A151}
+		{129B032C-4821-4785-8CBB-DAF53CA908B0} = {DFAFDDDC-CDCD-47EA-8C13-557D3F9C67E6}
+		{95E66412-2164-4DD4-AF5D-F7E38D858831} = {129B032C-4821-4785-8CBB-DAF53CA908B0}
+		{D6C76247-C52E-42A2-9CD0-833FB7CAD671} = {95E66412-2164-4DD4-AF5D-F7E38D858831}
+		{3F87FBCD-7B16-42D8-8774-828ACD4FD939} = {D6C76247-C52E-42A2-9CD0-833FB7CAD671}
+		{E243796E-888E-4353-87A2-71E762F9063D} = {3F87FBCD-7B16-42D8-8774-828ACD4FD939}
+		{1665F8BB-0964-47DE-8BDB-E22DDE54B263} = {E243796E-888E-4353-87A2-71E762F9063D}
+		{FFCDC4FF-FFC8-4C20-B646-C82F26FBBFCE} = {1665F8BB-0964-47DE-8BDB-E22DDE54B263}
+		{D4193B01-7C4A-44DD-BB38-5E3CE5E14F13} = {FFCDC4FF-FFC8-4C20-B646-C82F26FBBFCE}
+		{D1E94A20-A1CD-4A43-91FF-B49D57A2B8AF} = {D4193B01-7C4A-44DD-BB38-5E3CE5E14F13}
+		{A10F9B5A-51B1-4A3D-9409-3C37331B52F1} = {D1E94A20-A1CD-4A43-91FF-B49D57A2B8AF}
+		{D4713D9B-2A34-48E5-9D0A-FB9BEAFB2D84} = {D1E94A20-A1CD-4A43-91FF-B49D57A2B8AF}
+		{6C7256D7-2735-479B-9F71-F8815794C5D2} = {D1E94A20-A1CD-4A43-91FF-B49D57A2B8AF}
+		{5D1412F1-9DBF-4354-84D1-DF7415CBF884} = {D1E94A20-A1CD-4A43-91FF-B49D57A2B8AF}
+		{C79E8FB5-8AE0-43A3-BA6F-F6E8D2C8728B} = {D1E94A20-A1CD-4A43-91FF-B49D57A2B8AF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {71A91AB0-90CD-4ACF-8D59-60382FE9FB7C}
