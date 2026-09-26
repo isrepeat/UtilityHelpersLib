@@ -1,8 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [string]$ProjectRoot,
-[string]$CMakeExecutable)
+    [string]$ProjectRoot)
 
 $ErrorActionPreference = 'Stop'
 $utf8Encoding = [System.Text.UTF8Encoding]::new($false)
@@ -18,9 +17,6 @@ if (-not $config.Xaml) {
 
 $applicationRoot = Join-Path $projectRoot $config.Application
 $uiRoot = Join-Path $projectRoot $config.UI
-$xamlCompilerRoot = Join-Path $projectRoot $config.Xaml.CompilerSource
-$xamlCompilerBuild = Join-Path $projectRoot $config.Xaml.CompilerBuild
-$xamlCompiler = Join-Path $xamlCompilerBuild 'Debug\XamlCompiler.exe'
 $xamlSourceRoots = @(
     @{
         Source = Join-Path $applicationRoot 'UI'
@@ -48,31 +44,9 @@ function Invoke-Checked {
     }
 }
 
-. (Join-Path $PSScriptRoot 'Resolve-BuildTools.ps1')
-$tools = Resolve-AndroidBuildTools -CMakeExecutable $CMakeExecutable
-$cmake = $tools.CMake
-
-$xamlCompilerNeedsBuild = -not (Test-Path $xamlCompiler)
-if (-not $xamlCompilerNeedsBuild) {
-    $xamlCompilerExecutableTime = (Get-Item -LiteralPath $xamlCompiler).LastWriteTimeUtc
-    $xamlCompilerNeedsBuild = $null -ne (Get-ChildItem -LiteralPath $xamlCompilerRoot -Recurse -File | Where-Object {
-        $_.LastWriteTimeUtc -gt $xamlCompilerExecutableTime
-    } | Select-Object -First 1)
-}
-
-if ($xamlCompilerNeedsBuild) {
-    Write-Host '==> Building XamlCompiler host tool'
-    $xamlCompilerCache = Join-Path $xamlCompilerBuild 'CMakeCache.txt'
-    if (Test-Path $xamlCompilerCache) {
-        Invoke-Checked $cmake @('-S', $xamlCompilerRoot, '-B', $xamlCompilerBuild)
-    } else {
-        Invoke-Checked $cmake @('-S', $xamlCompilerRoot, '-B', $xamlCompilerBuild, '-G', $tools.Generator, '-A', 'x64', "-DCMAKE_GENERATOR_INSTANCE=$($tools.VisualStudio)")
-    }
-    Invoke-Checked $cmake @('--build', $xamlCompilerBuild, '--config', 'Debug')
-}
-if (-not (Test-Path $xamlCompiler)) {
-    throw "XamlCompiler build completed but did not produce $xamlCompiler"
-}
+. (Join-Path $PSScriptRoot 'Resolve-XamlCompiler.ps1')
+$xamlCompiler = Resolve-XamlCompiler -ProjectRoot $ProjectRoot -AndroidHost $config.AndroidHost
+Write-Host "==> Using XamlCompiler from $xamlCompiler"
 
 foreach ($xamlSourceRoot in $xamlSourceRoots) {
     Get-ChildItem -LiteralPath $xamlSourceRoot.Source -Filter '*.xaml' -File -Recurse | ForEach-Object {

@@ -73,10 +73,12 @@ Debug использует стандартный debug keystore. Release тре
 - `run-android-app-previewer -BuildOnly`: собрать plugin и desktop host без запуска.
 - `upload-apk-to-drive`: загрузить APK в `Drive.Path`.
 
-Для XAML задаются `Application`, `UI`, `Xaml.CompilerSource`, `CompilerBuild`,
-`Namespace`, `ControlNamespace`, `ControlIncludePrefix`. Preview содержит
-`ArtifactDirectory`, `Root`, `ProjectFile`, `Executable`, `Plugin`, `Target`.
-Приложения без этих функций не обязаны содержать фиктивные пути.
+Для XAML задаются `Application`, `UI`, `Xaml.Namespace`, `ControlNamespace`,
+`ControlIncludePrefix`. Генератор восстанавливает `XamlRuntime` в
+`Build/Packages/<AndroidHost>` и запускает включённый в него
+`tools/win-x64/XamlCompiler.exe`. Preview содержит `ArtifactDirectory`, `Root`,
+`ProjectFile`, `Executable`, `Plugin`, `Target`. Приложения без этих функций не
+обязаны содержать фиктивные пути.
 
 ## Версии APK
 

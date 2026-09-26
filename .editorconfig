@@ -2,12 +2,13 @@ root = true
 
 [*]
 end_of_line = lf
+insert_final_newline = false
 
 # Keep script line endings consistent with the submodule-owner repositories.
 [*.ps1]
 charset = utf-8
 end_of_line = lf
-insert_final_newline = true
+insert_final_newline = false
 
 # C/C++ (и сопутствующие)
 [*.{c,cc,cpp,cxx,h,hpp,hxx,ipp,inl,ixx,rc,idl,def}]
