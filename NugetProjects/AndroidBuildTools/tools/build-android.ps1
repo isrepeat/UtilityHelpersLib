@@ -103,6 +103,10 @@ $gradleTasks = @(
     ":$($config.AndroidModule):assemble$Configuration"
 )
 $gradleArguments = @('--no-daemon', "-PappVersionCode=$AppVersionCode", "-PappVersionName=$AppVersionName")
+$gradleArguments += "-PappVersionFile=$($config.VersionFile)"
+if ($config.SigningProperties) {
+    $gradleArguments += "-PandroidSigningProperties=$($config.SigningProperties)"
+}
 Write-Host "==> Running Gradle tasks: $($gradleTasks -join ', ')"
 Write-Host "==> Using Java: $javaHome"
 Write-Host "==> Using Android SDK: $androidSdk"

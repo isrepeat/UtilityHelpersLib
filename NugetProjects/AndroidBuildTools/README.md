@@ -1,73 +1,100 @@
 # AndroidBuildTools
 
-Общие инструменты сборки Android-приложений с нативной библиотекой CMake и XAML.
-Требуется Windows, PowerShell 5.1+, NuGet CLI, Visual Studio C++, Android SDK/NDK и JDK.
-Gradle wrapper и исходники XamlCompiler предоставляет приложение.
-
-## Подключение
-
-В корне приложения хранится `android-build.psd1`: точная версия пакета, источник NuGet,
-имена модулей, пути, параметры XAML и Google Drive. Образец конфигурации находится
-в DocumentTranslator. Секреты остаются во внешних файлах; конфигурация содержит только пути.
-
-Корневой `build.ps1` восстанавливает закреплённую версию
-в игнорируемый каталог `Build/Packages/<ArtifactName>` до запуска CMake. Источник можно переопределить
-переменной `ANDROID_BUILD_TOOLS_SOURCE`. Восстановленный пакет не редактируется.
-
-Единый `build.ps1` передаёт `-ProjectRoot` и параметры в соответствующие файлы `tools`.
-Он получает список команд, типы и проверки параметров из `tools/Invoke-Build.ps1`
-через динамические параметры PowerShell. Новые команды добавляются в пакет,
-не требуя изменений загрузчика в приложениях.
+Версионируемые PowerShell-команды, CMake-модули, Gradle conventions и шаблон
+нативного Android-приложения. Требуется Windows, PowerShell 5.1+, NuGet CLI,
+Visual Studio C++ с CMake, Android SDK/NDK и JDK 21.
 
 ## Новый проект
 
-Пакет содержит шаблоны в `templates`: `build.ps1`, `android-build.psd1`,
-`cmake/AndroidToolchain.cmake`, `CMakeLists.txt`, `CMakePresets.json`,
-Gradle launcher и `.bat`-команды. Скопируйте их в новый репозиторий, замените
-маркеры `<Application>` / `<application>`, затем добавьте собственные targets
-в CMake и Android-модуль.
+После восстановления пакета выполните:
 
-В приложении остаются загрузчики `build.ps1` и `cmake/AndroidToolchain.cmake`:
-они восстанавливают пакет до того, как CMake или PowerShell смогут использовать
-его файлы. Общие CMake-модули находятся только в пакете:
-`NuGetSource.cmake`, `InstallXamlRuntime.cmake` и
-`InstallAndroidAppPreviewerPluginSdk.cmake`.
+```powershell
+./tools/New-AndroidApplication.ps1 -Name SampleApp -PackageId com.example.sampleapp -Destination C:\Projects\SampleApp -BuildToolsSource C:\NugetFeed
+cd C:\Projects\SampleApp
+./build.ps1 build-android -Configuration Debug
+```
 
-Например: `./build.ps1 build-android -Configuration Debug`,
-`./build.ps1 build-and-distribute -Destination Local`, `./build.ps1 bump-version`.
-Команда `restore` возвращает путь пакета для CMake. Команды `build-for-drive` и
-`build-all` вызывают `build-and-distribute -Destination Drive`.
+Генератор принимает только новый каталог и создаёт работающее приложение с Java
+Activity и JNI-библиотекой. Gradle wrapper 9.5.0 включён вместе с SHA-256
+дистрибутива. Отдельная установка Gradle не нужна. Имя проекта — латинские буквы
+и цифры, начиная с заглавной буквы; package ID — строчные буквы и цифры с точками.
 
-Реализации команд:
+## Границы ответственности
 
-- `build-android.ps1`: XAML, CMake, Gradle; поддерживает Debug/Release, Clean, NativeOnly.
-- `generate-xaml.ps1`: сборка XamlCompiler и генерация изменённых XAML.
-- `bump-version.ps1`: вычисление версии из version.properties и APK в distribution.
-- `build-and-distribute.ps1`: сборка версионного APK; `-Destination Local` оставляет его
-  на диске, `-Destination Drive` дополнительно загружает на Google Drive.
-- `upload-apk-to-drive.ps1`: отдельная загрузка; пути OAuth и назначения обязательны.
-- `cmake/AndroidToolchain.cmake`: поиск Android NDK, включая конфигурацию напрямую из IDE.
-- `cmake/NuGetSource.cmake`: выбор источника NuGet через
-  `ANDROIDAPPKIT_NUGET_SOURCE`.
-- `cmake/InstallXamlRuntime.cmake` и
-  `cmake/InstallAndroidAppPreviewerPluginSdk.cmake`: восстановление и поиск
-  native NuGet-пакетов в `Build/Packages/<Project>`.
-- `run-android-app-previewer.ps1`: сборка и запуск desktop previewer; `-BuildOnly`
-  проверяет сборку без открытия окна. Пути и CMake target задаются в секции Preview.
+- Приложение: package ID, исходники, ресурсы, пути, native targets, свои зависимости.
+- `android-build.psd1`: закреплённая версия пакета, источник NuGet, имена модулей,
+  пути и необязательные параметры XAML, previewer, signing и Drive.
+- Пакет: реализация сборки, поиск инструментов, вычисление версии APK, Gradle defaults.
+- Шаблон: минимальные загрузчики и начальные файлы приложения.
 
-Версия APK имеет вид major.minor.patch. VERSION_CODE_BASE равен major * 1000000 +
-minor * 1000, а versionCode равен этой базе плюс patch. Следующий patch берётся из
-имён APK выбранной базовой версии; KeepVersion повторяет последнюю локальную версию.
-Для одной папки distribution сборки запускаются последовательно: распределённого
-резервирования номеров между несколькими процессами этот механизм не выполняет.
+`build.ps1` восстанавливает пакет в `Build/Packages/<ArtifactName>` и получает
+параметры команд из пакета. `ANDROID_BUILD_TOOLS_SOURCE` переопределяет источник
+NuGet. Распакованные файлы пакета не редактируют. CMake toolchain и Gradle settings
+вызывают тот же загрузчик, поэтому работают и при прямом запуске из IDE.
 
-## Публикация
+## Gradle conventions
 
-Изменить версию в AndroidBuildTools.nuspec и выполнить `Pack.ps1 -FeedPath C:\NugetFeed`
-или `Scripts/Nuget.AndroidBuildTools.Pack.cmd` из UtilityHelpersLib.
-Скрипт запрещает заменять уже опубликованную версию. Затем явно обновить
-BuildToolsVersion в конфигурации приложения и проверить сборку.
+`com.isrepeat.android.application` и `com.isrepeat.android.settings` поставляются
+в каталоге `gradle` и подключаются через `pluginManagement.includeBuild`.
+Версия AndroidBuildTools одновременно закрепляет PowerShell, CMake и conventions.
+AGP 9.3.2, compile/target SDK 36, min SDK 24, ARM64, Java 11 и AndroidX
+activity/lifecycle настроены в application plugin. Kotlin встроен в AGP 9 и
+наследует JVM target Java. Приложение может переопределять Android DSL после plugin.
 
-Пакет содержит инструменты, но не устанавливает SDK/NDK/JDK и не изменяет applicationId,
-подпись, зависимости Gradle или исходники приложения. Интеграция конкретных
-native-зависимостей остаётся в приложении.
+Settings plugin задаёт Google, Maven Central и общий Maven feed.
+`-PandroidMavenSource` или `ANDROID_MAVEN_SOURCE` меняют локальный default
+`C:/!PackagesFeed/Android`. Для динамических версий отключён длительный Gradle cache.
+
+Пути native `.so` задаются в `android.sourceSets` приложения либо через
+`-PappNativeLibraries` относительно корня репозитория. Build output модуля:
+`Build/<Module>`. Стандартная структура launcher: `Tools/Gradle`.
+
+## Signing
+
+Debug использует стандартный debug keystore. Release требует внешнего properties
+файла с `storeFile`, `storePassword`, `keyAlias`, `keyPassword` либо явного
+`android.buildTypes.release.signingConfig` в приложении.
+
+Путь передаётся через `SigningProperties` в `android-build.psd1`,
+`-PandroidSigningProperties` или `ANDROID_SIGNING_PROPERTIES`.
+Относительный `storeFile` отсчитывается от Android-модуля. Отсутствие signing
+не мешает Debug, а Release останавливается до упаковки. Ключи и пароли не входят
+в пакет и шаблон. Смена ключа не является частью миграции сборки.
+
+## Команды
+
+- `restore`: путь восстановленного пакета.
+- `build-android`: Debug/Release, `-Clean`, `-NativeOnly`, версия через пару
+  `-AppVersionCode` / `-AppVersionName`.
+- `build-and-distribute -Destination Local|Drive`: версионные APK.
+- `build-for-drive`, `build-all`: сборка и публикация в Drive.
+- `bump-version`: вычислить следующую версию без записи в исходники.
+- `generate-xaml`: необязательная секция `Xaml`; без неё генерация пропускается.
+- `run-android-app-previewer -BuildOnly`: собрать plugin и desktop host без запуска.
+- `upload-apk-to-drive`: загрузить APK в `Drive.Path`.
+
+Для XAML задаются `Application`, `UI`, `Xaml.CompilerSource`, `CompilerBuild`,
+`Namespace`, `ControlNamespace`, `ControlIncludePrefix`. Preview содержит
+`ArtifactDirectory`, `Root`, `ProjectFile`, `Executable`, `Plugin`, `Target`.
+Приложения без этих функций не обязаны содержать фиктивные пути.
+
+## Версии APK
+
+`VERSION_NAME_BASE=major.minor`, `VERSION_CODE_BASE=major*1000000+minor*1000`.
+Patch определяется по файлам в `DistributionDirectory`; `-KeepVersion` сохраняет
+последний patch. Обычная сборка использует patch 0. Следующая distribution-сборка
+без существующих APK использует patch 1. Исходный version.properties не изменяется.
+
+Имя APK: `<ArtifactName>-<VersionName>.apk`.
+Для одной папки distribution сборки выполняются последовательно.
+
+## CMake и публикация
+
+`tools/cmake` содержит Android toolchain, выбор NuGet feed и установку XamlRuntime
+и AndroidAppPreviewer.PluginSDK. Native-пакеты распаковываются в
+`Build/Packages/<Project>`. `ANDROIDAPPKIT_NUGET_SOURCE` задаёт их источник.
+
+Для публикации измените версию в nuspec и шаблоне конфигурации, выполните
+`Pack.ps1 -FeedPath C:\NugetFeed`, затем обновите BuildToolsVersion потребителя.
+Опубликованную версию заменять запрещено. При разработке используйте отдельный
+временный feed и проверяйте восстановление в новом проекте.

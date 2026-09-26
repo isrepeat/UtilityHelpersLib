@@ -12,6 +12,10 @@ $OutputEncoding = $utf8Encoding
 
 . (Join-Path $PSScriptRoot 'ProjectConfiguration.ps1')
 $config = Read-AndroidBuildConfiguration $ProjectRoot
+if (-not $config.Xaml) {
+    return
+}
+
 $applicationRoot = Join-Path $projectRoot $config.Application
 $uiRoot = Join-Path $projectRoot $config.UI
 $xamlCompilerRoot = Join-Path $projectRoot $config.Xaml.CompilerSource
