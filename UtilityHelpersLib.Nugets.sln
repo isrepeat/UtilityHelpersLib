@@ -6,6 +6,7 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "!Scripts", "!Scripts", "{D00E7632-E134-49A1-B9D0-878E959F6514}"
 	ProjectSection(SolutionItems) = preProject
 		Scripts\Nuget.AndroidAppPreviewer.PluginSDK.Pack.cmd = Scripts\Nuget.AndroidAppPreviewer.PluginSDK.Pack.cmd
+		Scripts\Nuget.AndroidBuildTools.Pack.cmd = Scripts\Nuget.AndroidBuildTools.Pack.cmd
 		Scripts\Nuget.CppFeatures.Pack.Release.cmd = Scripts\Nuget.CppFeatures.Pack.Release.cmd
 		Scripts\Nuget.CrashHandling.Pack.Release.cmd = Scripts\Nuget.CrashHandling.Pack.Release.cmd
 		Scripts\Nuget.XamlRuntime.Pack.cmd = Scripts\Nuget.XamlRuntime.Pack.cmd
@@ -290,6 +291,32 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "update", "update", "{F0E661
 	ProjectSection(SolutionItems) = preProject
 		PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\update\GoogleDriveUpdateConfiguration.kt = PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\update\GoogleDriveUpdateConfiguration.kt
 		PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\update\GoogleDriveUpdateController.kt = PackageProjects\Android\AndroidAppKit\androidappkit\src\main\kotlin\com\isrepeat\androidappkit\update\GoogleDriveUpdateController.kt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AndroidBuildTools", "AndroidBuildTools", "{A71CFA78-3F6E-4B63-8574-FF41252437C6}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\AndroidBuildTools.nuspec = NugetProjects\AndroidBuildTools\AndroidBuildTools.nuspec
+		NugetProjects\AndroidBuildTools\Pack.ps1 = NugetProjects\AndroidBuildTools\Pack.ps1
+		NugetProjects\AndroidBuildTools\README.md = NugetProjects\AndroidBuildTools\README.md
+		NugetProjects\AndroidBuildTools\templates\build.ps1 = NugetProjects\AndroidBuildTools\templates\build.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{6FE031B9-3D92-4C19-A9A9-3B4E58F28149}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\tools\ProjectConfiguration.ps1 = NugetProjects\AndroidBuildTools\tools\ProjectConfiguration.ps1
+		NugetProjects\AndroidBuildTools\tools\Invoke-Build.ps1 = NugetProjects\AndroidBuildTools\tools\Invoke-Build.ps1
+		NugetProjects\AndroidBuildTools\tools\Resolve-BuildTools.ps1 = NugetProjects\AndroidBuildTools\tools\Resolve-BuildTools.ps1
+		NugetProjects\AndroidBuildTools\tools\build-android.ps1 = NugetProjects\AndroidBuildTools\tools\build-android.ps1
+		NugetProjects\AndroidBuildTools\tools\build-and-distribute.ps1 = NugetProjects\AndroidBuildTools\tools\build-and-distribute.ps1
+		NugetProjects\AndroidBuildTools\tools\bump-version.ps1 = NugetProjects\AndroidBuildTools\tools\bump-version.ps1
+		NugetProjects\AndroidBuildTools\tools\generate-xaml.ps1 = NugetProjects\AndroidBuildTools\tools\generate-xaml.ps1
+		NugetProjects\AndroidBuildTools\tools\run-android-app-previewer.ps1 = NugetProjects\AndroidBuildTools\tools\run-android-app-previewer.ps1
+		NugetProjects\AndroidBuildTools\tools\upload-apk-to-drive.ps1 = NugetProjects\AndroidBuildTools\tools\upload-apk-to-drive.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cmake", "cmake", "{654509E0-2477-4688-B77F-5D914F862CBB}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\tools\cmake\AndroidToolchain.cmake = NugetProjects\AndroidBuildTools\tools\cmake\AndroidToolchain.cmake
 	EndProjectSection
 EndProject
 Global
@@ -645,6 +672,9 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{A71CFA78-3F6E-4B63-8574-FF41252437C6} = {5ED3376F-7EBD-4E7B-8B3F-E256D8E1505C}
+		{6FE031B9-3D92-4C19-A9A9-3B4E58F28149} = {A71CFA78-3F6E-4B63-8574-FF41252437C6}
+		{654509E0-2477-4688-B77F-5D914F862CBB} = {6FE031B9-3D92-4C19-A9A9-3B4E58F28149}
 		{D820CF56-DF1E-4B54-A9AC-257951382277} = {5ED3376F-7EBD-4E7B-8B3F-E256D8E1505C}
 		{0B4DBDBA-2F32-4D1F-9B5A-207A446C0EB4} = {D820CF56-DF1E-4B54-A9AC-257951382277}
 		{77E1F986-C601-4062-B70B-9226E02E9097} = {D820CF56-DF1E-4B54-A9AC-257951382277}
