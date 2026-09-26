@@ -3,7 +3,8 @@ param(
     [Parameter(Mandatory)] [ValidatePattern('^[A-Z][A-Za-z0-9]*$')] [string]$Name,
     [Parameter(Mandatory)] [ValidatePattern('^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$')] [string]$PackageId,
     [Parameter(Mandatory)] [string]$Destination,
-    [string]$BuildToolsSource = 'C:\NugetFeed'
+    [Parameter(Mandatory)] [string]$BuildToolsSource,
+    [Parameter(Mandatory)] [string]$NativePackageSource
 )
 
 $ErrorActionPreference = 'Stop'
@@ -27,6 +28,7 @@ foreach ($file in $files) {
     $text = $text.Replace('<Application>', $Name).Replace('<application>', $Name.ToLowerInvariant()).Replace('<APPLICATION>', $Name.ToUpperInvariant())
     $text = $text.Replace('<PackageId>', $PackageId).Replace('<JniPackage>', $PackageId.Replace('.', '_'))
     $text = $text.Replace('<BuildToolsSource>', $BuildToolsSource.Replace("'", "''"))
+    $text = $text.Replace('<NativePackageSource>', $NativePackageSource.Replace("'", "''"))
     [IO.File]::WriteAllText($target, $text.TrimEnd(), [Text.UTF8Encoding]::new($false))
 }
 Write-Host "Application created: $destinationRoot"

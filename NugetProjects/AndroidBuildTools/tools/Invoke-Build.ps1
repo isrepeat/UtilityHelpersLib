@@ -4,7 +4,7 @@ param(
     [string]$ProjectRoot,
 
     [Parameter(Position = 0)]
-    [ValidateSet('restore', 'build-android', 'build-and-distribute', 'build-for-drive', 'build-all', 'bump-version', 'generate-xaml', 'upload-apk-to-drive', 'run-android-app-previewer')]
+    [ValidateSet('restore', 'get-configuration-path', 'get-configuration-value', 'build-android', 'build-and-distribute', 'build-for-drive', 'build-all', 'bump-version', 'generate-xaml', 'upload-apk-to-drive', 'run-android-app-previewer')]
     [string]$Command = 'build-android',
 
     [ValidateSet('Debug', 'Release')]
@@ -18,6 +18,7 @@ param(
     [switch]$KeepVersion,
     [int]$AppVersionCode,
     [string]$AppVersionName,
+    [string]$Name,
     [string]$ApkPath,
     [string]$OAuthClientPath,
     [string]$TokenPath,

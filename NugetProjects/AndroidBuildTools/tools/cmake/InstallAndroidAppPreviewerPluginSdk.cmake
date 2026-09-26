@@ -1,13 +1,11 @@
-include("${CMAKE_CURRENT_LIST_DIR}/NuGetSource.cmake")
-
-function(fn_androidappkit_install_android_app_previewer_plugin_sdk project_name)
+function(fn_androidappkit_install_android_app_previewer_plugin_sdk packages_root package_source)
     set(androidappkit_plugin_sdk_package_name AndroidAppPreviewer.PluginSDK)
-    set(androidappkit_plugin_sdk_packages_root "${CMAKE_SOURCE_DIR}/Build/Packages/${project_name}")
-    if (IS_DIRECTORY "${ANDROIDAPPKIT_NUGET_SOURCE}")
+    set(androidappkit_plugin_sdk_packages_root "${packages_root}")
+    if (IS_DIRECTORY "${package_source}")
         # Native CMake-проекты не выполняют NuGet restore. Поэтому перед
         # find_package выбираем максимальный доступный пакет из локального feed,
         # как это сделал бы floating PackageReference в WPF-проекте.
-        file(GLOB androidappkit_plugin_sdk_archives "${ANDROIDAPPKIT_NUGET_SOURCE}/${androidappkit_plugin_sdk_package_name}.*.nupkg")
+        file(GLOB androidappkit_plugin_sdk_archives "${package_source}/${androidappkit_plugin_sdk_package_name}.*.nupkg")
         list(SORT androidappkit_plugin_sdk_archives COMPARE NATURAL ORDER DESCENDING)
         list(LENGTH androidappkit_plugin_sdk_archives androidappkit_plugin_sdk_archive_count)
         if (androidappkit_plugin_sdk_archive_count GREATER 0)
@@ -67,9 +65,9 @@ function(fn_androidappkit_install_android_app_previewer_plugin_sdk project_name)
     find_program(androidappkit_plugin_sdk_nuget_executable NAMES nuget.exe REQUIRED)
     execute_process(
         COMMAND "${androidappkit_plugin_sdk_nuget_executable}" install "${androidappkit_plugin_sdk_package_name}"
-            -Source "${ANDROIDAPPKIT_NUGET_SOURCE}"
+            -Source "${package_source}"
             -OutputDirectory "${androidappkit_plugin_sdk_packages_root}"
             -NonInteractive
         COMMAND_ERROR_IS_FATAL ANY)
-    fn_androidappkit_install_android_app_previewer_plugin_sdk("${project_name}")
+    fn_androidappkit_install_android_app_previewer_plugin_sdk("${packages_root}" "${package_source}")
 endfunction()

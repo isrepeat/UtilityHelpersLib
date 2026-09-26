@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([string]$FeedPath = 'C:\NugetFeed')
+param([Parameter(Mandatory)] [string]$FeedPath)
 
 $ErrorActionPreference = 'Stop'
 $nuget = (Get-Command nuget.exe -ErrorAction Stop).Source

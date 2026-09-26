@@ -9,7 +9,7 @@ Visual Studio C++ с CMake, Android SDK/NDK и JDK 21.
 После восстановления пакета выполните:
 
 ```powershell
-./tools/New-AndroidApplication.ps1 -Name SampleApp -PackageId com.example.sampleapp -Destination C:\Projects\SampleApp -BuildToolsSource C:\NugetFeed
+./tools/New-AndroidApplication.ps1 -Name SampleApp -PackageId com.example.sampleapp -Destination C:\Projects\SampleApp -BuildToolsSource C:\NugetFeed -NativePackageSource C:\NugetFeed
 cd C:\Projects\SampleApp
 ./build.ps1 build-android -Configuration Debug
 ```
@@ -27,7 +27,8 @@ Activity и JNI-библиотекой. Gradle wrapper 9.5.0 включён вм
 - Пакет: реализация сборки, поиск инструментов, вычисление версии APK, Gradle defaults.
 - Шаблон: минимальные загрузчики и начальные файлы приложения.
 
-`build.ps1` восстанавливает пакет в `Build/Packages/<ArtifactName>` и получает
+`build.ps1` восстанавливает пакет в каталог
+`PackageDirectories.AndroidBuildTools` из `android-build.psd1` и получает
 параметры команд из пакета. `ANDROID_BUILD_TOOLS_SOURCE` переопределяет источник
 NuGet. Распакованные файлы пакета не редактируют. CMake toolchain и Gradle settings
 вызывают тот же загрузчик, поэтому работают и при прямом запуске из IDE.
@@ -75,7 +76,7 @@ Debug использует стандартный debug keystore. Release тре
 
 Для XAML задаются `Application`, `UI`, `Xaml.Namespace`, `ControlNamespace`,
 `ControlIncludePrefix`. Генератор восстанавливает `XamlRuntime` в
-`Build/Packages/<AndroidHost>` и запускает включённый в него
+`PackageDirectories.XamlRuntime` и запускает включённый в него
 `tools/win-x64/XamlCompiler.exe`. Preview содержит `ArtifactDirectory`, `Root`,
 `ProjectFile`, `Executable`, `Plugin`, `Target`. Приложения без этих функций не
 обязаны содержать фиктивные пути.
@@ -94,7 +95,7 @@ Patch определяется по файлам в `DistributionDirectory`; `-K
 
 `tools/cmake` содержит Android toolchain, выбор NuGet feed и установку XamlRuntime
 и AndroidAppPreviewer.PluginSDK. Native-пакеты распаковываются в
-`Build/Packages/<Project>`. `ANDROIDAPPKIT_NUGET_SOURCE` задаёт их источник.
+каталоги из `PackageDirectories`; источник задаёт `PackageSources.Native`.
 
 Для публикации измените версию в nuspec и шаблоне конфигурации, выполните
 `Pack.ps1 -FeedPath C:\NugetFeed`, затем обновите BuildToolsVersion потребителя.

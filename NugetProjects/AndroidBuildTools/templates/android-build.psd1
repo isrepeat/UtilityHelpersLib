@@ -1,5 +1,5 @@
 @{
-    BuildToolsVersion = '1.0.11'
+    BuildToolsVersion = '1.0.16'
     BuildToolsSource = '<BuildToolsSource>'
     ArtifactName = '<Application>'
     AndroidModule = '<Application>.Android'
@@ -10,4 +10,12 @@
     GradleRoot = 'Tools\Gradle'
     VersionFile = 'version.properties'
     DistributionDirectory = 'Build\distribution'
+    PackageDirectories = @{
+        AndroidBuildTools = 'Build\Packages\<Application>'
+        XamlRuntime = 'Build\Packages\<Application>.AndroidHost'
+        AndroidAppPreviewerPluginSdk = 'Build\Packages\<Application>.PreviewPlugin'
+    }
+    PackageSources = @{
+        Native = '<NativePackageSource>'
+    }
 }

@@ -45,7 +45,9 @@ function Invoke-Checked {
 }
 
 . (Join-Path $PSScriptRoot 'Resolve-XamlCompiler.ps1')
-$xamlCompiler = Resolve-XamlCompiler -ProjectRoot $ProjectRoot -AndroidHost $config.AndroidHost
+$xamlPackagesRoot = Resolve-AndroidBuildConfigurationPath -Configuration $config -ProjectRoot $ProjectRoot -Name 'PackageDirectories.XamlRuntime'
+$nativePackageSource = Get-AndroidBuildConfigurationValue -Configuration $config -Name 'PackageSources.Native'
+$xamlCompiler = Resolve-XamlCompiler -PackagesRoot $xamlPackagesRoot -Source $nativePackageSource
 Write-Host "==> Using XamlCompiler from $xamlCompiler"
 
 foreach ($xamlSourceRoot in $xamlSourceRoots) {

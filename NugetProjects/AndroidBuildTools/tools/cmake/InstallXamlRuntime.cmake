@@ -1,5 +1,3 @@
-include("${CMAKE_CURRENT_LIST_DIR}/NuGetSource.cmake")
-
 function(fn_androidappkit_find_latest_xaml_runtime_package packages_root package_name output_variable)
     # Пакеты NuGet располагаются в отдельных папках <имя>.<версия>.
     # Берём наиболее новую только при наличии стандартного CMake-контракта.
@@ -17,16 +15,16 @@ function(fn_androidappkit_find_latest_xaml_runtime_package packages_root package
     set(${output_variable} "" PARENT_SCOPE)
 endfunction()
 
-function(fn_androidappkit_install_xaml_runtime project_name)
+function(fn_androidappkit_install_xaml_runtime packages_root package_source)
     set(androidappkit_xaml_runtime_package_name XamlRuntime)
-    set(androidappkit_xaml_runtime_packages_root "${CMAKE_SOURCE_DIR}/Build/Packages/${project_name}")
+    set(androidappkit_xaml_runtime_packages_root "${packages_root}")
     # Без -Version NuGet устанавливает последнюю доступную версию пакета.
     # Выполняем install при каждой конфигурации: уже скачанная старая версия
     # не должна блокировать получение нового пакета из локального feed-а.
     find_program(androidappkit_nuget_executable NAMES nuget.exe REQUIRED)
     execute_process(
         COMMAND "${androidappkit_nuget_executable}" install "${androidappkit_xaml_runtime_package_name}"
-            -Source "${ANDROIDAPPKIT_NUGET_SOURCE}"
+            -Source "${package_source}"
             -OutputDirectory "${androidappkit_xaml_runtime_packages_root}"
             -NonInteractive
         COMMAND_ERROR_IS_FATAL ANY
