@@ -2,7 +2,7 @@
 
 Общие инструменты сборки Android-приложений с нативной библиотекой CMake и XAML.
 Требуется Windows, PowerShell 5.1+, NuGet CLI, Visual Studio C++, Android SDK/NDK и JDK.
-Gradle wrapper, CMake presets и исходники XamlCompiler предоставляет приложение.
+Gradle wrapper и исходники XamlCompiler предоставляет приложение.
 
 ## Подключение
 
@@ -19,10 +19,19 @@ Gradle wrapper, CMake presets и исходники XamlCompiler предост�
 через динамические параметры PowerShell. Новые команды добавляются в пакет,
 не требуя изменений загрузчика в приложениях.
 
-При подключении нового проекта скопировать `templates/build.ps1` из исходников
-или распакованного пакета в корень приложения и создать `android-build.psd1`.
-Шаблон включён в NuGet-пакет, но автоматически не заменяет файлы потребителя.
-В приложении загрузчик хранится в Git, чтобы восстановить пакет после клонирования.
+## Новый проект
+
+Пакет содержит шаблоны в `templates`: `build.ps1`, `android-build.psd1`,
+`cmake/AndroidToolchain.cmake`, `CMakeLists.txt`, `CMakePresets.json`,
+Gradle launcher и `.bat`-команды. Скопируйте их в новый репозиторий, замените
+маркеры `<Application>` / `<application>`, затем добавьте собственные targets
+в CMake и Android-модуль.
+
+В приложении остаются загрузчики `build.ps1` и `cmake/AndroidToolchain.cmake`:
+они восстанавливают пакет до того, как CMake или PowerShell смогут использовать
+его файлы. Общие CMake-модули находятся только в пакете:
+`NuGetSource.cmake`, `InstallXamlRuntime.cmake` и
+`InstallAndroidAppPreviewerPluginSdk.cmake`.
 
 Например: `./build.ps1 build-android -Configuration Debug`,
 `./build.ps1 build-and-distribute -Destination Local`, `./build.ps1 bump-version`.
@@ -38,6 +47,11 @@ Gradle wrapper, CMake presets и исходники XamlCompiler предост�
   на диске, `-Destination Drive` дополнительно загружает на Google Drive.
 - `upload-apk-to-drive.ps1`: отдельная загрузка; пути OAuth и назначения обязательны.
 - `cmake/AndroidToolchain.cmake`: поиск Android NDK, включая конфигурацию напрямую из IDE.
+- `cmake/NuGetSource.cmake`: выбор источника NuGet через
+  `ANDROIDAPPKIT_NUGET_SOURCE`.
+- `cmake/InstallXamlRuntime.cmake` и
+  `cmake/InstallAndroidAppPreviewerPluginSdk.cmake`: восстановление и поиск
+  native NuGet-пакетов в `Build/Packages/<Project>`.
 - `run-android-app-previewer.ps1`: сборка и запуск desktop previewer; `-BuildOnly`
   проверяет сборку без открытия окна. Пути и CMake target задаются в секции Preview.
 
