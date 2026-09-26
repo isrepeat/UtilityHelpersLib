@@ -73,3 +73,49 @@ function Resolve-AndroidSdk {
 
     throw 'Android SDK was not found. Set ANDROID_HOME or install the Android SDK platform tools.'
 }
+
+function Resolve-AndroidBuildConfigurationPath {
+    param(
+        [Parameter(Mandatory)] [hashtable]$Configuration,
+        [Parameter(Mandatory)] [string]$ProjectRoot,
+        [Parameter(Mandatory)] [string]$Name
+    )
+
+    $value = Get-AndroidBuildConfigurationValue -Configuration $Configuration -Name $Name
+    return [System.IO.Path]::GetFullPath((Join-Path $ProjectRoot $value))
+}
+
+function Resolve-XamlCompiler {
+    param(
+        [Parameter(Mandatory)]
+        [string]$PackagesRoot,
+
+        [Parameter(Mandatory)]
+        [string]$Source
+    )
+
+    $packageName = 'XamlRuntime'
+    $nuget = (Get-Command nuget.exe -ErrorAction Stop).Source
+
+    # Не закрепляем версию XamlRuntime здесь: как и CMake-модуль пакета,
+    # при каждом запуске берём последнюю версию из выбранного NuGet feed-а.
+    & $nuget install $packageName -Source $Source -OutputDirectory $PackagesRoot -NonInteractive | Out-Host
+    if ($LASTEXITCODE -ne 0) {
+        throw "XamlRuntime restore failed with exit code $LASTEXITCODE."
+    }
+
+    # NuGet распаковывает каждую версию в каталог XamlRuntime.<версия>.
+    # Сортировка версий ставит 1.0.23 выше 1.0.9.
+    $candidates = Get-ChildItem -LiteralPath $PackagesRoot -Directory -Filter "$packageName.*" |
+        Sort-Object @{ Expression = {
+                [version]$_.Name.Substring($packageName.Length + 1)
+            }; Descending = $true }
+    foreach ($candidate in $candidates) {
+        $compiler = Join-Path $candidate.FullName 'tools\win-x64\XamlCompiler.exe'
+        if (Test-Path -LiteralPath $compiler -PathType Leaf) {
+            return $compiler
+        }
+    }
+
+    throw "NuGet package $packageName did not provide tools\\win-x64\\XamlCompiler.exe in $PackagesRoot."
+}
