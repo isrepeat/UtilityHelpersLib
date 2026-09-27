@@ -12,12 +12,12 @@ $destinationRoot = [IO.Path]::GetFullPath($Destination)
 if (Test-Path -LiteralPath $destinationRoot) {
     throw "Destination already exists: $destinationRoot. Choose a new directory."
 }
-$templateRoot = Join-Path (Split-Path -Parent $PSScriptRoot) 'templates'
+$templateRoot = Join-Path (Split-Path -Parent $PSScriptRoot) 'template_app'
 $files = @(Get-ChildItem -LiteralPath $templateRoot -Recurse -File -Force)
 [IO.Directory]::CreateDirectory($destinationRoot) | Out-Null
 foreach ($file in $files) {
     $relative = $file.FullName.Substring($templateRoot.Length + 1)
-    $relative = $relative.Replace('_Application_', $Name).Replace('_PackagePath_', $PackageId.Replace('.', '/'))
+    $relative = $relative.Replace('{{Application}}', $Name).Replace('{{PackagePath}}', $PackageId.Replace('.', '/'))
     $target = Join-Path $destinationRoot $relative
     [IO.Directory]::CreateDirectory((Split-Path -Parent $target)) | Out-Null
     if ($file.Extension -eq '.jar') {
@@ -25,10 +25,10 @@ foreach ($file in $files) {
         continue
     }
     $text = [IO.File]::ReadAllText($file.FullName)
-    $text = $text.Replace('<Application>', $Name).Replace('<application>', $Name.ToLowerInvariant()).Replace('<APPLICATION>', $Name.ToUpperInvariant())
-    $text = $text.Replace('<PackageId>', $PackageId).Replace('<JniPackage>', $PackageId.Replace('.', '_'))
-    $text = $text.Replace('<BuildToolsSource>', $BuildToolsSource.Replace("'", "''"))
-    $text = $text.Replace('<NativePackageSource>', $NativePackageSource.Replace("'", "''"))
+    $text = $text.Replace('{{Application}}', $Name).Replace('{{application}}', $Name.ToLowerInvariant()).Replace('{{APPLICATION}}', $Name.ToUpperInvariant())
+    $text = $text.Replace('{{PackageId}}', $PackageId).Replace('{{JniPackage}}', $PackageId.Replace('.', '_'))
+    $text = $text.Replace('{{BuildToolsSource}}', $BuildToolsSource.Replace("'", "''"))
+    $text = $text.Replace('{{NativePackageSource}}', $NativePackageSource.Replace("'", "''"))
     [IO.File]::WriteAllText($target, $text.TrimEnd(), [Text.UTF8Encoding]::new($false))
 }
 Write-Host "Application created: $destinationRoot"

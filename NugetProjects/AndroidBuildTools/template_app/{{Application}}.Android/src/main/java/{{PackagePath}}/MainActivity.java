@@ -1,4 +1,4 @@
-package <PackageId>;
+package {{PackageId}};
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -6,7 +6,7 @@ import android.widget.TextView;
 
 public class MainActivity extends Activity {
     static {
-        System.loadLibrary("<application>");
+        System.loadLibrary("{{application}}");
     }
 
     private native String nativeMessage();

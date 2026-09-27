@@ -15,6 +15,6 @@ plugins {
     id("com.isrepeat.android.settings")
 }
 
-rootProject.name = "<Application>"
-include(":<Application>.Android")
-project(":<Application>.Android").projectDir = file("../../<Application>.Android")
+rootProject.name = "{{Application}}"
+include(":{{Application}}.Android")
+project(":{{Application}}.Android").projectDir = file("../../{{Application}}.Android")

@@ -4,12 +4,29 @@
 нативного Android-приложения. Требуется Windows, PowerShell 5.1+, NuGet CLI,
 Visual Studio C++ с CMake, Android SDK/NDK и JDK 21.
 
-## Новый проект
+## Новый проект без существующего Android-проекта
 
-После восстановления пакета выполните:
+Для первого проекта ещё нет `build.ps1`, который мог бы восстановить пакет.
+Поэтому сначала NuGet распаковывает AndroidBuildTools во временный каталог:
 
 ```powershell
-./tools/New-AndroidApplication.ps1 -Name SampleApp -PackageId com.example.sampleapp -Destination C:\Projects\SampleApp -BuildToolsSource C:\NugetFeed -NativePackageSource C:\NugetFeed
+$version = '1.0.21'
+$bootstrapDirectory = 'C:\Temp\AndroidBuildTools'
+
+nuget install AndroidBuildTools `
+    -Version $version `
+    -Source C:\NugetFeed `
+    -OutputDirectory $bootstrapDirectory `
+    -NonInteractive
+
+$tools = Join-Path $bootstrapDirectory "AndroidBuildTools.$version"
+& "$tools\tools\New-AndroidApplication.ps1" `
+    -Name SampleApp `
+    -PackageId com.example.sampleapp `
+    -Destination C:\Projects\SampleApp `
+    -BuildToolsSource C:\NugetFeed `
+    -NativePackageSource C:\NugetFeed
+
 cd C:\Projects\SampleApp
 ./build.ps1 build-android -Configuration Debug
 ```
@@ -19,6 +36,21 @@ Activity и JNI-библиотекой. Gradle wrapper 9.5.0 включён вм
 дистрибутива. Отдельная установка Gradle не нужна. Имя проекта — латинские буквы
 и цифры, начиная с заглавной буквы; package ID — строчные буквы и цифры с точками.
 
+Полный контракт проекта, разбор bootstrap и flow сборки описаны в
+[BUILD-PIPELINE.md](BUILD-PIPELINE.md).
+
+## Синтаксис шаблонов
+
+Во всех шаблонах используется единый синтаксис `{{Имя}}`. Он одинаков для
+содержимого файлов и для имён файлов и каталогов, потому что фигурные скобки
+допустимы в путях Windows. Генератор заменяет `{{Application}}`,
+`{{application}}`, `{{APPLICATION}}`, `{{PackageId}}`, `{{PackagePath}}`,
+`{{JniPackage}}`, `{{BuildToolsSource}}` и `{{NativePackageSource}}` значениями
+параметров создания приложения.
+
+Например, `{{Application}}.Android/src/main/java/{{PackagePath}}` при имени
+`SampleApp` и package ID `com.example.sampleapp` становится
+`SampleApp.Android/src/main/java/com/example/sampleapp`.
 ## Границы ответственности
 
 - Приложение: package ID, исходники, ресурсы, пути, native targets, свои зависимости.

@@ -296,27 +296,134 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AndroidBuildTools", "AndroidBuildTools", "{A71CFA78-3F6E-4B63-8574-FF41252437C6}"
 	ProjectSection(SolutionItems) = preProject
 		NugetProjects\AndroidBuildTools\AndroidBuildTools.nuspec = NugetProjects\AndroidBuildTools\AndroidBuildTools.nuspec
+		NugetProjects\AndroidBuildTools\BUILD-PIPELINE.md = NugetProjects\AndroidBuildTools\BUILD-PIPELINE.md
 		NugetProjects\AndroidBuildTools\Pack.ps1 = NugetProjects\AndroidBuildTools\Pack.ps1
 		NugetProjects\AndroidBuildTools\README.md = NugetProjects\AndroidBuildTools\README.md
-		NugetProjects\AndroidBuildTools\templates\build.ps1 = NugetProjects\AndroidBuildTools\templates\build.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "gradle", "gradle", "{B5F9721F-47BF-40F2-8C53-0ABA3BC8E476}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\gradle\.gitignore = NugetProjects\AndroidBuildTools\gradle\.gitignore
+		NugetProjects\AndroidBuildTools\gradle\build.gradle = NugetProjects\AndroidBuildTools\gradle\build.gradle
+		NugetProjects\AndroidBuildTools\gradle\settings.gradle = NugetProjects\AndroidBuildTools\gradle\settings.gradle
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "template_app", "template_app", "{9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\template_app\.gitignore = NugetProjects\AndroidBuildTools\template_app\.gitignore
+		NugetProjects\AndroidBuildTools\template_app\android-build.psd1 = NugetProjects\AndroidBuildTools\template_app\android-build.psd1
+		NugetProjects\AndroidBuildTools\template_app\build.ps1 = NugetProjects\AndroidBuildTools\template_app\build.ps1
+		NugetProjects\AndroidBuildTools\template_app\CMakeLists.txt = NugetProjects\AndroidBuildTools\template_app\CMakeLists.txt
+		NugetProjects\AndroidBuildTools\template_app\CMakePresets.json = NugetProjects\AndroidBuildTools\template_app\CMakePresets.json
+		NugetProjects\AndroidBuildTools\template_app\README.md = NugetProjects\AndroidBuildTools\template_app\README.md
+		NugetProjects\AndroidBuildTools\template_app\version.properties = NugetProjects\AndroidBuildTools\template_app\version.properties
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{A148689F-EC55-41BE-B8B9-ADD8384391B4}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\tests\Test-Version.ps1 = NugetProjects\AndroidBuildTools\tests\Test-Version.ps1
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{6FE031B9-3D92-4C19-A9A9-3B4E58F28149}"
 	ProjectSection(SolutionItems) = preProject
-		NugetProjects\AndroidBuildTools\tools\ProjectConfiguration.ps1 = NugetProjects\AndroidBuildTools\tools\ProjectConfiguration.ps1
-		NugetProjects\AndroidBuildTools\tools\Invoke-Build.ps1 = NugetProjects\AndroidBuildTools\tools\Invoke-Build.ps1
-		NugetProjects\AndroidBuildTools\tools\Resolve-BuildTools.ps1 = NugetProjects\AndroidBuildTools\tools\Resolve-BuildTools.ps1
-		NugetProjects\AndroidBuildTools\tools\build-android.ps1 = NugetProjects\AndroidBuildTools\tools\build-android.ps1
 		NugetProjects\AndroidBuildTools\tools\build-and-distribute.ps1 = NugetProjects\AndroidBuildTools\tools\build-and-distribute.ps1
+		NugetProjects\AndroidBuildTools\tools\build-android.ps1 = NugetProjects\AndroidBuildTools\tools\build-android.ps1
 		NugetProjects\AndroidBuildTools\tools\bump-version.ps1 = NugetProjects\AndroidBuildTools\tools\bump-version.ps1
 		NugetProjects\AndroidBuildTools\tools\generate-xaml.ps1 = NugetProjects\AndroidBuildTools\tools\generate-xaml.ps1
+		NugetProjects\AndroidBuildTools\tools\get-configuration-path.ps1 = NugetProjects\AndroidBuildTools\tools\get-configuration-path.ps1
+		NugetProjects\AndroidBuildTools\tools\get-configuration-value.ps1 = NugetProjects\AndroidBuildTools\tools\get-configuration-value.ps1
+		NugetProjects\AndroidBuildTools\tools\Invoke-Build.ps1 = NugetProjects\AndroidBuildTools\tools\Invoke-Build.ps1
+		NugetProjects\AndroidBuildTools\tools\New-AndroidApplication.ps1 = NugetProjects\AndroidBuildTools\tools\New-AndroidApplication.ps1
 		NugetProjects\AndroidBuildTools\tools\run-android-app-previewer.ps1 = NugetProjects\AndroidBuildTools\tools\run-android-app-previewer.ps1
 		NugetProjects\AndroidBuildTools\tools\upload-apk-to-drive.ps1 = NugetProjects\AndroidBuildTools\tools\upload-apk-to-drive.ps1
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{92D5C050-7557-4E86-8441-3C17C333043A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "{{Application}}.Android", "{{Application}}.Android", "{78FEEA67-10C8-40A3-9657-AE81223D1F9A}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.Android\build.gradle.kts = NugetProjects\AndroidBuildTools\template_app\{{Application}}.Android\build.gradle.kts
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "{{Application}}.AndroidHost", "{{Application}}.AndroidHost", "{7FA0A306-CEBD-4346-BCF6-150BDFFD0CC6}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.AndroidHost\CMakeLists.txt = NugetProjects\AndroidBuildTools\template_app\{{Application}}.AndroidHost\CMakeLists.txt
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.AndroidHost\Native.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.AndroidHost\Native.cpp
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cmake", "cmake", "{E5665BC1-4EC5-4809-8677-E34B8FB58039}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\template_app\cmake\AndroidToolchain.cmake = NugetProjects\AndroidBuildTools\template_app\cmake\AndroidToolchain.cmake
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{30B74DB5-397B-4194-8E56-68D2ECD720A6}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\template_app\Scripts\build-for-drive.debug.bat = NugetProjects\AndroidBuildTools\template_app\Scripts\build-for-drive.debug.bat
+		NugetProjects\AndroidBuildTools\template_app\Scripts\build-for-drive.release.bat = NugetProjects\AndroidBuildTools\template_app\Scripts\build-for-drive.release.bat
+		NugetProjects\AndroidBuildTools\template_app\Scripts\run-android-app-previewer-release.bat = NugetProjects\AndroidBuildTools\template_app\Scripts\run-android-app-previewer-release.bat
+		NugetProjects\AndroidBuildTools\template_app\Scripts\run-android-app-previewer-debug.bat = NugetProjects\AndroidBuildTools\template_app\Scripts\run-android-app-previewer-debug.bat
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{7BCDB532-E025-4A6E-A97E-641CDA1611DD}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cmake", "cmake", "{654509E0-2477-4688-B77F-5D914F862CBB}"
 	ProjectSection(SolutionItems) = preProject
 		NugetProjects\AndroidBuildTools\tools\cmake\AndroidToolchain.cmake = NugetProjects\AndroidBuildTools\tools\cmake\AndroidToolchain.cmake
+		NugetProjects\AndroidBuildTools\tools\cmake\InstallAndroidAppPreviewerPluginSdk.cmake = NugetProjects\AndroidBuildTools\tools\cmake\InstallAndroidAppPreviewerPluginSdk.cmake
+		NugetProjects\AndroidBuildTools\tools\cmake\InstallXamlRuntime.cmake = NugetProjects\AndroidBuildTools\tools\cmake\InstallXamlRuntime.cmake
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{E66377AD-39CE-40D0-812E-46905F15268D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "main", "main", "{C3DD606A-4CC9-424A-AFEB-F43F3171EA71}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{D57B08D1-96B2-46C2-9236-392E1BB3CE42}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Gradle", "Gradle", "{D3823237-539E-4000-A1FD-CB421B8AB1B5}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\template_app\Tools\Gradle\build.gradle.kts = NugetProjects\AndroidBuildTools\template_app\Tools\Gradle\build.gradle.kts
+		NugetProjects\AndroidBuildTools\template_app\Tools\Gradle\gradle.properties = NugetProjects\AndroidBuildTools\template_app\Tools\Gradle\gradle.properties
+		NugetProjects\AndroidBuildTools\template_app\Tools\Gradle\gradlew = NugetProjects\AndroidBuildTools\template_app\Tools\Gradle\gradlew
+		NugetProjects\AndroidBuildTools\template_app\Tools\Gradle\gradlew.bat = NugetProjects\AndroidBuildTools\template_app\Tools\Gradle\gradlew.bat
+		NugetProjects\AndroidBuildTools\template_app\Tools\Gradle\settings.gradle.kts = NugetProjects\AndroidBuildTools\template_app\Tools\Gradle\settings.gradle.kts
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Module.AndroidBuildTools", "Module.AndroidBuildTools", "{66BEBE3B-95BB-4898-B913-D1E031005D3C}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\tools\Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1 = NugetProjects\AndroidBuildTools\tools\Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "groovy", "groovy", "{4C58C6B7-9943-41AD-9EE2-9D311073F2B1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "main", "main", "{0DB4F0E4-ACEE-4B86-8B92-723E21CDB277}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.Android\src\main\AndroidManifest.xml = NugetProjects\AndroidBuildTools\template_app\{{Application}}.Android\src\main\AndroidManifest.xml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "gradle", "gradle", "{541C644A-4BA8-491F-87FB-50939C7A1973}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "com", "com", "{2F33B243-DE04-4F8A-9FFE-C02938D318DF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "java", "java", "{E29A317F-6C3A-49DB-84AE-F9445E02961A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "wrapper", "wrapper", "{FD624C8B-62B6-48AB-9B79-627C82A849B1}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\template_app\Tools\Gradle\gradle\wrapper\gradle-wrapper.jar = NugetProjects\AndroidBuildTools\template_app\Tools\Gradle\gradle\wrapper\gradle-wrapper.jar
+		NugetProjects\AndroidBuildTools\template_app\Tools\Gradle\gradle\wrapper\gradle-wrapper.properties = NugetProjects\AndroidBuildTools\template_app\Tools\Gradle\gradle\wrapper\gradle-wrapper.properties
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "isrepeat", "isrepeat", "{6D5F6F3A-D31B-4EF4-B555-888087423AAC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "{{PackagePath}}", "{{PackagePath}}", "{26B1452E-227B-4EF5-B8BB-782F2E4E3690}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.Android\src\main\java\{{PackagePath}}\MainActivity.java = NugetProjects\AndroidBuildTools\template_app\{{Application}}.Android\src\main\java\{{PackagePath}}\MainActivity.java
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{68487B36-FF60-4B42-8DFE-2187F5D2F011}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\gradle\src\main\groovy\com\isrepeat\build\AndroidApplicationPlugin.groovy = NugetProjects\AndroidBuildTools\gradle\src\main\groovy\com\isrepeat\build\AndroidApplicationPlugin.groovy
+		NugetProjects\AndroidBuildTools\gradle\src\main\groovy\com\isrepeat\build\AndroidSettingsPlugin.groovy = NugetProjects\AndroidBuildTools\gradle\src\main\groovy\com\isrepeat\build\AndroidSettingsPlugin.groovy
+		NugetProjects\AndroidBuildTools\gradle\src\main\groovy\com\isrepeat\build\VerifyReleaseSigning.groovy = NugetProjects\AndroidBuildTools\gradle\src\main\groovy\com\isrepeat\build\VerifyReleaseSigning.groovy
 	EndProjectSection
 EndProject
 Global
@@ -672,9 +779,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{A71CFA78-3F6E-4B63-8574-FF41252437C6} = {5ED3376F-7EBD-4E7B-8B3F-E256D8E1505C}
-		{6FE031B9-3D92-4C19-A9A9-3B4E58F28149} = {A71CFA78-3F6E-4B63-8574-FF41252437C6}
-		{654509E0-2477-4688-B77F-5D914F862CBB} = {6FE031B9-3D92-4C19-A9A9-3B4E58F28149}
 		{D820CF56-DF1E-4B54-A9AC-257951382277} = {5ED3376F-7EBD-4E7B-8B3F-E256D8E1505C}
 		{0B4DBDBA-2F32-4D1F-9B5A-207A446C0EB4} = {D820CF56-DF1E-4B54-A9AC-257951382277}
 		{77E1F986-C601-4062-B70B-9226E02E9097} = {D820CF56-DF1E-4B54-A9AC-257951382277}
@@ -759,6 +863,32 @@ Global
 		{71EDC238-EBED-4B77-B231-8E8F03D7D1E1} = {0F0B784A-BFAE-4131-9F3D-26E9C83C187A}
 		{1CA0DA5A-24C5-43F5-868A-8FB1782BDE2F} = {0F0B784A-BFAE-4131-9F3D-26E9C83C187A}
 		{F0E66120-F0C1-456A-9CC7-516640629B0E} = {0F0B784A-BFAE-4131-9F3D-26E9C83C187A}
+		{A71CFA78-3F6E-4B63-8574-FF41252437C6} = {5ED3376F-7EBD-4E7B-8B3F-E256D8E1505C}
+		{B5F9721F-47BF-40F2-8C53-0ABA3BC8E476} = {A71CFA78-3F6E-4B63-8574-FF41252437C6}
+		{9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B} = {A71CFA78-3F6E-4B63-8574-FF41252437C6}
+		{A148689F-EC55-41BE-B8B9-ADD8384391B4} = {A71CFA78-3F6E-4B63-8574-FF41252437C6}
+		{6FE031B9-3D92-4C19-A9A9-3B4E58F28149} = {A71CFA78-3F6E-4B63-8574-FF41252437C6}
+		{92D5C050-7557-4E86-8441-3C17C333043A} = {B5F9721F-47BF-40F2-8C53-0ABA3BC8E476}
+		{78FEEA67-10C8-40A3-9657-AE81223D1F9A} = {9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B}
+		{7FA0A306-CEBD-4346-BCF6-150BDFFD0CC6} = {9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B}
+		{E5665BC1-4EC5-4809-8677-E34B8FB58039} = {9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B}
+		{30B74DB5-397B-4194-8E56-68D2ECD720A6} = {9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B}
+		{7BCDB532-E025-4A6E-A97E-641CDA1611DD} = {9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B}
+		{654509E0-2477-4688-B77F-5D914F862CBB} = {6FE031B9-3D92-4C19-A9A9-3B4E58F28149}
+		{E66377AD-39CE-40D0-812E-46905F15268D} = {6FE031B9-3D92-4C19-A9A9-3B4E58F28149}
+		{C3DD606A-4CC9-424A-AFEB-F43F3171EA71} = {92D5C050-7557-4E86-8441-3C17C333043A}
+		{D57B08D1-96B2-46C2-9236-392E1BB3CE42} = {78FEEA67-10C8-40A3-9657-AE81223D1F9A}
+		{D3823237-539E-4000-A1FD-CB421B8AB1B5} = {7BCDB532-E025-4A6E-A97E-641CDA1611DD}
+		{66BEBE3B-95BB-4898-B913-D1E031005D3C} = {E66377AD-39CE-40D0-812E-46905F15268D}
+		{4C58C6B7-9943-41AD-9EE2-9D311073F2B1} = {C3DD606A-4CC9-424A-AFEB-F43F3171EA71}
+		{0DB4F0E4-ACEE-4B86-8B92-723E21CDB277} = {D57B08D1-96B2-46C2-9236-392E1BB3CE42}
+		{541C644A-4BA8-491F-87FB-50939C7A1973} = {D3823237-539E-4000-A1FD-CB421B8AB1B5}
+		{2F33B243-DE04-4F8A-9FFE-C02938D318DF} = {4C58C6B7-9943-41AD-9EE2-9D311073F2B1}
+		{E29A317F-6C3A-49DB-84AE-F9445E02961A} = {0DB4F0E4-ACEE-4B86-8B92-723E21CDB277}
+		{FD624C8B-62B6-48AB-9B79-627C82A849B1} = {541C644A-4BA8-491F-87FB-50939C7A1973}
+		{6D5F6F3A-D31B-4EF4-B555-888087423AAC} = {2F33B243-DE04-4F8A-9FFE-C02938D318DF}
+		{26B1452E-227B-4EF5-B8BB-782F2E4E3690} = {E29A317F-6C3A-49DB-84AE-F9445E02961A}
+		{68487B36-FF60-4B42-8DFE-2187F5D2F011} = {6D5F6F3A-D31B-4EF4-B555-888087423AAC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {71A91AB0-90CD-4ACF-8D59-60382FE9FB7C}
