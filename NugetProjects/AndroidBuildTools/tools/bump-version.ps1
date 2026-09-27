@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [Parameter(Mandatory)]
     [string]$ProjectRoot,
@@ -9,6 +9,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Import-Module -Name (Join-Path $PSScriptRoot 'Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
+Module.AndroidBuildTools\Initialize-AndroidBuildConsole
 $config = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
 $versionFile = Join-Path $projectRoot $config.VersionFile
 $distributionDirectory = Join-Path $projectRoot $config.DistributionDirectory

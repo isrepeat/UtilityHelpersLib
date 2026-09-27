@@ -1,7 +1,12 @@
-$utf8Encoding = [System.Text.UTF8Encoding]::new($false)
-[Console]::InputEncoding = $utf8Encoding
-[Console]::OutputEncoding = $utf8Encoding
-$OutputEncoding = $utf8Encoding
+﻿function Initialize-AndroidBuildConsole {
+    # Задаём единый формат для сообщений PowerShell и данных, передаваемых
+    # внешним программам через pipeline. Кодировку вывода самой программы
+    # без поддержки UTF-8 эта функция изменить не может.
+    $utf8Encoding = [System.Text.UTF8Encoding]::new($false)
+    [Console]::InputEncoding = $utf8Encoding
+    [Console]::OutputEncoding = $utf8Encoding
+    $global:OutputEncoding = $utf8Encoding
+}
 
 function Import-AndroidBuildDataFile {
     param([Parameter(Mandatory)] [string]$Path)
@@ -162,6 +167,7 @@ function Resolve-XamlCompiler {
 }
 
 Export-ModuleMember -Function `
+    Initialize-AndroidBuildConsole, `
     Read-AndroidBuildConfiguration, `
     Get-AndroidBuildConfigurationValue, `
     Resolve-AndroidBuildTools, `

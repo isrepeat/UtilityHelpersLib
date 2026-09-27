@@ -1,7 +1,9 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([Parameter(Mandatory)] [string]$FeedPath)
 
 $ErrorActionPreference = 'Stop'
+Import-Module -Name (Join-Path $PSScriptRoot 'tools\Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
+Module.AndroidBuildTools\Initialize-AndroidBuildConsole
 $nuget = (Get-Command nuget.exe -ErrorAction Stop).Source
 $manifest = Join-Path $PSScriptRoot 'AndroidBuildTools.nuspec'
 $version = ([xml](Get-Content -LiteralPath $manifest -Raw)).package.metadata.version

@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [Parameter(Mandatory)]
     [string]$ProjectRoot,
@@ -12,11 +12,6 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$utf8Encoding = [System.Text.UTF8Encoding]::new($false)
-[Console]::InputEncoding = $utf8Encoding
-[Console]::OutputEncoding = $utf8Encoding
-$OutputEncoding = $utf8Encoding
-
 function Initialize-VisualStudioEnvironment {
     param(
         [Parameter(Mandatory = $true)]
@@ -42,6 +37,7 @@ function Initialize-VisualStudioEnvironment {
 
 try {
     Import-Module -Name (Join-Path $PSScriptRoot 'Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
+    Module.AndroidBuildTools\Initialize-AndroidBuildConsole
     $config = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
     $tools = Module.AndroidBuildTools\Resolve-AndroidBuildTools
     $generateXamlScript = Join-Path $PSScriptRoot 'generate-xaml.ps1'

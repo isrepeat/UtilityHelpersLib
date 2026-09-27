@@ -10,8 +10,13 @@ Visual Studio C++ с CMake, Android SDK/NDK и JDK 21.
 Поэтому сначала NuGet распаковывает AndroidBuildTools во временный каталог:
 
 ```powershell
-$version = '1.0.21'
+$version = '1.0.28'
 $bootstrapDirectory = 'C:\Temp\AndroidBuildTools'
+
+chcp 65001 | Out-Null
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 nuget install AndroidBuildTools `
     -Version $version `
@@ -25,7 +30,9 @@ $tools = Join-Path $bootstrapDirectory "AndroidBuildTools.$version"
     -PackageId com.example.sampleapp `
     -Destination C:\Projects\SampleApp `
     -BuildToolsSource C:\NugetFeed `
-    -NativePackageSource C:\NugetFeed
+    -NativePackageSource C:\NugetFeed `
+    -SecretsRoot C:\WORK\Secrets\Android `
+    -GoogleCloudProject androidappsstorage
 
 cd C:\Projects\SampleApp
 ./build.ps1 build-android -Configuration Debug
@@ -36,6 +43,18 @@ Activity и JNI-библиотекой. Gradle wrapper 9.5.0 включён вм
 дистрибутива. Отдельная установка Gradle не нужна. Имя проекта — латинские буквы
 и цифры, начиная с заглавной буквы; package ID — строчные буквы и цифры с точками.
 
+`-SecretsRoot` — обязательный параметр. Генератор создаёт в нём каталог с package ID:
+`C:\WORK\Secrets\Android\com.example.sampleapp`. В нём лежат отдельные Debug и
+Release keystore, а также `signing.properties` с паролями. Этот каталог находится
+вне проекта и не попадает в Git. Обе конфигурации Gradle используют эти ключи.
+
+Генератор получает SHA-1 обоих сертификатов, записывает их в
+`Google-OAuth-setup.md` и открывает страницу Google Cloud Clients, если задан
+`-GoogleCloudProject`. В Google Console остаётся создать два Android OAuth client:
+`SampleApp debug` и `SampleApp release`, с тем же package ID и соответствующим
+SHA-1. Desktop OAuth client и refresh token для публикации APK остаются общими для
+всех приложений; у приложения меняется только `Drive.Path`.
+
 Полный контракт проекта, разбор bootstrap и flow сборки описаны в
 [BUILD-PIPELINE.md](BUILD-PIPELINE.md).
 
@@ -45,7 +64,8 @@ Activity и JNI-библиотекой. Gradle wrapper 9.5.0 включён вм
 содержимого файлов и для имён файлов и каталогов, потому что фигурные скобки
 допустимы в путях Windows. Генератор заменяет `{{Application}}`,
 `{{application}}`, `{{APPLICATION}}`, `{{PackageId}}`, `{{PackagePath}}`,
-`{{JniPackage}}`, `{{BuildToolsSource}}` и `{{NativePackageSource}}` значениями
+`{{JniPackage}}`, `{{BuildToolsSource}}`, `{{NativePackageSource}}` и
+`{{SigningProperties}}` значениями
 параметров создания приложения.
 
 Например, `{{Application}}.Android/src/main/java/{{PackagePath}}` при имени
@@ -62,6 +82,11 @@ Activity и JNI-библиотекой. Gradle wrapper 9.5.0 включён вм
 Общие PowerShell-функции находятся в модуле `Module.AndroidBuildTools`.
 Scripts подключают его через `Import-Module`; при необходимости команду можно
 вызвать явно как `Module.AndroidBuildTools\Resolve-XamlCompiler`.
+
+`Initialize-AndroidBuildConsole` задаёт UTF-8 без BOM для консоли PowerShell,
+`$OutputEncoding` и pipeline во внешние программы. Все точки входа пакета
+вызывают её после загрузки модуля. Кодировку, с которой конкретный внешний `.exe`
+сам формирует свой вывод, эта настройка изменить не может.
 
 `build.ps1` восстанавливает пакет в каталог
 `PackageDirectories.AndroidBuildTools` из `android-build.psd1` и получает
@@ -88,15 +113,13 @@ Settings plugin задаёт Google, Maven Central и общий Maven feed.
 
 ## Signing
 
-Debug использует стандартный debug keystore. Release требует внешнего properties
-файла с `storeFile`, `storePassword`, `keyAlias`, `keyPassword` либо явного
-`android.buildTypes.release.signingConfig` в приложении.
-
-Путь передаётся через `SigningProperties` в `android-build.psd1`,
-`-PandroidSigningProperties` или `ANDROID_SIGNING_PROPERTIES`.
-Относительный `storeFile` отсчитывается от Android-модуля. Отсутствие signing
-не мешает Debug, а Release останавливается до упаковки. Ключи и пароли не входят
-в пакет и шаблон. Смена ключа не является частью миграции сборки.
+Генератор создаёт Debug и Release keystore за пределами Git и добавляет абсолютный
+путь к их `signing.properties` в `SigningProperties` файла `android-build.psd1`.
+Gradle получает его как `-PandroidSigningProperties`; значение
+`ANDROID_SIGNING_PROPERTIES` остаётся способом переопределить путь в CI. Файл
+содержит поля Release (`storeFile`, `storePassword`, `keyAlias`, `keyPassword`) и
+Debug (`debugStoreFile`, `debugStorePassword`, `debugKeyAlias`,
+`debugKeyPassword`).
 
 ## Команды
 

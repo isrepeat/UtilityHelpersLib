@@ -1,5 +1,5 @@
-@{
-    BuildToolsVersion = '1.0.21'
+﻿@{
+    BuildToolsVersion = '1.0.28'
     BuildToolsSource = '{{BuildToolsSource}}'
     ArtifactName = '{{Application}}'
     AndroidModule = '{{Application}}.Android'
@@ -18,4 +18,5 @@
     PackageSources = @{
         Native = '{{NativePackageSource}}'
     }
+    SigningProperties = '{{SigningProperties}}'
 }

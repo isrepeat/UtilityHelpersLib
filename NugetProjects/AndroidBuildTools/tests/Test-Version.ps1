@@ -1,8 +1,10 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param()
 
 $ErrorActionPreference = 'Stop'
 $packageRoot = Split-Path -Parent $PSScriptRoot
+Import-Module -Name (Join-Path $packageRoot 'tools\Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
+Module.AndroidBuildTools\Initialize-AndroidBuildConsole
 $fixture = Join-Path ([IO.Path]::GetTempPath()) ("AndroidBuildTools-test-" + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $fixture | Out-Null
 $configuration = @'

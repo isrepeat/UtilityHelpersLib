@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [Parameter(Mandatory)]
     [string]$ApkPath,
@@ -18,11 +18,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$utf8Encoding = [System.Text.UTF8Encoding]::new($false)
-[Console]::InputEncoding = $utf8Encoding
-[Console]::OutputEncoding = $utf8Encoding
-$OutputEncoding = $utf8Encoding
-
+Import-Module -Name (Join-Path $PSScriptRoot 'Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
+Module.AndroidBuildTools\Initialize-AndroidBuildConsole
 function ConvertTo-Base64Url {
     param([Parameter(Mandatory)] [byte[]]$Bytes)
 

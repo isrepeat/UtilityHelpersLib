@@ -334,6 +334,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{6FE031B9
 		NugetProjects\AndroidBuildTools\tools\get-configuration-value.ps1 = NugetProjects\AndroidBuildTools\tools\get-configuration-value.ps1
 		NugetProjects\AndroidBuildTools\tools\Invoke-Build.ps1 = NugetProjects\AndroidBuildTools\tools\Invoke-Build.ps1
 		NugetProjects\AndroidBuildTools\tools\New-AndroidApplication.ps1 = NugetProjects\AndroidBuildTools\tools\New-AndroidApplication.ps1
+		NugetProjects\AndroidBuildTools\tools\Open-AndroidOAuthClientSetup.ps1 = NugetProjects\AndroidBuildTools\tools\Open-AndroidOAuthClientSetup.ps1
 		NugetProjects\AndroidBuildTools\tools\run-android-app-previewer.ps1 = NugetProjects\AndroidBuildTools\tools\run-android-app-previewer.ps1
 		NugetProjects\AndroidBuildTools\tools\upload-apk-to-drive.ps1 = NugetProjects\AndroidBuildTools\tools\upload-apk-to-drive.ps1
 	EndProjectSection

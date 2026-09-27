@@ -10,8 +10,13 @@ PowerShell-команды, CMake-модули, Gradle convention plugins и ша
 существует. Сначала распакуйте точную версию NuGet-пакета во временный каталог:
 
 ```powershell
-$version = '1.0.21'
+$version = '1.0.28'
 $bootstrapDirectory = 'C:\Temp\AndroidBuildTools'
+
+chcp 65001 | Out-Null
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 nuget install AndroidBuildTools `
     -Version $version `
@@ -23,7 +28,7 @@ nuget install AndroidBuildTools `
 NuGet создаст каталог:
 
 ```text
-C:\Temp\AndroidBuildTools\AndroidBuildTools.1.0.21
+C:\Temp\AndroidBuildTools\AndroidBuildTools.1.0.28
 ```
 
 Запустите generator из этого каталога:
@@ -35,7 +40,9 @@ $tools = Join-Path $bootstrapDirectory "AndroidBuildTools.$version"
     -PackageId com.example.sampleapp `
     -Destination C:\Projects\SampleApp `
     -BuildToolsSource C:\NugetFeed `
-    -NativePackageSource C:\NugetFeed
+    -NativePackageSource C:\NugetFeed `
+    -SecretsRoot C:\WORK\Secrets\Android `
+    -GoogleCloudProject androidappsstorage
 ```
 
 После этого существует самостоятельный проект. Его обычная первая проверка:
@@ -44,6 +51,17 @@ $tools = Join-Path $bootstrapDirectory "AndroidBuildTools.$version"
 cd C:\Projects\SampleApp
 ./build.ps1 build-android -Configuration Debug
 ```
+
+`-SecretsRoot` передаётся явно. Генератор создаёт
+`<SecretsRoot>\<package ID>\debug.keystore`, `release.keystore` и
+`signing.properties`, генерирует оба ключа через `keytool` и записывает путь к
+properties в проектный `android-build.psd1`. В Git не попадают ни ключи, ни пароли.
+
+`Google-OAuth-setup.md` содержит package ID и SHA-1 обоих сертификатов.
+`-GoogleCloudProject` открывает страницу Clients указанного Cloud-проекта. Вручную
+создайте два Android OAuth client: Debug и Release. Они нужны приложению для Google
+API. Desktop OAuth client и refresh token сборочного uploader-а остаются общими;
+для каждого приложения отличается только `Drive.Path`.
 
 ## 2. Минимальный контракт проекта
 
@@ -56,7 +74,7 @@ bootstrap: он читает второе, восстанавливает зак
 
 ```powershell
 @{
-    BuildToolsVersion = '1.0.21'
+    BuildToolsVersion = '1.0.28'
     BuildToolsSource = 'C:\NugetFeed'
     ArtifactName = 'SampleApp'
     AndroidModule = 'SampleApp.Android'
@@ -100,9 +118,8 @@ Xaml = @{
 }
 ```
 
-Для previewer-а, Drive и Release signing добавляются секции `Preview`, `Drive` и
-`SigningProperties`. Шаблон простого приложения не создаёт фиктивные значения для
-этих функций.
+Для previewer-а и Drive добавляются секции `Preview` и `Drive`. Генератор добавляет
+`SigningProperties` автоматически: это абсолютный путь к файлу секретов вне Git.
 
 ## 3. Обычная Android-сборка
 
@@ -219,9 +236,10 @@ $config = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
 следующий patch по APK в `DistributionDirectory`, передаёт versionCode/versionName
 в CMake и Gradle и не меняет tracked-файлы.
 
-Debug использует стандартный debug keystore. Release требует внешний properties-файл
-с `storeFile`, `storePassword`, `keyAlias`, `keyPassword`. Его путь передаётся через
-`SigningProperties`, `-PandroidSigningProperties` или `ANDROID_SIGNING_PROPERTIES`.
+Генератор создаёт отдельные Debug и Release keystore в `SecretsRoot` и передаёт
+сгенерированный `signing.properties` через `SigningProperties`. Gradle передаёт
+путь как `-PandroidSigningProperties`. Для CI его можно переопределить переменной
+`ANDROID_SIGNING_PROPERTIES`.
 
 ## 10. Диагностика
 

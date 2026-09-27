@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [Parameter(Mandatory)]
     [string]$ProjectRoot,
@@ -33,6 +33,7 @@ $ErrorActionPreference = 'Stop'
 # Это конфигурация конкретного приложения. В пакете нет имён модулей, путей к
 # ресурсам или секретов: они всегда берутся из android-build.psd1 потребителя.
 Import-Module -Name (Join-Path $PSScriptRoot 'Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
+Module.AndroidBuildTools\Initialize-AndroidBuildConsole
 $config = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
 
 # $PSScriptRoot указывает на <пакет>/tools. Поднимаемся на один уровень, чтобы

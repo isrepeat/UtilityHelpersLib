@@ -60,6 +60,16 @@ class AndroidApplicationPlugin implements Plugin<Project> {
                 releaseSigning.keyAlias = signing.getProperty('keyAlias')
                 releaseSigning.keyPassword = signing.getProperty('keyPassword')
                 android.buildTypes.getByName('release').signingConfig = releaseSigning
+
+                def debugSigningKeys = ['debugStoreFile', 'debugStorePassword', 'debugKeyAlias', 'debugKeyPassword']
+                if (debugSigningKeys.every { signing.getProperty(it) }) {
+                    def debugSigning = android.signingConfigs.maybeCreate('debug')
+                    debugSigning.storeFile = project.file(signing.getProperty('debugStoreFile'))
+                    debugSigning.storePassword = signing.getProperty('debugStorePassword')
+                    debugSigning.keyAlias = signing.getProperty('debugKeyAlias')
+                    debugSigning.keyPassword = signing.getProperty('debugKeyPassword')
+                    android.buildTypes.getByName('debug').signingConfig = debugSigning
+                }
             }
             // Проверка выполняется перед сборкой release, поэтому debug доступен без ключа.
             def verifySigning = project.tasks.register('verifyReleaseSigning', VerifyReleaseSigning)

@@ -1,8 +1,14 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param()
 
 dynamicparam {
     $ErrorActionPreference = 'Stop'
+    # До restore модуль AndroidBuildTools ещё не существует в проекте.
+    $utf8Encoding = [System.Text.UTF8Encoding]::new($false)
+    [Console]::InputEncoding = $utf8Encoding
+    [Console]::OutputEncoding = $utf8Encoding
+    $OutputEncoding = $utf8Encoding
+    
     $config = & ([scriptblock]::Create([System.IO.File]::ReadAllText((Join-Path $PSScriptRoot 'android-build.psd1'))))
     $version = $config.BuildToolsVersion
     if ($version -notmatch '^\d+\.\d+\.\d+$') {
