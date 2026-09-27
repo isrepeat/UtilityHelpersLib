@@ -6,6 +6,8 @@ param(
     [Parameter(Mandatory)] [string]$BuildToolsSource,
     [Parameter(Mandatory)] [string]$NativePackageSource,
     [Parameter(Mandatory)] [string]$SecretsRoot,
+    [Parameter(Mandatory)] [string]$DriveOAuthClientPath,
+    [Parameter(Mandatory)] [string]$DriveTokenPath,
     [string]$GoogleCloudProject
 )
 
@@ -51,6 +53,8 @@ foreach ($file in $files) {
     $text = $text.Replace('{{BuildToolsSource}}', $BuildToolsSource.Replace("'", "''"))
     $text = $text.Replace('{{NativePackageSource}}', $NativePackageSource.Replace("'", "''"))
     $text = $text.Replace('{{SigningProperties}}', $signingPropertiesPath.Replace("'", "''"))
+    $text = $text.Replace('{{DriveOAuthClientPath}}', $DriveOAuthClientPath.Replace("'", "''"))
+    $text = $text.Replace('{{DriveTokenPath}}', $DriveTokenPath.Replace("'", "''"))
     [IO.File]::WriteAllText($target, $text.TrimEnd(), [Text.UTF8Encoding]::new($false))
 }
 

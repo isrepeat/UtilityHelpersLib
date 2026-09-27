@@ -1,5 +1,5 @@
 ﻿@{
-    BuildToolsVersion = '1.0.28'
+    BuildToolsVersion = '1.0.39'
     BuildToolsSource = '{{BuildToolsSource}}'
     ArtifactName = '{{Application}}'
     AndroidModule = '{{Application}}.Android'
@@ -19,4 +19,9 @@
         Native = '{{NativePackageSource}}'
     }
     SigningProperties = '{{SigningProperties}}'
+    Drive = @{
+        Path = @('Android', '{{Application}}')
+        OAuthClientPath = '{{DriveOAuthClientPath}}'
+        TokenPath = '{{DriveTokenPath}}'
+    }
 }

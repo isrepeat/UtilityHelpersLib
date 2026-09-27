@@ -10,7 +10,7 @@ Visual Studio C++ с CMake, Android SDK/NDK и JDK 21.
 Поэтому сначала NuGet распаковывает AndroidBuildTools во временный каталог:
 
 ```powershell
-$version = '1.0.28'
+$version = '1.0.39'
 $bootstrapDirectory = 'C:\Temp\AndroidBuildTools'
 
 chcp 65001 | Out-Null
@@ -32,6 +32,8 @@ $tools = Join-Path $bootstrapDirectory "AndroidBuildTools.$version"
     -BuildToolsSource C:\NugetFeed `
     -NativePackageSource C:\NugetFeed `
     -SecretsRoot C:\WORK\Secrets\Android `
+    -DriveOAuthClientPath C:\WORK\Secrets\apkupdater-drive-oauth.json `
+    -DriveTokenPath C:\WORK\Secrets\apkupdater-drive-token.json `
     -GoogleCloudProject androidappsstorage
 
 cd C:\Projects\SampleApp
@@ -54,6 +56,10 @@ Release keystore, а также `signing.properties` с паролями. Это
 `SampleApp debug` и `SampleApp release`, с тем же package ID и соответствующим
 SHA-1. Desktop OAuth client и refresh token для публикации APK остаются общими для
 всех приложений; у приложения меняется только `Drive.Path`.
+
+Генератор сразу создаёт секцию `Drive` в `android-build.psd1`. Пути к Desktop
+OAuth JSON и refresh token всегда передаются явно через `-DriveOAuthClientPath` и
+`-DriveTokenPath`: генератор не предполагает структуру секретов ApkUpdater.
 
 Полный контракт проекта, разбор bootstrap и flow сборки описаны в
 [BUILD-PIPELINE.md](BUILD-PIPELINE.md).
@@ -121,6 +127,20 @@ Gradle получает его как `-PandroidSigningProperties`; значен
 Debug (`debugStoreFile`, `debugStorePassword`, `debugKeyAlias`,
 `debugKeyPassword`).
 
+## Update из Google Drive
+
+Шаблон нового приложения добавляет Kotlin `MainPage` с кнопкой **Update** и
+`GoogleDriveUpdateController` из `androidappkit`. Controller ищет APK в
+`Android/<Application>` по имени `<Application>-<major>.<minor>.<patch>.apk`.
+Android OAuth client Debug и Release создаются генератором в документации
+`Google-OAuth-setup.md`.
+
+Установка выполняется внешним `ApkUpdater`, поэтому его APK и обновляемое
+приложение должны быть подписаны одним сертификатом для соответствующей
+конфигурации. В опубликованный список целей ApkUpdater добавляют package ID нового
+приложения. Доступ к Drive для сборочного uploader-а настраивается отдельно через
+секцию `Drive`: Desktop OAuth client и refresh token не входят в Android OAuth.
+
 ## Команды
 
 - `restore`: путь восстановленного пакета.
@@ -129,6 +149,8 @@ Debug (`debugStoreFile`, `debugStorePassword`, `debugKeyAlias`,
 - `build-and-distribute -Destination Local|Drive`: версионные APK.
 - `build-for-drive`, `build-all`: сборка и публикация в Drive.
 - `bump-version`: вычислить следующую версию без записи в исходники.
+- `tools\Remove-AndroidProject.ps1`: запросить package ID и удалить указанный
+  проект вместе с его secrets.
 - `generate-xaml`: необязательная секция `Xaml`; без неё генерация пропускается.
 - `run-android-app-previewer -BuildOnly`: собрать plugin и desktop host без запуска.
 - `upload-apk-to-drive`: загрузить APK в `Drive.Path`.

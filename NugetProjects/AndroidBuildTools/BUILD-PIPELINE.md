@@ -10,7 +10,7 @@ PowerShell-команды, CMake-модули, Gradle convention plugins и ша
 существует. Сначала распакуйте точную версию NuGet-пакета во временный каталог:
 
 ```powershell
-$version = '1.0.28'
+$version = '1.0.39'
 $bootstrapDirectory = 'C:\Temp\AndroidBuildTools'
 
 chcp 65001 | Out-Null
@@ -28,7 +28,7 @@ nuget install AndroidBuildTools `
 NuGet создаст каталог:
 
 ```text
-C:\Temp\AndroidBuildTools\AndroidBuildTools.1.0.28
+C:\Temp\AndroidBuildTools\AndroidBuildTools.1.0.39
 ```
 
 Запустите generator из этого каталога:
@@ -42,6 +42,8 @@ $tools = Join-Path $bootstrapDirectory "AndroidBuildTools.$version"
     -BuildToolsSource C:\NugetFeed `
     -NativePackageSource C:\NugetFeed `
     -SecretsRoot C:\WORK\Secrets\Android `
+    -DriveOAuthClientPath C:\WORK\Secrets\apkupdater-drive-oauth.json `
+    -DriveTokenPath C:\WORK\Secrets\apkupdater-drive-token.json `
     -GoogleCloudProject androidappsstorage
 ```
 
@@ -63,6 +65,10 @@ properties в проектный `android-build.psd1`. В Git не попада�
 API. Desktop OAuth client и refresh token сборочного uploader-а остаются общими;
 для каждого приложения отличается только `Drive.Path`.
 
+Секция `Drive` создаётся вместе с проектом. Путь содержит `Android/<Application>`;
+пути к общим Desktop OAuth JSON и refresh token передаются явно параметрами
+`-DriveOAuthClientPath` и `-DriveTokenPath`.
+
 ## 2. Минимальный контракт проекта
 
 В корне приложения нужны `build.ps1` и `android-build.psd1`. Первый файл —
@@ -74,7 +80,7 @@ bootstrap: он читает второе, восстанавливает зак
 
 ```powershell
 @{
-    BuildToolsVersion = '1.0.28'
+    BuildToolsVersion = '1.0.39'
     BuildToolsSource = 'C:\NugetFeed'
     ArtifactName = 'SampleApp'
     AndroidModule = 'SampleApp.Android'
@@ -241,7 +247,20 @@ $config = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
 путь как `-PandroidSigningProperties`. Для CI его можно переопределить переменной
 `ANDROID_SIGNING_PROPERTIES`.
 
-## 10. Диагностика
+## 10. Update из Google Drive
+
+Новый шаблон содержит Kotlin `MainPage` с кнопкой **Update**. Она запускает
+`GoogleDriveUpdateController` из `androidappkit`: controller авторизует пользователя
+в Google Drive, ищет versioned APK в `Android/<Application>` и проверяет package ID
+и версию до передачи файла updater-у.
+
+Updater — отдельное приложение `ApkUpdater`. Для вызова оно и целевое приложение
+подписываются одним сертификатом; Android проверяет это через signature permission.
+Кроме того, опубликованный список целей ApkUpdater должен включать package ID
+приложения. Без этих двух условий кнопка может проверить Drive, но установка будет
+остановлена безопасно.
+
+## 11. Диагностика
 
 1. Не восстановился AndroidBuildTools — проверить `BuildToolsVersion`,
    `BuildToolsSource`, `PackageDirectories.AndroidBuildTools` и `nuget.exe`.

@@ -361,6 +361,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{30B7
 	ProjectSection(SolutionItems) = preProject
 		NugetProjects\AndroidBuildTools\template_app\Scripts\build-for-drive.debug.bat = NugetProjects\AndroidBuildTools\template_app\Scripts\build-for-drive.debug.bat
 		NugetProjects\AndroidBuildTools\template_app\Scripts\build-for-drive.release.bat = NugetProjects\AndroidBuildTools\template_app\Scripts\build-for-drive.release.bat
+		NugetProjects\AndroidBuildTools\tools\Remove-AndroidProject.ps1 = NugetProjects\AndroidBuildTools\tools\Remove-AndroidProject.ps1
 		NugetProjects\AndroidBuildTools\template_app\Scripts\run-android-app-previewer-release.bat = NugetProjects\AndroidBuildTools\template_app\Scripts\run-android-app-previewer-release.bat
 		NugetProjects\AndroidBuildTools\template_app\Scripts\run-android-app-previewer-debug.bat = NugetProjects\AndroidBuildTools\template_app\Scripts\run-android-app-previewer-debug.bat
 	EndProjectSection
