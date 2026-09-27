@@ -3,6 +3,50 @@ $utf8Encoding = [System.Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = $utf8Encoding
 $OutputEncoding = $utf8Encoding
 
+function Import-AndroidBuildDataFile {
+    param([Parameter(Mandatory)] [string]$Path)
+
+    # android-build.psd1 — контролируемый файл конфигурации проекта. Не зависим
+    # от Import-PowerShellDataFile: в урезанном окружении CMake этот cmdlet
+    # может отсутствовать даже в Windows PowerShell.
+    $config = & ([scriptblock]::Create([System.IO.File]::ReadAllText($Path)))
+    if ($config -isnot [hashtable]) {
+        throw "Configuration must return a hashtable: $Path"
+    }
+    return $config
+}
+
+function Read-AndroidBuildConfiguration {
+    param([Parameter(Mandatory)] [string]$ProjectRoot)
+
+    $config = Import-AndroidBuildDataFile (Join-Path $ProjectRoot 'android-build.psd1')
+    foreach ($name in @('ArtifactName', 'AndroidModule', 'AndroidHost', 'NativeLibrary', 'AndroidPresetPrefix', 'CMakeVersionVariable', 'GradleRoot', 'VersionFile', 'DistributionDirectory', 'PackageDirectories', 'PackageSources')) {
+        if ([string]::IsNullOrWhiteSpace($config[$name])) {
+            throw "android-build.psd1 must define $name."
+        }
+    }
+    return $config
+}
+
+function Get-AndroidBuildConfigurationValue {
+    param(
+        [Parameter(Mandatory)] [hashtable]$Configuration,
+        [Parameter(Mandatory)] [string]$Name
+    )
+
+    $value = $Configuration
+    foreach ($segment in $Name.Split('.')) {
+        if ($value -isnot [hashtable] -or -not $value.ContainsKey($segment)) {
+            throw "android-build.psd1 must define $Name."
+        }
+        $value = $value[$segment]
+    }
+    if ([string]::IsNullOrWhiteSpace($value)) {
+        throw "android-build.psd1 must define $Name."
+    }
+    return $value
+}
+
 function Resolve-AndroidBuildTools {
     param([string]$CMakeExecutable)
 
@@ -87,11 +131,8 @@ function Resolve-AndroidBuildConfigurationPath {
 
 function Resolve-XamlCompiler {
     param(
-        [Parameter(Mandatory)]
-        [string]$PackagesRoot,
-
-        [Parameter(Mandatory)]
-        [string]$Source
+        [Parameter(Mandatory)] [string]$PackagesRoot,
+        [Parameter(Mandatory)] [string]$Source
     )
 
     $packageName = 'XamlRuntime'
@@ -119,3 +160,12 @@ function Resolve-XamlCompiler {
 
     throw "NuGet package $packageName did not provide tools\\win-x64\\XamlCompiler.exe in $PackagesRoot."
 }
+
+Export-ModuleMember -Function `
+    Read-AndroidBuildConfiguration, `
+    Get-AndroidBuildConfigurationValue, `
+    Resolve-AndroidBuildTools, `
+    Resolve-AndroidJavaHome, `
+    Resolve-AndroidSdk, `
+    Resolve-AndroidBuildConfigurationPath, `
+    Resolve-XamlCompiler

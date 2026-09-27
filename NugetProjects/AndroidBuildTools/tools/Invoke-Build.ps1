@@ -32,8 +32,8 @@ $ErrorActionPreference = 'Stop'
 
 # Это конфигурация конкретного приложения. В пакете нет имён модулей, путей к
 # ресурсам или секретов: они всегда берутся из android-build.psd1 потребителя.
-. (Join-Path $PSScriptRoot 'ProjectConfiguration.ps1')
-$config = Read-AndroidBuildConfiguration $ProjectRoot
+Import-Module -Name (Join-Path $PSScriptRoot 'Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
+$config = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
 
 # $PSScriptRoot указывает на <пакет>/tools. Поднимаемся на один уровень, чтобы
 # построить пути к другим scripts и вернуть корень пакета для команды restore.

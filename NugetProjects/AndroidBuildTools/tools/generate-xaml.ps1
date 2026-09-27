@@ -9,8 +9,8 @@ $utf8Encoding = [System.Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = $utf8Encoding
 $OutputEncoding = $utf8Encoding
 
-. (Join-Path $PSScriptRoot 'ProjectConfiguration.ps1')
-$config = Read-AndroidBuildConfiguration $ProjectRoot
+Import-Module -Name (Join-Path $PSScriptRoot 'Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
+$config = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
 if (-not $config.Xaml) {
     return
 }
@@ -44,10 +44,9 @@ function Invoke-Checked {
     }
 }
 
-. (Join-Path $PSScriptRoot 'Resolve-BuildTools.ps1')
-$xamlPackagesRoot = Resolve-AndroidBuildConfigurationPath -Configuration $config -ProjectRoot $ProjectRoot -Name 'PackageDirectories.XamlRuntime'
-$nativePackageSource = Get-AndroidBuildConfigurationValue -Configuration $config -Name 'PackageSources.Native'
-$xamlCompiler = Resolve-XamlCompiler -PackagesRoot $xamlPackagesRoot -Source $nativePackageSource
+$xamlPackagesRoot = Module.AndroidBuildTools\Resolve-AndroidBuildConfigurationPath -Configuration $config -ProjectRoot $ProjectRoot -Name 'PackageDirectories.XamlRuntime'
+$nativePackageSource = Module.AndroidBuildTools\Get-AndroidBuildConfigurationValue -Configuration $config -Name 'PackageSources.Native'
+$xamlCompiler = Module.AndroidBuildTools\Resolve-XamlCompiler -PackagesRoot $xamlPackagesRoot -Source $nativePackageSource
 Write-Host "==> Using XamlCompiler from $xamlCompiler"
 
 foreach ($xamlSourceRoot in $xamlSourceRoots) {

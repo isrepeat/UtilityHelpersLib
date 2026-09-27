@@ -9,7 +9,6 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-. (Join-Path $PSScriptRoot 'ProjectConfiguration.ps1')
-. (Join-Path $PSScriptRoot 'Resolve-BuildTools.ps1')
-$config = Read-AndroidBuildConfiguration $ProjectRoot
-Resolve-AndroidBuildConfigurationPath -Configuration $config -ProjectRoot $ProjectRoot -Name $Name
+Import-Module -Name (Join-Path $PSScriptRoot 'Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
+$config = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
+Module.AndroidBuildTools\Resolve-AndroidBuildConfigurationPath -Configuration $config -ProjectRoot $ProjectRoot -Name $Name

@@ -27,6 +27,10 @@ Activity и JNI-библиотекой. Gradle wrapper 9.5.0 включён вм
 - Пакет: реализация сборки, поиск инструментов, вычисление версии APK, Gradle defaults.
 - Шаблон: минимальные загрузчики и начальные файлы приложения.
 
+Общие PowerShell-функции находятся в модуле `Module.AndroidBuildTools`.
+Scripts подключают его через `Import-Module`; при необходимости команду можно
+вызвать явно как `Module.AndroidBuildTools\Resolve-XamlCompiler`.
+
 `build.ps1` восстанавливает пакет в каталог
 `PackageDirectories.AndroidBuildTools` из `android-build.psd1` и получает
 параметры команд из пакета. `ANDROID_BUILD_TOOLS_SOURCE` переопределяет источник

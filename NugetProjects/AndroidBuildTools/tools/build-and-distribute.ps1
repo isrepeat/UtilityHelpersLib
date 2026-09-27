@@ -20,8 +20,8 @@ $utf8Encoding = [System.Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = $utf8Encoding
 $OutputEncoding = $utf8Encoding
 
-. (Join-Path $PSScriptRoot 'ProjectConfiguration.ps1')
-$config = Read-AndroidBuildConfiguration $ProjectRoot
+Import-Module -Name (Join-Path $PSScriptRoot 'Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
+$config = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
 $bumpVersion = Join-Path $PSScriptRoot 'bump-version.ps1'
 $buildAndroid = Join-Path $PSScriptRoot 'build-android.ps1'
 $uploadToDrive = Join-Path $PSScriptRoot 'upload-apk-to-drive.ps1'

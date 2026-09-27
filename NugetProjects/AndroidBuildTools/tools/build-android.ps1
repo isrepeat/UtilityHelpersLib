@@ -29,8 +29,8 @@ $utf8Encoding = [System.Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = $utf8Encoding
 $OutputEncoding = $utf8Encoding
 
-. (Join-Path $PSScriptRoot 'ProjectConfiguration.ps1')
-$config = Read-AndroidBuildConfiguration $ProjectRoot
+Import-Module -Name (Join-Path $PSScriptRoot 'Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
+$config = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
 $gradleRoot = Join-Path $projectRoot $config.GradleRoot
 $gradleWrapper = Join-Path $gradleRoot 'gradlew.bat'
 $configurationDirectory = $Configuration.ToLowerInvariant()
@@ -50,11 +50,10 @@ function Invoke-Checked {
 }
 
 # Определяем установленные инструменты Visual Studio.
-. (Join-Path $PSScriptRoot 'Resolve-BuildTools.ps1')
-$tools = Resolve-AndroidBuildTools
+$tools = Module.AndroidBuildTools\Resolve-AndroidBuildTools
 $cmake = $tools.CMake
-$javaHome = Resolve-AndroidJavaHome
-$androidSdk = Resolve-AndroidSdk
+$javaHome = Module.AndroidBuildTools\Resolve-AndroidJavaHome
+$androidSdk = Module.AndroidBuildTools\Resolve-AndroidSdk
 $env:JAVA_HOME = $javaHome
 $env:ANDROID_HOME = $androidSdk
 $env:ANDROID_SDK_ROOT = $androidSdk
