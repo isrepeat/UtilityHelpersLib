@@ -26,9 +26,10 @@
     }
     Preview = @{
         ArtifactDirectory = 'Build\{{Application}}.PreviewPlugin'
-        Root = '..\AndroidAppPreviewer'
-        ProjectFile = 'AndroidAppPreviewer.WPF\AndroidAppPreviewer.WPF.csproj'
-        Executable = '!VS_TMP\Build\{Configuration}\x64\AndroidAppPreviewer.WPF\AndroidAppPreviewer.exe'
+        Executable = @{
+            Debug = '{{PreviewerDebugExecutablePath}}'
+            Release = '{{PreviewerReleaseExecutablePath}}'
+        }
         Plugin = 'Build\{Configuration}\x64\{{Application}}.PreviewPlugin\{{Application}}.PreviewPlugin.dll'
         Target = '{{application}}_preview_plugin'
     }

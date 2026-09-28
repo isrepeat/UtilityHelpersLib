@@ -156,15 +156,15 @@ Android OAuth client Debug и Release создаются генератором 
 - `tools\Remove-AndroidProject.ps1`: запросить package ID и удалить указанный
   проект вместе с его secrets.
 - `generate-xaml`: необязательная секция `Xaml`; без неё генерация пропускается.
-- `run-android-app-previewer -BuildOnly`: собрать plugin и desktop host без запуска.
+- `run-android-app-previewer -BuildOnly`: собрать plugin без запуска previewer-а.
 - `upload-apk-to-drive`: загрузить APK в `Drive.Path`.
 
 Для XAML задаются `Application`, `UI`, `Xaml.Namespace`, `ControlNamespace`,
 `ControlIncludePrefix`. Генератор восстанавливает `XamlRuntime` в
 `PackageDirectories.XamlRuntime` и запускает включённый в него
-`tools/win-x64/XamlCompiler.exe`. Preview содержит `ArtifactDirectory`, `Root`,
-`ProjectFile`, `Executable`, `Plugin`, `Target`. Приложения без этих функций не
-обязаны содержать фиктивные пути.
+`tools/win-x64/XamlCompiler.exe`. Preview содержит `ArtifactDirectory`,
+`Executable.Debug`, `Executable.Release`, `Plugin`, `Target`. `Executable`
+указывает на готовый AndroidAppPreviewer без его исходников.
 
 ## Версии APK
 

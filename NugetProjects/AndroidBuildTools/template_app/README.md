@@ -5,8 +5,8 @@
 ./build.ps1 build-and-distribute -Destination Local -Configuration Debug
 ```
 
-Проект создан из AndroidBuildTools. `android-build.psd1` содержит версию пакета
-и пути, `{{Application}}.Android/build.gradle.kts` — package ID и Android-ресурсы,
+Проект создан из AndroidBuildTools. `android-build.psd1` содержит пути к пакетам
+и инструментам, `{{Application}}.Android/build.gradle.kts` — package ID и Android-ресурсы,
 `{{Application}}.AndroidHost` — native-код. Gradle wrapper включён в репозиторий.
 `{{Application}}.Application/UI/Page/MainPage.xaml` — минимальная нативная страница;
 её `.cpp/.h` генерирует `XamlCompiler` в `!Generated` перед сборкой CMake.
@@ -16,9 +16,9 @@
 переопределить `ANDROID_SIGNING_PROPERTIES`.
 
 Конфигурация сразу содержит секции `Xaml`, `Preview` и `Drive`, как у полноценного
-приложения. `Preview` становится рабочим после добавления отдельного target-а
-`{{Application}}.PreviewPlugin`; Drive использует пути к секретам, переданные
-`New-AndroidApplication.ps1`.
+приложения. `Preview.Executable.Debug` и `Preview.Executable.Release` содержат
+пути к готовому AndroidAppPreviewer, а Drive использует пути к секретам,
+переданные `New-AndroidApplication.ps1`.
 
 ## Update из Google Drive
 
@@ -42,10 +42,5 @@ $tools = .\build.ps1 restore
 & "$tools\tools\Remove-AndroidProject.ps1" -ProjectRoot (Get-Location)
 ```
 
-Он сам запросит package ID и подтверждение `Y/N`. Для автоматического сценария
-можно передать package ID явно: `-PackageId {{PackageId}}`.
-
-Скрипт сверяет package ID с каталогом из `SigningProperties`, при необходимости
-сам переносит выполнение во временный каталог, затем удаляет корень проекта и
-связанный каталог secrets. Используйте его только для проекта, который больше не
-нужен.
+Скрипт запросит package ID и подтверждение `Y/N`, после чего удалит корень
+проекта и связанный каталог secrets.

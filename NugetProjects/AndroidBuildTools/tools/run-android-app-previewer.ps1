@@ -42,28 +42,11 @@ try {
     $tools = Module.AndroidBuildTools\Resolve-AndroidBuildTools
     $generateXamlScript = Join-Path $PSScriptRoot 'generate-xaml.ps1'
     $artifactDirectory = Join-Path $projectRoot $config.Preview.ArtifactDirectory
-    $previewerRoot = Join-Path $projectRoot $config.Preview.Root
-    $projectFile = Join-Path $previewerRoot $config.Preview.ProjectFile
-    $previewer = Join-Path $previewerRoot $config.Preview.Executable.Replace('{Configuration}', $Configuration)
     $plugin = Join-Path $artifactDirectory $config.Preview.Plugin.Replace('{Configuration}', $Configuration)
-    $binaryLogDirectory = Join-Path $artifactDirectory 'Logs'
-    $binaryLogName = "android-app-previewer-{0:yyyyMMdd-HHmmss}.binlog" -f [DateTime]::Now
-    $binaryLogPath = Join-Path $binaryLogDirectory $binaryLogName
-    $visualStudioMsBuild = Join-Path $tools.VisualStudio 'MSBuild\Current\Bin\MSBuild.exe'
     $visualStudioCmake = $tools.CMake
     $visualStudioNinja = $tools.Ninja
     $cmakeBuildDirectory = Join-Path $artifactDirectory 'Intermediate\CMake'
 
-
-    if (-not (Test-Path $projectFile)) {
-        throw "AndroidAppPreviewer was not found at $previewerRoot. Check Preview.Root in android-build.psd1."
-    }
-
-    if (Test-Path $visualStudioMsBuild) {
-        $msBuild = $visualStudioMsBuild
-    } else {
-        $msBuild = (Get-Command MSBuild.exe -ErrorAction Stop).Source
-    }
     Initialize-VisualStudioEnvironment -VisualStudioRoot $tools.VisualStudio
 
     if ($ParentProcessId -gt 0) {
@@ -75,7 +58,6 @@ try {
 
     & $generateXamlScript -ProjectRoot $ProjectRoot
 
-    New-Item -ItemType Directory -Path $binaryLogDirectory -Force | Out-Null
     Write-Host "==> Rebuilding Application preview plugin $Configuration x64"
     if (Test-Path $visualStudioCmake) {
         $cmake = $visualStudioCmake
@@ -100,21 +82,22 @@ try {
         throw "Application preview plugin was not produced: $plugin"
     }
 
-    Write-Host "==> Rebuilding AndroidAppPreviewer $Configuration x64"
-    & $msBuild $projectFile '/t:Rebuild' "/p:Configuration=$Configuration" '/p:Platform=x64' "/bl:$binaryLogPath;ProjectImports=Embed"
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "==> MSBuild binary log: $binaryLogPath"
-        throw "AndroidAppPreviewer $Configuration build failed with exit code $LASTEXITCODE."
-    }
-
-    Write-Host "==> MSBuild binary log: $binaryLogPath"
-    if (-not (Test-Path $previewer)) {
-        throw "AndroidAppPreviewer executable was not produced: $previewer"
-    }
-
     if ($BuildOnly) {
-        Write-Host "Previewer and plugin ready: $plugin"
+        Write-Host "Preview plugin ready: $plugin"
         return
+    }
+
+    $previewerValue = $config.Preview.Executable[$Configuration]
+    if ([string]::IsNullOrWhiteSpace($previewerValue)) {
+        throw "Preview.Executable.$Configuration must specify the AndroidAppPreviewer executable."
+    }
+    $previewer = if ([IO.Path]::IsPathRooted($previewerValue)) {
+        [IO.Path]::GetFullPath($previewerValue)
+    } else {
+        [IO.Path]::GetFullPath((Join-Path $ProjectRoot $previewerValue))
+    }
+    if (-not (Test-Path -LiteralPath $previewer -PathType Leaf)) {
+        throw "AndroidAppPreviewer executable was not found: $previewer"
     }
 
     Write-Host "==> Starting $previewer"

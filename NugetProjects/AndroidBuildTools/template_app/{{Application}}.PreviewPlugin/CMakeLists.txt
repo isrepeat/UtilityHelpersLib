@@ -57,12 +57,3 @@ else()
     add_custom_command(TARGET {{application}}_preview_plugin POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E make_directory "$<TARGET_FILE_DIR:{{application}}_preview_plugin>/Resources")
 endif()
-
-set(ANDROID_APP_PREVIEWER_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../AndroidAppPreviewer"
-    CACHE PATH "Path to the AndroidAppPreviewer repository")
-set({{application}}_previewer_output_directory
-    "${ANDROID_APP_PREVIEWER_ROOT}/!VS_TMP/Build/$<CONFIG>/x64/AndroidAppPreviewer.WPF")
-set_target_properties({{application}}_preview_plugin PROPERTIES
-    VS_DEBUGGER_COMMAND "${{{application}}_previewer_output_directory}/AndroidAppPreviewer.exe"
-    VS_DEBUGGER_COMMAND_ARGUMENTS "--plugin \"$<TARGET_FILE:{{application}}_preview_plugin>\""
-    VS_DEBUGGER_WORKING_DIRECTORY "${{{application}}_previewer_output_directory}")
