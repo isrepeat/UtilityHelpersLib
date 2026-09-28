@@ -352,6 +352,72 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "{{Application}}.AndroidHost
 		NugetProjects\AndroidBuildTools\template_app\{{Application}}.AndroidHost\Native.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.AndroidHost\Native.cpp
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "{{Application}}.Application", "{{Application}}.Application", "{D4B81251-C29A-4DF2-9DC9-07F94885364D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UI", "UI", "{C12A9B70-0C33-4FE6-A0D9-D7E9A02856AC}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.Application\UI\XamlCompilerIgnore.json = NugetProjects\AndroidBuildTools\template_app\{{Application}}.Application\UI\XamlCompilerIgnore.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Page", "Page", "{687EF530-5D13-447E-8569-A57BA6D50E7C}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.Application\UI\Page\MainPage.xaml = NugetProjects\AndroidBuildTools\template_app\{{Application}}.Application\UI\Page\MainPage.xaml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "{{Application}}.PreviewPlugin", "{{Application}}.PreviewPlugin", "{A2D13E26-89A3-4EE1-9AC6-6E72F85C183B}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\CMakeLists.txt = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\CMakeLists.txt
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\PreviewPluginExports.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\PreviewPluginExports.cpp
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Api", "Api", "{76420AF2-AB8E-4CFD-A1E5-793EFD1B3649}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\ElementApi.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\ElementApi.cpp
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\ElementApi.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\ElementApi.h
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\InteractionApi.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\InteractionApi.cpp
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\InteractionApi.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\InteractionApi.h
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\LoggingApi.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\LoggingApi.cpp
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\LoggingApi.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\LoggingApi.h
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\MetadataApi.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\MetadataApi.cpp
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\MetadataApi.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\MetadataApi.h
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\PreviewPluginApi.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\PreviewPluginApi.cpp
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\PreviewPluginApi.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\PreviewPluginApi.h
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\RenderingApi.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\RenderingApi.cpp
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\RenderingApi.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\RenderingApi.h
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\SessionApi.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\SessionApi.cpp
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\SessionApi.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\SessionApi.h
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\XamlCompletionApi.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\XamlCompletionApi.cpp
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\XamlCompletionApi.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\XamlCompletionApi.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Bridge", "Bridge", "{5BE24F53-667E-4AE9-A91B-2F6C0C3BBD13}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Bridge\Diagnostic.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Bridge\Diagnostic.cpp
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Bridge\Diagnostic.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Bridge\Diagnostic.h
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Bridge\ElementTree.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Bridge\ElementTree.cpp
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Bridge\ElementTree.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Bridge\ElementTree.h
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Bridge\PreviewPluginSdkTypes.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Bridge\PreviewPluginSdkTypes.cpp
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Bridge\PreviewPluginSdkTypes.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Bridge\PreviewPluginSdkTypes.h
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Bridge\TextBuffer.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Bridge\TextBuffer.cpp
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Bridge\TextBuffer.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Bridge\TextBuffer.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Rendering", "Rendering", "{64F14C06-A032-40B9-B626-E896C930CA57}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Rendering\AngleRenderSurface.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Rendering\AngleRenderSurface.cpp
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Rendering\AngleRenderSurface.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Rendering\AngleRenderSurface.h
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Rendering\RecordingBackend.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Rendering\RecordingBackend.cpp
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Rendering\RecordingBackend.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Rendering\RecordingBackend.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Session", "Session", "{F36D6DE8-DA19-4D86-BE30-C0EC77F6384A}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Session\PreviewNavigationController.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Session\PreviewNavigationController.cpp
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Session\PreviewNavigationController.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Session\PreviewNavigationController.h
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Session\PreviewSession.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Session\PreviewSession.cpp
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Session\PreviewSession.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Session\PreviewSession.h
+	EndProjectSection
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cmake", "cmake", "{E5665BC1-4EC5-4809-8677-E34B8FB58039}"
 	ProjectSection(SolutionItems) = preProject
 		NugetProjects\AndroidBuildTools\template_app\cmake\AndroidToolchain.cmake = NugetProjects\AndroidBuildTools\template_app\cmake\AndroidToolchain.cmake
@@ -873,6 +939,14 @@ Global
 		{92D5C050-7557-4E86-8441-3C17C333043A} = {B5F9721F-47BF-40F2-8C53-0ABA3BC8E476}
 		{78FEEA67-10C8-40A3-9657-AE81223D1F9A} = {9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B}
 		{7FA0A306-CEBD-4346-BCF6-150BDFFD0CC6} = {9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B}
+		{D4B81251-C29A-4DF2-9DC9-07F94885364D} = {9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B}
+		{C12A9B70-0C33-4FE6-A0D9-D7E9A02856AC} = {D4B81251-C29A-4DF2-9DC9-07F94885364D}
+		{687EF530-5D13-447E-8569-A57BA6D50E7C} = {C12A9B70-0C33-4FE6-A0D9-D7E9A02856AC}
+		{A2D13E26-89A3-4EE1-9AC6-6E72F85C183B} = {9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B}
+		{76420AF2-AB8E-4CFD-A1E5-793EFD1B3649} = {A2D13E26-89A3-4EE1-9AC6-6E72F85C183B}
+		{5BE24F53-667E-4AE9-A91B-2F6C0C3BBD13} = {A2D13E26-89A3-4EE1-9AC6-6E72F85C183B}
+		{64F14C06-A032-40B9-B626-E896C930CA57} = {A2D13E26-89A3-4EE1-9AC6-6E72F85C183B}
+		{F36D6DE8-DA19-4D86-BE30-C0EC77F6384A} = {A2D13E26-89A3-4EE1-9AC6-6E72F85C183B}
 		{E5665BC1-4EC5-4809-8677-E34B8FB58039} = {9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B}
 		{30B74DB5-397B-4194-8E56-68D2ECD720A6} = {9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B}
 		{7BCDB532-E025-4A6E-A97E-641CDA1611DD} = {9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B}

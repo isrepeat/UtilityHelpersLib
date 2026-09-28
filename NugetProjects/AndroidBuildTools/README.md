@@ -10,7 +10,7 @@ Visual Studio C++ с CMake, Android SDK/NDK и JDK 21.
 Поэтому сначала NuGet распаковывает AndroidBuildTools во временный каталог:
 
 ```powershell
-$version = '1.0.39'
+$version = '1.0.40'
 $bootstrapDirectory = 'C:\Temp\AndroidBuildTools'
 
 chcp 65001 | Out-Null

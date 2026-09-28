@@ -1,9 +1,11 @@
-﻿@{
-    BuildToolsVersion = '1.0.39'
+@{
+    BuildToolsVersion = '1.0.40'
     BuildToolsSource = '{{BuildToolsSource}}'
     ArtifactName = '{{Application}}'
     AndroidModule = '{{Application}}.Android'
     AndroidHost = '{{Application}}.AndroidHost'
+    Application = '{{Application}}.Application'
+    UI = '{{Application}}.UI'
     NativeLibrary = 'lib{{application}}.so'
     AndroidPresetPrefix = 'android-arm64'
     CMakeVersionVariable = '{{APPLICATION}}_PACKAGE_VERSION'
@@ -17,6 +19,19 @@
     }
     PackageSources = @{
         Native = '{{NativePackageSource}}'
+    }
+    Xaml = @{
+        Namespace = 'urn:{{application}}:xaml'
+        ControlNamespace = '{{application}}::ui::control'
+        ControlIncludePrefix = '{{Application}}.UI/Control'
+    }
+    Preview = @{
+        ArtifactDirectory = 'Build\{{Application}}.PreviewPlugin'
+        Root = '..\AndroidAppPreviewer'
+        ProjectFile = 'AndroidAppPreviewer.WPF\AndroidAppPreviewer.WPF.csproj'
+        Executable = '!VS_TMP\Build\{Configuration}\x64\AndroidAppPreviewer.WPF\AndroidAppPreviewer.exe'
+        Plugin = 'Build\{Configuration}\x64\{{Application}}.PreviewPlugin\{{Application}}.PreviewPlugin.dll'
+        Target = '{{application}}_preview_plugin'
     }
     SigningProperties = '{{SigningProperties}}'
     Drive = @{

@@ -10,7 +10,7 @@ PowerShell-команды, CMake-модули, Gradle convention plugins и ша
 существует. Сначала распакуйте точную версию NuGet-пакета во временный каталог:
 
 ```powershell
-$version = '1.0.39'
+$version = '1.0.40'
 $bootstrapDirectory = 'C:\Temp\AndroidBuildTools'
 
 chcp 65001 | Out-Null
@@ -28,7 +28,7 @@ nuget install AndroidBuildTools `
 NuGet создаст каталог:
 
 ```text
-C:\Temp\AndroidBuildTools\AndroidBuildTools.1.0.39
+C:\Temp\AndroidBuildTools\AndroidBuildTools.1.0.40
 ```
 
 Запустите generator из этого каталога:
@@ -80,7 +80,7 @@ bootstrap: он читает второе, восстанавливает зак
 
 ```powershell
 @{
-    BuildToolsVersion = '1.0.39'
+    BuildToolsVersion = '1.0.40'
     BuildToolsSource = 'C:\NugetFeed'
     ArtifactName = 'SampleApp'
     AndroidModule = 'SampleApp.Android'
