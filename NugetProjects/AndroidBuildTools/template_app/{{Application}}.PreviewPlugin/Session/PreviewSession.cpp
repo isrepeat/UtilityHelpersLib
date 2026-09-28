@@ -1,20 +1,26 @@
 #include "PreviewSession.h"
 
+#include <XamlRuntime/RuntimeMarkup/RuntimeBindingRegistry.h>
 #include <XamlRuntime/RuntimeMarkup/RuntimeTreeBuilder.h>
 #include <XamlRuntime/RuntimeMarkup/XamlParser.h>
 
+#include "../../!Generated/{{Application}}.Application/Xaml/Page/SettingsPage.xaml.h"
 #include "../../!Generated/{{Application}}.Application/Xaml/Page/MainPage.xaml.h"
 
 #include <stdexcept>
 #include <utility>
 #include <cctype>
+#include <vector>
 
 namespace {{application}}::preview::session {
     PreviewSession::PreviewSession(int width, int height)
-        : bindings(std::make_unique<xaml::BindingScope>()) {
-        this->root = xaml::generated::MainPage::Create(this->viewModel, *this->bindings);
-        this->animations.Attach(*this->root, xaml::AnimationRegistry{}, false);
-        this->Resize(width, height);
+        : navigation(*this) {
+        if (width <= 0 || height <= 0) {
+            throw std::invalid_argument("Preview session dimensions must be positive");
+        }
+        this->viewport = {static_cast<float>(width), static_cast<float>(height)};
+        this->viewModel.session = this;
+        this->LoadPage("MainPage");
     }
 
     //
@@ -28,8 +34,46 @@ namespace {{application}}::preview::session {
         return this->navigation;
     }
 
+    std::string_view PreviewSession::CurrentPage() const {
+        return this->currentPage;
+    }
+
+    std::string_view PreviewSession::PageTitle(std::string_view page) const {
+        if (page == "MainPage") {
+            return "Главная";
+        }
+        if (page == "SettingsPage") {
+            return "Настройки";
+        }
+        return {};
+    }
+
     bool PreviewSession::LoadPage(std::string_view page) {
-        return page == "MainPage";
+        if (!this->IsKnownPage(page)) {
+            return false;
+        }
+        auto bindings = std::make_unique<xaml::BindingScope>();
+        std::unique_ptr<xaml::Element> root;
+        if (page == "MainPage") {
+            root = xaml::generated::MainPage::Create(this->viewModel, *bindings);
+        } else {
+            root = xaml::generated::SettingsPage::Create(this->viewModel, *bindings);
+        }
+        xaml::AnimationController animations;
+        animations.Attach(*root, xaml::AnimationRegistry{}, false);
+        this->interaction.Cancel();
+        this->animations = std::move(animations);
+        this->bindings = std::move(bindings);
+        this->root = std::move(root);
+        this->currentPage = page;
+        xaml::layoutInViewport(*this->root, this->viewport);
+        return true;
+    }
+
+    void PreviewSession::QueuePage(std::string_view page) {
+        if (this->IsKnownPage(page)) {
+            this->pendingPage = page;
+        }
     }
 
     void PreviewSession::Resize(int width, int height) {
@@ -41,13 +85,17 @@ namespace {{application}}::preview::session {
     }
 
     bool PreviewSession::ReloadMarkup(std::string_view page, std::string_view markup, std::string_view sourcePath, std::string& error) {
-        if (!this->LoadPage(page)) {
+        if (!this->IsKnownPage(page)) {
             error = "Unknown template page";
             return false;
         }
         xaml::runtime::RuntimeBindingContext context;
         context.xamlNamespace = "urn:{{application}}:xaml";
-        context.owner = "MainPage";
+        context.owner = page;
+        context.bindings = std::make_shared<xaml::runtime::RuntimeBindingRegistry>();
+        context.bindings->AddCommand("NavigateToMainCommand", [this] { this->QueuePage("MainPage"); });
+        context.bindings->AddCommand("NavigateToSettingsCommand", [this] { this->QueuePage("SettingsPage"); });
+        context.bindings->AddCommand("UpdateApplicationCommand", [] {});
         auto tree = xaml::runtime::RuntimeTreeBuilder{}.BuildPage(
             xaml::runtime::XamlParser{}.Parse(markup, sourcePath), context, this->viewport);
         xaml::AnimationController animations;
@@ -56,6 +104,7 @@ namespace {{application}}::preview::session {
         this->animations = std::move(animations);
         this->bindings = std::move(tree.bindings);
         this->root = std::move(tree.root);
+        this->currentPage = page;
         error.clear();
         return true;
     }
@@ -84,8 +133,30 @@ namespace {{application}}::preview::session {
         const bool interacting = this->interaction.Update();
         const bool animating = this->animations.IsAnimating();
         this->animations.Update();
+        if (!this->pendingPage.empty()) {
+            const std::string page = std::move(this->pendingPage);
+            this->pendingPage.clear();
+            this->LoadPage(page);
+            return true;
+        }
         xaml::layoutInViewport(*this->root, this->viewport);
         return interacting || animating || this->animations.IsAnimating();
+    }
+
+    bool PreviewSession::IsKnownPage(std::string_view page) const {
+        return !this->PageTitle(page).empty();
+    }
+
+    xaml::Element::Command PreviewSession::ViewModel::NavigateToMainCommand() {
+        return [this] { this->session->QueuePage("MainPage"); };
+    }
+
+    xaml::Element::Command PreviewSession::ViewModel::NavigateToSettingsCommand() {
+        return [this] { this->session->QueuePage("SettingsPage"); };
+    }
+
+    xaml::Element::Command PreviewSession::ViewModel::UpdateApplicationCommand() {
+        return [] {};
     }
 
     std::vector<std::string> PreviewSession::ParseNavigationTransitionIds(std::string_view json) {

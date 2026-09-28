@@ -12,7 +12,7 @@
         <None Include="Android\CMakeLists.txt"><Filter>Android</Filter></None>
         <None Include="build\native\XamlRuntime.targets"><Filter>build\native</Filter></None>
         <None Include="cmake\XamlRuntimeConfig.cmake"><Filter>cmake</Filter></None>
-        <None Include="Nuget.XamlRuntime.Pack.ps1" />
+        <None Include="Pack.ps1" />
         <None Include="ThirdParty\ANGLE\vcpkg.json"><Filter>ThirdParty\ANGLE</Filter></None>
         <None Include="XamlRuntime.nuspec" />
     </ItemGroup>

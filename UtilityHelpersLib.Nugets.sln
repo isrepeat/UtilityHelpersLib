@@ -154,9 +154,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HelpersNew.st", "HelpersNew
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AndroidAppPreviewer", "AndroidAppPreviewer", "{24B9776B-90C7-97F3-DD58-50603FDFA8C2}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AndroidAppPreviewer.PluginSDK.Package", "NugetProjects\AndroidAppPreviewer\Nuget\AndroidAppPreviewer.PluginSDK.Package\AndroidAppPreviewer.PluginSDK.Package.vcxproj", "{F507F677-1AFE-4ED3-838F-E30A42B66B1C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AndroidAppPreviewer.PluginSDK.Package", "NugetProjects\AndroidAppPreviewer.PluginSDK\Nuget\AndroidAppPreviewer.PluginSDK.Package\AndroidAppPreviewer.PluginSDK.Package.vcxproj", "{F507F677-1AFE-4ED3-838F-E30A42B66B1C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AndroidAppPreviewer.PluginSDK.WPF", "NugetProjects\AndroidAppPreviewer\Nuget\AndroidAppPreviewer.PluginSDK.WPF\AndroidAppPreviewer.PluginSDK.WPF.csproj", "{8740FED9-BB1C-4A40-AB98-B47E0866B071}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AndroidAppPreviewer.PluginSDK.WPF", "NugetProjects\AndroidAppPreviewer.PluginSDK\Nuget\AndroidAppPreviewer.PluginSDK.WPF\AndroidAppPreviewer.PluginSDK.WPF.csproj", "{8740FED9-BB1C-4A40-AB98-B47E0866B071}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Android", "Android", "{3FC1304D-35C5-4385-9704-55E42BB47AA1}"
 	ProjectSection(SolutionItems) = preProject
@@ -183,7 +183,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AndroidCoreSdk", "AndroidCo
 	ProjectSection(SolutionItems) = preProject
 		PackageProjects\Android\AndroidCoreSdk\build.gradle.kts = PackageProjects\Android\AndroidCoreSdk\build.gradle.kts
 		PackageProjects\Android\AndroidCoreSdk\gradle.properties = PackageProjects\Android\AndroidCoreSdk\gradle.properties
-		PackageProjects\Android\AndroidCoreSdk\Package.Android.AndroidCoreSdk.Pack.ps1 = PackageProjects\Android\AndroidCoreSdk\Package.Android.AndroidCoreSdk.Pack.ps1
+		PackageProjects\Android\AndroidCoreSdk\Pack.ps1 = PackageProjects\Android\AndroidCoreSdk\Pack.ps1
 		PackageProjects\Android\AndroidCoreSdk\README.md = PackageProjects\Android\AndroidCoreSdk\README.md
 		PackageProjects\Android\AndroidCoreSdk\settings.gradle.kts = PackageProjects\Android\AndroidCoreSdk\settings.gradle.kts
 	EndProjectSection
@@ -244,7 +244,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AndroidAppKit", "AndroidApp
 	ProjectSection(SolutionItems) = preProject
 		PackageProjects\Android\AndroidAppKit\build.gradle.kts = PackageProjects\Android\AndroidAppKit\build.gradle.kts
 		PackageProjects\Android\AndroidAppKit\gradle.properties = PackageProjects\Android\AndroidAppKit\gradle.properties
-		PackageProjects\Android\AndroidAppKit\Package.Android.AndroidAppKit.Pack.ps1 = PackageProjects\Android\AndroidAppKit\Package.Android.AndroidAppKit.Pack.ps1
+		PackageProjects\Android\AndroidAppKit\Pack.ps1 = PackageProjects\Android\AndroidAppKit\Pack.ps1
 		PackageProjects\Android\AndroidAppKit\settings.gradle.kts = PackageProjects\Android\AndroidAppKit\settings.gradle.kts
 	EndProjectSection
 EndProject
@@ -364,6 +364,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Page", "Page", "{687EF530-5D13-447E-8569-A57BA6D50E7C}"
 	ProjectSection(SolutionItems) = preProject
 		NugetProjects\AndroidBuildTools\template_app\{{Application}}.Application\UI\Page\MainPage.xaml = NugetProjects\AndroidBuildTools\template_app\{{Application}}.Application\UI\Page\MainPage.xaml
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.Application\UI\Page\SettingsPage.xaml = NugetProjects\AndroidBuildTools\template_app\{{Application}}.Application\UI\Page\SettingsPage.xaml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "{{Application}}.PreviewPlugin", "{{Application}}.PreviewPlugin", "{A2D13E26-89A3-4EE1-9AC6-6E72F85C183B}"
@@ -378,8 +379,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Api", "Api", "{76420AF2-AB8
 		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\ElementApi.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\ElementApi.h
 		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\InteractionApi.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\InteractionApi.cpp
 		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\InteractionApi.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\InteractionApi.h
-		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\LoggingApi.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\LoggingApi.cpp
-		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\LoggingApi.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\LoggingApi.h
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\DiagnosticApi.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\DiagnosticApi.cpp
+		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\DiagnosticApi.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\DiagnosticApi.h
 		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\MetadataApi.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\MetadataApi.cpp
 		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\MetadataApi.h = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\MetadataApi.h
 		NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\PreviewPluginApi.cpp = NugetProjects\AndroidBuildTools\template_app\{{Application}}.PreviewPlugin\Api\PreviewPluginApi.cpp

@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
     [Parameter(Mandatory)] [ValidatePattern('^[A-Z][A-Za-z0-9]*$')] [string]$Name,
     [Parameter(Mandatory)] [ValidatePattern('^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$')] [string]$PackageId,
@@ -38,6 +38,12 @@ if (Test-Path -LiteralPath $secretsDirectory) {
 $signingPropertiesPath = Join-Path $secretsDirectory 'signing.properties'
 
 $templateRoot = Join-Path (Split-Path -Parent $PSScriptRoot) 'template_app'
+$versionPropertiesPath = Join-Path $templateRoot 'version.properties'
+$versionProperties = ConvertFrom-StringData ([IO.File]::ReadAllText($versionPropertiesPath))
+$applicationVersion = $versionProperties.VERSION_NAME_BASE
+if ([string]::IsNullOrWhiteSpace($applicationVersion)) {
+    throw 'version.properties must define VERSION_NAME_BASE.'
+}
 $files = @(Get-ChildItem -LiteralPath $templateRoot -Recurse -File -Force)
 [IO.Directory]::CreateDirectory($destinationRoot) | Out-Null
 foreach ($file in $files) {
@@ -50,7 +56,7 @@ foreach ($file in $files) {
         continue
     }
     $text = [IO.File]::ReadAllText($file.FullName)
-    $text = $text.Replace('{{Application}}', $Name).Replace('{{application}}', $Name.ToLowerInvariant()).Replace('{{APPLICATION}}', $Name.ToUpperInvariant())
+    $text = $text.Replace('{{Application}}', $Name).Replace('{{application}}', $Name.ToLowerInvariant()).Replace('{{APPLICATION}}', $Name.ToUpperInvariant()).Replace('{{ApplicationVersion}}', $applicationVersion)
     $text = $text.Replace('{{PackageId}}', $PackageId).Replace('{{JniPackage}}', $PackageId.Replace('.', '_'))
     $text = $text.Replace('{{BuildToolsSource}}', $BuildToolsSource.Replace("'", "''"))
     $text = $text.Replace('{{NativePackageSource}}', $NativePackageSource.Replace("'", "''"))

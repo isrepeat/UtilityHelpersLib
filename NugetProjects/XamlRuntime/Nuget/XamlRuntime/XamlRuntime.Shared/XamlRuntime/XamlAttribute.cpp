@@ -15,6 +15,7 @@ namespace xaml {
             {XamlAttribute::fontSize, XamlAttributeGroup::text, "fontSize"},
             {XamlAttribute::fontFamily, XamlAttributeGroup::text, "fontFamily"},
             {XamlAttribute::fontWeight, XamlAttributeGroup::text, "fontWeight"},
+            {XamlAttribute::textWrapping, XamlAttributeGroup::text, "textWrapping"},
             {XamlAttribute::source, XamlAttributeGroup::source, "source"},
             {XamlAttribute::tint, XamlAttributeGroup::tint, "tint"},
             {XamlAttribute::command, XamlAttributeGroup::command, "command"},

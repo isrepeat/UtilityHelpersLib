@@ -1,15 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Page id="mainPage"
       background="#1E1E1E"
-      xmlns="urn:{{application}}:xaml"
+      xmlns="urn:testfooapp:xaml"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Grid verticalAlignment="Stretch"
+	<Grid verticalAlignment="Stretch"
           horizontalAlignment="Stretch">
-        <TextBlock id="helloText"
-                   verticalAlignment="Center"
-                   horizontalAlignment="Center"
-                   fontSize="36"
-                   foreground="#FFFFFF"
-                   text="Hello, {{Application}}!"/>
-    </Grid>
+		<StackPanel width="320"
+                    verticalAlignment="Center"
+                    horizontalAlignment="Center"
+                    orientation="Vertical">
+			<TextBlock id="applicationVersionText"
+                       margin="0 0 0 16"
+                       horizontalAlignment="Center"
+                       fontSize="48"
+                       foreground="#BDBDBD"
+                       text="Версия 1.0"/>
+			<TextBlock id="helloText"
+                       margin="0 0 0 32"
+                       horizontalAlignment="Center"
+                       fontSize="40"
+                       foreground="#FFFFFF"
+                       text="Hello, TestFooApp!"/>
+			<Button id="openSettingsButton"
+                    width="320"
+                    height="72"
+                    contentAlignment="Center"
+                    horizontalAlignment="Center"
+                    fontSize="32"
+                    foreground="#FFFFFF"
+                    background="#3A6EA5"
+                    command="{Binding NavigateToSettingsCommand}"
+                    text="Открыть настройки"/>
+		</StackPanel>
+	</Grid>
 </Page>

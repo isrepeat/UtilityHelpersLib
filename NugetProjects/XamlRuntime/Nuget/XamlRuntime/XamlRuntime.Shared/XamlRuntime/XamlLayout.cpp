@@ -4,6 +4,7 @@
 #include "Binding.h"
 
 #include <algorithm>
+#include <cctype>
 #include <sstream>
 #include <limits>
 
@@ -75,6 +76,38 @@ namespace xaml::_details {
         return bottom > top ? (bottom - top) * element.FontSize() : element.FontSize();
     }
 
+    size_t wrappedLineCount(const Element& element) {
+        if (!element.TextWrapping() || element.Width() <= 0.0f) {
+            return 1;
+        }
+        const size_t maximumCharacters = std::max(
+            static_cast<size_t>(1),
+            static_cast<size_t>(element.Width() / (element.FontSize() * 0.55f)));
+        size_t lineLength = 0;
+        size_t lineCount = 1;
+        size_t wordLength = 0;
+        const auto addWord = [&] {
+            if (wordLength == 0) {
+                return;
+            }
+            if (lineLength != 0 && lineLength + 1 + wordLength > maximumCharacters) {
+                ++lineCount;
+                lineLength = 0;
+            }
+            lineLength += lineLength == 0 ? wordLength : wordLength + 1;
+            wordLength = 0;
+        };
+        for (const unsigned char character : element.Text()) {
+            if (std::isspace(character)) {
+                addWord();
+            } else if ((character & 0xC0) != 0x80) {
+                ++wordLength;
+            }
+        }
+        addWord();
+        return lineCount;
+    }
+
     float horizontal(const attr::Thickness& thickness) {
         return thickness.left + thickness.right;
     }
@@ -142,7 +175,7 @@ namespace xaml::_details {
             || (element.Type() == ElementType::button && element.Children().empty())) {
             Size result{
                 std::max(1.0f, static_cast<float>(utf8Length(element.Text())) * element.FontSize() * 0.55f),
-                textHeight(element),
+                textHeight(element) * static_cast<float>(wrappedLineCount(element)),
             };
             if (element.Type() == ElementType::button) {
                 result.width += 48.0f;
@@ -540,6 +573,18 @@ namespace xaml {
 
     void Element::SetFontWeight(std::string value) {
         this->fontWeight = std::move(value);
+    }
+
+    bool Element::TextWrapping() const {
+        return this->textWrapping;
+    }
+
+    void Element::SetTextWrapping(bool value) {
+        if (this->textWrapping == value) {
+            return;
+        }
+        this->textWrapping = value;
+        this->InvalidateLayout();
     }
 
     const std::string& Element::Source() const {

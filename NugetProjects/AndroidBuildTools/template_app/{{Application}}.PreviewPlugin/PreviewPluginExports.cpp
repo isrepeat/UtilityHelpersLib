@@ -1,12 +1,12 @@
 #include <AndroidAppPreviewer.PluginSDK/AndroidAppPreviewerPlugin.h>
 
-#include "Api/XamlCompletionApi.h"
-#include "Api/InteractionApi.h"
-#include "Api/RenderingApi.h"
-#include "Api/MetadataApi.h"
-#include "Api/ElementApi.h"
-#include "Api/LoggingApi.h"
-#include "Api/SessionApi.h"
+#include "./Api/XamlCompletionApi.h"
+#include "./Api/InteractionApi.h"
+#include "./Api/DiagnosticApi.h"
+#include "./Api/RenderingApi.h"
+#include "./Api/MetadataApi.h"
+#include "./Api/ElementApi.h"
+#include "./Api/SessionApi.h"
 
 namespace _details {
     using namespace AndroidAppPreviewerPluginSDK;
@@ -132,8 +132,8 @@ namespace _details {
     const xp_logging_api loggingApi{
         android_app_previewer_plugin_api_version,
         sizeof(xp_logging_api),
-        &LoggingApi::xp_configure_logging,
-        &LoggingApi::xp_log_info
+        &DiagnosticApi::xp_configure_logging,
+        &DiagnosticApi::xp_log_info
     };
 
     const xp_plugin_api pluginApi{

@@ -11,7 +11,7 @@
         <None Include="build\native\include\AndroidAppPreviewer.PluginSDK\AndroidAppPreviewerPlugin.h"><Filter>build\native\include\AndroidAppPreviewer.PluginSDK</Filter></None>
         <None Include="build\native\AndroidAppPreviewer.PluginSDK.targets"><Filter>build\native</Filter></None>
         <None Include="cmake\AndroidAppPreviewerPluginConfig.cmake"><Filter>cmake</Filter></None>
-        <None Include="Nuget.AndroidAppPreviewer.PluginSDK.Pack.ps1" />
+        <None Include="Pack.ps1" />
         <None Include="AndroidAppPreviewer.PluginSDK.nuspec" />
     </ItemGroup>
 </Project>

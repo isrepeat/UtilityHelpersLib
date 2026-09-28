@@ -159,10 +159,9 @@ function Resolve-AndroidNdkRoot([string]$utilityRoot, [string]$requestedPath) {
     throw $errorMessage
 }
 
-# XamlRuntime.nuspec is the single source of truth for the package version.
-# Calculate the next patch version before packing, but write it back only after
-# MSBuild has created the package successfully, so a failed Pack never skips a version.
-function Get-NextPackageVersion([string]$nuspecPath) {
+# XamlRuntime.nuspec хранит базовую версию пакета.
+# Ревизия определяется по локальному feed-у и не записывается в исходный файл.
+function Get-NextPackageVersion([string]$nuspecPath, [string]$packagesFeedPath) {
     $nuspecContent = Get-Content -LiteralPath $nuspecPath -Raw
     $startTag = '<version>'
     $endTag = '</version>'
@@ -174,19 +173,22 @@ function Get-NextPackageVersion([string]$nuspecPath) {
 
     $versionStartIndex = $startIndex + $startTag.Length
     $versionLength = $endIndex - $versionStartIndex
-    $previousVersionText = $nuspecContent.Substring($versionStartIndex, $versionLength).Trim()
-    $previousVersion = $null
-    if (-not [System.Version]::TryParse($previousVersionText, [ref]$previousVersion)) {
-        throw "NuGet version is invalid in ${nuspecPath}: $previousVersionText"
+    $baseVersion = $nuspecContent.Substring($versionStartIndex, $versionLength).Trim()
+    if ($baseVersion -notmatch '^\d+\.\d+\.\d+$') {
+        throw "NuGet version must use the major.minor.patch format in $nuspecPath."
     }
 
-    $patch = if ($previousVersion.Build -lt 0) { 1 } else { $previousVersion.Build + 1 }
-    $nextVersion = "$($previousVersion.Major).$($previousVersion.Minor).$patch"
-    $nextNuspecContent = $nuspecContent.Remove($versionStartIndex, $versionLength).Insert($versionStartIndex, $nextVersion)
-    return [PSCustomObject]@{
-        Version = $nextVersion
-        NuspecContent = $nextNuspecContent
+    $manifest = [xml]$nuspecContent
+    $packageId = $manifest.package.metadata.id
+    $revisions = if (Test-Path -LiteralPath $packagesFeedPath -PathType Container) {
+        Get-ChildItem -LiteralPath $packagesFeedPath -File -Filter "$packageId.$baseVersion.*.nupkg" | ForEach-Object {
+            $versionMatch = [regex]::Match($_.Name, "^$([regex]::Escape($packageId))\.$([regex]::Escape($baseVersion))\.(\d+)\.nupkg$")
+            if ($versionMatch.Success) { [int]$versionMatch.Groups[1].Value }
+        }
     }
+    $maximumRevision = ($revisions | Measure-Object -Maximum).Maximum
+    if ($null -eq $maximumRevision) { $maximumRevision = 0 }
+    return "$baseVersion.$($maximumRevision + 1)"
 }
 
 $runtimeRoot = Join-Path $utilityRoot 'NugetProjects\XamlRuntime'
@@ -205,11 +207,10 @@ $angleOverlayPortsRoot = Join-Path $angleBuildRoot 'CustomRecipes'
 $angleInstallRoot = Join-Path $angleBuildRoot 'vcpkg_installed'
 $anglePackageRoot = Join-Path $angleInstallRoot 'x64-windows'
 $nuspecPath = Join-Path $packagingRoot 'XamlRuntime.nuspec'
-$packageVersion = Get-NextPackageVersion $nuspecPath
 # UH_PACKAGES_FEED используется всеми точками входа упаковки.
 $feedResolver = Join-Path $utilityRoot 'Scripts\PowerShell\Resolve-PackagesFeed.ps1'
 $feedRoot = & $feedResolver -FeedPath $FeedRoot
-$Version = $packageVersion.Version
+$Version = Get-NextPackageVersion $nuspecPath $feedRoot
 $packageConfigurations = @('Debug', 'Release')
 
 # Держим результат ANGLE вместе с остальными нативными выходами NuGet-сборки.
@@ -365,7 +366,7 @@ foreach ($buildConfiguration in $packageConfigurations) {
             throw "Unsupported Android ABI: $abi"
         }
         m::MessageAction "Build Android artifacts [$abi, $buildConfiguration]..."
-        $buildDirectory = Join-Path $runtimeRoot "!NUGET_TMP\Android\$abi\$buildConfiguration"
+        $buildDirectory = Join-Path $nativeBuildRoot "Android\$abi\$buildConfiguration"
         $installDirectory = Join-Path $stagingRoot "runtimes\$($abiToRid[$abi])\native\$buildConfiguration"
         & $cmake '-S' (Join-Path $packagingRoot 'Android') '-B' $buildDirectory '-G' 'Ninja' "-DCMAKE_MAKE_PROGRAM=$ninja" "-DCMAKE_TOOLCHAIN_FILE=$AndroidNdkRoot\build\cmake\android.toolchain.cmake" "-DANDROID_ABI=$abi" "-DANDROID_PLATFORM=android-$AndroidApi" "-DCMAKE_BUILD_TYPE=$buildConfiguration"
         if ($LASTEXITCODE -ne 0) {
@@ -400,7 +401,7 @@ Copy-Item (Join-Path $anglePackageRoot 'share\angle\copyright') (Join-Path $stag
 Copy-Item (Join-Path $packagingRoot 'build\native\XamlRuntime.targets') (Join-Path $stagingRoot 'build\native\XamlRuntime.targets')
 New-Item -ItemType Directory -Path (Join-Path $stagingRoot 'build\native\cmake') -Force | Out-Null
 Copy-Item (Join-Path $packagingRoot 'cmake\XamlRuntimeConfig.cmake') (Join-Path $stagingRoot 'build\native\cmake\XamlRuntimeConfig.cmake')
-[System.IO.File]::WriteAllText((Join-Path $stagingRoot 'XamlRuntime.nuspec'), $packageVersion.NuspecContent, [System.Text.UTF8Encoding]::new($false))
+Copy-Item -LiteralPath $nuspecPath -Destination (Join-Path $stagingRoot 'XamlRuntime.nuspec')
 
 # Параметр -SkipPackage оставлен для диагностики staging-дерева без создания
 # .nupkg; штатный release-скрипт этот режим не использует.
@@ -416,7 +417,6 @@ if (-not $SkipPackage) {
         m::MessageError "MSBuild completed without creating the expected package: $packagePath"
         throw "MSBuild completed without creating the expected package: $packagePath"
     }
-    [System.IO.File]::WriteAllText($nuspecPath, $packageVersion.NuspecContent, [System.Text.UTF8Encoding]::new($false))
     m::Message -color Green -text "Package created: $packagePath"
 }
 

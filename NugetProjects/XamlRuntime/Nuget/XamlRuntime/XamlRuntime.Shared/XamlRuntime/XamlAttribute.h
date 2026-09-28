@@ -12,6 +12,7 @@ namespace xaml {
         fontSize,
         fontFamily,
         fontWeight,
+        textWrapping,
         source,
         tint,
         command,

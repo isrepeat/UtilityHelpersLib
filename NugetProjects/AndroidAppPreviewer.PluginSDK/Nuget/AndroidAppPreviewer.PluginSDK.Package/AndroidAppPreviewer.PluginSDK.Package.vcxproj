@@ -13,7 +13,7 @@
     <ItemGroup>
         <None Include="build\native\include\AndroidAppPreviewer.PluginSDK\AndroidAppPreviewerPlugin.h" />
         <None Include="cmake\AndroidAppPreviewerPluginConfig.cmake" />
-        <None Include="Nuget.AndroidAppPreviewer.PluginSDK.Pack.ps1" />
+        <None Include="Pack.ps1" />
         <None Include="AndroidAppPreviewer.PluginSDK.nuspec" />
     </ItemGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

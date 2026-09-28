@@ -347,6 +347,12 @@ namespace xaml {
         case XamlAttribute::fontFamily:
             element.SetFontFamily(std::string(value));
             return;
+        case XamlAttribute::textWrapping:
+            if (value != "Wrap" && value != "NoWrap") {
+                throw std::invalid_argument("textWrapping must be Wrap or NoWrap");
+            }
+            element.SetTextWrapping(value == "Wrap");
+            return;
         case XamlAttribute::fontWeight:
             element.SetFontWeight(std::string(value));
             return;

@@ -7,7 +7,7 @@
 #include "../Bridge/ElementTree.h"
 #include "../Bridge/Diagnostic.h"
 #include "../Bridge/TextBuffer.h"
-#include "PreviewPluginApi.h"
+#include "./PreviewPluginApi.h"
 
 #include <string_view>
 #include <stdexcept>
@@ -63,7 +63,7 @@ namespace {{application}}::preview::api {
             if (session == nullptr || page == nullptr || capacity <= 0) {
                 throw std::invalid_argument("Session, page buffer and positive capacity are required");
             }
-            const std::string_view name = "MainPage";
+            const std::string_view name = session->value.CurrentPage();
             {{application}}::preview::bridge::TextBuffer::Write(
                 name,
                 page,
@@ -149,10 +149,10 @@ namespace {{application}}::preview::api {
             if (session == nullptr || page == nullptr || title == nullptr || capacity <= 0) {
                 throw std::invalid_argument("Session, page, title buffer and positive capacity are required");
             }
-            if (!session->value.LoadPage(page)) {
+            const std::string_view value = session->value.PageTitle(page);
+            if (value.empty()) {
                 throw std::invalid_argument("Unknown template page");
             }
-            const std::string_view value = "MainPage";
             {{application}}::preview::bridge::TextBuffer::Write(
                 value,
                 title,
@@ -457,7 +457,8 @@ namespace {{application}}::preview::api {
         if (session == nullptr) {
             return 0;
         }
-        return Update(*session) ? 1 : 0;
+        Update(*session);
+        return 1;
     }
 
     int SessionApi::xp_session_render_angle_surface(

@@ -63,17 +63,17 @@ function Get-NextPackageVersion {
     }
 
     $baseVersion = "$($match.Groups[1].Value).$($match.Groups[2].Value)"
+    $packageVersionBase = "$baseVersion.0"
     $artifactPath = Join-Path (Join-Path $PackagesFeedPath $PackageGroup.Replace('.', '\')) $ArtifactId
-    $patches = if (Test-Path -LiteralPath $artifactPath -PathType Container) {
+    $revisions = if (Test-Path -LiteralPath $artifactPath -PathType Container) {
         Get-ChildItem -LiteralPath $artifactPath -Directory | ForEach-Object {
-            $versionMatch = [regex]::Match($_.Name, "^$([regex]::Escape($baseVersion))\.(\d+)$")
+            $versionMatch = [regex]::Match($_.Name, "^$([regex]::Escape($packageVersionBase))\.(\d+)$")
             if ($versionMatch.Success) { [int]$versionMatch.Groups[1].Value }
         }
     }
-    $maximumPatch = ($patches | Measure-Object -Maximum).Maximum
-    if ($null -eq $maximumPatch) { $maximumPatch = 0 }
-    $nextPatch = $maximumPatch + 1
-    return "$baseVersion.$nextPatch"
+    $maximumRevision = ($revisions | Measure-Object -Maximum).Maximum
+    if ($null -eq $maximumRevision) { $maximumRevision = 0 }
+    return "$packageVersionBase.$($maximumRevision + 1)"
 }
 
 function Get-GradleProperty {

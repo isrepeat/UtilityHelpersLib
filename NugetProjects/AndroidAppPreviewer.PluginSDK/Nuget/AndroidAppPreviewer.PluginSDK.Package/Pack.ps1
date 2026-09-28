@@ -23,6 +23,28 @@ $nuget = Get-Command nuget.exe -ErrorAction SilentlyContinue | Select-Object -Fi
 if ([string]::IsNullOrWhiteSpace($nuget) -or -not (Test-Path -LiteralPath $nuget)) {
     throw 'nuget.exe was not found. Install the official NuGet CLI and make it available in PATH.'
 }
+
+function Get-NextPackageVersion([string]$ManifestPath, [string]$PackagesFeedPath) {
+    $manifest = [xml](Get-Content -LiteralPath $ManifestPath -Raw)
+    $packageId = $manifest.package.metadata.id
+    $baseVersion = $manifest.package.metadata.version
+    if ($baseVersion -notmatch '^\d+\.\d+\.\d+$') {
+        throw "Package version must use the major.minor.patch format in $ManifestPath."
+    }
+
+    $revisions = if (Test-Path -LiteralPath $PackagesFeedPath -PathType Container) {
+        Get-ChildItem -LiteralPath $PackagesFeedPath -File -Filter "$packageId.$baseVersion.*.nupkg" | ForEach-Object {
+            $versionMatch = [regex]::Match($_.Name, "^$([regex]::Escape($packageId))\.$([regex]::Escape($baseVersion))\.(\d+)\.nupkg$")
+            if ($versionMatch.Success) { [int]$versionMatch.Groups[1].Value }
+        }
+    }
+    $maximumRevision = ($revisions | Measure-Object -Maximum).Maximum
+    if ($null -eq $maximumRevision) { $maximumRevision = 0 }
+    return "$baseVersion.$($maximumRevision + 1)"
+}
+
+$manifestPath = Join-Path $packageRoot 'AndroidAppPreviewer.PluginSDK.nuspec'
+$packageVersion = Get-NextPackageVersion $manifestPath $FeedRoot
 Remove-Item -LiteralPath $stagingRoot -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path (Join-Path $stagingRoot 'build\native\include\AndroidAppPreviewer.PluginSDK'), (Join-Path $stagingRoot 'build\native\cmake'), (Join-Path $stagingRoot 'lib\net8.0'), $FeedRoot -Force | Out-Null
 Copy-Item -LiteralPath $headerPath -Destination (Join-Path $stagingRoot 'build\native\include\AndroidAppPreviewer.PluginSDK\AndroidAppPreviewerPlugin.h')
@@ -39,7 +61,7 @@ if (-not (Test-Path -LiteralPath $managedAssembly -PathType Leaf)) {
 }
 Copy-Item -LiteralPath $managedAssembly -Destination (Join-Path $stagingRoot 'lib\net8.0\AndroidAppPreviewer.PluginSDK.dll')
 
-& $nuget pack (Join-Path $stagingRoot 'AndroidAppPreviewer.PluginSDK.nuspec') '-BasePath' $stagingRoot '-OutputDirectory' $FeedRoot '-NoPackageAnalysis' '-NonInteractive' '-ForceEnglishOutput'
+& $nuget pack (Join-Path $stagingRoot 'AndroidAppPreviewer.PluginSDK.nuspec') '-BasePath' $stagingRoot '-OutputDirectory' $FeedRoot '-Version' $packageVersion '-NoPackageAnalysis' '-NonInteractive' '-ForceEnglishOutput'
 if ($LASTEXITCODE -ne 0) {
     throw 'NuGet CLI package creation failed.'
 }

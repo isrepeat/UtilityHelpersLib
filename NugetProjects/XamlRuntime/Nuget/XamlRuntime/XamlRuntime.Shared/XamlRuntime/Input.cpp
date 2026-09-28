@@ -122,6 +122,7 @@ namespace xaml {
                 "XamlRuntime.Input",
                 "Tap: element='{}'",
                 element.Id());
+            element.ExecuteCommand();
         }
         return true;
     }
