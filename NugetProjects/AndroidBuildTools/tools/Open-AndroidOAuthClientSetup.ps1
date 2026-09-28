@@ -82,7 +82,10 @@ $result = [pscustomobject]@{
     KeyAlias = $KeyAlias
     SetupUrl = $setupUrl
 }
-Write-Host "OAuth client name: $($result.ClientName)"
-Write-Host "Package ID: $($result.PackageId)"
-Write-Host "SHA-1: $($result.Sha1)"
+Write-Host 'OAuth client name — copy the next line:'
+Write-Host $result.ClientName
+Write-Host 'Package ID — copy the next line:'
+Write-Host $result.PackageId
+Write-Host 'SHA-1 certificate fingerprint — copy the next line:'
+Write-Host $result.Sha1
 return $result

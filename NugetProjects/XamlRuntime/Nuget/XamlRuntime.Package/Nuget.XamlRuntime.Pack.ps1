@@ -3,6 +3,8 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$UtilityHelpersRoot,
 
+    [string]$FeedRoot,
+
     [string]$AndroidNdkRoot,
 
     [ValidateSet('Debug', 'Release')]
@@ -204,9 +206,9 @@ $angleInstallRoot = Join-Path $angleBuildRoot 'vcpkg_installed'
 $anglePackageRoot = Join-Path $angleInstallRoot 'x64-windows'
 $nuspecPath = Join-Path $packagingRoot 'XamlRuntime.nuspec'
 $packageVersion = Get-NextPackageVersion $nuspecPath
-# UH_NUGET_FEED is shared with NugetProjects/Directory.Build.props, so direct
-# NuGet CLI packing and MSBuild package projects publish to the same feed.
-$feedRoot = if ([string]::IsNullOrWhiteSpace($env:UH_NUGET_FEED)) { 'C:\NugetFeed' } else { $env:UH_NUGET_FEED }
+# UH_PACKAGES_FEED используется всеми точками входа упаковки.
+$feedResolver = Join-Path $utilityRoot 'Scripts\PowerShell\Resolve-PackagesFeed.ps1'
+$feedRoot = & $feedResolver -FeedPath $FeedRoot
 $Version = $packageVersion.Version
 $packageConfigurations = @('Debug', 'Release')
 

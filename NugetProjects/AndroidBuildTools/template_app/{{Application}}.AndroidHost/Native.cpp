@@ -19,12 +19,7 @@ namespace _details {
 } // namespace _details
 
 #if defined(__ANDROID__)
-extern "C" JNIEXPORT jstring JNICALL Java_ {
-    {
-        JniPackage
-    }
-}
-_MainActivity_nativeMessage(JNIEnv *environment, jobject) {
+extern "C" JNIEXPORT jstring JNICALL Java_{{JniPackage}}_MainActivity_nativeMessage(JNIEnv *environment, jobject) {
     const auto page = _details::CreateMainPage();
     if (!page) {
         return environment->NewStringUTF(

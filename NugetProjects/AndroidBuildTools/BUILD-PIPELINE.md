@@ -11,7 +11,10 @@ PowerShell-команды, CMake-модули, Gradle convention plugins и ша
 
 ```powershell
 $version = '1.0.40'
-$bootstrapDirectory = 'C:\Temp\AndroidBuildTools'
+if ([string]::IsNullOrWhiteSpace($env:UH_PACKAGES_FEED)) {
+    throw 'Set UH_PACKAGES_FEED before creating an Android project.'
+}
+$bootstrapDirectory = Join-Path $env:UH_PACKAGES_FEED '!TEMP'
 
 chcp 65001 | Out-Null
 $utf8 = [System.Text.UTF8Encoding]::new($false)
@@ -20,8 +23,9 @@ $OutputEncoding = $utf8
 
 nuget install AndroidBuildTools `
     -Version $version `
-    -Source C:\NugetFeed `
+    -Source $env:UH_PACKAGES_FEED `
     -OutputDirectory $bootstrapDirectory `
+    -ForceEnglishOutput `
     -NonInteractive
 ```
 
@@ -39,8 +43,8 @@ $tools = Join-Path $bootstrapDirectory "AndroidBuildTools.$version"
     -Name SampleApp `
     -PackageId com.example.sampleapp `
     -Destination C:\Projects\SampleApp `
-    -BuildToolsSource C:\NugetFeed `
-    -NativePackageSource C:\NugetFeed `
+    -BuildToolsSource $env:UH_PACKAGES_FEED `
+    -NativePackageSource $env:UH_PACKAGES_FEED `
     -SecretsRoot C:\WORK\Secrets\Android `
     -DriveOAuthClientPath C:\WORK\Secrets\apkupdater-drive-oauth.json `
     -DriveTokenPath C:\WORK\Secrets\apkupdater-drive-token.json `
@@ -81,7 +85,7 @@ bootstrap: он читает второе, восстанавливает зак
 ```powershell
 @{
     BuildToolsVersion = '1.0.40'
-    BuildToolsSource = 'C:\NugetFeed'
+    BuildToolsSource = '<значение UH_PACKAGES_FEED>'
     ArtifactName = 'SampleApp'
     AndroidModule = 'SampleApp.Android'
     AndroidHost = 'SampleApp.AndroidHost'
@@ -97,7 +101,7 @@ bootstrap: он читает второе, восстанавливает зак
         AndroidAppPreviewerPluginSdk = 'Build\Packages\SampleApp.PreviewPlugin'
     }
     PackageSources = @{
-        Native = 'C:\NugetFeed'
+        Native = '<значение UH_PACKAGES_FEED>'
     }
 }
 ```

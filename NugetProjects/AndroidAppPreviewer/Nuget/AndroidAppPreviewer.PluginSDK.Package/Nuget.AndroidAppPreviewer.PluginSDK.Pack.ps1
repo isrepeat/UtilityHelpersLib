@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param([string]$FeedRoot = $env:UH_NUGET_FEED)
+param([string]$FeedRoot)
 
 $ErrorActionPreference = 'Stop'
 
@@ -13,9 +13,8 @@ if (-not (Test-Path -LiteralPath $headerPath -PathType Leaf)) {
     throw "Plugin SDK header was not found: $headerPath"
 }
 
-if ([string]::IsNullOrWhiteSpace($FeedRoot)) {
-    $FeedRoot = 'C:\NugetFeed'
-}
+$feedResolver = Join-Path $PSScriptRoot '..\..\..\..\Scripts\PowerShell\Resolve-PackagesFeed.ps1'
+$FeedRoot = & $feedResolver -FeedPath $FeedRoot
 
 $stagingRoot = Join-Path $packageRoot '!NUGET_STAGING'
 $managedProject = Join-Path $packageRoot '..\AndroidAppPreviewer.PluginSDK.WPF\AndroidAppPreviewer.PluginSDK.WPF.csproj'

@@ -1,5 +1,4 @@
 @{
-    BuildToolsVersion = '1.0.40'
     BuildToolsSource = '{{BuildToolsSource}}'
     ArtifactName = '{{Application}}'
     AndroidModule = '{{Application}}.Android'

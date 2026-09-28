@@ -5,6 +5,8 @@ $utf8Encoding = [System.Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = $utf8Encoding
 $OutputEncoding = $utf8Encoding
 
+$feedResolver = Join-Path $PSScriptRoot 'Resolve-PackagesFeed.ps1'
+$env:UH_PACKAGES_FEED = & $feedResolver
 $solutionScriptPath = Join-Path $PSScriptRoot 'Solution.UtilityHelpersLib.Nugets.ps1'
 $solutionTargets = @(
     'NugetProjects\CrashHandling\Nuget\CrashHandling.Desktop',

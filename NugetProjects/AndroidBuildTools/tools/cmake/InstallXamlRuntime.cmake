@@ -27,6 +27,7 @@ function(fn_androidappkit_install_xaml_runtime packages_root package_source)
             -Source "${package_source}"
             -OutputDirectory "${androidappkit_xaml_runtime_packages_root}"
             -NonInteractive
+            -ForceEnglishOutput
         COMMAND_ERROR_IS_FATAL ANY
     )
     fn_androidappkit_find_latest_xaml_runtime_package(

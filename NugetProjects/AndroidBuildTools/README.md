@@ -11,7 +11,10 @@ Visual Studio C++ с CMake, Android SDK/NDK и JDK 21.
 
 ```powershell
 $version = '1.0.40'
-$bootstrapDirectory = 'C:\Temp\AndroidBuildTools'
+if ([string]::IsNullOrWhiteSpace($env:UH_PACKAGES_FEED)) {
+    throw 'Set UH_PACKAGES_FEED before creating an Android project.'
+}
+$bootstrapDirectory = Join-Path $env:UH_PACKAGES_FEED '!TEMP'
 
 chcp 65001 | Out-Null
 $utf8 = [System.Text.UTF8Encoding]::new($false)
@@ -20,8 +23,9 @@ $OutputEncoding = $utf8
 
 nuget install AndroidBuildTools `
     -Version $version `
-    -Source C:\NugetFeed `
+    -Source $env:UH_PACKAGES_FEED `
     -OutputDirectory $bootstrapDirectory `
+    -ForceEnglishOutput `
     -NonInteractive
 
 $tools = Join-Path $bootstrapDirectory "AndroidBuildTools.$version"
@@ -29,8 +33,8 @@ $tools = Join-Path $bootstrapDirectory "AndroidBuildTools.$version"
     -Name SampleApp `
     -PackageId com.example.sampleapp `
     -Destination C:\Projects\SampleApp `
-    -BuildToolsSource C:\NugetFeed `
-    -NativePackageSource C:\NugetFeed `
+    -BuildToolsSource $env:UH_PACKAGES_FEED `
+    -NativePackageSource $env:UH_PACKAGES_FEED `
     -SecretsRoot C:\WORK\Secrets\Android `
     -DriveOAuthClientPath C:\WORK\Secrets\apkupdater-drive-oauth.json `
     -DriveTokenPath C:\WORK\Secrets\apkupdater-drive-token.json `
@@ -178,7 +182,8 @@ Patch определяется по файлам в `DistributionDirectory`; `-K
 и AndroidAppPreviewer.PluginSDK. Native-пакеты распаковываются в
 каталоги из `PackageDirectories`; источник задаёт `PackageSources.Native`.
 
-Для публикации измените версию в nuspec и шаблоне конфигурации, выполните
-`Pack.ps1 -FeedPath C:\NugetFeed`, затем обновите BuildToolsVersion потребителя.
+Для публикации измените версию в nuspec и шаблоне конфигурации, задайте
+`UH_PACKAGES_FEED` или укажите `Pack.ps1 -FeedPath <путь>`, затем обновите
+BuildToolsVersion потребителя.
 Опубликованную версию заменять запрещено. При разработке используйте отдельный
 временный feed и проверяйте восстановление в новом проекте.

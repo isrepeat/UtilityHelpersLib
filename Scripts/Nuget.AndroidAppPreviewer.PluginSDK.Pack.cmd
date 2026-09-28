@@ -2,7 +2,10 @@
 setlocal
 
 for %%I in ("%~dp0..") do set "UTILITY_HELPERS_ROOT=%%~fI"
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%UTILITY_HELPERS_ROOT%\NugetProjects\AndroidAppPreviewer\Nuget\AndroidAppPreviewer.PluginSDK.Package\Nuget.AndroidAppPreviewer.PluginSDK.Pack.ps1" %*
+call "%UTILITY_HELPERS_ROOT%\Scripts\Resolve-PackagesFeed.cmd"
+if errorlevel 1 endlocal & exit /b %errorlevel%
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%UTILITY_HELPERS_ROOT%\NugetProjects\AndroidAppPreviewer\Nuget\AndroidAppPreviewer.PluginSDK.Package\Nuget.AndroidAppPreviewer.PluginSDK.Pack.ps1" -FeedRoot "%UH_PACKAGES_FEED%" %*
 set "EXIT_CODE=%ERRORLEVEL%"
 
 echo.

@@ -68,6 +68,7 @@ function(fn_androidappkit_install_android_app_previewer_plugin_sdk packages_root
             -Source "${package_source}"
             -OutputDirectory "${androidappkit_plugin_sdk_packages_root}"
             -NonInteractive
+            -ForceEnglishOutput
         COMMAND_ERROR_IS_FATAL ANY)
     fn_androidappkit_install_android_app_previewer_plugin_sdk("${packages_root}" "${package_source}")
 endfunction()

@@ -145,7 +145,7 @@ function Resolve-XamlCompiler {
 
     # Не закрепляем версию XamlRuntime здесь: как и CMake-модуль пакета,
     # при каждом запуске берём последнюю версию из выбранного NuGet feed-а.
-    & $nuget install $packageName -Source $Source -OutputDirectory $PackagesRoot -NonInteractive | Out-Host
+    & $nuget install $packageName -Source $Source -OutputDirectory $PackagesRoot -NonInteractive -ForceEnglishOutput | Out-Host
     if ($LASTEXITCODE -ne 0) {
         throw "XamlRuntime restore failed with exit code $LASTEXITCODE."
     }

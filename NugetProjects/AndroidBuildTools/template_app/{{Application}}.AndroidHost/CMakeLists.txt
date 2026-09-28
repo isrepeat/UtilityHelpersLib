@@ -20,6 +20,9 @@ target_compile_features({{application}} PRIVATE cxx_std_20)
 target_include_directories({{application}} PRIVATE "${{{application}}_project_root}")
 target_link_libraries({{application}} PRIVATE XamlRuntime::Runtime)
 if (ANDROID)
+    # В CMake 4.3 Android-модуль не добавляет c++abi для standalone-NDK preset.
+    # Линкуем рантайм статически, не требуя отдельный libc++_shared.so.
+    target_link_libraries({{application}} PRIVATE c++_static c++abi)
     set_target_properties({{application}} PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Build/{{Application}}.AndroidHost/android/jniLibs/${ANDROID_ABI}")
 endif()

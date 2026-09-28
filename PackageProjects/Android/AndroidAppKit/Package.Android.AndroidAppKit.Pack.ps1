@@ -1,4 +1,7 @@
-param([switch]$NoPause)
+param(
+    [switch]$NoPause,
+    [string]$PackagesFeedPath
+)
 
 function Resolve-JavaHome {
     $roots = @($env:JAVA_HOME, $env:JDK_HOME, (Join-Path $env:ProgramFiles 'Android\Android Studio\jbr'), (Join-Path $env:ProgramFiles 'Android\openjdk'), (Join-Path $env:ProgramFiles 'Java')) | Where-Object { $_ }
@@ -45,7 +48,9 @@ $exitCode = 1
 
 try {
     $propertiesPath = Join-Path $PSScriptRoot 'gradle.properties'
-    $feed = Get-GradleProperty $propertiesPath 'androidPackagesFeedPath'
+    $root = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
+    $feedResolver = Join-Path $root 'Scripts\PowerShell\Resolve-PackagesFeed.ps1'
+    $feed = & $feedResolver -FeedPath $PackagesFeedPath
     $group = Get-GradleProperty $propertiesPath 'packageGroup'
     $nextVersion = Get-NextPackageVersion $propertiesPath $feed $group 'androidappkit'
     $javaHome = Resolve-JavaHome
@@ -54,11 +59,10 @@ try {
     $env:ANDROID_HOME = $androidSdk
     $env:ANDROID_SDK_ROOT = $androidSdk
     $env:Path = "$(Join-Path $javaHome 'bin');$env:Path"
-    $root = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
     $wrapper = Join-Path $root 'Scripts\Android\Gradle\gradlew.bat'
     Push-Location $PSScriptRoot
     try {
-        & $wrapper "-PpackageVersion=$nextVersion" ':androidappkit:publishReleasePublicationToAndroidPackagesFeedRepository'
+        & $wrapper "-PandroidPackagesFeedPath=$feed" "-PpackageVersion=$nextVersion" ':androidappkit:publishReleasePublicationToAndroidPackagesFeedRepository'
         if ($LASTEXITCODE -ne 0) { throw "Gradle exited with $LASTEXITCODE" }
     } finally { Pop-Location }
     $aar = Join-Path "$feed\\$($group.Replace('.', '\\'))\\androidappkit\\$nextVersion" "androidappkit-$nextVersion.aar"

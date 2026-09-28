@@ -1,7 +1,9 @@
 ﻿[CmdletBinding()]
-param([Parameter(Mandatory)] [string]$FeedPath)
+param([string]$FeedPath)
 
 $ErrorActionPreference = 'Stop'
+$feedResolver = Join-Path $PSScriptRoot '..\..\Scripts\PowerShell\Resolve-PackagesFeed.ps1'
+$FeedPath = & $feedResolver -FeedPath $FeedPath
 Import-Module -Name (Join-Path $PSScriptRoot 'tools\Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
 Module.AndroidBuildTools\Initialize-AndroidBuildConsole
 $nuget = (Get-Command nuget.exe -ErrorAction Stop).Source

@@ -1,5 +1,6 @@
 param(
-    [switch]$NoPause
+    [switch]$NoPause,
+    [string]$PackagesFeedPath
 )
 
 function Resolve-JavaHome {
@@ -102,7 +103,8 @@ try {
     }
 
     $propertiesPath = Join-Path $PSScriptRoot 'gradle.properties'
-    $packagesFeedPath = Get-GradleProperty $propertiesPath 'androidPackagesFeedPath'
+    $feedResolver = Join-Path $repositoryRoot 'Scripts\PowerShell\Resolve-PackagesFeed.ps1'
+    $packagesFeedPath = & $feedResolver -FeedPath $PackagesFeedPath
     $packageGroup = Get-GradleProperty $propertiesPath 'packageGroup'
     $nextVersion = Get-NextPackageVersion $propertiesPath $packagesFeedPath $packageGroup 'androidcoresdk'
 
@@ -116,7 +118,7 @@ try {
     Push-Location -LiteralPath $PSScriptRoot
     $locationChanged = $true
     Write-Host "Publishing AndroidCoreSdk $nextVersion"
-    & $wrapperPath "-PpackageVersion=$nextVersion" `
+    & $wrapperPath "-PandroidPackagesFeedPath=$packagesFeedPath" "-PpackageVersion=$nextVersion" `
         :androidcoresdk:publishReleasePublicationToAndroidPackagesFeedRepository
     $exitCode = $LASTEXITCODE
     if ($exitCode -eq 0) {
