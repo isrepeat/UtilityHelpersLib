@@ -5,7 +5,7 @@
 ./build.ps1 build-and-distribute -Destination Local -Configuration Debug
 ```
 
-Проект создан из AndroidBuildTools. `android-build.psd1` содержит пути к пакетам
+Проект создан пакетом `AndroidBuildTools` версии `{{AndroidBuildToolsVersion}}`. `android-build.psd1` содержит пути к пакетам
 и инструментам, `{{Application}}.Android/build.gradle.kts` — package ID и Android-ресурсы,
 `{{Application}}.AndroidHost` — native-код. Gradle wrapper включён в репозиторий.
 `{{Application}}.Application/UI/Page/MainPage.xaml` — минимальная нативная страница;
@@ -20,6 +20,27 @@
 пути к готовому AndroidAppPreviewer, а Drive использует пути к секретам,
 переданные `New-AndroidApplication.ps1`.
 
+
+## XAML-preview
+
+Соберите только `PreviewPlugin.dll`, не запуская AndroidAppPreviewer:
+
+```powershell
+$projectRoot = 'C:\WORK\Android\Projects\{{Application}}'
+Set-Location $projectRoot
+.\build.ps1 run-android-app-previewer -BuildOnly -Configuration Debug
+```
+
+Для сборки плагина и запуска previewer выполните:
+
+```powershell
+$projectRoot = 'C:\WORK\Android\Projects\{{Application}}'
+Set-Location $projectRoot
+.\build.ps1 run-android-app-previewer -Configuration Debug
+```
+
+Пути к `AndroidAppPreviewer.exe` для Debug и Release находятся в параметрах
+`Preview.Executable.Debug` и `Preview.Executable.Release` файла `android-build.psd1`.
 ## Update из Google Drive
 
 Стартовый `MainPage` содержит кнопку **Update**. Она вызывает
@@ -35,11 +56,10 @@
 
 ## Удаление тестового проекта
 
-Удаление выполняет скрипт из пакета AndroidBuildTools:
+Удаление выполняет скрипт, скопированный в проект генератором:
 
 ```powershell
-$tools = .\build.ps1 restore
-& "$tools\tools\Remove-AndroidProject.ps1" -ProjectRoot (Get-Location)
+& ".\Scripts\Remove-AndroidProject.ps1" -ProjectRoot (Get-Location)
 ```
 
 Скрипт запросит package ID и подтверждение `Y/N`, после чего удалит корень

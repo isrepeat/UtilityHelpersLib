@@ -1,77 +1,15 @@
 # AndroidBuildTools: flow сборки и контракт проекта
 
 AndroidBuildTools содержит общую инфраструктуру native Android-приложений:
-PowerShell-команды, CMake-модули, Gradle convention plugins и шаблон минимального
-проекта. Приложение хранит только свои имена, пути, исходники, ресурсы и зависимости.
+PowerShell-команды, CMake-модули и Gradle convention plugins. Приложение хранит
+только свои имена, пути, исходники, ресурсы и зависимости.
 
-## 1. Начало без существующего проекта
+## 1. Создание проекта
 
-Если Android-проекта ещё нет, его `build.ps1` использовать нельзя: файла пока не
-существует. Сначала распакуйте точную версию NuGet-пакета во временный каталог:
-
-```powershell
-$version = '1.0.40'
-if ([string]::IsNullOrWhiteSpace($env:UH_PACKAGES_FEED)) {
-    throw 'Set UH_PACKAGES_FEED before creating an Android project.'
-}
-$bootstrapDirectory = Join-Path $env:UH_PACKAGES_FEED '!TEMP'
-
-chcp 65001 | Out-Null
-$utf8 = [System.Text.UTF8Encoding]::new($false)
-[Console]::OutputEncoding = $utf8
-$OutputEncoding = $utf8
-
-nuget install AndroidBuildTools `
-    -Version $version `
-    -Source $env:UH_PACKAGES_FEED `
-    -OutputDirectory $bootstrapDirectory `
-    -ForceEnglishOutput `
-    -NonInteractive
-```
-
-NuGet создаст каталог:
-
-```text
-C:\Temp\AndroidBuildTools\AndroidBuildTools.1.0.40
-```
-
-Запустите generator из этого каталога:
-
-```powershell
-$tools = Join-Path $bootstrapDirectory "AndroidBuildTools.$version"
-& "$tools\tools\New-AndroidApplication.ps1" `
-    -Name SampleApp `
-    -PackageId com.example.sampleapp `
-    -Destination C:\Projects\SampleApp `
-    -BuildToolsSource $env:UH_PACKAGES_FEED `
-    -NativePackageSource $env:UH_PACKAGES_FEED `
-    -SecretsRoot C:\WORK\Secrets\Android `
-    -DriveOAuthClientPath C:\WORK\Secrets\apkupdater-drive-oauth.json `
-    -DriveTokenPath C:\WORK\Secrets\apkupdater-drive-token.json `
-    -GoogleCloudProject androidappsstorage
-```
-
-После этого существует самостоятельный проект. Его обычная первая проверка:
-
-```powershell
-cd C:\Projects\SampleApp
-./build.ps1 build-android -Configuration Debug
-```
-
-`-SecretsRoot` передаётся явно. Генератор создаёт
-`<SecretsRoot>\<package ID>\debug.keystore`, `release.keystore` и
-`signing.properties`, генерирует оба ключа через `keytool` и записывает путь к
-properties в проектный `android-build.psd1`. В Git не попадают ни ключи, ни пароли.
-
-`Google-OAuth-setup.md` содержит package ID и SHA-1 обоих сертификатов.
-`-GoogleCloudProject` открывает страницу Clients указанного Cloud-проекта. Вручную
-создайте два Android OAuth client: Debug и Release. Они нужны приложению для Google
-API. Desktop OAuth client и refresh token сборочного uploader-а остаются общими;
-для каждого приложения отличается только `Drive.Path`.
-
-Секция `Drive` создаётся вместе с проектом. Путь содержит `Android/<Application>`;
-пути к общим Desktop OAuth JSON и refresh token передаются явно параметрами
-`-DriveOAuthClientPath` и `-DriveTokenPath`.
+Проект создаёт отдельный пакет `AndroidTemplates`. Генератор получает версию
+AndroidBuildTools явным параметром и записывает её в `android-build.psd1`;
+переменная среды для версии не используется. После генерации `build.ps1`
+восстанавливает закреплённую версию пакета в локальный каталог проекта.
 
 ## 2. Минимальный контракт проекта
 

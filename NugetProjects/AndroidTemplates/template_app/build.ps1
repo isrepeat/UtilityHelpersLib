@@ -12,30 +12,21 @@ dynamicparam {
     $config = & ([scriptblock]::Create([System.IO.File]::ReadAllText((Join-Path $PSScriptRoot 'android-build.psd1'))))
     $packagesRoot = Join-Path $PSScriptRoot $config.PackageDirectories.AndroidBuildTools
     $packageName = 'AndroidBuildTools'
+    $packageVersion = $config.AndroidBuildToolsVersion
+    if ([string]::IsNullOrWhiteSpace($packageVersion)) {
+        throw 'android-build.psd1 must define AndroidBuildToolsVersion.'
+    }
     $nuget = (Get-Command nuget.exe -ErrorAction Stop).Source
     $source = if ($env:ANDROID_BUILD_TOOLS_SOURCE) { $env:ANDROID_BUILD_TOOLS_SOURCE } else { $config.BuildToolsSource }
 
-    # NuGet без -Version восстанавливает последнюю стабильную версию пакета.
-    & $nuget install $packageName -Source $source -OutputDirectory $packagesRoot -NonInteractive -DirectDownload -NoHttpCache -ForceEnglishOutput | Out-Host
+    & $nuget install $packageName -Version $packageVersion -Source $source -OutputDirectory $packagesRoot -NonInteractive -DirectDownload -NoHttpCache -ForceEnglishOutput | Out-Host
     if ($LASTEXITCODE -ne 0) {
-        throw "$packageName restore failed with exit code $LASTEXITCODE."
+        throw "$packageName $packageVersion restore failed with exit code $LASTEXITCODE."
     }
 
-    # Среди всех распакованных версий используем максимальную.
-    $entryPoint = $null
-    $candidates = Get-ChildItem -LiteralPath $packagesRoot -Directory -Filter "$packageName.*" |
-        Sort-Object @{ Expression = {
-                [version]$_.Name.Substring($packageName.Length + 1)
-            }; Descending = $true }
-    foreach ($candidate in $candidates) {
-        $candidateEntryPoint = Join-Path $candidate.FullName 'tools\Invoke-Build.ps1'
-        if (Test-Path -LiteralPath $candidateEntryPoint -PathType Leaf) {
-            $entryPoint = $candidateEntryPoint
-            break
-        }
-    }
-    if ($null -eq $entryPoint) {
-        throw "$packageName did not provide tools\Invoke-Build.ps1 in $packagesRoot."
+    $entryPoint = Join-Path $packagesRoot "$packageName.$packageVersion\tools\Invoke-Build.ps1"
+    if (-not (Test-Path -LiteralPath $entryPoint -PathType Leaf)) {
+        throw "$packageName $packageVersion did not provide tools\Invoke-Build.ps1 in $packagesRoot."
     }
 
     # Получаем параметры из пакета: загрузчик не содержит списка команд и опций.

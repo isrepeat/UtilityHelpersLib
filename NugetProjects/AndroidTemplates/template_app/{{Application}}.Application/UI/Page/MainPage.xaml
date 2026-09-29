@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Page id="mainPage"
       background="#1E1E1E"
-      xmlns="urn:testfooapp:xaml"
+      xmlns="urn:{{application}}:xaml"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 	<Grid verticalAlignment="Stretch"
           horizontalAlignment="Stretch">
@@ -14,13 +14,13 @@
                        horizontalAlignment="Center"
                        fontSize="48"
                        foreground="#BDBDBD"
-                       text="Версия 1.0"/>
+                       text="Версия {{ApplicationVersion}}"/>
 			<TextBlock id="helloText"
                        margin="0 0 0 32"
                        horizontalAlignment="Center"
                        fontSize="40"
                        foreground="#FFFFFF"
-                       text="Hello, TestFooApp!"/>
+                       text="Hello, {{Application}}!"/>
 			<Button id="openSettingsButton"
                     width="320"
                     height="72"

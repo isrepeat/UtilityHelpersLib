@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
     [Parameter(Mandatory)] [string]$ClientName,
     [Parameter(Mandatory)] [ValidatePattern('^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$')] [string]$PackageId,
@@ -12,10 +12,42 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-Import-Module -Name (Join-Path $PSScriptRoot 'Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
-Module.AndroidBuildTools\Initialize-AndroidBuildConsole
+function Initialize-AndroidTemplatesConsole {
+    $utf8Encoding = [Text.UTF8Encoding]::new($false)
+    [Console]::InputEncoding = $utf8Encoding
+    [Console]::OutputEncoding = $utf8Encoding
+    $script:OutputEncoding = $utf8Encoding
+}
 
-$javaHome = Module.AndroidBuildTools\Resolve-AndroidJavaHome
+function Resolve-AndroidJavaHome {
+    $candidateRoots = @(
+        $env:JAVA_HOME,
+        $env:JDK_HOME,
+        (Join-Path $env:ProgramFiles 'Android\Android Studio\jbr'),
+        (Join-Path $env:ProgramFiles 'Android\openjdk'),
+        (Join-Path $env:ProgramFiles 'Java')
+    ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+
+    foreach ($candidateRoot in $candidateRoots) {
+        $homes = @($candidateRoot)
+        if (Test-Path -LiteralPath $candidateRoot -PathType Container) {
+            $homes += Get-ChildItem -LiteralPath $candidateRoot -Directory -ErrorAction SilentlyContinue |
+                Sort-Object Name -Descending |
+                ForEach-Object FullName
+        }
+        foreach ($javaHomeCandidate in $homes) {
+            if (Test-Path -LiteralPath (Join-Path $javaHomeCandidate 'bin\java.exe') -PathType Leaf) {
+                return $javaHomeCandidate
+            }
+        }
+    }
+
+    throw 'Java JDK was not found. Set JAVA_HOME or install Android Studio / Android OpenJDK.'
+}
+
+Initialize-AndroidTemplatesConsole
+
+$javaHome = Resolve-AndroidJavaHome
 $keyTool = Join-Path $javaHome 'bin\keytool.exe'
 $resolvedKeystorePath = [IO.Path]::GetFullPath($KeystorePath)
 
@@ -31,8 +63,8 @@ if (-not (Test-Path -LiteralPath $resolvedKeystorePath -PathType Leaf)) {
     # keytool печатает полученные аргументы. Передаём пароли через временные
     # переменные окружения, чтобы они не попали в вывод сборки.
     $passwordVariableSuffix = [Guid]::NewGuid().ToString('N')
-    $storePasswordVariable = "ANDROID_BUILD_TOOLS_STORE_PASSWORD_$passwordVariableSuffix"
-    $keyPasswordVariable = "ANDROID_BUILD_TOOLS_KEY_PASSWORD_$passwordVariableSuffix"
+    $storePasswordVariable = "ANDROID_TEMPLATES_STORE_PASSWORD_$passwordVariableSuffix"
+    $keyPasswordVariable = "ANDROID_TEMPLATES_KEY_PASSWORD_$passwordVariableSuffix"
     try {
         [Environment]::SetEnvironmentVariable($storePasswordVariable, $StorePassword, 'Process')
         [Environment]::SetEnvironmentVariable($keyPasswordVariable, $KeyPassword, 'Process')
@@ -49,7 +81,7 @@ if (-not (Test-Path -LiteralPath $resolvedKeystorePath -PathType Leaf)) {
 $keyToolArguments = @('-list', '-v', '-keystore', $resolvedKeystorePath, '-alias', $KeyAlias)
 $storePasswordVariable = $null
 if ($StorePassword) {
-    $storePasswordVariable = "ANDROID_BUILD_TOOLS_STORE_PASSWORD_$([Guid]::NewGuid().ToString('N'))"
+    $storePasswordVariable = "ANDROID_TEMPLATES_STORE_PASSWORD_$([Guid]::NewGuid().ToString('N'))"
     [Environment]::SetEnvironmentVariable($storePasswordVariable, $StorePassword, 'Process')
     $keyToolArguments += @('-storepass:env', $storePasswordVariable)
 }

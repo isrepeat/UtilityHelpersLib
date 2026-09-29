@@ -1,5 +1,6 @@
 @{
     BuildToolsSource = '{{BuildToolsSource}}'
+    AndroidBuildToolsVersion = '{{AndroidBuildToolsVersion}}'
     ArtifactName = '{{Application}}'
     AndroidModule = '{{Application}}.Android'
     AndroidHost = '{{Application}}.AndroidHost'

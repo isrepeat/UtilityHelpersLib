@@ -10,12 +10,15 @@ param(
     [Parameter(Mandatory)] [string]$DriveTokenPath,
     [Parameter(Mandatory)] [string]$PreviewerDebugExecutablePath,
     [Parameter(Mandatory)] [string]$PreviewerReleaseExecutablePath,
+    [Parameter(Mandatory)] [version]$BuildToolsVersion,
     [string]$GoogleCloudProject
 )
 
 $ErrorActionPreference = 'Stop'
-Import-Module -Name (Join-Path $PSScriptRoot 'Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
-Module.AndroidBuildTools\Initialize-AndroidBuildConsole
+$utf8Encoding = [Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8Encoding
+[Console]::OutputEncoding = $utf8Encoding
+$OutputEncoding = $utf8Encoding
 function New-KeyPassword {
     $bytes = [byte[]]::new(20)
     $random = [Security.Cryptography.RandomNumberGenerator]::Create()
@@ -38,6 +41,7 @@ if (Test-Path -LiteralPath $secretsDirectory) {
 $signingPropertiesPath = Join-Path $secretsDirectory 'signing.properties'
 
 $templateRoot = Join-Path (Split-Path -Parent $PSScriptRoot) 'template_app'
+$androidBuildToolsVersion = $BuildToolsVersion.ToString()
 $versionPropertiesPath = Join-Path $templateRoot 'version.properties'
 $versionProperties = ConvertFrom-StringData ([IO.File]::ReadAllText($versionPropertiesPath))
 $applicationVersion = $versionProperties.VERSION_NAME_BASE
@@ -56,7 +60,7 @@ foreach ($file in $files) {
         continue
     }
     $text = [IO.File]::ReadAllText($file.FullName)
-    $text = $text.Replace('{{Application}}', $Name).Replace('{{application}}', $Name.ToLowerInvariant()).Replace('{{APPLICATION}}', $Name.ToUpperInvariant()).Replace('{{ApplicationVersion}}', $applicationVersion)
+    $text = $text.Replace('{{Application}}', $Name).Replace('{{application}}', $Name.ToLowerInvariant()).Replace('{{APPLICATION}}', $Name.ToUpperInvariant()).Replace('{{ApplicationVersion}}', $applicationVersion).Replace('{{AndroidBuildToolsVersion}}', $androidBuildToolsVersion)
     $text = $text.Replace('{{PackageId}}', $PackageId).Replace('{{JniPackage}}', $PackageId.Replace('.', '_'))
     $text = $text.Replace('{{BuildToolsSource}}', $BuildToolsSource.Replace("'", "''"))
     $text = $text.Replace('{{NativePackageSource}}', $NativePackageSource.Replace("'", "''"))
@@ -65,8 +69,13 @@ foreach ($file in $files) {
     $text = $text.Replace('{{DriveTokenPath}}', $DriveTokenPath.Replace("'", "''"))
     $text = $text.Replace('{{PreviewerDebugExecutablePath}}', $PreviewerDebugExecutablePath.Replace("'", "''"))
     $text = $text.Replace('{{PreviewerReleaseExecutablePath}}', $PreviewerReleaseExecutablePath.Replace("'", "''"))
-    [IO.File]::WriteAllText($target, $text.TrimEnd(), [Text.UTF8Encoding]::new($false))
+    $encoding = if ($file.Extension -eq '.ps1') { [Text.UTF8Encoding]::new($true) } else { [Text.UTF8Encoding]::new($false) }
+    [IO.File]::WriteAllText($target, $text.TrimEnd(), $encoding)
 }
+
+$removeProjectScript = Join-Path $PSScriptRoot 'Remove-AndroidProject.ps1'
+$removeProjectTarget = Join-Path $destinationRoot 'Scripts\Remove-AndroidProject.ps1'
+[IO.File]::Copy($removeProjectScript, $removeProjectTarget)
 
 [IO.Directory]::CreateDirectory($secretsDirectory) | Out-Null
 $debugKeystore = Join-Path $secretsDirectory 'debug.keystore'
@@ -90,10 +99,10 @@ debugKeyPassword=$debugPassword
 [IO.File]::WriteAllText($signingPropertiesPath, $signingProperties.TrimEnd(), [Text.UTF8Encoding]::new($false))
 
 $oauthDocument = @'
-# Настройка Google OAuth для {{Name}}
+# Google OAuth setup for {{Name}}
 
-Создайте два Android OAuth client в Google Cloud. Сборочный uploader использует
-отдельный общий Desktop OAuth client и не использует эти два client ID.
+Create two Android OAuth clients in Google Cloud. The build uploader uses
+a separate shared Desktop OAuth client and does not use these Android client IDs.
 
 ```text
 Name: {{Name}} debug
@@ -105,9 +114,9 @@ Package name: {{PackageId}}
 SHA-1 certificate fingerprint: {{ReleaseSha1}}
 ```
 
-Страница Google Cloud Clients: {{SetupUrl}}
+Google Cloud Clients page: {{SetupUrl}}
 
-Secrets этого приложения находятся вне Git:
+This application's secrets are outside Git:
 
 ```text
 {{SecretsDirectory}}
@@ -116,7 +125,7 @@ Secrets этого приложения находятся вне Git:
 └─ signing.properties
 ```
 '@
-$setupUrl = if ($releaseCertificate.SetupUrl) { $releaseCertificate.SetupUrl } else { 'передайте -GoogleCloudProject, чтобы получить ссылку на страницу Clients' }
+$setupUrl = if ($releaseCertificate.SetupUrl) { $releaseCertificate.SetupUrl } else { 'pass -GoogleCloudProject to get a link to the Clients page' }
 $oauthDocument = $oauthDocument.Replace('{{Name}}', $Name).Replace('{{PackageId}}', $PackageId).Replace('{{DebugSha1}}', $debugCertificate.Sha1).Replace('{{ReleaseSha1}}', $releaseCertificate.Sha1).Replace('{{SecretsDirectory}}', $secretsDirectory).Replace('{{SetupUrl}}', $setupUrl)
 [IO.File]::WriteAllText((Join-Path $destinationRoot 'Google-OAuth-setup.md'), $oauthDocument.TrimEnd(), [Text.UTF8Encoding]::new($false))
 
