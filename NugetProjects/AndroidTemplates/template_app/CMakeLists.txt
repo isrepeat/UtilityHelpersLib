@@ -67,6 +67,7 @@ include("${ANDROID_BUILD_TOOLS_ROOT}/tools/cmake/InstallXamlRuntime.cmake")
 fn_androidappkit_install_xaml_runtime("${{{application}}_xaml_runtime_packages_root}"
     "${{{application}}_native_package_source}")
 
+add_subdirectory({{Application}}.Application)
 add_subdirectory({{Application}}.AndroidHost)
 if (NOT ANDROID)
     {{application}}_get_configuration_path("PackageDirectories.AndroidAppPreviewerPluginSdk"

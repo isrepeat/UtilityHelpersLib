@@ -20,6 +20,7 @@ set_target_properties({{application}}_preview_plugin PROPERTIES
 target_include_directories({{application}}_preview_plugin PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 target_link_libraries({{application}}_preview_plugin PRIVATE
     AndroidAppPreviewerPlugin::SDK
+    {{application}}_application
     XamlRuntime::Logging
     XamlRuntime::Runtime
     XamlRuntime::OpenGLESRenderer)

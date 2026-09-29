@@ -2,7 +2,29 @@
 
 #include "./PreviewSession.h"
 
+#include <set>
+
 namespace {{application}}::preview::session {
+    namespace _details {
+        std::string JsonString(std::string_view value) {
+            std::string result = "\"";
+            constexpr char digits[] = "0123456789abcdef";
+            for (const unsigned char c : value) {
+                if (c == '"' || c == '\\') {
+                    result += '\\';
+                    result += c;
+                } else if (c < 32) {
+                    result += "\\u00";
+                    result += digits[c >> 4];
+                    result += digits[c & 15];
+                } else {
+                    result += c;
+                }
+            }
+            return result + '"';
+        }
+    }
+
     PreviewNavigationController::PreviewNavigationController(PreviewSession& session)
         : session(session) {
     }
@@ -11,27 +33,44 @@ namespace {{application}}::preview::session {
     // API
     //
     std::string PreviewNavigationController::BuildGraphJson() const {
-        return std::string{"{\"currentPageId\":\""} + std::string{this->session.CurrentPage()}
-            + R"(","layoutRootPageId":"MainPage","pages":[{"id":"MainPage","title":"Главная"},{"id":"SettingsPage","title":"Настройки"}],"transitions":[{"id":"main-to-settings","sourcePageId":"MainPage","targetPageId":"SettingsPage","targetKind":"page","backwardOfTransitionId":"","title":"Открыть настройки","isDefault":true,"dataType":"","previewDefault":true},{"id":"settings-to-main","sourcePageId":"SettingsPage","targetPageId":"MainPage","targetKind":"page","backwardOfTransitionId":"main-to-settings","title":"Назад","isDefault":true,"dataType":"","previewDefault":true}]})";
+        const auto routes = this->session.Pages().preview_Routes();
+        std::set<std::string_view> pages;
+        pages.insert(this->session.CurrentPage());
+        for (const auto& route : routes) {
+            pages.insert(route.source);
+            pages.insert(route.target);
+        }
+        std::string result = "{\"currentPageId\":" + _details::JsonString(this->session.CurrentPage())
+            + ",\"layoutRootPageId\":\"MainPage\",\"pages\":[";
+        bool first = true;
+        for (const auto page : pages) {
+            if (!first) {
+                result += ',';
+            }
+            first = false;
+            result += "{\"id\":" + _details::JsonString(page) + ",\"title\":" + _details::JsonString(this->session.PageTitle(page)) + '}';
+        }
+        result += "],\"transitions\":[";
+        first = true;
+        for (const auto& route : routes) {
+            if (!first) {
+                result += ',';
+            }
+            first = false;
+            result += "{\"id\":" + _details::JsonString(route.id)
+                + ",\"sourcePageId\":" + _details::JsonString(route.source)
+                + ",\"targetPageId\":" + _details::JsonString(route.target)
+                + ",\"backwardOfTransitionId\":" + _details::JsonString(route.backwardOfRouteId)
+                + ",\"title\":" + _details::JsonString(route.title)
+                + ",\"targetKind\":" + _details::JsonString(route.targetKind == {{application}}::application::core::NavigationTargetKind::previousPage ? "previousPage" : "page")
+                + ",\"isDefault\":" + (route.isDefault ? "true" : "false")
+                + ",\"dataType\":" + _details::JsonString(route.dataType)
+                + ",\"previewDefault\":" + (route.previewDefault ? "true" : "null") + '}';
+        }
+        return result + "]}";
     }
 
     bool PreviewNavigationController::Navigate(std::span<const std::string_view> transitionIds, std::string& error) {
-        if (transitionIds.size() != 1) {
-            error = "The template navigation requires exactly one transition";
-            return false;
-        }
-        const std::string_view transition = transitionIds.front();
-        if (transition == "main-to-settings" && this->session.CurrentPage() == "MainPage") {
-            this->session.LoadPage("SettingsPage");
-            error.clear();
-            return true;
-        }
-        if (transition == "settings-to-main" && this->session.CurrentPage() == "SettingsPage") {
-            this->session.LoadPage("MainPage");
-            error.clear();
-            return true;
-        }
-        error = "Transition is not available on the current page";
-        return false;
+        return this->session.Navigate(transitionIds, error);
     }
 }

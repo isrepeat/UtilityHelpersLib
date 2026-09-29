@@ -363,6 +363,54 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "{{Application}}.AndroidHost
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "{{Application}}.Application", "{{Application}}.Application", "{D4B81251-C29A-4DF2-9DC9-07F94885364D}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\CMakeLists.txt = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\CMakeLists.txt
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\README.md = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Base", "Base", "{B37161C3-4ECB-4CC7-B61F-847569FA0492}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Base\AppRepositoryBase.cpp = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Base\AppRepositoryBase.cpp
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Base\AppRepositoryBase.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Base\AppRepositoryBase.h
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Base\NavigationStateBase.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Base\NavigationStateBase.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{E2D0A1B0-E2B7-4B19-B7E7-F139B1A15B5A}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\ApplicationSession.cpp = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\ApplicationSession.cpp
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\ApplicationSession.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\ApplicationSession.h
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\ApplicationStateStore.cpp = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\ApplicationStateStore.cpp
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\ApplicationStateStore.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\ApplicationStateStore.h
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\AppSessionController.cpp = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\AppSessionController.cpp
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\AppSessionController.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\AppSessionController.h
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\InputDispatcher.cpp = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\InputDispatcher.cpp
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\InputDispatcher.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\InputDispatcher.h
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\Navigation.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\Navigation.h
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\NavigationStates.cpp = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\NavigationStates.cpp
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\NavigationStates.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\NavigationStates.h
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\PageManager.cpp = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\PageManager.cpp
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\PageManager.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\PageManager.h
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\PageRegistry.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Core\PageRegistry.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Interface", "Interface", "{0CD0E5EF-4AE2-47B0-9152-73A5FE1E33F1}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Interface\INavigationPage.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Interface\INavigationPage.h
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Interface\IPage.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Interface\IPage.h
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Interface\IPageNavigator.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Interface\IPageNavigator.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Model", "Model", "{E539AA7C-DA0C-4D2B-A8E6-45D8EEC683FE}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Model\ApplicationRepository.cpp = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Model\ApplicationRepository.cpp
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Model\ApplicationRepository.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Model\ApplicationRepository.h
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Model\ApplicationStateDocument.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Model\ApplicationStateDocument.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{D6178B14-D5D3-4E32-B831-40C9203DE0C3}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Tests\ApplicationSessionTests.cpp = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Tests\ApplicationSessionTests.cpp
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UI", "UI", "{C12A9B70-0C33-4FE6-A0D9-D7E9A02856AC}"
 	ProjectSection(SolutionItems) = preProject
@@ -372,7 +420,11 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Page", "Page", "{687EF530-5D13-447E-8569-A57BA6D50E7C}"
 	ProjectSection(SolutionItems) = preProject
 		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\UI\Page\MainPage.xaml = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\UI\Page\MainPage.xaml
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\UI\Page\MainPageViewModel.cpp = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\UI\Page\MainPageViewModel.cpp
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\UI\Page\MainPageViewModel.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\UI\Page\MainPageViewModel.h
 		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\UI\Page\SettingsPage.xaml = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\UI\Page\SettingsPage.xaml
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\UI\Page\SettingsPageViewModel.cpp = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\UI\Page\SettingsPageViewModel.cpp
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\UI\Page\SettingsPageViewModel.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\UI\Page\SettingsPageViewModel.h
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "{{Application}}.PreviewPlugin", "{{Application}}.PreviewPlugin", "{A2D13E26-89A3-4EE1-9AC6-6E72F85C183B}"
@@ -951,6 +1003,11 @@ Global
 		{78FEEA67-10C8-40A3-9657-AE81223D1F9A} = {9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B}
 		{7FA0A306-CEBD-4346-BCF6-150BDFFD0CC6} = {9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B}
 		{D4B81251-C29A-4DF2-9DC9-07F94885364D} = {9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B}
+		{B37161C3-4ECB-4CC7-B61F-847569FA0492} = {D4B81251-C29A-4DF2-9DC9-07F94885364D}
+		{E2D0A1B0-E2B7-4B19-B7E7-F139B1A15B5A} = {D4B81251-C29A-4DF2-9DC9-07F94885364D}
+		{0CD0E5EF-4AE2-47B0-9152-73A5FE1E33F1} = {D4B81251-C29A-4DF2-9DC9-07F94885364D}
+		{E539AA7C-DA0C-4D2B-A8E6-45D8EEC683FE} = {D4B81251-C29A-4DF2-9DC9-07F94885364D}
+		{D6178B14-D5D3-4E32-B831-40C9203DE0C3} = {D4B81251-C29A-4DF2-9DC9-07F94885364D}
 		{C12A9B70-0C33-4FE6-A0D9-D7E9A02856AC} = {D4B81251-C29A-4DF2-9DC9-07F94885364D}
 		{687EF530-5D13-447E-8569-A57BA6D50E7C} = {C12A9B70-0C33-4FE6-A0D9-D7E9A02856AC}
 		{A2D13E26-89A3-4EE1-9AC6-6E72F85C183B} = {9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B}

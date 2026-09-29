@@ -3,35 +3,24 @@
       background="#1E1E1E"
       xmlns="urn:{{application}}:xaml"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-	<Grid verticalAlignment="Stretch"
-          horizontalAlignment="Stretch">
-		<StackPanel width="320"
-                    verticalAlignment="Center"
-                    horizontalAlignment="Center"
-                    orientation="Vertical">
-			<TextBlock id="applicationVersionText"
-                       margin="0 0 0 32"
-                       horizontalAlignment="Center"
-                       fontSize="48"
-                       foreground="#BDBDBD"
-                       text="Version {{ApplicationVersion}}"/>
-			<TextBlock id="helloText"
-                       margin="0 0 0 32"
-                       horizontalAlignment="Center"
-                       fontSize="40"
-                       foreground="#FFFFFF"
-                       text="Hello, {{Application}}!"/>
-			<Button id="openSettingsButton"
-                    width="320"
-                    height="72"
-                    contentAlignment="Center"
-                    horizontalAlignment="Center"
-                    fontSize="36"
-                    fontWeight="Bold"
-                    foreground="#FFFFFF"
-                    background="#3A6EA5"
-                    command="{Binding NavigateToSettingsCommand}"
-                    text="Open settings"/>
-		</StackPanel>
-	</Grid>
+    <StackPanel width="320"
+                verticalAlignment="Center"
+                horizontalAlignment="Center"
+                orientation="Vertical">
+        <TextBlock id="helloText"
+                   margin="0 0 0 32"
+                   fontSize="32"
+                   foreground="#FFFFFF"
+                   textWrapping="Wrap"
+                   text="Hello, {{Application}}!"/>
+        <Button id="openSettingsButton"
+                width="320"
+                height="72"
+                contentAlignment="Center"
+                fontSize="28"
+                foreground="#FFFFFF"
+                background="#3A6EA5"
+                command="{Binding NavigateToSettingsCommand}"
+                text="Open settings"/>
+    </StackPanel>
 </Page>
