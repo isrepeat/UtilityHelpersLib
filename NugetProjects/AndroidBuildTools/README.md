@@ -2,7 +2,7 @@
 
 Версионируемые PowerShell-команды, CMake-модули и Gradle conventions для сборки native Android-приложений. Требуется Windows, PowerShell 5.1+, NuGet CLI, Visual Studio C++ с CMake, Android SDK/NDK и JDK 21.
 
-Создание и удаление проектов не входят в этот пакет: для них используется `AndroidTemplates`. Новый проект фиксирует требуемую версию AndroidBuildTools в собственном `android-build.psd1`.
+Создание и удаление проектов не входят в этот пакет: для них используется `AndroidTemplates`. При создании генератор находит последнюю опубликованную версию AndroidBuildTools и фиксирует её в `android-build.psd1` нового проекта.
 
 ## Границы ответственности
 

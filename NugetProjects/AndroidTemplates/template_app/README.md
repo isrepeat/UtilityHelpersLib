@@ -62,5 +62,5 @@ Set-Location $projectRoot
 & ".\Scripts\Remove-AndroidProject.ps1" -ProjectRoot (Get-Location)
 ```
 
-Скрипт запросит package ID и подтверждение `Y/N`, после чего удалит корень
+Скрипт запросит подтверждение `Y/N`, после чего удалит корень
 проекта и связанный каталог secrets.

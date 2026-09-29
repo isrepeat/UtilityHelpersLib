@@ -12,38 +12,39 @@
             <TextBlock id="titleText"
                        margin="0 0 0 32"
                        horizontalAlignment="Center"
-                       fontSize="36"
+                       fontSize="48"
                        foreground="#FFFFFF"
-                       text="Настройки"/>
+                       text="Settings"/>
             <Button id="updateApplicationButton"
                     width="320"
                     height="72"
                     margin="0 0 0 16"
                     contentAlignment="Center"
                     horizontalAlignment="Center"
-                    fontSize="24"
+                    fontSize="36"
+                    fontWeight="Bold"
                     foreground="#FFFFFF"
                     background="#3A6EA5"
                     command="{Binding UpdateApplicationCommand}"
-                    text="Обновить приложение"/>
+                    text="Update application"/>
             <TextBlock id="updateStatusText"
                        width="320"
                        margin="0 0 0 16"
                        horizontalAlignment="Center"
-                       fontSize="20"
+                       fontSize="32"
                        foreground="#BDBDBD"
                        textWrapping="Wrap"
-                       text="Статус обновления: не проверялся"/>
+                       text="Update status: not checked"/>
             <Button id="backButton"
                     width="320"
                     height="72"
                     contentAlignment="Center"
                     horizontalAlignment="Center"
-                    fontSize="24"
+                    fontSize="36"
                     foreground="#FFFFFF"
                     background="#505050"
                     command="{Binding NavigateToMainCommand}"
-                    text="Назад"/>
+                    text="Back"/>
         </StackPanel>
     </Grid>
 </Page>

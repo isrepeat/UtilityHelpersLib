@@ -3,8 +3,6 @@ param(
     [Parameter(Mandatory)]
     [string]$ProjectRoot,
 
-    [string]$PackageId,
-
     [switch]$Confirmed
 )
 
@@ -22,18 +20,10 @@ if (-not $signingPropertiesPath) {
 }
 
 $secretsDirectory = Split-Path -Parent $signingPropertiesPath
-if (-not $PackageId) {
-    $PackageId = Read-Host 'Package ID'
-}
-if (-not $PackageId) {
-    throw 'Package ID was not entered.'
-}
-if ((Split-Path -Leaf $secretsDirectory) -ine $PackageId) {
-    throw "Package ID does not match the configured secrets directory: $secretsDirectory"
-}
 if (-not (Test-Path -LiteralPath $secretsDirectory -PathType Container)) {
     throw "Secrets directory was not found: $secretsDirectory"
 }
+$packageId = Split-Path -Leaf $secretsDirectory
 
 if (-not $Confirmed) {
     $answer = Read-Host "Delete project and secrets for $PackageId? [Y/N]"
@@ -49,7 +39,7 @@ if ($scriptPath.StartsWith($normalizedProjectRoot, [StringComparison]::OrdinalIg
     $temporaryScript = Join-Path ([IO.Path]::GetTempPath()) ("Remove-AndroidProject-{0}.ps1" -f [Guid]::NewGuid().ToString('N'))
     Copy-Item -LiteralPath $scriptPath -Destination $temporaryScript -Force
     try {
-        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $temporaryScript -ProjectRoot $projectRoot -PackageId $PackageId -Confirmed
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $temporaryScript -ProjectRoot $projectRoot -Confirmed
         exit $LASTEXITCODE
     } finally {
         Remove-Item -LiteralPath $temporaryScript -Force -ErrorAction SilentlyContinue

@@ -10,7 +10,6 @@ param(
     [Parameter(Mandatory)] [string]$DriveTokenPath,
     [Parameter(Mandatory)] [string]$PreviewerDebugExecutablePath,
     [Parameter(Mandatory)] [string]$PreviewerReleaseExecutablePath,
-    [Parameter(Mandatory)] [version]$BuildToolsVersion,
     [string]$GoogleCloudProject
 )
 
@@ -30,6 +29,31 @@ function New-KeyPassword {
     return [BitConverter]::ToString($bytes).Replace('-', '').ToLowerInvariant()
 }
 
+function Resolve-LatestAndroidBuildToolsVersion {
+    param([string]$Source)
+
+    $nuget = (Get-Command nuget.exe -ErrorAction Stop).Source
+    $output = & $nuget list AndroidBuildTools -Source $Source -AllVersions -Prerelease -NonInteractive -ForceEnglishOutput 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "AndroidBuildTools version lookup failed for ${Source} with exit code ${LASTEXITCODE}: $($output -join [Environment]::NewLine)"
+    }
+
+    $versions = @(
+        $output | ForEach-Object {
+            $match = [regex]::Match($_.ToString(), '^\s*AndroidBuildTools\s+(?<Version>\d+(?:\.\d+){2,3})(?:\s|$)')
+            if ($match.Success) {
+                [version]$match.Groups['Version'].Value
+            }
+        }
+    )
+    $latestVersion = $versions | Sort-Object -Descending | Select-Object -First 1
+    if ($null -eq $latestVersion) {
+        throw "AndroidBuildTools was not found in $Source. Publish it to the feed before creating a project."
+    }
+
+    return $latestVersion
+}
+
 $destinationRoot = [IO.Path]::GetFullPath($Destination)
 if (Test-Path -LiteralPath $destinationRoot) {
     throw "Destination already exists: $destinationRoot. Choose a new directory."
@@ -41,7 +65,7 @@ if (Test-Path -LiteralPath $secretsDirectory) {
 $signingPropertiesPath = Join-Path $secretsDirectory 'signing.properties'
 
 $templateRoot = Join-Path (Split-Path -Parent $PSScriptRoot) 'template_app'
-$androidBuildToolsVersion = $BuildToolsVersion.ToString()
+$androidBuildToolsVersion = (Resolve-LatestAndroidBuildToolsVersion $BuildToolsSource).ToString()
 $versionPropertiesPath = Join-Path $templateRoot 'version.properties'
 $versionProperties = ConvertFrom-StringData ([IO.File]::ReadAllText($versionPropertiesPath))
 $applicationVersion = $versionProperties.VERSION_NAME_BASE

@@ -10,11 +10,11 @@
                     horizontalAlignment="Center"
                     orientation="Vertical">
 			<TextBlock id="applicationVersionText"
-                       margin="0 0 0 16"
+                       margin="0 0 0 32"
                        horizontalAlignment="Center"
                        fontSize="48"
                        foreground="#BDBDBD"
-                       text="Версия {{ApplicationVersion}}"/>
+                       text="Version {{ApplicationVersion}}"/>
 			<TextBlock id="helloText"
                        margin="0 0 0 32"
                        horizontalAlignment="Center"
@@ -26,11 +26,12 @@
                     height="72"
                     contentAlignment="Center"
                     horizontalAlignment="Center"
-                    fontSize="32"
+                    fontSize="36"
+                    fontWeight="Bold"
                     foreground="#FFFFFF"
                     background="#3A6EA5"
                     command="{Binding NavigateToSettingsCommand}"
-                    text="Открыть настройки"/>
+                    text="Open settings"/>
 		</StackPanel>
 	</Grid>
 </Page>
