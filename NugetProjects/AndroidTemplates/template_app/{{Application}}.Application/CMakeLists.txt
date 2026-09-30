@@ -20,7 +20,9 @@ add_library({{application}}_application STATIC ${{{application}}_application_sou
 set_target_properties({{application}}_application PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features({{application}}_application PUBLIC cxx_std_20)
 target_include_directories({{application}}_application PUBLIC "${{{application}}_project_root}")
-target_link_libraries({{application}}_application PUBLIC XamlRuntime::Runtime)
+target_link_libraries({{application}}_application PUBLIC
+    XamlRuntime::Logging
+    XamlRuntime::Runtime)
 if (NOT ANDROID)
     target_compile_definitions({{application}}_application PUBLIC ANDROID_APP_PREVIEWER)
 endif()

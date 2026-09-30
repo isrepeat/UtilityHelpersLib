@@ -2,8 +2,6 @@ add_library({{application}} SHARED
     Native.cpp
     AndroidCommandDispatcher.cpp
     AndroidCommandDispatcher.h
-    SessionLogger.cpp
-    SessionLogger.h
     Jni/Jni.cpp
     Jni/Jni.h)
 target_compile_features({{application}} PRIVATE cxx_std_20)

@@ -1,4 +1,4 @@
-package com.isrepeat.androidcoresdk.logging
+package com.isrepeat.androidcoresdk.diagnostics
 
 data class SessionLog(val uri: android.net.Uri, val nativePath: String)
 

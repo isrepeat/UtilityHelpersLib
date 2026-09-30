@@ -5,7 +5,7 @@ import com.isrepeat.androidappkit.androidappkit
 class MainActivity : androidx.activity.ComponentActivity() {
     private lateinit var mainPage: MainPage
     private lateinit var dispatcher: NativeCommandDispatcher
-    private lateinit var sessionLog: androidappkit.logging.NativeSessionLog
+    private lateinit var sessionLog: androidappkit.diagnostics.NativeSessionLog
     private lateinit var updateController: androidappkit.update.GoogleDriveUpdateController
     private var confirmation: android.app.AlertDialog? = null
 
@@ -21,11 +21,14 @@ class MainActivity : androidx.activity.ComponentActivity() {
             }
         }
         mainPage = MainPage(this, dispatcher)
-        sessionLog = androidappkit.logging.NativeSessionLog(
+        sessionLog = androidappkit.diagnostics.NativeSessionLog(
             androidappkit.AppIdentity("{{Application}}", "com.isrepeat/{{Application}}"),
-            androidappkit.NativeLogConfigurator { mainPage.configureNativeLog(it) },
+            androidappkit.NativeLogConfigurator { nativePath -> mainPage.configureNativeLog(nativePath) },
         )
         sessionLog.configure(this)
+        androidappkit.diagnostics.configureLogger(
+            androidappkit.diagnostics.AppKitLogger { message -> NativeDiagnostics.log(message) },
+        )
         updateController = androidappkit.update.GoogleDriveUpdateController(
             this,
             androidappkit.update.GoogleDriveUpdateConfiguration(
@@ -47,7 +50,7 @@ class MainActivity : androidx.activity.ComponentActivity() {
                     mainPage.setStatus(message)
                 }
             },
-            androidappkit.update.UpdateLogger { android.util.Log.i("{{Application}}", it) },
+            androidappkit.diagnostics.sharedLogger(),
             { onConfirmed, onCancelled ->
                 confirmation = android.app.AlertDialog.Builder(this)
                     .setTitle("Reinstall application?")

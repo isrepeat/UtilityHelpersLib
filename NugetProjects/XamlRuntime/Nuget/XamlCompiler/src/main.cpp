@@ -496,6 +496,8 @@ namespace {
                 output << "            " << variable << "->SetText(\"" << this->EscapeCpp(value) << "\");\n";
             } else if (name == "fontSize") {
                 output << "            " << variable << "->SetFontSize(" << this->FloatLiteral(value) << ");\n";
+            } else if (name == "lineHeight") {
+                output << "            " << variable << "->SetLineHeight(" << this->FloatLiteral(value) << ");\n";
             } else if (name == "fontFamily") {
                 output << "            " << variable << "->SetFontFamily(\"" << this->EscapeCpp(value) << "\");\n";
             } else if (name == "fontWeight") {

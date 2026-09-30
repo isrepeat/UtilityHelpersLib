@@ -98,14 +98,14 @@ class GoogleDriveClient(private val accessToken: String) {
             )
         }
         requireSuccess(connection)
-        return org.json.JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+        return org.json.JSONObject(connection.inputStream.bufferedReader().use { reader -> reader.readText() })
             .getString("id")
             .also { connection.disconnect() }
     }
 
     private fun read(url: java.net.URL): String {
         val connection = connection(url, "GET")
-        return connection.inputStream.bufferedReader().use { it.readText() }
+        return connection.inputStream.bufferedReader().use { reader -> reader.readText() }
             .also { connection.disconnect() }
     }
 
@@ -124,7 +124,7 @@ class GoogleDriveClient(private val accessToken: String) {
     private fun requireSuccess(connection: java.net.HttpURLConnection) {
         check(connection.responseCode in 200..299) {
             "Google Drive returned HTTP ${connection.responseCode}: " +
-                connection.errorStream?.bufferedReader()?.use { it.readText() }
+                connection.errorStream?.bufferedReader()?.use { reader -> reader.readText() }
         }
     }
 

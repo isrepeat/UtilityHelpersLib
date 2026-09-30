@@ -14,8 +14,24 @@ object androidcoresdk {
         fun GoogleDriveClient(accessToken: String) =
             com.isrepeat.androidcoresdk.drive.GoogleDriveClient(accessToken)
     }
-    object logging {
-        val MediaStoreSessionLog = com.isrepeat.androidcoresdk.logging.MediaStoreSessionLog
+    object diagnostics {
+        val MediaStoreSessionLog = com.isrepeat.androidcoresdk.diagnostics.MediaStoreSessionLog
+
+        fun interface SdkLogger {
+            fun log(message: String)
+        }
+
+        private val sharedLogger = SdkLogger { message ->
+            com.isrepeat.androidcoresdk.diagnostics.SdkDiagnostics.log(message)
+        }
+
+        fun configureLogger(logger: SdkLogger) {
+            com.isrepeat.androidcoresdk.diagnostics.SdkDiagnostics.configure(
+                com.isrepeat.androidcoresdk.diagnostics.SdkLogger { message -> logger.log(message) },
+            )
+        }
+
+        fun sharedLogger(): SdkLogger = sharedLogger
     }
     object media {
         val ScreenshotCapture = com.isrepeat.androidcoresdk.media.ScreenshotCapture

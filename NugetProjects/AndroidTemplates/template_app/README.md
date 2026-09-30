@@ -46,11 +46,12 @@ Set-Location $projectRoot
 
 При запуске `MainActivity` создаётся журнал сеанса в
 `Downloads/com.isrepeat/{{Application}}`. Kotlin передаёт открытый file descriptor
-в native host через `NativeSessionLog` из AndroidAppKit. Native host записывает
-в этот файл своё состояние: создание журнала и статусы обновления. Имя файла
-содержит дату и время запуска. Перед уничтожением native-сессии журнал
-принудительно сбрасывается на диск. Подробные сообщения контроллера обновления
-остаются в Logcat через `android.util.Log`.
+в native host через `NativeSessionLog` из AndroidAppKit. Android host настраивает
+`Helpers.Logging` на этот файл, поэтому записи `LOG_INFO`, `LOG_WARNING` и
+`LOG_ERROR` из общей C++ библиотеки попадают в журнал. PreviewPlugin настраивает
+тот же logger через `xp_configure_logging`, поэтому эти записи также видны в
+журнале previewer. Имя Android-журнала содержит дату и время запуска; перед
+уничтожением native-сессии logger принудительно сбрасывается на диск.
 
 ## Update из Google Drive
 
