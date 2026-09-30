@@ -41,6 +41,17 @@ Set-Location $projectRoot
 
 Пути к `AndroidAppPreviewer.exe` для Debug и Release находятся в параметрах
 `Preview.Executable.Debug` и `Preview.Executable.Release` файла `android-build.psd1`.
+
+## Логирование Android
+
+При запуске `MainActivity` создаётся журнал сеанса в
+`Downloads/com.isrepeat/{{Application}}`. Kotlin передаёт открытый file descriptor
+в native host через `NativeSessionLog` из AndroidAppKit. Native host записывает
+в этот файл своё состояние: создание журнала и статусы обновления. Имя файла
+содержит дату и время запуска. Перед уничтожением native-сессии журнал
+принудительно сбрасывается на диск. Подробные сообщения контроллера обновления
+остаются в Logcat через `android.util.Log`.
+
 ## Update из Google Drive
 
 Стартовый `MainPage` содержит кнопку **Update**. Она вызывает

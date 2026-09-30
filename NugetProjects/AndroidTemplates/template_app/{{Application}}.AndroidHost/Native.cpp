@@ -8,23 +8,26 @@
 
 #include "../{{Application}}.Application/Core/ApplicationSession.h"
 #include "./AndroidCommandDispatcher.h"
+#include "./SessionLogger.h"
 
 #include <stdexcept>
 #include <iterator>
 #include <fstream>
 #include <utility>
-#include <memory>
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace _details {
     struct NativeHost final {
         {{application}}::application::core::ApplicationSession session{};
+        {{application}}::android_host::SessionLogger logger;
 #if defined(__ANDROID__)
         std::unique_ptr<es_renderer::OpenGlRenderer> renderer;
         std::unique_ptr<{{application}}::android_host::AndroidCommandDispatcher> dispatcher;
 #endif
     };
+
 #if defined(__ANDROID__)
     NativeHost& Host(jlong handle) {
         if (handle == 0) {
@@ -50,8 +53,26 @@ namespace _details {
         }
         return {std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>()};
     }
+
+    std::string ReadString(JNIEnv* environment, jstring value) {
+        if (value == nullptr) {
+            throw std::invalid_argument("Java string is required");
+        }
+        const char* const characters = environment->GetStringUTFChars(value, nullptr);
+        if (characters == nullptr) {
+            throw std::runtime_error("Cannot read Java string");
+        }
+        const std::string result(characters);
+        environment->ReleaseStringUTFChars(value, characters);
+        return result;
+    }
+
+    void ConfigureLogging(NativeHost& host, JNIEnv* environment, jstring path) {
+        host.logger.Configure(ReadString(environment, path));
+        host.logger.Info("{{Application}}.Android", "Logging initialized");
+    }
 #endif
-}
+} // namespace _details
 
 #if defined(__ANDROID__)
 extern "C" JNIEXPORT jlong JNICALL Java_{{JniPackage}}_MainPage_nativeCreate(JNIEnv* environment, jobject, jobject dispatcher) {
@@ -68,8 +89,20 @@ extern "C" JNIEXPORT jlong JNICALL Java_{{JniPackage}}_MainPage_nativeCreate(JNI
     }
 }
 
+extern "C" JNIEXPORT void JNICALL Java_{{JniPackage}}_MainPage_nativeConfigureLogFile(JNIEnv* environment, jobject, jlong handle, jstring path) {
+    try {
+        _details::ConfigureLogging(_details::Host(handle), environment, path);
+    } catch (const std::exception& error) {
+        _details::ReportError(environment, error);
+    }
+}
+
 extern "C" JNIEXPORT void JNICALL Java_{{JniPackage}}_MainPage_nativeDestroy(JNIEnv*, jobject, jlong handle) {
-    delete reinterpret_cast<_details::NativeHost*>(handle);
+    auto* host = reinterpret_cast<_details::NativeHost*>(handle);
+    if (host != nullptr) {
+        host->logger.Flush();
+        delete host;
+    }
 }
 
 extern "C" JNIEXPORT void JNICALL Java_{{JniPackage}}_MainPage_nativeSurface(JNIEnv* environment, jobject, jlong handle, jint width, jint height) {
@@ -143,7 +176,9 @@ extern "C" JNIEXPORT void JNICALL Java_{{JniPackage}}_MainPage_nativeSetStatus(J
         std::string status(static_cast<size_t>(environment->GetArrayLength(value)), '\0');
         environment->GetByteArrayRegion(value, 0, static_cast<jsize>(status.size()), reinterpret_cast<jbyte*>(status.data()));
         if (!environment->ExceptionCheck()) {
-            _details::Host(handle).session.Controller().SetStatus(std::move(status));
+            auto& host = _details::Host(handle);
+            host.logger.Info("{{Application}}.Status", status);
+            host.session.Controller().SetStatus(std::move(status));
         }
     } catch (const std::exception& error) {
         _details::ReportError(environment, error);

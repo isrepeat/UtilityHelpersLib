@@ -49,15 +49,27 @@ class MainPage(context: android.content.Context, dispatcher: NativeCommandDispat
     }
 
     fun setStatus(value: String) {
-        if (destroyed) return
+        if (destroyed) {
+            return
+        }
         val bytes = value.toByteArray(Charsets.UTF_8)
         queueEvent {
-            if (handle != 0L) nativeSetStatus(handle, bytes)
+            if (handle != 0L) {
+                nativeSetStatus(handle, bytes)
+            }
+        }
+    }
+
+    fun configureNativeLog(path: String) {
+        if (!destroyed) {
+            nativeConfigureLogFile(handle, path)
         }
     }
 
     fun destroySession() {
-        if (destroyed) return
+        if (destroyed) {
+            return
+        }
         destroyed = true
         // Барьер выполняет ранее поставленные события до удаления сессии.
         val released = java.util.concurrent.CountDownLatch(1)
@@ -73,6 +85,7 @@ class MainPage(context: android.content.Context, dispatcher: NativeCommandDispat
     }
 
     private external fun nativeCreate(dispatcher: NativeCommandDispatcher): Long
+    private external fun nativeConfigureLogFile(handle: Long, path: String)
     private external fun nativeSetStatus(handle: Long, value: ByteArray)
     private external fun nativeDestroy(handle: Long)
     private external fun nativeSurface(handle: Long, width: Int, height: Int)

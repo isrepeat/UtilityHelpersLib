@@ -13,6 +13,7 @@ namespace xaml {
             {XamlAttribute::dataContext, XamlAttributeGroup::dataContext, "dataContext"},
             {XamlAttribute::text, XamlAttributeGroup::text, "text"},
             {XamlAttribute::fontSize, XamlAttributeGroup::text, "fontSize"},
+            {XamlAttribute::lineHeight, XamlAttributeGroup::text, "lineHeight"},
             {XamlAttribute::fontFamily, XamlAttributeGroup::text, "fontFamily"},
             {XamlAttribute::fontWeight, XamlAttributeGroup::text, "fontWeight"},
             {XamlAttribute::textWrapping, XamlAttributeGroup::text, "textWrapping"},

@@ -5,6 +5,7 @@ import com.isrepeat.androidappkit.androidappkit
 class MainActivity : androidx.activity.ComponentActivity() {
     private lateinit var mainPage: MainPage
     private lateinit var dispatcher: NativeCommandDispatcher
+    private lateinit var sessionLog: androidappkit.logging.NativeSessionLog
     private lateinit var updateController: androidappkit.update.GoogleDriveUpdateController
     private var confirmation: android.app.AlertDialog? = null
 
@@ -14,6 +15,17 @@ class MainActivity : androidx.activity.ComponentActivity() {
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
+        dispatcher = NativeCommandDispatcher { command, _, _ ->
+            when (command) {
+                HostCommand.REQUEST_APPLICATION_UPDATE -> updateController.start()
+            }
+        }
+        mainPage = MainPage(this, dispatcher)
+        sessionLog = androidappkit.logging.NativeSessionLog(
+            androidappkit.AppIdentity("{{Application}}", "com.isrepeat/{{Application}}"),
+            androidappkit.NativeLogConfigurator { mainPage.configureNativeLog(it) },
+        )
+        sessionLog.configure(this)
         updateController = androidappkit.update.GoogleDriveUpdateController(
             this,
             androidappkit.update.GoogleDriveUpdateConfiguration(
@@ -31,7 +43,9 @@ class MainActivity : androidx.activity.ComponentActivity() {
             ),
             authorizeUpdate::launch,
             { message ->
-                if (!isDestroyed) mainPage.setStatus(message)
+                if (!isDestroyed) {
+                    mainPage.setStatus(message)
+                }
             },
             androidappkit.update.UpdateLogger { android.util.Log.i("{{Application}}", it) },
             { onConfirmed, onCancelled ->
@@ -44,12 +58,6 @@ class MainActivity : androidx.activity.ComponentActivity() {
                     .show()
             },
         )
-        dispatcher = NativeCommandDispatcher { command, _, _ ->
-            when (command) {
-                HostCommand.REQUEST_APPLICATION_UPDATE -> updateController.start()
-            }
-        }
-        mainPage = MainPage(this, dispatcher)
         setContentView(mainPage)
         onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {

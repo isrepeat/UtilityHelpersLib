@@ -1,10 +1,10 @@
 #include "ElementBuilder.h"
 #include "XamlAttribute.h"
 
+#include <stdexcept>
 #include <algorithm>
 #include <cstdint>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -343,6 +343,9 @@ namespace xaml {
             return;
         case XamlAttribute::fontSize:
             element.SetFontSize(std::stof(std::string(value)));
+            return;
+        case XamlAttribute::lineHeight:
+            element.SetLineHeight(std::stof(std::string(value)));
             return;
         case XamlAttribute::fontFamily:
             element.SetFontFamily(std::string(value));
