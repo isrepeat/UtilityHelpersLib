@@ -7,11 +7,14 @@
 #endif
 
 #include "../{{Application}}.Application/Core/ApplicationSession.h"
+#include "./AndroidCommandDispatcher.h"
 
 #include <stdexcept>
 #include <iterator>
 #include <fstream>
+#include <utility>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace _details {
@@ -19,6 +22,7 @@ namespace _details {
         {{application}}::application::core::ApplicationSession session{};
 #if defined(__ANDROID__)
         std::unique_ptr<es_renderer::OpenGlRenderer> renderer;
+        std::unique_ptr<{{application}}::android_host::AndroidCommandDispatcher> dispatcher;
 #endif
     };
 #if defined(__ANDROID__)
@@ -30,7 +34,13 @@ namespace _details {
     }
 
     void ReportError(JNIEnv* environment, const std::exception& error) {
-        environment->ThrowNew(environment->FindClass("java/lang/IllegalStateException"), error.what());
+        if (!environment->ExceptionCheck()) {
+            const auto type = environment->FindClass("java/lang/IllegalStateException");
+            if (type != nullptr) {
+                environment->ThrowNew(type, error.what());
+                environment->DeleteLocalRef(type);
+            }
+        }
     }
 
     std::vector<unsigned char> ReadFont() {
@@ -44,9 +54,14 @@ namespace _details {
 }
 
 #if defined(__ANDROID__)
-extern "C" JNIEXPORT jlong JNICALL Java_{{JniPackage}}_MainPage_nativeCreate(JNIEnv* environment, jobject) {
+extern "C" JNIEXPORT jlong JNICALL Java_{{JniPackage}}_MainPage_nativeCreate(JNIEnv* environment, jobject, jobject dispatcher) {
     try {
-        return reinterpret_cast<jlong>(new _details::NativeHost{});
+        auto host = std::make_unique<_details::NativeHost>();
+        host->dispatcher = std::make_unique<{{application}}::android_host::AndroidCommandDispatcher>(environment, dispatcher);
+        host->session.Controller().SetHostEventHandler([target = host->dispatcher.get()](auto command, const auto& data) {
+            target->Dispatch(command, data);
+        });
+        return reinterpret_cast<jlong>(host.release());
     } catch (const std::exception& error) {
         _details::ReportError(environment, error);
         return 0;
@@ -119,10 +134,19 @@ extern "C" JNIEXPORT jboolean JNICALL Java_{{JniPackage}}_MainPage_nativeBack(JN
         return false;
     }
 }
-#else
-extern "C" int ApplicationVersion() {
-    _details::NativeHost host;
-    host.session.Initialize({480, 800});
-    return host.session.Pages().CurrentPageName() == "MainPage" ? 1 : 0;
+
+extern "C" JNIEXPORT void JNICALL Java_{{JniPackage}}_MainPage_nativeSetStatus(JNIEnv* environment, jobject, jlong handle, jbyteArray value) {
+    try {
+        if (value == nullptr) {
+            return;
+        }
+        std::string status(static_cast<size_t>(environment->GetArrayLength(value)), '\0');
+        environment->GetByteArrayRegion(value, 0, static_cast<jsize>(status.size()), reinterpret_cast<jbyte*>(status.data()));
+        if (!environment->ExceptionCheck()) {
+            _details::Host(handle).session.Controller().SetStatus(std::move(status));
+        }
+    } catch (const std::exception& error) {
+        _details::ReportError(environment, error);
+    }
 }
 #endif

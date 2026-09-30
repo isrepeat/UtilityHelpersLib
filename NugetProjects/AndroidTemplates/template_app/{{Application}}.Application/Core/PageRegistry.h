@@ -2,6 +2,7 @@
 #include "../Interface/IPageNavigator.h"
 #include "../Interface/IPage.h"
 #include "../Model/ApplicationRepository.h"
+#include "./AppSessionController.h"
 
 #include <memory>
 #include <tuple>
@@ -10,6 +11,8 @@ namespace {{application}}::application::core {
     struct PageContext final {
         interface::IPageNavigator& navigator;
         model::ApplicationRepository& repository;
+        interface::IHostCommandDispatcher& hostCommands;
+        const AppSessionController& controller;
     };
 
     template <typename... TPages>

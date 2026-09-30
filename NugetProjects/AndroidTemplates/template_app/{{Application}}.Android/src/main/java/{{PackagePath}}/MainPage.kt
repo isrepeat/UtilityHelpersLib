@@ -1,31 +1,25 @@
 package {{PackageId}}
 
-import android.content.Context
-import android.opengl.GLSurfaceView
-import android.view.MotionEvent
-import java.util.concurrent.CountDownLatch
-import javax.microedition.khronos.egl.EGLConfig
-import javax.microedition.khronos.opengles.GL10
-
-class MainPage(context: Context) : GLSurfaceView(context), GLSurfaceView.Renderer {
-    private var handle = nativeCreate()
+class MainPage(context: android.content.Context, dispatcher: NativeCommandDispatcher) : android.opengl.GLSurfaceView(context), android.opengl.GLSurfaceView.Renderer {
+    private var handle = nativeCreate(dispatcher)
+    private var destroyed = false
 
     init {
         setEGLContextClientVersion(3)
         setRenderer(this)
     }
 
-    override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) = Unit
+    override fun onSurfaceCreated(gl: javax.microedition.khronos.opengles.GL10?, config: javax.microedition.khronos.egl.EGLConfig?) = Unit
 
-    override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
+    override fun onSurfaceChanged(gl: javax.microedition.khronos.opengles.GL10?, width: Int, height: Int) {
         nativeSurface(handle, width, height)
     }
 
-    override fun onDrawFrame(gl: GL10?) {
+    override fun onDrawFrame(gl: javax.microedition.khronos.opengles.GL10?) {
         nativeRender(handle)
     }
 
-    override fun onTouchEvent(event: MotionEvent): Boolean {
+    override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
         val action = event.actionMasked
         val x = event.x
         val y = event.y
@@ -42,7 +36,7 @@ class MainPage(context: Context) : GLSurfaceView(context), GLSurfaceView.Rendere
     }
 
     fun pauseSession() {
-        val released = CountDownLatch(1)
+        val released = java.util.concurrent.CountDownLatch(1)
         queueEvent {
             try {
                 nativeReleaseSurface(handle)
@@ -54,12 +48,32 @@ class MainPage(context: Context) : GLSurfaceView(context), GLSurfaceView.Rendere
         onPause()
     }
 
-    fun destroySession() {
-        nativeDestroy(handle)
-        handle = 0
+    fun setStatus(value: String) {
+        if (destroyed) return
+        val bytes = value.toByteArray(Charsets.UTF_8)
+        queueEvent {
+            if (handle != 0L) nativeSetStatus(handle, bytes)
+        }
     }
 
-    private external fun nativeCreate(): Long
+    fun destroySession() {
+        if (destroyed) return
+        destroyed = true
+        // Барьер выполняет ранее поставленные события до удаления сессии.
+        val released = java.util.concurrent.CountDownLatch(1)
+        queueEvent {
+            try {
+                nativeDestroy(handle)
+                handle = 0
+            } finally {
+                released.countDown()
+            }
+        }
+        released.await()
+    }
+
+    private external fun nativeCreate(dispatcher: NativeCommandDispatcher): Long
+    private external fun nativeSetStatus(handle: Long, value: ByteArray)
     private external fun nativeDestroy(handle: Long)
     private external fun nativeSurface(handle: Long, width: Int, height: Int)
     private external fun nativeReleaseSurface(handle: Long)

@@ -25,7 +25,7 @@ namespace {{application}}::application::core {
         };
 #endif
 
-        explicit PageManager(model::ApplicationRepository& repository);
+        PageManager(model::ApplicationRepository& repository, AppSessionController& controller);
         ~PageManager() = default;
         PageManager(const PageManager&) = delete;
         PageManager& operator=(const PageManager&) = delete;

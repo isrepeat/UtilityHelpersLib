@@ -1,25 +1,26 @@
 #pragma once
-#include "./ApplicationSession.h"
+#include "../Interface/IHostCommandDispatcher.h"
 
 #include <functional>
 
 namespace {{application}}::application::core {
-    enum class AppSessionSignal { closeApplication };
-    struct AppSessionSignalData final {
-        std::string value;
-    };
-
-    class AppSessionController final {
+    class AppSessionController final : public interface::IHostCommandDispatcher {
     public:
-        using HostEventHandler = std::function<void(AppSessionSignal, const AppSessionSignalData&)>;
-        explicit AppSessionController(ApplicationSession& session);
-        void Dispatch(AppSessionSignal signal, AppSessionSignalData data);
+        using HostEventHandler = std::function<void(HostCommand, const HostCommandData&)>;
+        AppSessionController() = default;
+        ~AppSessionController() = default;
+
+        //
+        // IHostCommandDispatcher
+        //
+        void Dispatch(HostCommand command, const HostCommandData& data = {}) override;
+
         void SetHostEventHandler(HostEventHandler handler);
-        ApplicationSession& Session();
-        const ApplicationSession& Session() const;
+        const std::string& Status() const;
+        void SetStatus(std::string value);
 
     private:
-        ApplicationSession& session;
         HostEventHandler hostEventHandler;
+        std::string status;
     };
 }

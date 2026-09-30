@@ -3,28 +3,29 @@
 #include <utility>
 
 namespace {{application}}::application::core {
-    AppSessionController::AppSessionController(ApplicationSession& session)
-        : session(session) {
+    //
+    // IHostCommandDispatcher
+    //
+    void AppSessionController::Dispatch(HostCommand command, const HostCommandData& data) {
+        if (this->hostEventHandler) {
+            this->hostEventHandler(command, data);
+        } else {
+            this->SetStatus("Application updates are available in the Android host.");
+        }
     }
 
     //
     // API
     //
-    void AppSessionController::Dispatch(AppSessionSignal signal, AppSessionSignalData data) {
-        if (this->hostEventHandler) {
-            this->hostEventHandler(signal, data);
-        }
-    }
-
     void AppSessionController::SetHostEventHandler(HostEventHandler handler) {
         this->hostEventHandler = std::move(handler);
     }
 
-    ApplicationSession& AppSessionController::Session() {
-        return this->session;
+    const std::string& AppSessionController::Status() const {
+        return this->status;
     }
 
-    const ApplicationSession& AppSessionController::Session() const {
-        return this->session;
+    void AppSessionController::SetStatus(std::string value) {
+        this->status = std::move(value);
     }
 }

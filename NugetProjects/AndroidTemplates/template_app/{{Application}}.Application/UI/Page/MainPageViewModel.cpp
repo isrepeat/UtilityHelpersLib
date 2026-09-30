@@ -43,7 +43,12 @@ namespace {{application}}::application::ui::page {
     }
 
     void MainPageViewModel::Update() {
-
+        if (this->status != this->context.controller.Status()) {
+            this->status = this->context.controller.Status();
+            for (const auto& [id, handler] : this->handlers) {
+                handler(Property::status);
+            }
+        }
     }
 
     xaml::Element& MainPageViewModel::Root() {
@@ -56,6 +61,10 @@ namespace {{application}}::application::ui::page {
         result.owner = PageName;
         result.bindings = std::make_shared<xaml::runtime::RuntimeBindingRegistry>();
         result.bindings->AddCommand("NavigateToSettingsCommand", this->NavigateToSettingsCommand());
+        result.bindings->AddCommand("RequestApplicationUpdateCommand", this->RequestApplicationUpdateCommand());
+        result.bindings->AddText("Status", [this] { return this->Status(); }, [this](std::function<void()> handler) {
+            return this->Subscribe([handler](Property) { handler(); });
+        });
         return result;
     }
 
@@ -73,5 +82,21 @@ namespace {{application}}::application::ui::page {
             state->Message = this->context.repository.Greeting();
             this->context.navigator.Trigger(core::NavigationTrigger::navigateToSettings, std::move(state));
         };
+    }
+    xaml::Element::Command MainPageViewModel::RequestApplicationUpdateCommand() {
+        return [this] {
+            this->context.hostCommands.Dispatch(core::HostCommand::requestApplicationUpdate);
+            this->Update();
+        };
+    }
+
+    const std::string& MainPageViewModel::Status() const {
+        return this->status;
+    }
+
+    std::function<void()> MainPageViewModel::Subscribe(PropertyChangedHandler handler) {
+        const size_t id = ++this->nextSubscription;
+        this->handlers.emplace(id, std::move(handler));
+        return [this, id] { this->handlers.erase(id); };
     }
 }

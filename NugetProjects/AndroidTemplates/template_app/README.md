@@ -48,6 +48,23 @@ Set-Location $projectRoot
 `Android/{{Application}}` на Google Drive. Кнопка использует Android OAuth client
 этого package ID и сертификата подписи.
 
+Команда проходит по цепочке: `RequestApplicationUpdateCommand` →
+`AppSessionController` → `AndroidCommandDispatcher` (JNI) →
+`NativeCommandDispatcher` (UI-поток) → `GoogleDriveUpdateController.start()`.
+`ApplicationSession` владеет контроллером; `PageContext.hostCommands` предоставляет
+страницам интерфейс отправки команд. Числовые IDs `HostCommand` в C++ и Kotlin
+должны совпадать. В JNI строки передаются как UTF-8 byte arrays.
+
+Статус проверки и загрузки возвращается через `MainPage.setStatus()` и очередь
+GL-потока в `AppSessionController`, затем в XAML binding `Status`. Операции с C++ UI
+выполняются на GL-потоке. При уничтожении Activity отключается Kotlin handler,
+после обработки очереди удаляется native-сессия и освобождается JNI global reference.
+В preview Update показывает сообщение о доступности обновления в Android host.
+
+Контроллер из AndroidAppKit обрабатывает авторизацию, повторный запуск, загрузку,
+проверку package ID и версии. Для установленной версии host запрашивает подтверждение
+переустановки. Передача APK в ApkUpdater ещё не означает успешную установку.
+
 Для установки найденного APK нужен установленный `ApkUpdater`. Он должен быть
 подписан тем же Debug или Release сертификатом, что и приложение, а его опубликованный
 список разрешённых пакетов должен содержать `{{PackageId}}`. Секреты Desktop OAuth

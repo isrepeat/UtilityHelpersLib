@@ -2,6 +2,7 @@
 #include <XamlRuntime/RenderEngine.h>
 
 #include "./ApplicationStateStore.h"
+#include "./AppSessionController.h"
 #include "./PageManager.h"
 
 namespace {{application}}::application::core {
@@ -11,6 +12,7 @@ namespace {{application}}::application::core {
         ~ApplicationSession() = default;
         ApplicationSession(const ApplicationSession&) = delete;
         ApplicationSession& operator=(const ApplicationSession&) = delete;
+        AppSessionController& Controller();
         void Initialize(xaml::Size size);
         void Resize(xaml::Size size);
         PageManager& Pages();
@@ -27,6 +29,7 @@ namespace {{application}}::application::core {
     private:
         ApplicationStateStore stateStore;
         model::ApplicationRepository repository;
+        AppSessionController controller;
         PageManager pageManager;
         xaml::RendererRegistry renderers;
     };

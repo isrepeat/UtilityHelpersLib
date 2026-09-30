@@ -360,6 +360,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "{{Application}}.AndroidHost
 	ProjectSection(SolutionItems) = preProject
 		NugetProjects\AndroidTemplates\template_app\{{Application}}.AndroidHost\CMakeLists.txt = NugetProjects\AndroidTemplates\template_app\{{Application}}.AndroidHost\CMakeLists.txt
 		NugetProjects\AndroidTemplates\template_app\{{Application}}.AndroidHost\Native.cpp = NugetProjects\AndroidTemplates\template_app\{{Application}}.AndroidHost\Native.cpp
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.AndroidHost\AndroidCommandDispatcher.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.AndroidHost\AndroidCommandDispatcher.h
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.AndroidHost\AndroidCommandDispatcher.cpp = NugetProjects\AndroidTemplates\template_app\{{Application}}.AndroidHost\AndroidCommandDispatcher.cpp
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Jni", "Jni", "{21A57DF3-61DD-486F-A714-E93A3C73FB92}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.AndroidHost\Jni\Jni.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.AndroidHost\Jni\Jni.h
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.AndroidHost\Jni\Jni.cpp = NugetProjects\AndroidTemplates\template_app\{{Application}}.AndroidHost\Jni\Jni.cpp
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.AndroidHost\Jni\README.md = NugetProjects\AndroidTemplates\template_app\{{Application}}.AndroidHost\Jni\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "{{Application}}.Application", "{{Application}}.Application", "{D4B81251-C29A-4DF2-9DC9-07F94885364D}"
@@ -398,6 +407,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Interface", "Interface", "{
 		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Interface\INavigationPage.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Interface\INavigationPage.h
 		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Interface\IPage.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Interface\IPage.h
 		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Interface\IPageNavigator.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Interface\IPageNavigator.h
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Interface\IHostCommandDispatcher.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Interface\IHostCommandDispatcher.h
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Model", "Model", "{E539AA7C-DA0C-4D2B-A8E6-45D8EEC683FE}"
@@ -542,6 +552,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "{{PackagePath}}", "{{PackagePath}}", "{26B1452E-227B-4EF5-B8BB-782F2E4E3690}"
 	ProjectSection(SolutionItems) = preProject
 		NugetProjects\AndroidTemplates\template_app\{{Application}}.Android\src\main\java\{{PackagePath}}\MainActivity.kt = NugetProjects\AndroidTemplates\template_app\{{Application}}.Android\src\main\java\{{PackagePath}}\MainActivity.kt
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Android\src\main\java\{{PackagePath}}\MainPage.kt = NugetProjects\AndroidTemplates\template_app\{{Application}}.Android\src\main\java\{{PackagePath}}\MainPage.kt
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Android\src\main\java\{{PackagePath}}\NativeCommandDispatcher.kt = NugetProjects\AndroidTemplates\template_app\{{Application}}.Android\src\main\java\{{PackagePath}}\NativeCommandDispatcher.kt
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{68487B36-FF60-4B42-8DFE-2187F5D2F011}"
@@ -904,6 +916,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{21A57DF3-61DD-486F-A714-E93A3C73FB92} = {7FA0A306-CEBD-4346-BCF6-150BDFFD0CC6}
 		{D820CF56-DF1E-4B54-A9AC-257951382277} = {5ED3376F-7EBD-4E7B-8B3F-E256D8E1505C}
 		{0B4DBDBA-2F32-4D1F-9B5A-207A446C0EB4} = {D820CF56-DF1E-4B54-A9AC-257951382277}
 		{77E1F986-C601-4062-B70B-9226E02E9097} = {D820CF56-DF1E-4B54-A9AC-257951382277}

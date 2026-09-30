@@ -22,5 +22,22 @@
                 background="#3A6EA5"
                 command="{Binding NavigateToSettingsCommand}"
                 text="Open settings"/>
+        <Button id="updateButton"
+                width="320"
+                height="72"
+                margin="0 16 0 0"
+                contentAlignment="Center"
+                fontSize="28"
+                foreground="#FFFFFF"
+                background="#3A6EA5"
+                command="{Binding RequestApplicationUpdateCommand}"
+                text="Update"/>
+        <TextBlock id="statusText"
+                   width="320"
+                   margin="0 16 0 0"
+                   fontSize="18"
+                   foreground="#FFFFFF"
+                   textWrapping="Wrap"
+                   text="{Binding Status}"/>
     </StackPanel>
 </Page>

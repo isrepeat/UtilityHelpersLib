@@ -4,10 +4,14 @@
 #include "../../Interface/IPage.h"
 #include "../../Core/PageRegistry.h"
 
+#include <map>
+
 namespace {{application}}::application::ui::page {
     class MainPageViewModel final : public interface::IPage {
     public:
         static constexpr std::string_view PageName = "MainPage";
+        enum class Property { status };
+        using PropertyChangedHandler = std::function<void(Property)>;
         explicit MainPageViewModel(core::PageContext& context);
         ~MainPageViewModel() = default;
 
@@ -30,9 +34,15 @@ namespace {{application}}::application::ui::page {
         void preview_ReplaceRuntimeTree(xaml::runtime::RuntimeBuildResult result) override;
 #endif
         xaml::Element::Command NavigateToSettingsCommand();
+        xaml::Element::Command RequestApplicationUpdateCommand();
+        const std::string& Status() const;
+        std::function<void()> Subscribe(PropertyChangedHandler handler);
 
     private:
         core::PageContext& context;
+        std::string status;
+        std::map<size_t, PropertyChangedHandler> handlers;
+        size_t nextSubscription = 0;
         std::unique_ptr<xaml::Element> root;
         std::unique_ptr<xaml::BindingScope> bindings;
     };

@@ -11,8 +11,8 @@
 #include <array>
 
 namespace {{application}}::application::core {
-    PageManager::PageManager(model::ApplicationRepository& repository)
-        : context{*this, repository}
+    PageManager::PageManager(model::ApplicationRepository& repository, AppSessionController& controller)
+        : context{*this, repository, controller, controller}
         , pages(this->context) {
     }
 

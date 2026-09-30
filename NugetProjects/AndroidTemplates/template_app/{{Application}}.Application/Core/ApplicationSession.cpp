@@ -6,12 +6,16 @@ namespace {{application}}::application::core {
     ApplicationSession::ApplicationSession(model::ApplicationStateDocument document, ApplicationStateStore::DocumentSaveHandler save)
         : stateStore(std::move(document), std::move(save))
         , repository(this->stateStore)
-        , pageManager(this->repository) {
+        , pageManager(this->repository, this->controller) {
     }
 
     //
     // API
     //
+    AppSessionController& ApplicationSession::Controller() {
+        return this->controller;
+    }
+
     void ApplicationSession::Initialize(xaml::Size size) {
         this->pageManager.Initialize(size);
     }
