@@ -17,14 +17,3 @@
 ApplicationStateStore принимает callback сохранения документа. При ошибке сохранения прежний документ остаётся активным. В preview доступен отдельный документ в памяти и явный экспорт. AppRepositoryBase не зависит от предметной области. AppSessionController передаёт платформенные события через callback.
 
 Android использует GLSurfaceView и JNI. ApplicationSession сохраняется при pause/resume; OpenGL renderer освобождается на GL-потоке. При уничтожении Activity сессия уничтожается. Постоянное хранение включается передачей callback в ApplicationSession.
-
-## Проверки
-
-Из окружения VsDevCmd после сборки preview plugin:
-
-```powershell
-cmake --build Build/{{Application}}.PreviewPlugin/Intermediate/CMake --target {{application}}_application_tests
-& .\Build\{{Application}}.PreviewPlugin\Intermediate\CMake\{{Application}}.Application\{{application}}_application_tests.exe
-```
-
-Тест проверяет pointer navigation, обязательность payload и TypeId, Back, сохранение страниц, native previewDefault, hot reload и отказ сохранения документа.

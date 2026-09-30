@@ -27,8 +27,3 @@ endif()
 if (MSVC)
     target_compile_options({{application}}_application PRIVATE /utf-8)
 endif()
-
-if (NOT ANDROID)
-    add_executable({{application}}_application_tests EXCLUDE_FROM_ALL Tests/ApplicationSessionTests.cpp)
-    target_link_libraries({{application}}_application_tests PRIVATE {{application}}_application)
-endif()

@@ -34,7 +34,7 @@ namespace {{application}}::application::core {
         }
 
         std::string_view TypeId() const final {
-            return Contract().typeId;
+            return this->Contract().typeId;
         }
     };
 

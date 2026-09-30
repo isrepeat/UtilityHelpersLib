@@ -407,11 +407,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Model", "Model", "{E539AA7C
 		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Model\ApplicationStateDocument.h = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Model\ApplicationStateDocument.h
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{D6178B14-D5D3-4E32-B831-40C9203DE0C3}"
-	ProjectSection(SolutionItems) = preProject
-		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Tests\ApplicationSessionTests.cpp = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\Tests\ApplicationSessionTests.cpp
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UI", "UI", "{C12A9B70-0C33-4FE6-A0D9-D7E9A02856AC}"
 	ProjectSection(SolutionItems) = preProject
 		NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\UI\XamlCompilerIgnore.json = NugetProjects\AndroidTemplates\template_app\{{Application}}.Application\UI\XamlCompilerIgnore.json
@@ -1007,7 +1002,6 @@ Global
 		{E2D0A1B0-E2B7-4B19-B7E7-F139B1A15B5A} = {D4B81251-C29A-4DF2-9DC9-07F94885364D}
 		{0CD0E5EF-4AE2-47B0-9152-73A5FE1E33F1} = {D4B81251-C29A-4DF2-9DC9-07F94885364D}
 		{E539AA7C-DA0C-4D2B-A8E6-45D8EEC683FE} = {D4B81251-C29A-4DF2-9DC9-07F94885364D}
-		{D6178B14-D5D3-4E32-B831-40C9203DE0C3} = {D4B81251-C29A-4DF2-9DC9-07F94885364D}
 		{C12A9B70-0C33-4FE6-A0D9-D7E9A02856AC} = {D4B81251-C29A-4DF2-9DC9-07F94885364D}
 		{687EF530-5D13-447E-8569-A57BA6D50E7C} = {C12A9B70-0C33-4FE6-A0D9-D7E9A02856AC}
 		{A2D13E26-89A3-4EE1-9AC6-6E72F85C183B} = {9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B}

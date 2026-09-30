@@ -26,7 +26,7 @@ namespace {{application}}::application::core {
         if (pageName == this->CurrentPageName()) {
             return true;
         }
-        for (const auto& route : Routes()) {
+        for (const auto& route : this->Routes()) {
             if (route.source == this->CurrentPageName() && this->ResolveTarget(route) == pageName) {
                 return this->Navigate(route, {});
             }
@@ -39,7 +39,7 @@ namespace {{application}}::application::core {
     }
 
     bool PageManager::Trigger(NavigationTrigger trigger, std::unique_ptr<base::NavigationStateBase> state) {
-        for (const auto& route : Routes()) {
+        for (const auto& route : this->Routes()) {
             if (route.source == this->CurrentPageName() && route.trigger == trigger) {
                 return this->Navigate(route, std::move(state));
             }
@@ -132,11 +132,11 @@ namespace {{application}}::application::core {
 #if defined(ANDROID_APP_PREVIEWER)
     std::vector<PageManager::preview_Route> PageManager::preview_Routes() const {
         std::vector<preview_Route> result;
-        for (const auto& route : Routes()) {
+        for (const auto& route : this->Routes()) {
             if (route.targetKind == NavigationTargetKind::previousPage) {
                 // Граф показывает обратные рёбра для входящих маршрутов. Выполнение
                 // всегда использует фактическую историю, а не цель из графа.
-                for (const auto& incoming : Routes()) {
+                for (const auto& incoming : this->Routes()) {
                     if (incoming.targetKind == NavigationTargetKind::page && incoming.target == route.source) {
                         result.push_back({route.id, route.source, incoming.source, incoming.id, route.title,
                             true, route.targetKind, {}, true});
@@ -165,7 +165,7 @@ namespace {{application}}::application::core {
         std::vector<const NavigationRoute*> routes;
         std::vector<std::unique_ptr<base::NavigationStateBase>> states;
         for (const auto id : ids) {
-            const auto available = Routes();
+            const auto available = this->Routes();
             const auto found = std::find_if(available.begin(), available.end(), [id](const auto& route) { return route.id == id; });
             if (found == available.end() || simulated.empty() || found->source != simulated.back()) {
                 error = "Transition is not available on the current page";
@@ -175,7 +175,7 @@ namespace {{application}}::application::core {
             if (found->dataContract != nullptr && found->dataContract->preview_CreatePreviewDefaultFn != nullptr) {
                 state = found->dataContract->preview_CreatePreviewDefaultFn();
             }
-            if (!IsNavigationDataValid(*found, state.get())) {
+            if (!this->IsNavigationDataValid(*found, state.get())) {
                 error = "Native preview default does not satisfy the data contract";
                 return false;
             }
@@ -254,7 +254,7 @@ namespace {{application}}::application::core {
         if (!state) {
             state = std::move(outgoingState);
         }
-        if (!IsNavigationDataValid(route, state.get()) || !target->OnNavigatingTo(request, std::move(state))) {
+        if (!this->IsNavigationDataValid(route, state.get()) || !target->OnNavigatingTo(request, std::move(state))) {
             return false;
         }
         this->input.Cancel();
