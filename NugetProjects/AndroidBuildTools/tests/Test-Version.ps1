@@ -20,6 +20,9 @@ $configuration = @'
     GradleRoot = 'Tools/Gradle'
     VersionFile = 'version.properties'
     DistributionDirectory = 'distribution'
+    PackageDirectories = @{
+        AndroidBuildTools = 'packages'
+    }
 }
 '@
 [IO.File]::WriteAllText((Join-Path $fixture 'android-build.psd1'), $configuration)

@@ -17,4 +17,8 @@
 
 Общие пути читаются из ближайшего `Android.SharedProps.json` вверх от корня проекта. `Paths` определяет signing, Updater, Drive, feed и previewer; относительные значения вычисляются от каталога JSON. `$androidProjectConfig` содержит только настройки проекта, а `$androidProjectSharedConfig` — отдельные секции `Paths` и `Properties` из JSON. Команды чтения конфигурации работают только с настройками проекта; сборка обращается к общим настройкам напрямую через `$androidProjectSharedConfig`. Полный контракт версии 1 описан в `Windows/Me/Documentation/AndroidBuild.md`.
 
-Перед сборкой Android APK проверяется SHA-256 сертификата ApkUpdater из `Paths.ApkUpdaterProjectRoot` для выбранной конфигурации по `Paths.SigningProperties`. Отсутствующий, повреждённый или подписанный другим ключом APK автоматически пересобирается; результат проверяется повторно. Для `-NativeOnly` проверка не выполняется.
+`tools/test-apk-signing.ps1` сравнивает SHA-256 сертификата переданного APK с ключом выбранной конфигурации и возвращает boolean. Координация зависимых приложений находится в сценариях AndroidTemplates.
+
+Секция `Native = @{}` включает CMake и XAML; нативные поля `AndroidHost`, `NativeLibrary`, `AndroidPresetPrefix` и `CMakeVersionVariable` остаются в конфигурации проекта. Для совместимости наличие старого `NativeLibrary` также включает нативную сборку. Если этих настроек нет, выполняется только Gradle и Visual Studio не требуется. `-NativeOnly` для такого проекта завершается явной ошибкой.
+
+Kotlin-приложения используют те же команды через свой `build.ps1`. Общий uploader принимает `-FilePath` и `-MimeType` и возвращает метаданные Drive с ID файла; старое имя `-ApkPath` поддерживается как alias.

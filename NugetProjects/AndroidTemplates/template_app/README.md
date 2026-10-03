@@ -90,7 +90,7 @@ GL-потока в `AppSessionController`, затем в XAML binding `Status`. 
 Удаление выполняет скрипт, скопированный в проект генератором:
 
 ```powershell
-& ".\Scripts\Remove-AndroidProject.ps1" -ProjectRoot (Get-Location)
+& ".\Scripts\PowerShell\Remove-AndroidProject.ps1" -ProjectRoot (Get-Location)
 ```
 
 Скрипт запросит подтверждение `Y/N`, после чего удалит корень

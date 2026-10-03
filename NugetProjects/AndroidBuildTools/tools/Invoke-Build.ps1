@@ -18,8 +18,12 @@ param(
     [switch]$KeepVersion,
     [int]$AppVersionCode,
     [string]$AppVersionName,
+    [string]$SigningProperties,
+    [string]$TargetsConfigUrl,
     [string]$Name,
     [string]$ApkPath,
+    [string]$FilePath,
+    [string]$MimeType,
     [string]$OAuthClientPath,
     [string]$TokenPath,
     [string[]]$DrivePath,
@@ -72,6 +76,13 @@ if ($Command -in @('build-for-drive', 'build-all')) {
 # Имя команды соответствует имени файла в tools, например build-android
 # превращается в tools/build-android.ps1.
 $script = Join-Path $packageRoot "tools\$Command.ps1"
+if ($Command -eq 'upload-apk-to-drive' -and $parameters.ContainsKey('ApkPath')) {
+    if ($parameters.ContainsKey('FilePath')) {
+        throw 'Specify either ApkPath or FilePath, not both.'
+    }
+    $parameters.FilePath = $parameters.ApkPath
+    $parameters.Remove('ApkPath')
+}
 
 # Сначала читаем контракт выбранного script. Это не даёт случайно передать
 # параметр не той команде и получить непонятную ошибку уже внутри неё.

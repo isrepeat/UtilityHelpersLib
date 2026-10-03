@@ -19,7 +19,7 @@ $tools = Get-ChildItem -LiteralPath $bootstrapDirectory -Directory |
     Where-Object { $_.Name -match '^AndroidTemplates\.(.+)$' } |
     Sort-Object { [version]$_.Name.Substring('AndroidTemplates.'.Length) } -Descending |
     Select-Object -First 1 -ExpandProperty FullName
-& "$tools\tools\New-AndroidApplication.ps1" `
+& "$tools\PowerShell\New-AndroidApplication.ps1" `
     -Name SampleApp `
     -PackageId com.example.sampleapp `
     -Destination C:\WORK\Android\Projects\SampleApp
@@ -31,4 +31,4 @@ $tools = Get-ChildItem -LiteralPath $bootstrapDirectory -Directory |
 
 До генерации создайте `Android.SharedProps.json` над каталогом будущего проекта. Генератор и сборка используют ближайший файл с `SchemaVersion: 1`, `Paths` и необязательным `Properties`. Пути в `Paths` вычисляются от каталога JSON. Полный контракт описан в `Windows/Me/Documentation/AndroidBuild.md`.
 
-`Paths.ApkUpdaterProjectRoot` задаёт отдельный репозиторий Updater. При создании общих ключей генератор собирает Debug и Release ApkUpdater с тем же `Paths.SigningProperties`. Общие пути не сохраняются в конфигурации проекта: они читаются из JSON перед каждой сборкой. Перед Android-сборкой инструменты проверяют сертификат APK Updater и пересобирают его при отсутствии или несовпадении подписи.
+`Paths.ApkUpdaterProjectRoot` задаёт отдельный репозиторий Updater. При создании общих ключей генератор собирает Debug и Release ApkUpdater с тем же `Paths.SigningProperties`. Общие пути читаются из JSON перед каждой сборкой. Сценарий `template_app/Scripts/PowerShell/ensure-apk-updater.ps1` проверяет сертификат APK Updater и пересобирает его при отсутствии или несовпадении подписи. AndroidBuildTools предоставляет только универсальную проверку подписи APK.

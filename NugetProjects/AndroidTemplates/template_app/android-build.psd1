@@ -16,7 +16,6 @@
         XamlRuntime = 'Build\Packages\{{Application}}.AndroidHost'
         AndroidAppPreviewerPluginSdk = 'Build\Packages\{{Application}}.PreviewPlugin'
     }
-    PackageSources = @{}
     Xaml = @{
         Namespace = 'urn:{{application}}:xaml'
         ControlNamespace = '{{application}}::ui::control'

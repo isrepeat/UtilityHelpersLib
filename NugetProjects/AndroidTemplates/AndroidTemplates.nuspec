@@ -8,7 +8,9 @@
         <description>Project templates and lifecycle commands for native Android applications.</description>
     </metadata>
     <files>
-        <file src="tools\**\*" target="tools" />
+        <file src="PowerShell\**\*" target="PowerShell" />
+        <file src="PowerShell\Read-AndroidSharedProps.ps1" target="template_app\Scripts\PowerShell" />
+        <file src="PowerShell\Remove-AndroidProject.ps1" target="template_app\Scripts\PowerShell" />
         <file src="template_app\**\*" target="template_app" />
         <file src="README.md" target="" />
     </files>

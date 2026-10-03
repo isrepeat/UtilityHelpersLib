@@ -1,7 +1,10 @@
 ﻿[CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [string]$ApkPath,
+    [Alias('ApkPath')]
+    [string]$FilePath,
+
+    [string]$MimeType = 'application/vnd.android.package-archive',
 
     [Parameter(Mandatory)]
     [string]$OAuthClientPath,
@@ -208,19 +211,20 @@ function New-DriveFolder {
     } -Body $metadata
 }
 
-function Send-ApkToDrive {
+function Send-FileToDrive {
     param(
         [Parameter(Mandatory)] [string]$FilePath,
         [Parameter(Mandatory)] [string]$AccessToken,
         [Parameter(Mandatory)] [string]$DestinationFolderId,
-        [Parameter(Mandatory)] [string]$DestinationFileName
+        [Parameter(Mandatory)] [string]$DestinationFileName,
+        [Parameter(Mandatory)] [string]$MimeType
     )
 
     $file = Get-Item -LiteralPath $FilePath
     $boundary = "AndroidBuildTools$([Guid]::NewGuid().ToString('N'))"
     $existingFile = Get-DriveItem -AccessToken $AccessToken -ParentId $DestinationFolderId -Name $DestinationFileName
     $metadata = @{
-        mimeType = 'application/vnd.android.package-archive'
+        mimeType = $MimeType
         name = $DestinationFileName
     }
     if ($null -eq $existingFile) {
@@ -228,7 +232,7 @@ function Send-ApkToDrive {
     }
     $metadataJson = $metadata | ConvertTo-Json -Compress
     $prefix = [System.Text.Encoding]::UTF8.GetBytes(
-        "--$boundary`r`nContent-Type: application/json; charset=UTF-8`r`n`r`n$metadataJson`r`n--$boundary`r`nContent-Type: application/vnd.android.package-archive`r`n`r`n"
+        "--$boundary`r`nContent-Type: application/json; charset=UTF-8`r`n`r`n$metadataJson`r`n--$boundary`r`nContent-Type: $MimeType`r`n`r`n"
     )
     $suffix = [System.Text.Encoding]::ASCII.GetBytes("`r`n--$boundary--`r`n")
     $requestUri = if ($null -eq $existingFile) {
@@ -267,8 +271,8 @@ function Send-ApkToDrive {
     }
 }
 
-if (-not (Test-Path -LiteralPath $ApkPath)) {
-    throw "APK not found: $ApkPath"
+if (-not (Test-Path -LiteralPath $FilePath -PathType Leaf)) {
+    throw "File not found: $FilePath"
 }
 if (-not (Test-Path -LiteralPath $OAuthClientPath)) {
     throw "Desktop OAuth client JSON not found: $OAuthClientPath"
@@ -282,7 +286,8 @@ if ($null -eq $oauthClient) {
 $accessToken = Get-AccessToken $oauthClient $TokenPath
 $destinationFolderId = Get-DriveFolderId $accessToken $DrivePath
 if ([string]::IsNullOrWhiteSpace($DriveFileName)) {
-    $DriveFileName = (Get-Item -LiteralPath $ApkPath).Name
+    $DriveFileName = (Get-Item -LiteralPath $FilePath).Name
 }
-$uploadedFile = Send-ApkToDrive $ApkPath $accessToken $destinationFolderId $DriveFileName
+$uploadedFile = Send-FileToDrive $FilePath $accessToken $destinationFolderId $DriveFileName $MimeType
 Write-Host "Google Drive upload completed: $($uploadedFile.name) ($($uploadedFile.id))"
+return $uploadedFile

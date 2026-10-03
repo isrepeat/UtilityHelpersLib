@@ -20,7 +20,11 @@ param(
     # Версия передаётся build-and-distribute.ps1 и не записывается в Git-файлы.
     [int]$AppVersionCode,
 
-    [string]$AppVersionName
+    [string]$AppVersionName,
+
+    [string]$SigningProperties,
+
+    [string]$TargetsConfigUrl
 )
 
 $ErrorActionPreference = 'Stop'
@@ -46,9 +50,23 @@ function Invoke-Checked {
     }
 }
 
-# Определяем установленные инструменты Visual Studio.
-$tools = Module.AndroidBuildTools\Resolve-AndroidBuildTools
-$cmake = $tools.CMake
+# Нативные инструменты нужны только проектам с CMake.
+$hasNativeBuild = $null -ne $androidProjectConfig.Native -or -not [string]::IsNullOrWhiteSpace($androidProjectConfig.NativeLibrary)
+if ($NativeOnly -and -not $hasNativeBuild) {
+    throw 'NativeOnly is not supported by a project without Native configuration.'
+}
+if ($hasNativeBuild) {
+    foreach ($name in @('AndroidHost', 'NativeLibrary', 'AndroidPresetPrefix', 'CMakeVersionVariable')) {
+        if ([string]::IsNullOrWhiteSpace($androidProjectConfig[$name])) {
+            throw "Native Android project must define $name."
+        }
+    }
+    $tools = Module.AndroidBuildTools\Resolve-AndroidBuildTools
+    $cmake = $tools.CMake
+}
+if (-not $PSBoundParameters.ContainsKey('SigningProperties')) {
+    $SigningProperties = $androidProjectSharedConfig.Paths.SigningProperties
+}
 $javaHome = Module.AndroidBuildTools\Resolve-AndroidJavaHome
 $androidSdk = Module.AndroidBuildTools\Resolve-AndroidSdk
 $env:JAVA_HOME = $javaHome
@@ -65,56 +83,54 @@ if (-not $PSBoundParameters.ContainsKey('AppVersionName')) {
     $AppVersionCode = [int]$baseVersion.VERSION_CODE_BASE
     $AppVersionName = "$($baseVersion.VERSION_NAME_BASE).0"
 }
-$cmakeConfigureArguments = @('--preset', "$($androidProjectConfig.AndroidPresetPrefix)-$configurationDirectory", "-DCMAKE_MAKE_PROGRAM=$($tools.Ninja)")
-$cmakeConfigureArguments += "-D$($androidProjectConfig.CMakeVersionVariable)=$AppVersionName"
+if ($hasNativeBuild) {
+    $cmakeConfigureArguments = @('--preset', "$($androidProjectConfig.AndroidPresetPrefix)-$configurationDirectory", "-DCMAKE_MAKE_PROGRAM=$($tools.Ninja)")
+    $cmakeConfigureArguments += "-D$($androidProjectConfig.CMakeVersionVariable)=$AppVersionName"
+}
 
-# Проверяем updater до сборки приложения; NativeOnly не создаёт Android APK.
-if (-not $NativeOnly -and -not [string]::IsNullOrWhiteSpace($androidProjectSharedConfig.Paths.ApkUpdaterProjectRoot)) {
-    if ([string]::IsNullOrWhiteSpace($androidProjectSharedConfig.Paths.SigningProperties)) {
-        throw 'SigningProperties is required when ApkUpdaterProjectRoot is configured.'
+if ($hasNativeBuild) {
+    & (Join-Path $PSScriptRoot 'generate-xaml.ps1') -ProjectRoot $ProjectRoot
+
+    Push-Location $projectRoot
+    try {
+        $cmakePreset = "$($androidProjectConfig.AndroidPresetPrefix)-$configurationDirectory"
+        Write-Host "==> Building native $Architecture $Configuration library with CMake"
+        if ($Clean) {
+            Invoke-Checked $cmake (@('--fresh') + $cmakeConfigureArguments)
+        } else {
+            Invoke-Checked $cmake $cmakeConfigureArguments
+        }
+        Invoke-Checked $cmake @('--build', '--preset', $cmakePreset)
+    } finally {
+        Pop-Location
     }
-    & (Join-Path $PSScriptRoot 'ensure-apk-updater.ps1') `
-        -ApkUpdaterProjectRoot $androidProjectSharedConfig.Paths.ApkUpdaterProjectRoot `
-        -SigningProperties $androidProjectSharedConfig.Paths.SigningProperties `
-        -JavaHome $javaHome `
-        -AndroidSdk $androidSdk `
-        -Configuration $Configuration
-}
 
-& (Join-Path $PSScriptRoot 'generate-xaml.ps1') -ProjectRoot $ProjectRoot
-
-Push-Location $projectRoot
-try {
-    $cmakePreset = "$($androidProjectConfig.AndroidPresetPrefix)-$configurationDirectory"
-    Write-Host "==> Building native $Architecture $Configuration library with CMake"
-    if ($Clean) {
-        Invoke-Checked $cmake (@('--fresh') + $cmakeConfigureArguments)
-    } else {
-        Invoke-Checked $cmake $cmakeConfigureArguments
+    $nativeLibrary = Join-Path $projectRoot "Build\$($androidProjectConfig.AndroidHost)\android\jniLibs\$Architecture\$($androidProjectConfig.NativeLibrary)"
+    if (-not (Test-Path $nativeLibrary)) {
+        throw "CMake completed but did not produce $nativeLibrary"
     }
-    Invoke-Checked $cmake @('--build', '--preset', $cmakePreset)
-} finally {
-    Pop-Location
+
+    if ($NativeOnly) {
+        Write-Host "Native library ready: $nativeLibrary"
+        return
+    }
 }
 
-$nativeLibrary = Join-Path $projectRoot "Build\$($androidProjectConfig.AndroidHost)\android\jniLibs\$Architecture\$($androidProjectConfig.NativeLibrary)"
-if (-not (Test-Path $nativeLibrary)) {
-    throw "CMake completed but did not produce $nativeLibrary"
-}
-
-if ($NativeOnly) {
-    Write-Host "Native library ready: $nativeLibrary"
-    return
-}
-
-# Gradle упаковывает нативную библиотеку, уже собранную через CMake.
+# Kotlin-проект собирается только Gradle; нативный проект дополнительно упаковывает библиотеку CMake.
 $gradleTasks = @(
     ":$($androidProjectConfig.AndroidModule):assemble$Configuration"
 )
 $gradleArguments = @('--no-daemon', "-PappVersionCode=$AppVersionCode", "-PappVersionName=$AppVersionName")
 $gradleArguments += "-PappVersionFile=$($androidProjectConfig.VersionFile)"
-if ($androidProjectSharedConfig.Paths.SigningProperties) {
-    $gradleArguments += "-PandroidSigningProperties=$($androidProjectSharedConfig.Paths.SigningProperties)"
+if ($SigningProperties) {
+    $gradleArguments += "-PandroidSigningProperties=$SigningProperties"
+}
+if ($Clean) {
+    $gradleTasks = @(":$($androidProjectConfig.AndroidModule):clean") + $gradleTasks
+}
+$previousTargetsConfigUrl = $env:TARGETS_CONFIG_URL
+if ($PSBoundParameters.ContainsKey('TargetsConfigUrl')) {
+    $env:TARGETS_CONFIG_URL = $TargetsConfigUrl
 }
 Write-Host "==> Running Gradle tasks: $($gradleTasks -join ', ')"
 Write-Host "==> Using Java: $javaHome"
@@ -125,6 +141,7 @@ Push-Location $gradleRoot
 try {
     Invoke-Checked $gradleWrapper ($gradleArguments + $gradleTasks)
 } finally {
+    $env:TARGETS_CONFIG_URL = $previousTargetsConfigUrl
     Pop-Location
 }
 

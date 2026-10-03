@@ -100,13 +100,9 @@ if ([IO.Path]::GetFullPath((Split-Path -Parent $signingPropertiesPath)) -ne $sha
 
 $updaterBuildScript = $null
 if (-not [string]::IsNullOrWhiteSpace($ApkUpdaterProjectRoot)) {
-    $updaterBuildScript = Join-Path ([IO.Path]::GetFullPath($ApkUpdaterProjectRoot)) 'Scripts\PowerShell\build-android.ps1'
+    $updaterBuildScript = Join-Path ([IO.Path]::GetFullPath($ApkUpdaterProjectRoot)) 'build.ps1'
     if (-not (Test-Path -LiteralPath $updaterBuildScript -PathType Leaf)) {
         throw "ApkUpdater build script was not found: $updaterBuildScript"
-    }
-    $updaterBuildCommand = Get-Command $updaterBuildScript -ErrorAction Stop
-    if (-not $updaterBuildCommand.Parameters.ContainsKey('SigningProperties')) {
-        throw "ApkUpdater build script must support -SigningProperties: $updaterBuildScript"
     }
 }
 
@@ -144,10 +140,7 @@ foreach ($file in $files) {
     [IO.File]::WriteAllText($target, $text.TrimEnd(), $encoding)
 }
 
-$removeProjectScript = Join-Path $PSScriptRoot 'Remove-AndroidProject.ps1'
-$removeProjectTarget = Join-Path $destinationRoot 'Scripts\Remove-AndroidProject.ps1'
-[IO.File]::Copy($removeProjectScript, $removeProjectTarget)
-[IO.File]::Copy((Join-Path $PSScriptRoot 'Read-AndroidSharedProps.ps1'), (Join-Path $destinationRoot 'Scripts\Read-AndroidSharedProps.ps1'))
+# Общие скрипты уже включены в template_app при упаковке NuGet из одного исходника.
 
 [IO.Directory]::CreateDirectory($secretsDirectory) | Out-Null
 [IO.Directory]::CreateDirectory($sharedSecretsDirectory) | Out-Null
@@ -175,13 +168,13 @@ debugKeyPassword=$debugPassword
     if ($null -ne $updaterBuildScript) {
         foreach ($updaterConfiguration in @('Debug', 'Release')) {
             Write-Host "Building ApkUpdater $updaterConfiguration with $signingPropertiesPath" -ForegroundColor Green
-            & $updaterBuildScript -Configuration $updaterConfiguration -SigningProperties $signingPropertiesPath
+            & $updaterBuildScript build-android -Configuration $updaterConfiguration -SigningProperties $signingPropertiesPath
         }
         Write-Host 'ApkUpdater Debug и Release пересобраны. Установите соответствующий APK на устройство.' -ForegroundColor Green
     } else {
         Write-Host 'WARNING: Для автоматической сборки укажите -ApkUpdaterProjectRoot. Для ручной сборки выполните команды в репозитории ApkUpdater:' -ForegroundColor Yellow
-        Write-Host "& '.\Scripts\PowerShell\build-android.ps1' -Configuration Debug -SigningProperties '$signingPropertiesPath'" -ForegroundColor Yellow
-        Write-Host "& '.\Scripts\PowerShell\build-android.ps1' -Configuration Release -SigningProperties '$signingPropertiesPath'" -ForegroundColor Yellow
+        Write-Host "& '.\build.ps1' build-android -Configuration Debug -SigningProperties '$signingPropertiesPath'" -ForegroundColor Yellow
+        Write-Host "& '.\build.ps1' build-android -Configuration Release -SigningProperties '$signingPropertiesPath'" -ForegroundColor Yellow
     }
 }
 $sharedSigning = ConvertFrom-StringData ([IO.File]::ReadAllText($signingPropertiesPath))

@@ -181,6 +181,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Android", "Android", "{129B
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AndroidCoreSdk", "AndroidCoreSdk", "{95E66412-2164-4DD4-AF5D-F7E38D858831}"
 	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidCoreSdk\.gitignore = PackageProjects\Android\AndroidCoreSdk\.gitignore
 		PackageProjects\Android\AndroidCoreSdk\build.gradle.kts = PackageProjects\Android\AndroidCoreSdk\build.gradle.kts
 		PackageProjects\Android\AndroidCoreSdk\gradle.properties = PackageProjects\Android\AndroidCoreSdk\gradle.properties
 		PackageProjects\Android\AndroidCoreSdk\Pack.ps1 = PackageProjects\Android\AndroidCoreSdk\Pack.ps1
@@ -242,6 +243,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nativeui", "nativeui", "{C7
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AndroidAppKit", "AndroidAppKit", "{E718F83B-A594-43A9-9A30-C30D680E9B5B}"
 	ProjectSection(SolutionItems) = preProject
+		PackageProjects\Android\AndroidAppKit\.gitignore = PackageProjects\Android\AndroidAppKit\.gitignore
 		PackageProjects\Android\AndroidAppKit\build.gradle.kts = PackageProjects\Android\AndroidAppKit\build.gradle.kts
 		PackageProjects\Android\AndroidAppKit\gradle.properties = PackageProjects\Android\AndroidAppKit\gradle.properties
 		PackageProjects\Android\AndroidAppKit\Pack.ps1 = PackageProjects\Android\AndroidAppKit\Pack.ps1
@@ -304,11 +306,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AndroidTemplates", "AndroidTemplates", "{77CBE756-722B-4F52-9AA4-F4E0B2DFD2B1}"
 	ProjectSection(SolutionItems) = preProject
 		NugetProjects\AndroidTemplates\AndroidTemplates.nuspec = NugetProjects\AndroidTemplates\AndroidTemplates.nuspec
-		NugetProjects\AndroidTemplates\tools\New-AndroidApplication.ps1 = NugetProjects\AndroidTemplates\tools\New-AndroidApplication.ps1
-		NugetProjects\AndroidTemplates\tools\Open-AndroidOAuthClientSetup.ps1 = NugetProjects\AndroidTemplates\tools\Open-AndroidOAuthClientSetup.ps1
 		NugetProjects\AndroidTemplates\Pack.ps1 = NugetProjects\AndroidTemplates\Pack.ps1
 		NugetProjects\AndroidTemplates\README.md = NugetProjects\AndroidTemplates\README.md
-		NugetProjects\AndroidTemplates\tools\Remove-AndroidProject.ps1 = NugetProjects\AndroidTemplates\tools\Remove-AndroidProject.ps1
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "gradle", "gradle", "{B5F9721F-47BF-40F2-8C53-0ABA3BC8E476}"
@@ -336,6 +335,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{A148689F
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{6FE031B9-3D92-4C19-A9A9-3B4E58F28149}"
 	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidBuildTools\tools\Read-AndroidSharedProps.ps1 = NugetProjects\AndroidBuildTools\tools\Read-AndroidSharedProps.ps1
+		NugetProjects\AndroidBuildTools\tools\test-apk-signing.ps1 = NugetProjects\AndroidBuildTools\tools\test-apk-signing.ps1
 		NugetProjects\AndroidBuildTools\tools\build-and-distribute.ps1 = NugetProjects\AndroidBuildTools\tools\build-and-distribute.ps1
 		NugetProjects\AndroidBuildTools\tools\build-android.ps1 = NugetProjects\AndroidBuildTools\tools\build-android.ps1
 		NugetProjects\AndroidBuildTools\tools\bump-version.ps1 = NugetProjects\AndroidBuildTools\tools\bump-version.ps1
@@ -549,6 +550,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "isrepeat", "isrepeat", "{6D
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "{{PackagePath}}", "{{PackagePath}}", "{26B1452E-227B-4EF5-B8BB-782F2E4E3690}"
 	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Android\src\main\java\{{PackagePath}}\NativeDiagnostics.kt = NugetProjects\AndroidTemplates\template_app\{{Application}}.Android\src\main\java\{{PackagePath}}\NativeDiagnostics.kt
 		NugetProjects\AndroidTemplates\template_app\{{Application}}.Android\src\main\java\{{PackagePath}}\MainActivity.kt = NugetProjects\AndroidTemplates\template_app\{{Application}}.Android\src\main\java\{{PackagePath}}\MainActivity.kt
 		NugetProjects\AndroidTemplates\template_app\{{Application}}.Android\src\main\java\{{PackagePath}}\MainPage.kt = NugetProjects\AndroidTemplates\template_app\{{Application}}.Android\src\main\java\{{PackagePath}}\MainPage.kt
 		NugetProjects\AndroidTemplates\template_app\{{Application}}.Android\src\main\java\{{PackagePath}}\NativeCommandDispatcher.kt = NugetProjects\AndroidTemplates\template_app\{{Application}}.Android\src\main\java\{{PackagePath}}\NativeCommandDispatcher.kt
@@ -559,6 +561,37 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{68487B36
 		NugetProjects\AndroidBuildTools\gradle\src\main\groovy\com\isrepeat\build\AndroidApplicationPlugin.groovy = NugetProjects\AndroidBuildTools\gradle\src\main\groovy\com\isrepeat\build\AndroidApplicationPlugin.groovy
 		NugetProjects\AndroidBuildTools\gradle\src\main\groovy\com\isrepeat\build\AndroidSettingsPlugin.groovy = NugetProjects\AndroidBuildTools\gradle\src\main\groovy\com\isrepeat\build\AndroidSettingsPlugin.groovy
 		NugetProjects\AndroidBuildTools\gradle\src\main\groovy\com\isrepeat\build\VerifyReleaseSigning.groovy = NugetProjects\AndroidBuildTools\gradle\src\main\groovy\com\isrepeat\build\VerifyReleaseSigning.groovy
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "res", "res", "{1301D3D9-DCD0-D9EB-52B5-A9D7CC71D014}"
+	ProjectSection(SolutionItems) = preProject
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "xml", "xml", "{42FF4BC1-7D33-2E95-7296-CEBA4B659EF4}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.Android\src\main\res\xml\file_paths.xml = NugetProjects\AndroidTemplates\template_app\{{Application}}.Android\src\main\res\xml\file_paths.xml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "{{Application}}.UI", "{{Application}}.UI", "{99C4B121-2271-06C0-4B8E-A3904352C58B}"
+	ProjectSection(SolutionItems) = preProject
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Control", "Control", "{F571F67A-8504-D43A-D019-202C0F731AF6}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidTemplates\template_app\{{Application}}.UI\Control\.gitkeep = NugetProjects\AndroidTemplates\template_app\{{Application}}.UI\Control\.gitkeep
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PowerShell", "PowerShell", "{8B41F008-DA43-4614-A23B-199B9229FE0F}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidTemplates\template_app\Scripts\PowerShell\ensure-apk-updater.ps1 = NugetProjects\AndroidTemplates\template_app\Scripts\PowerShell\ensure-apk-updater.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PowerShell", "PowerShell", "{450D38A1-6C4F-482A-B64E-4C87E752BE91}"
+	ProjectSection(SolutionItems) = preProject
+		NugetProjects\AndroidTemplates\PowerShell\New-AndroidApplication.ps1 = NugetProjects\AndroidTemplates\PowerShell\New-AndroidApplication.ps1
+		NugetProjects\AndroidTemplates\PowerShell\Open-AndroidOAuthClientSetup.ps1 = NugetProjects\AndroidTemplates\PowerShell\Open-AndroidOAuthClientSetup.ps1
+		NugetProjects\AndroidTemplates\PowerShell\Read-AndroidSharedProps.ps1 = NugetProjects\AndroidTemplates\PowerShell\Read-AndroidSharedProps.ps1
+		NugetProjects\AndroidTemplates\PowerShell\Remove-AndroidProject.ps1 = NugetProjects\AndroidTemplates\PowerShell\Remove-AndroidProject.ps1
 	EndProjectSection
 EndProject
 Global
@@ -914,6 +947,12 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{450D38A1-6C4F-482A-B64E-4C87E752BE91} = {77CBE756-722B-4F52-9AA4-F4E0B2DFD2B1}
+		{8B41F008-DA43-4614-A23B-199B9229FE0F} = {30B74DB5-397B-4194-8E56-68D2ECD720A6}
+		{1301D3D9-DCD0-D9EB-52B5-A9D7CC71D014} = {0DB4F0E4-ACEE-4B86-8B92-723E21CDB277}
+		{42FF4BC1-7D33-2E95-7296-CEBA4B659EF4} = {1301D3D9-DCD0-D9EB-52B5-A9D7CC71D014}
+		{99C4B121-2271-06C0-4B8E-A3904352C58B} = {9DFB7A90-16EA-4FAC-9B09-61DEE0F4652B}
+		{F571F67A-8504-D43A-D019-202C0F731AF6} = {99C4B121-2271-06C0-4B8E-A3904352C58B}
 		{21A57DF3-61DD-486F-A714-E93A3C73FB92} = {7FA0A306-CEBD-4346-BCF6-150BDFFD0CC6}
 		{D820CF56-DF1E-4B54-A9AC-257951382277} = {5ED3376F-7EBD-4E7B-8B3F-E256D8E1505C}
 		{0B4DBDBA-2F32-4D1F-9B5A-207A446C0EB4} = {D820CF56-DF1E-4B54-A9AC-257951382277}

@@ -11,7 +11,9 @@ param(
 
     # Конфигурация нативной и Android-сборки.
     [ValidateSet('Debug', 'Release')]
-    [string]$Configuration = 'Release'
+    [string]$Configuration = 'Release',
+
+    [string]$TargetsConfigUrl
 )
 
 $ErrorActionPreference = 'Stop'
@@ -33,7 +35,16 @@ if ($KeepVersion) {
 } else {
     Write-Host "==> Using next Android version $($version.VERSION_CODE) / $($version.VERSION_NAME)"
 }
-& $buildAndroid -ProjectRoot $ProjectRoot -Configuration $Configuration -AppVersionCode $version.VERSION_CODE -AppVersionName $version.VERSION_NAME
+$buildParameters = @{
+    ProjectRoot = $ProjectRoot
+    Configuration = $Configuration
+    AppVersionCode = $version.VERSION_CODE
+    AppVersionName = $version.VERSION_NAME
+}
+if ($PSBoundParameters.ContainsKey('TargetsConfigUrl')) {
+    $buildParameters.TargetsConfigUrl = $TargetsConfigUrl
+}
+& $buildAndroid @buildParameters
 
 $destinationApk = Join-Path $distributionOutput "$($androidProjectConfig.ArtifactName)-$($version.VERSION_NAME).apk"
 New-Item -ItemType Directory -Path $distributionOutput -Force | Out-Null

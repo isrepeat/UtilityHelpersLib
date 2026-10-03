@@ -10,7 +10,7 @@ dynamicparam {
     $OutputEncoding = $utf8Encoding
     
     $androidProjectConfig = & ([scriptblock]::Create([System.IO.File]::ReadAllText((Join-Path $PSScriptRoot 'android-build.psd1'))))
-    . (Join-Path $PSScriptRoot 'Scripts\Read-AndroidSharedProps.ps1')
+    . (Join-Path $PSScriptRoot 'Scripts\PowerShell\Read-AndroidSharedProps.ps1')
     $androidProjectSharedConfig = Read-AndroidSharedProps -ProjectRoot $PSScriptRoot
     $packagesRoot = Join-Path $PSScriptRoot $androidProjectConfig.PackageDirectories.AndroidBuildTools
     $packageName = 'AndroidBuildTools'
@@ -44,5 +44,12 @@ dynamicparam {
 }
 
 end {
+    # Сценарий приложения проверяет Updater; общий сборщик не знает о зависимых проектах.
+    $command = if ($PSBoundParameters.Command) { $PSBoundParameters.Command } else { 'build-android' }
+    if ($command -in @('build-android', 'build-and-distribute', 'build-for-drive', 'build-all') -and -not $PSBoundParameters.NativeOnly) {
+        $configuration = if ($PSBoundParameters.Configuration) { $PSBoundParameters.Configuration } elseif ($command -eq 'build-android') { 'Debug' } else { 'Release' }
+        $signingProperties = if ($PSBoundParameters.SigningProperties) { $PSBoundParameters.SigningProperties } else { $androidProjectSharedConfig.Paths.SigningProperties }
+        & (Join-Path $PSScriptRoot 'Scripts\PowerShell\ensure-apk-updater.ps1') -ApkUpdaterProjectRoot $androidProjectSharedConfig.Paths.ApkUpdaterProjectRoot -SigningProperties $signingProperties -BuildToolsRoot (Split-Path -Parent (Split-Path -Parent $entryPoint)) -Configuration $configuration
+    }
     & $entryPoint -ProjectRoot $PSScriptRoot @PSBoundParameters
 }
