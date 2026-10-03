@@ -46,6 +46,10 @@ Set-Location $projectRoot
 
 ## Логирование Android
 
+Кнопка `Send logs` после `Update` отправляет журнал текущего сеанса в Google Drive,
+в папку `Android/{{Application}}` рядом с APK. Результат отображается на главной
+странице; при необходимости Google запрашивает доступ к Drive.
+
 При запуске `MainActivity` создаётся журнал сеанса в
 `Downloads/com.isrepeat/{{Application}}`. Kotlin передаёт открытый file descriptor
 в native host через `NativeSessionLog` из AndroidAppKit. Android host настраивает

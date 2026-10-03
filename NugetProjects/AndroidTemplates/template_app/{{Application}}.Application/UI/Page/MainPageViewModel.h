@@ -35,6 +35,7 @@ namespace {{application}}::application::ui::page {
 #endif
         xaml::Element::Command NavigateToSettingsCommand();
         xaml::Element::Command RequestApplicationUpdateCommand();
+        xaml::Element::Command SendLogsCommand();
         const std::string& Status() const;
         const std::string& PackageVersion() const;
         std::function<void()> Subscribe(PropertyChangedHandler handler);

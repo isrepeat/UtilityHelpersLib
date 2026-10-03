@@ -42,6 +42,16 @@
                 background="#3A6EA5"
                 command="{Binding RequestApplicationUpdateCommand}"
                 text="Update"/>
+        <Button id="sendLogsButton"
+                height="72"
+                margin="0 0 0 16"
+                contentAlignment="Center"
+                fontSize="36"
+                fontWeight="Bold"
+                foreground="#FFFFFF"
+                background="#3A6EA5"
+                command="{Binding SendLogsCommand}"
+                text="Send logs"/>
         <TextBlock id="statusText"
                    fontSize="32"
                    foreground="#FFFFFF"

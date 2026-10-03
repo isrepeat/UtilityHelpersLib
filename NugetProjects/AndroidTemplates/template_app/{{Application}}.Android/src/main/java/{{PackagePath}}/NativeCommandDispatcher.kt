@@ -2,7 +2,8 @@ package {{PackageId}}
 
 // Числа совпадают с HostCommand в C++; ordinal не является частью контракта.
 enum class HostCommand(val id: Int) {
-    REQUEST_APPLICATION_UPDATE(1);
+    REQUEST_APPLICATION_UPDATE(1),
+    SEND_LOGS(2);
 
     companion object {
         fun fromId(id: Int): HostCommand? = entries.firstOrNull { it.id == id }

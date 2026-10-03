@@ -65,6 +65,7 @@ namespace {{application}}::application::ui::page {
         result.bindings->AddCommand("NavigateToSettingsCommand", this->NavigateToSettingsCommand());
         result.bindings->AddText("PackageVersion", [this] { return this->PackageVersion(); });
         result.bindings->AddCommand("RequestApplicationUpdateCommand", this->RequestApplicationUpdateCommand());
+        result.bindings->AddCommand("SendLogsCommand", this->SendLogsCommand());
         result.bindings->AddText("Status", [this] { return this->Status(); }, [this](std::function<void()> handler) {
             return this->Subscribe([handler](Property) { handler(); });
         });
@@ -89,6 +90,13 @@ namespace {{application}}::application::ui::page {
     xaml::Element::Command MainPageViewModel::RequestApplicationUpdateCommand() {
         return [this] {
             this->context.hostCommands.Dispatch(core::HostCommand::requestApplicationUpdate);
+            this->Update();
+        };
+    }
+
+    xaml::Element::Command MainPageViewModel::SendLogsCommand() {
+        return [this] {
+            this->context.hostCommands.Dispatch(core::HostCommand::sendLogs);
             this->Update();
         };
     }

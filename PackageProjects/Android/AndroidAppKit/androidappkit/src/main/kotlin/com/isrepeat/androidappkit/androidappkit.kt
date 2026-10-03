@@ -89,6 +89,7 @@ object androidappkit {
             val updaterActivity: String,
             val updaterPermission: String,
             val updaterAction: String,
+            val confirmSameVersionInUpdater: Boolean = false,
         )
 
         class GoogleDriveUpdateController(
@@ -97,7 +98,8 @@ object androidappkit {
             requestAuthorization: (androidx.activity.result.IntentSenderRequest) -> Unit,
             status: (String) -> Unit,
             logger: diagnostics.AppKitLogger = diagnostics.sharedLogger(),
-            confirmSameVersion: (onConfirmed: () -> Unit, onCancelled: () -> Unit) -> Unit,
+            confirmSameVersion: (onConfirmed: () -> Unit, onCancelled: () -> Unit) -> Unit =
+                { onConfirmed, _ -> onConfirmed() },
         ) {
             private val controller = com.isrepeat.androidappkit.update.GoogleDriveUpdateController(
                 activity,
@@ -109,6 +111,7 @@ object androidappkit {
                     configuration.updaterActivity,
                     configuration.updaterPermission,
                     configuration.updaterAction,
+                    confirmSameVersionInUpdater = configuration.confirmSameVersionInUpdater,
                 ),
                 requestAuthorization,
                 status,

@@ -144,10 +144,27 @@ class GoogleDriveUpdateController(
             return
         }
         logger.log("Downloaded APK matches the installed version. Requesting reinstall confirmation.")
+        if (configuration.confirmSameVersionInUpdater && supportsPreparedReinstallConfirmation()) {
+            // Updater сначала готовит сессию, затем показывает подтверждение.
+            launchUpdaterAndFinish(apk, confirmSameVersion = true)
+            return
+        }
         confirmSameVersion({ launchUpdaterAndFinish(apk) }, { finish("Reinstallation was cancelled.") })
     }
 
-    private fun launchUpdaterAndFinish(apk: java.io.File) {
+    @Suppress("DEPRECATION")
+    private fun supportsPreparedReinstallConfirmation(): Boolean = runCatching {
+        val component = android.content.ComponentName(configuration.updaterPackage, configuration.updaterActivity)
+        val info = activity.packageManager.getActivityInfo(component, android.content.pm.PackageManager.GET_META_DATA)
+        val supported = info.metaData?.getBoolean("com.isrepeat.apkupdater.PREPARED_REINSTALL_CONFIRMATION", false) == true
+        logger.log("Updater supports prepared reinstall confirmation: $supported")
+        supported
+    }.getOrElse { error ->
+        logger.log("Could not read updater capabilities: ${error.message}. Using application confirmation.")
+        false
+    }
+
+    private fun launchUpdaterAndFinish(apk: java.io.File, confirmSameVersion: Boolean = false) {
         status("Starting updater…")
         runCatching {
             logger.log("Checking updater signature and permission.")
@@ -158,8 +175,12 @@ class GoogleDriveUpdateController(
             activity.startActivity(android.content.Intent(configuration.updaterAction)
                 .setClassName(configuration.updaterPackage, configuration.updaterActivity)
                 .setDataAndType(uri, APK_MIME_TYPE)
-                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                .putExtra(configuration.targetPackageExtra, activity.packageName))
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or
+                    android.content.Intent.FLAG_ACTIVITY_NO_ANIMATION or
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                .putExtra(configuration.targetPackageExtra, activity.packageName)
+                .putExtra("confirm_same_version", confirmSameVersion),
+                android.app.ActivityOptions.makeCustomAnimation(activity, 0, 0).toBundle())
             logger.log("Update passed to the updater application: ${apk.length()} bytes")
         }.onSuccess { finish("Update passed to the updater application. Waiting for installation…") }
             .onFailure { error ->
