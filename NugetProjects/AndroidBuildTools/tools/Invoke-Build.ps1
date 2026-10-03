@@ -34,7 +34,8 @@ $ErrorActionPreference = 'Stop'
 # ресурсам или секретов: они всегда берутся из android-build.psd1 потребителя.
 Import-Module -Name (Join-Path $PSScriptRoot 'Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
 Module.AndroidBuildTools\Initialize-AndroidBuildConsole
-$config = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
+$androidProjectConfig = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
+$androidProjectSharedConfig = Module.AndroidBuildTools\Read-AndroidBuildSharedConfiguration $ProjectRoot
 
 # $PSScriptRoot указывает на <пакет>/tools. Поднимаемся на один уровень, чтобы
 # построить пути к другим scripts и вернуть корень пакета для команды restore.
@@ -87,11 +88,11 @@ foreach ($name in $parameters.Keys) {
 if ($Command -eq 'upload-apk-to-drive') {
     foreach ($name in @('OAuthClientPath', 'TokenPath')) {
         if (-not $parameters.ContainsKey($name)) {
-            $parameters[$name] = $config.Drive[$name]
+            $parameters[$name] = $androidProjectSharedConfig.Paths[('Drive' + $name)]
         }
     }
     if (-not $parameters.ContainsKey('DrivePath')) {
-        $parameters.DrivePath = $config.Drive.Path
+        $parameters.DrivePath = $androidProjectConfig.Drive.Path
     }
 } else {
     # Остальные команды работают с проектом, поэтому всегда получают его корень,

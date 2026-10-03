@@ -12,7 +12,9 @@
 её `.cpp/.h` генерирует `XamlCompiler` в `!Generated` перед сборкой CMake.
 
 При генерации проекта в `android-build.psd1` уже записан путь `SigningProperties`
-к секретам вне Git. Он содержит ключи Debug и Release. Для CI этот путь можно
+к общему файлу `SecretsRoot/shared/signing.properties` вне Git. Все приложения и
+ApkUpdater используют его Debug и Release ключи. Генератор создаёт их один раз.
+Для CI этот путь можно
 переопределить `ANDROID_SIGNING_PROPERTIES`.
 
 Конфигурация сразу содержит секции `Xaml`, `Preview` и `Drive`, как у полноценного

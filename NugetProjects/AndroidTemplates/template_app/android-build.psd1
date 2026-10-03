@@ -1,5 +1,4 @@
 @{
-    BuildToolsSource = '{{BuildToolsSource}}'
     AndroidBuildToolsVersion = '{{AndroidBuildToolsVersion}}'
     ArtifactName = '{{Application}}'
     AndroidModule = '{{Application}}.Android'
@@ -17,9 +16,7 @@
         XamlRuntime = 'Build\Packages\{{Application}}.AndroidHost'
         AndroidAppPreviewerPluginSdk = 'Build\Packages\{{Application}}.PreviewPlugin'
     }
-    PackageSources = @{
-        Native = '{{NativePackageSource}}'
-    }
+    PackageSources = @{}
     Xaml = @{
         Namespace = 'urn:{{application}}:xaml'
         ControlNamespace = '{{application}}::ui::control'
@@ -27,17 +24,10 @@
     }
     Preview = @{
         ArtifactDirectory = 'Build\{{Application}}.PreviewPlugin'
-        Executable = @{
-            Debug = '{{PreviewerDebugExecutablePath}}'
-            Release = '{{PreviewerReleaseExecutablePath}}'
-        }
         Plugin = 'Build\{Configuration}\x64\{{Application}}.PreviewPlugin\{{Application}}.PreviewPlugin.dll'
         Target = '{{application}}_preview_plugin'
     }
-    SigningProperties = '{{SigningProperties}}'
     Drive = @{
         Path = @('Android', '{{Application}}')
-        OAuthClientPath = '{{DriveOAuthClientPath}}'
-        TokenPath = '{{DriveTokenPath}}'
     }
 }

@@ -14,3 +14,7 @@
 `build.ps1` восстанавливает пакет в каталог `PackageDirectories.AndroidBuildTools` из `android-build.psd1` и получает параметры команд из пакета. `ANDROID_BUILD_TOOLS_SOURCE` временно переопределяет источник NuGet.
 
 Полный контракт проекта и flow сборки описаны в [BUILD-PIPELINE.md](BUILD-PIPELINE.md).
+
+Общие пути читаются из ближайшего `Android.SharedProps.json` вверх от корня проекта. `Paths` определяет signing, Updater, Drive, feed и previewer; относительные значения вычисляются от каталога JSON. `$androidProjectConfig` содержит только настройки проекта, а `$androidProjectSharedConfig` — отдельные секции `Paths` и `Properties` из JSON. Команды чтения конфигурации работают только с настройками проекта; сборка обращается к общим настройкам напрямую через `$androidProjectSharedConfig`. Полный контракт версии 1 описан в `Windows/Me/Documentation/AndroidBuild.md`.
+
+Перед сборкой Android APK проверяется SHA-256 сертификата ApkUpdater из `Paths.ApkUpdaterProjectRoot` для выбранной конфигурации по `Paths.SigningProperties`. Отсутствующий, повреждённый или подписанный другим ключом APK автоматически пересобирается; результат проверяется повторно. Для `-NativeOnly` проверка не выполняется.

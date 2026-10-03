@@ -3,13 +3,14 @@ param(
     [Parameter(Mandatory)] [ValidatePattern('^[A-Z][A-Za-z0-9]*$')] [string]$Name,
     [Parameter(Mandatory)] [ValidatePattern('^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$')] [string]$PackageId,
     [Parameter(Mandatory)] [string]$Destination,
-    [Parameter(Mandatory)] [string]$BuildToolsSource,
-    [Parameter(Mandatory)] [string]$NativePackageSource,
-    [Parameter(Mandatory)] [string]$SecretsRoot,
-    [Parameter(Mandatory)] [string]$DriveOAuthClientPath,
-    [Parameter(Mandatory)] [string]$DriveTokenPath,
-    [Parameter(Mandatory)] [string]$PreviewerDebugExecutablePath,
-    [Parameter(Mandatory)] [string]$PreviewerReleaseExecutablePath,
+    [string]$BuildToolsSource,
+    [string]$NativePackageSource,
+    [string]$SecretsRoot,
+    [string]$DriveOAuthClientPath,
+    [string]$DriveTokenPath,
+    [string]$PreviewerDebugExecutablePath,
+    [string]$PreviewerReleaseExecutablePath,
+    [string]$ApkUpdaterProjectRoot,
     [string]$GoogleCloudProject
 )
 
@@ -18,6 +19,35 @@ $utf8Encoding = [Text.UTF8Encoding]::new($false)
 [Console]::InputEncoding = $utf8Encoding
 [Console]::OutputEncoding = $utf8Encoding
 $OutputEncoding = $utf8Encoding
+. (Join-Path $PSScriptRoot 'Read-AndroidSharedProps.ps1')
+$sharedProps = Read-AndroidSharedProps -ProjectRoot $Destination
+if (-not $PSBoundParameters.ContainsKey('BuildToolsSource')) {
+    $BuildToolsSource = $sharedProps.Paths.PackagesFeed
+}
+if (-not $PSBoundParameters.ContainsKey('NativePackageSource')) {
+    $NativePackageSource = $sharedProps.Paths.PackagesFeed
+}
+if (-not $PSBoundParameters.ContainsKey('PreviewerDebugExecutablePath')) {
+    $PreviewerDebugExecutablePath = $sharedProps.Paths.PreviewerDebugExecutablePath
+}
+if (-not $PSBoundParameters.ContainsKey('PreviewerReleaseExecutablePath')) {
+    $PreviewerReleaseExecutablePath = $sharedProps.Paths.PreviewerReleaseExecutablePath
+}
+if (-not $PSBoundParameters.ContainsKey('SecretsRoot')) {
+    $SecretsRoot = $sharedProps.Paths.SecretsRoot
+}
+if (-not $PSBoundParameters.ContainsKey('DriveOAuthClientPath')) {
+    $DriveOAuthClientPath = $sharedProps.Paths.DriveOAuthClientPath
+}
+if (-not $PSBoundParameters.ContainsKey('DriveTokenPath')) {
+    $DriveTokenPath = $sharedProps.Paths.DriveTokenPath
+}
+if (-not $PSBoundParameters.ContainsKey('ApkUpdaterProjectRoot')) {
+    $ApkUpdaterProjectRoot = $sharedProps.Paths.ApkUpdaterProjectRoot
+}
+if (-not $PSBoundParameters.ContainsKey('GoogleCloudProject')) {
+    $GoogleCloudProject = $sharedProps.Properties.GoogleCloudProject
+}
 function New-KeyPassword {
     $bytes = [byte[]]::new(20)
     $random = [Security.Cryptography.RandomNumberGenerator]::Create()
@@ -62,7 +92,23 @@ $secretsDirectory = Join-Path ([IO.Path]::GetFullPath($SecretsRoot)) $PackageId
 if (Test-Path -LiteralPath $secretsDirectory) {
     throw "Secrets directory already exists: $secretsDirectory. Choose another package ID or remove it deliberately."
 }
-$signingPropertiesPath = Join-Path $secretsDirectory 'signing.properties'
+$sharedSecretsDirectory = Join-Path ([IO.Path]::GetFullPath($SecretsRoot)) 'shared'
+$signingPropertiesPath = $sharedProps.Paths.SigningProperties
+if ([IO.Path]::GetFullPath((Split-Path -Parent $signingPropertiesPath)) -ne $sharedSecretsDirectory) {
+    throw 'Paths.SigningProperties must be located in the shared directory under Paths.SecretsRoot.'
+}
+
+$updaterBuildScript = $null
+if (-not [string]::IsNullOrWhiteSpace($ApkUpdaterProjectRoot)) {
+    $updaterBuildScript = Join-Path ([IO.Path]::GetFullPath($ApkUpdaterProjectRoot)) 'Scripts\PowerShell\build-android.ps1'
+    if (-not (Test-Path -LiteralPath $updaterBuildScript -PathType Leaf)) {
+        throw "ApkUpdater build script was not found: $updaterBuildScript"
+    }
+    $updaterBuildCommand = Get-Command $updaterBuildScript -ErrorAction Stop
+    if (-not $updaterBuildCommand.Parameters.ContainsKey('SigningProperties')) {
+        throw "ApkUpdater build script must support -SigningProperties: $updaterBuildScript"
+    }
+}
 
 $templateRoot = Join-Path (Split-Path -Parent $PSScriptRoot) 'template_app'
 $androidBuildToolsVersion = (Resolve-LatestAndroidBuildToolsVersion $BuildToolsSource).ToString()
@@ -89,6 +135,7 @@ foreach ($file in $files) {
     $text = $text.Replace('{{BuildToolsSource}}', $BuildToolsSource.Replace("'", "''"))
     $text = $text.Replace('{{NativePackageSource}}', $NativePackageSource.Replace("'", "''"))
     $text = $text.Replace('{{SigningProperties}}', $signingPropertiesPath.Replace("'", "''"))
+    $text = $text.Replace('{{ApkUpdaterProjectRoot}}', $ApkUpdaterProjectRoot.Replace("'", "''"))
     $text = $text.Replace('{{DriveOAuthClientPath}}', $DriveOAuthClientPath.Replace("'", "''"))
     $text = $text.Replace('{{DriveTokenPath}}', $DriveTokenPath.Replace("'", "''"))
     $text = $text.Replace('{{PreviewerDebugExecutablePath}}', $PreviewerDebugExecutablePath.Replace("'", "''"))
@@ -100,17 +147,20 @@ foreach ($file in $files) {
 $removeProjectScript = Join-Path $PSScriptRoot 'Remove-AndroidProject.ps1'
 $removeProjectTarget = Join-Path $destinationRoot 'Scripts\Remove-AndroidProject.ps1'
 [IO.File]::Copy($removeProjectScript, $removeProjectTarget)
+[IO.File]::Copy((Join-Path $PSScriptRoot 'Read-AndroidSharedProps.ps1'), (Join-Path $destinationRoot 'Scripts\Read-AndroidSharedProps.ps1'))
 
 [IO.Directory]::CreateDirectory($secretsDirectory) | Out-Null
-$debugKeystore = Join-Path $secretsDirectory 'debug.keystore'
-$releaseKeystore = Join-Path $secretsDirectory 'release.keystore'
-$debugPassword = New-KeyPassword
-$releasePassword = New-KeyPassword
+[IO.Directory]::CreateDirectory($sharedSecretsDirectory) | Out-Null
 $oauthSetup = Join-Path $PSScriptRoot 'Open-AndroidOAuthClientSetup.ps1'
-$debugCertificate = & $oauthSetup -ClientName "$Name debug" -PackageId $PackageId -KeystorePath $debugKeystore -KeyAlias debug -StorePassword $debugPassword -KeyPassword $debugPassword -CreateKeystore
-$releaseCertificate = & $oauthSetup -ClientName "$Name release" -PackageId $PackageId -KeystorePath $releaseKeystore -KeyAlias release -StorePassword $releasePassword -KeyPassword $releasePassword -CreateKeystore -GoogleCloudProject $GoogleCloudProject -OpenBrowser
+if (-not (Test-Path -LiteralPath $signingPropertiesPath -PathType Leaf)) {
+    $debugKeystore = Join-Path $sharedSecretsDirectory 'debug.keystore'
+    $releaseKeystore = Join-Path $sharedSecretsDirectory 'release.keystore'
+    $debugPassword = New-KeyPassword
+    $releasePassword = New-KeyPassword
+    $debugCertificate = & $oauthSetup -ClientName "$Name debug" -PackageId $PackageId -KeystorePath $debugKeystore -KeyAlias debug -StorePassword $debugPassword -KeyPassword $debugPassword -CreateKeystore
+    $releaseCertificate = & $oauthSetup -ClientName "$Name release" -PackageId $PackageId -KeystorePath $releaseKeystore -KeyAlias release -StorePassword $releasePassword -KeyPassword $releasePassword -CreateKeystore
 
-$signingProperties = @"
+    $signingProperties = @"
 storeFile=$($releaseKeystore.Replace('\', '/'))
 storePassword=$releasePassword
 keyAlias=release
@@ -120,8 +170,23 @@ debugStorePassword=$debugPassword
 debugKeyAlias=debug
 debugKeyPassword=$debugPassword
 "@
-[IO.File]::WriteAllText($signingPropertiesPath, $signingProperties.TrimEnd(), [Text.UTF8Encoding]::new($false))
-
+    [IO.File]::WriteAllText($signingPropertiesPath, $signingProperties.TrimEnd(), [Text.UTF8Encoding]::new($false))
+    Write-Host "WARNING: Созданы новые общие ключи Android: $sharedSecretsDirectory. Пересоберите ApkUpdater для Debug и Release с этими ключами и установите соответствующую сборку на устройство, иначе приложения не смогут вызвать Updater из-за несовпадения подписей." -ForegroundColor Yellow
+    if ($null -ne $updaterBuildScript) {
+        foreach ($updaterConfiguration in @('Debug', 'Release')) {
+            Write-Host "Building ApkUpdater $updaterConfiguration with $signingPropertiesPath" -ForegroundColor Green
+            & $updaterBuildScript -Configuration $updaterConfiguration -SigningProperties $signingPropertiesPath
+        }
+        Write-Host 'ApkUpdater Debug и Release пересобраны. Установите соответствующий APK на устройство.' -ForegroundColor Green
+    } else {
+        Write-Host 'WARNING: Для автоматической сборки укажите -ApkUpdaterProjectRoot. Для ручной сборки выполните команды в репозитории ApkUpdater:' -ForegroundColor Yellow
+        Write-Host "& '.\Scripts\PowerShell\build-android.ps1' -Configuration Debug -SigningProperties '$signingPropertiesPath'" -ForegroundColor Yellow
+        Write-Host "& '.\Scripts\PowerShell\build-android.ps1' -Configuration Release -SigningProperties '$signingPropertiesPath'" -ForegroundColor Yellow
+    }
+}
+$sharedSigning = ConvertFrom-StringData ([IO.File]::ReadAllText($signingPropertiesPath))
+$debugCertificate = & $oauthSetup -ClientName "$Name debug" -PackageId $PackageId -KeystorePath $sharedSigning.debugStoreFile -KeyAlias $sharedSigning.debugKeyAlias -StorePassword $sharedSigning.debugStorePassword -KeyPassword $sharedSigning.debugKeyPassword
+$releaseCertificate = & $oauthSetup -ClientName "$Name release" -PackageId $PackageId -KeystorePath $sharedSigning.storeFile -KeyAlias $sharedSigning.keyAlias -StorePassword $sharedSigning.storePassword -KeyPassword $sharedSigning.keyPassword -GoogleCloudProject $GoogleCloudProject -OpenBrowser
 $oauthDocument = @'
 # Google OAuth setup for {{Name}}
 
@@ -150,7 +215,7 @@ This application's secrets are outside Git:
 ```
 '@
 $setupUrl = if ($releaseCertificate.SetupUrl) { $releaseCertificate.SetupUrl } else { 'pass -GoogleCloudProject to get a link to the Clients page' }
-$oauthDocument = $oauthDocument.Replace('{{Name}}', $Name).Replace('{{PackageId}}', $PackageId).Replace('{{DebugSha1}}', $debugCertificate.Sha1).Replace('{{ReleaseSha1}}', $releaseCertificate.Sha1).Replace('{{SecretsDirectory}}', $secretsDirectory).Replace('{{SetupUrl}}', $setupUrl)
+$oauthDocument = $oauthDocument.Replace('{{Name}}', $Name).Replace('{{PackageId}}', $PackageId).Replace('{{DebugSha1}}', $debugCertificate.Sha1).Replace('{{ReleaseSha1}}', $releaseCertificate.Sha1).Replace('{{SecretsDirectory}}', $sharedSecretsDirectory).Replace('{{SetupUrl}}', $setupUrl)
 [IO.File]::WriteAllText((Join-Path $destinationRoot 'Google-OAuth-setup.md'), $oauthDocument.TrimEnd(), [Text.UTF8Encoding]::new($false))
 
 Write-Host "Application created: $destinationRoot"

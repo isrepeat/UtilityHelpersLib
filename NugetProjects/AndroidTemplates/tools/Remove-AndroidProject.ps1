@@ -3,7 +3,9 @@ param(
     [Parameter(Mandatory)]
     [string]$ProjectRoot,
 
-    [switch]$Confirmed
+    [switch]$Confirmed,
+
+    [string]$SigningProperties
 )
 
 $ErrorActionPreference = 'Stop'
@@ -14,19 +16,19 @@ if (-not (Test-Path -LiteralPath $configurationPath -PathType Leaf)) {
 }
 
 $configuration = Import-PowerShellDataFile -LiteralPath $configurationPath
-$signingPropertiesPath = $configuration.SigningProperties
+$signingPropertiesPath = if ($SigningProperties) { $SigningProperties } else { $configuration.SigningProperties }
 if (-not $signingPropertiesPath) {
-    throw 'SigningProperties is required to locate this project secrets directory.'
+    . (Join-Path $PSScriptRoot 'Read-AndroidSharedProps.ps1')
+    $sharedProps = Read-AndroidSharedProps -ProjectRoot $projectRoot
+    $signingPropertiesPath = $sharedProps.Paths.SigningProperties
 }
 
 $secretsDirectory = Split-Path -Parent $signingPropertiesPath
-if (-not (Test-Path -LiteralPath $secretsDirectory -PathType Container)) {
-    throw "Secrets directory was not found: $secretsDirectory"
-}
-$packageId = Split-Path -Leaf $secretsDirectory
-
+$sharedKeys = (Split-Path -Leaf $secretsDirectory) -eq 'shared'
+$packageId = Split-Path -Leaf $projectRoot
 if (-not $Confirmed) {
-    $answer = Read-Host "Delete project and secrets for $PackageId? [Y/N]"
+    $description = if ($sharedKeys) { "Delete project $packageId (shared signing keys are preserved)? [Y/N]" } else { "Delete project and secrets for $packageId? [Y/N]" }
+    $answer = Read-Host $description
     if ($answer -ine 'Y') {
         Write-Host 'Deletion cancelled.'
         return
@@ -39,7 +41,7 @@ if ($scriptPath.StartsWith($normalizedProjectRoot, [StringComparison]::OrdinalIg
     $temporaryScript = Join-Path ([IO.Path]::GetTempPath()) ("Remove-AndroidProject-{0}.ps1" -f [Guid]::NewGuid().ToString('N'))
     Copy-Item -LiteralPath $scriptPath -Destination $temporaryScript -Force
     try {
-        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $temporaryScript -ProjectRoot $projectRoot -Confirmed
+        & $temporaryScript -ProjectRoot $projectRoot -Confirmed -SigningProperties $signingPropertiesPath
         exit $LASTEXITCODE
     } finally {
         Remove-Item -LiteralPath $temporaryScript -Force -ErrorAction SilentlyContinue
@@ -47,7 +49,9 @@ if ($scriptPath.StartsWith($normalizedProjectRoot, [StringComparison]::OrdinalIg
 }
 
 Set-Location -LiteralPath ([IO.Path]::GetTempPath())
-Write-Host "Removing secrets: $secretsDirectory"
-Remove-Item -LiteralPath $secretsDirectory -Recurse -Force
+if (-not $sharedKeys -and (Test-Path -LiteralPath $secretsDirectory -PathType Container)) {
+    Write-Host "Removing secrets: $secretsDirectory"
+    Remove-Item -LiteralPath $secretsDirectory -Recurse -Force
+}
 Write-Host "Removing project: $projectRoot"
 Remove-Item -LiteralPath $projectRoot -Recurse -Force

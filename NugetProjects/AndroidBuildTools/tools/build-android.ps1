@@ -26,12 +26,13 @@ param(
 $ErrorActionPreference = 'Stop'
 Import-Module -Name (Join-Path $PSScriptRoot 'Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
 Module.AndroidBuildTools\Initialize-AndroidBuildConsole
-$config = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
-$gradleRoot = Join-Path $projectRoot $config.GradleRoot
+$androidProjectConfig = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
+$androidProjectSharedConfig = Module.AndroidBuildTools\Read-AndroidBuildSharedConfiguration $ProjectRoot
+$gradleRoot = Join-Path $projectRoot $androidProjectConfig.GradleRoot
 $gradleWrapper = Join-Path $gradleRoot 'gradlew.bat'
 $configurationDirectory = $Configuration.ToLowerInvariant()
 $apkSuffix = if ($Configuration -eq 'Release') { 'release' } else { 'debug' }
-$apkPath = Join-Path $projectRoot "Build\$($config.AndroidModule)\outputs\apk\$configurationDirectory\$($config.AndroidModule)-$apkSuffix.apk"
+$apkPath = Join-Path $projectRoot "Build\$($androidProjectConfig.AndroidModule)\outputs\apk\$configurationDirectory\$($androidProjectConfig.AndroidModule)-$apkSuffix.apk"
 
 function Invoke-Checked {
     param(
@@ -60,18 +61,31 @@ if ($PSBoundParameters.ContainsKey('AppVersionCode') -xor $PSBoundParameters.Con
 }
 # Передаём версию явно, чтобы CMake не сохранил номер предыдущей distribution-сборки.
 if (-not $PSBoundParameters.ContainsKey('AppVersionName')) {
-    $baseVersion = ConvertFrom-StringData ([System.IO.File]::ReadAllText((Join-Path $ProjectRoot $config.VersionFile)))
+    $baseVersion = ConvertFrom-StringData ([System.IO.File]::ReadAllText((Join-Path $ProjectRoot $androidProjectConfig.VersionFile)))
     $AppVersionCode = [int]$baseVersion.VERSION_CODE_BASE
     $AppVersionName = "$($baseVersion.VERSION_NAME_BASE).0"
 }
-$cmakeConfigureArguments = @('--preset', "$($config.AndroidPresetPrefix)-$configurationDirectory", "-DCMAKE_MAKE_PROGRAM=$($tools.Ninja)")
-$cmakeConfigureArguments += "-D$($config.CMakeVersionVariable)=$AppVersionName"
+$cmakeConfigureArguments = @('--preset', "$($androidProjectConfig.AndroidPresetPrefix)-$configurationDirectory", "-DCMAKE_MAKE_PROGRAM=$($tools.Ninja)")
+$cmakeConfigureArguments += "-D$($androidProjectConfig.CMakeVersionVariable)=$AppVersionName"
+
+# Проверяем updater до сборки приложения; NativeOnly не создаёт Android APK.
+if (-not $NativeOnly -and -not [string]::IsNullOrWhiteSpace($androidProjectSharedConfig.Paths.ApkUpdaterProjectRoot)) {
+    if ([string]::IsNullOrWhiteSpace($androidProjectSharedConfig.Paths.SigningProperties)) {
+        throw 'SigningProperties is required when ApkUpdaterProjectRoot is configured.'
+    }
+    & (Join-Path $PSScriptRoot 'ensure-apk-updater.ps1') `
+        -ApkUpdaterProjectRoot $androidProjectSharedConfig.Paths.ApkUpdaterProjectRoot `
+        -SigningProperties $androidProjectSharedConfig.Paths.SigningProperties `
+        -JavaHome $javaHome `
+        -AndroidSdk $androidSdk `
+        -Configuration $Configuration
+}
 
 & (Join-Path $PSScriptRoot 'generate-xaml.ps1') -ProjectRoot $ProjectRoot
 
 Push-Location $projectRoot
 try {
-    $cmakePreset = "$($config.AndroidPresetPrefix)-$configurationDirectory"
+    $cmakePreset = "$($androidProjectConfig.AndroidPresetPrefix)-$configurationDirectory"
     Write-Host "==> Building native $Architecture $Configuration library with CMake"
     if ($Clean) {
         Invoke-Checked $cmake (@('--fresh') + $cmakeConfigureArguments)
@@ -83,7 +97,7 @@ try {
     Pop-Location
 }
 
-$nativeLibrary = Join-Path $projectRoot "Build\$($config.AndroidHost)\android\jniLibs\$Architecture\$($config.NativeLibrary)"
+$nativeLibrary = Join-Path $projectRoot "Build\$($androidProjectConfig.AndroidHost)\android\jniLibs\$Architecture\$($androidProjectConfig.NativeLibrary)"
 if (-not (Test-Path $nativeLibrary)) {
     throw "CMake completed but did not produce $nativeLibrary"
 }
@@ -95,12 +109,12 @@ if ($NativeOnly) {
 
 # Gradle упаковывает нативную библиотеку, уже собранную через CMake.
 $gradleTasks = @(
-    ":$($config.AndroidModule):assemble$Configuration"
+    ":$($androidProjectConfig.AndroidModule):assemble$Configuration"
 )
 $gradleArguments = @('--no-daemon', "-PappVersionCode=$AppVersionCode", "-PappVersionName=$AppVersionName")
-$gradleArguments += "-PappVersionFile=$($config.VersionFile)"
-if ($config.SigningProperties) {
-    $gradleArguments += "-PandroidSigningProperties=$($config.SigningProperties)"
+$gradleArguments += "-PappVersionFile=$($androidProjectConfig.VersionFile)"
+if ($androidProjectSharedConfig.Paths.SigningProperties) {
+    $gradleArguments += "-PandroidSigningProperties=$($androidProjectSharedConfig.Paths.SigningProperties)"
 }
 Write-Host "==> Running Gradle tasks: $($gradleTasks -join ', ')"
 Write-Host "==> Using Java: $javaHome"

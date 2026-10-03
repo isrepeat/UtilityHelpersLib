@@ -33,6 +33,14 @@ function Read-AndroidBuildConfiguration {
     return $config
 }
 
+function Read-AndroidBuildSharedConfiguration {
+    param([Parameter(Mandatory)] [string]$ProjectRoot)
+
+    # Общие настройки читаются отдельно и не изменяют конфигурацию проекта.
+    . (Join-Path $PSScriptRoot '..\..\Read-AndroidSharedProps.ps1')
+    return Read-AndroidSharedProps -ProjectRoot $ProjectRoot
+}
+
 function Get-AndroidBuildConfigurationValue {
     param(
         [Parameter(Mandatory)] [hashtable]$Configuration,
@@ -169,6 +177,7 @@ function Resolve-XamlCompiler {
 Export-ModuleMember -Function `
     Initialize-AndroidBuildConsole, `
     Read-AndroidBuildConfiguration, `
+    Read-AndroidBuildSharedConfiguration, `
     Get-AndroidBuildConfigurationValue, `
     Resolve-AndroidBuildTools, `
     Resolve-AndroidJavaHome, `

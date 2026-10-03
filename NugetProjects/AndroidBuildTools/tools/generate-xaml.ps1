@@ -6,21 +6,22 @@ param(
 $ErrorActionPreference = 'Stop'
 Import-Module -Name (Join-Path $PSScriptRoot 'Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
 Module.AndroidBuildTools\Initialize-AndroidBuildConsole
-$config = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
-if (-not $config.Xaml) {
+$androidProjectConfig = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
+$androidProjectSharedConfig = Module.AndroidBuildTools\Read-AndroidBuildSharedConfiguration $ProjectRoot
+if (-not $androidProjectConfig.Xaml) {
     return
 }
 
-$applicationRoot = Join-Path $projectRoot $config.Application
-$uiRoot = Join-Path $projectRoot $config.UI
+$applicationRoot = Join-Path $projectRoot $androidProjectConfig.Application
+$uiRoot = Join-Path $projectRoot $androidProjectConfig.UI
 $xamlSourceRoots = @(
     @{
         Source = Join-Path $applicationRoot 'UI'
-        Generated = Join-Path $projectRoot "!Generated\$($config.Application)\Xaml"
+        Generated = Join-Path $projectRoot "!Generated\$($androidProjectConfig.Application)\Xaml"
     },
     @{
         Source = $uiRoot
-        Generated = Join-Path $projectRoot "!Generated\$($config.UI)\Xaml"
+        Generated = Join-Path $projectRoot "!Generated\$($androidProjectConfig.UI)\Xaml"
     }
 )
 $xamlIgnoreConfigurationPath = Join-Path $applicationRoot 'UI\XamlCompilerIgnore.json'
@@ -40,8 +41,8 @@ function Invoke-Checked {
     }
 }
 
-$xamlPackagesRoot = Module.AndroidBuildTools\Resolve-AndroidBuildConfigurationPath -Configuration $config -ProjectRoot $ProjectRoot -Name 'PackageDirectories.XamlRuntime'
-$nativePackageSource = Module.AndroidBuildTools\Get-AndroidBuildConfigurationValue -Configuration $config -Name 'PackageSources.Native'
+$xamlPackagesRoot = Module.AndroidBuildTools\Resolve-AndroidBuildConfigurationPath -Configuration $androidProjectConfig -ProjectRoot $ProjectRoot -Name 'PackageDirectories.XamlRuntime'
+$nativePackageSource = $androidProjectSharedConfig.Paths.PackagesFeed
 $xamlCompiler = Module.AndroidBuildTools\Resolve-XamlCompiler -PackagesRoot $xamlPackagesRoot -Source $nativePackageSource
 Write-Host "==> Using XamlCompiler from $xamlCompiler"
 
@@ -64,13 +65,13 @@ foreach ($xamlSourceRoot in $xamlSourceRoots) {
                 $_.FullName,
                 $generatedPath,
                 '--xaml-namespace',
-                $config.Xaml.Namespace,
+                $androidProjectConfig.Xaml.Namespace,
                 '--control-xml-prefix',
                 'control',
                 '--control-cpp-namespace',
-                $config.Xaml.ControlNamespace,
+                $androidProjectConfig.Xaml.ControlNamespace,
                 '--control-include-prefix',
-                $config.Xaml.ControlIncludePrefix
+                $androidProjectConfig.Xaml.ControlIncludePrefix
             )
             foreach ($directory in $xamlIgnoredDirectories) {
                 $compilerArguments += '--ignore-directory', $directory

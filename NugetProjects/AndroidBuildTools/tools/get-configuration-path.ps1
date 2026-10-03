@@ -11,5 +11,5 @@ $ErrorActionPreference = 'Stop'
 
 Import-Module -Name (Join-Path $PSScriptRoot 'Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
 Module.AndroidBuildTools\Initialize-AndroidBuildConsole
-$config = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
-Module.AndroidBuildTools\Resolve-AndroidBuildConfigurationPath -Configuration $config -ProjectRoot $ProjectRoot -Name $Name
+$androidProjectConfig = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
+Module.AndroidBuildTools\Resolve-AndroidBuildConfigurationPath -Configuration $androidProjectConfig -ProjectRoot $ProjectRoot -Name $Name

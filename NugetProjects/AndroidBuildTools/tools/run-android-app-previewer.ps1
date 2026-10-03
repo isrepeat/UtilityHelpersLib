@@ -38,11 +38,12 @@ function Initialize-VisualStudioEnvironment {
 try {
     Import-Module -Name (Join-Path $PSScriptRoot 'Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
     Module.AndroidBuildTools\Initialize-AndroidBuildConsole
-    $config = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
+    $androidProjectConfig = Module.AndroidBuildTools\Read-AndroidBuildConfiguration $ProjectRoot
+    $androidProjectSharedConfig = Module.AndroidBuildTools\Read-AndroidBuildSharedConfiguration $ProjectRoot
     $tools = Module.AndroidBuildTools\Resolve-AndroidBuildTools
     $generateXamlScript = Join-Path $PSScriptRoot 'generate-xaml.ps1'
-    $artifactDirectory = Join-Path $projectRoot $config.Preview.ArtifactDirectory
-    $plugin = Join-Path $artifactDirectory $config.Preview.Plugin.Replace('{Configuration}', $Configuration)
+    $artifactDirectory = Join-Path $projectRoot $androidProjectConfig.Preview.ArtifactDirectory
+    $plugin = Join-Path $artifactDirectory $androidProjectConfig.Preview.Plugin.Replace('{Configuration}', $Configuration)
     $visualStudioCmake = $tools.CMake
     $visualStudioNinja = $tools.Ninja
     $cmakeBuildDirectory = Join-Path $artifactDirectory 'Intermediate\CMake'
@@ -74,7 +75,7 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "Application preview-plugin CMake configure failed with exit code $LASTEXITCODE."
     }
-    & $cmake '--build' $cmakeBuildDirectory '--target' $config.Preview.Target '--' '-j' '2'
+    & $cmake '--build' $cmakeBuildDirectory '--target' $androidProjectConfig.Preview.Target '--' '-j' '2'
     if ($LASTEXITCODE -ne 0) {
         throw "Application preview plugin $Configuration build failed with exit code $LASTEXITCODE."
     }
@@ -87,7 +88,7 @@ try {
         return
     }
 
-    $previewerValue = $config.Preview.Executable[$Configuration]
+    $previewerValue = $androidProjectSharedConfig.Paths[('Previewer' + $Configuration + 'ExecutablePath')]
     if ([string]::IsNullOrWhiteSpace($previewerValue)) {
         throw "Preview.Executable.$Configuration must specify the AndroidAppPreviewer executable."
     }

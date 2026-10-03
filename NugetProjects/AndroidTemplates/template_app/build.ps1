@@ -9,15 +9,17 @@ dynamicparam {
     [Console]::OutputEncoding = $utf8Encoding
     $OutputEncoding = $utf8Encoding
     
-    $config = & ([scriptblock]::Create([System.IO.File]::ReadAllText((Join-Path $PSScriptRoot 'android-build.psd1'))))
-    $packagesRoot = Join-Path $PSScriptRoot $config.PackageDirectories.AndroidBuildTools
+    $androidProjectConfig = & ([scriptblock]::Create([System.IO.File]::ReadAllText((Join-Path $PSScriptRoot 'android-build.psd1'))))
+    . (Join-Path $PSScriptRoot 'Scripts\Read-AndroidSharedProps.ps1')
+    $androidProjectSharedConfig = Read-AndroidSharedProps -ProjectRoot $PSScriptRoot
+    $packagesRoot = Join-Path $PSScriptRoot $androidProjectConfig.PackageDirectories.AndroidBuildTools
     $packageName = 'AndroidBuildTools'
-    $packageVersion = $config.AndroidBuildToolsVersion
+    $packageVersion = $androidProjectConfig.AndroidBuildToolsVersion
     if ([string]::IsNullOrWhiteSpace($packageVersion)) {
         throw 'android-build.psd1 must define AndroidBuildToolsVersion.'
     }
     $nuget = (Get-Command nuget.exe -ErrorAction Stop).Source
-    $source = if ($env:ANDROID_BUILD_TOOLS_SOURCE) { $env:ANDROID_BUILD_TOOLS_SOURCE } else { $config.BuildToolsSource }
+    $source = if ($env:ANDROID_BUILD_TOOLS_SOURCE) { $env:ANDROID_BUILD_TOOLS_SOURCE } else { $androidProjectSharedConfig.Paths.PackagesFeed }
 
     & $nuget install $packageName -Version $packageVersion -Source $source -OutputDirectory $packagesRoot -NonInteractive -DirectDownload -NoHttpCache -ForceEnglishOutput | Out-Host
     if ($LASTEXITCODE -ne 0) {

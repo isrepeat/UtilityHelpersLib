@@ -22,14 +22,13 @@ $tools = Get-ChildItem -LiteralPath $bootstrapDirectory -Directory |
 & "$tools\tools\New-AndroidApplication.ps1" `
     -Name SampleApp `
     -PackageId com.example.sampleapp `
-    -Destination C:\Projects\SampleApp `
-    -BuildToolsSource $env:UH_PACKAGES_FEED `
-    -NativePackageSource $env:UH_PACKAGES_FEED `
-    -SecretsRoot C:\WORK\Secrets\Android `
-    -DriveOAuthClientPath C:\WORK\Secrets\apkupdater-drive-oauth.json `
-    -DriveTokenPath C:\WORK\Secrets\apkupdater-drive-token.json
+    -Destination C:\WORK\Android\Projects\SampleApp
 ```
 
 ## Удаление проекта
 
 Генератор копирует `Remove-AndroidProject.ps1` в `Scripts` созданного проекта. Скрипт удаляет явно указанный корень проекта и каталог секретов, найденный в его `android-build.psd1`. До удаления он запрашивает подтверждение.
+
+До генерации создайте `Android.SharedProps.json` над каталогом будущего проекта. Генератор и сборка используют ближайший файл с `SchemaVersion: 1`, `Paths` и необязательным `Properties`. Пути в `Paths` вычисляются от каталога JSON. Полный контракт описан в `Windows/Me/Documentation/AndroidBuild.md`.
+
+`Paths.ApkUpdaterProjectRoot` задаёт отдельный репозиторий Updater. При создании общих ключей генератор собирает Debug и Release ApkUpdater с тем же `Paths.SigningProperties`. Общие пути не сохраняются в конфигурации проекта: они читаются из JSON перед каждой сборкой. Перед Android-сборкой инструменты проверяют сертификат APK Updater и пересобирают его при отсутствии или несовпадении подписи.
