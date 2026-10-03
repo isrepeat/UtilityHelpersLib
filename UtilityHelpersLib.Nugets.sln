@@ -71,6 +71,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PowerShell", "PowerShell", 
 		Scripts\PowerShell\Nuget.CppFeatures.Pack.Release.ps1 = Scripts\PowerShell\Nuget.CppFeatures.Pack.Release.ps1
 		Scripts\PowerShell\Nuget.CrashHandling.Pack.Release.ps1 = Scripts\PowerShell\Nuget.CrashHandling.Pack.Release.ps1
 		Scripts\PowerShell\Resolve-PackagesFeed.ps1 = Scripts\PowerShell\Resolve-PackagesFeed.ps1
+		Scripts\PowerShell\Increment-PackageVersion.ps1 = Scripts\PowerShell\Increment-PackageVersion.ps1
 		Scripts\PowerShell\Run-TrailingWhitespaceWatcher.vbs = Scripts\PowerShell\Run-TrailingWhitespaceWatcher.vbs
 		Scripts\PowerShell\Solution.UtilityHelpersLib.Nugets.ps1 = Scripts\PowerShell\Solution.UtilityHelpersLib.Nugets.ps1
 		Scripts\PowerShell\TrailingWhitespaceWatcher.ps1 = Scripts\PowerShell\TrailingWhitespaceWatcher.ps1

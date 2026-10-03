@@ -162,33 +162,16 @@ function Resolve-AndroidNdkRoot([string]$utilityRoot, [string]$requestedPath) {
 # XamlRuntime.nuspec хранит базовую версию пакета.
 # Ревизия определяется по локальному feed-у и не записывается в исходный файл.
 function Get-NextPackageVersion([string]$nuspecPath, [string]$packagesFeedPath) {
-    $nuspecContent = Get-Content -LiteralPath $nuspecPath -Raw
-    $startTag = '<version>'
-    $endTag = '</version>'
-    $startIndex = $nuspecContent.IndexOf($startTag, [System.StringComparison]::Ordinal)
-    $endIndex = $nuspecContent.IndexOf($endTag, [System.StringComparison]::Ordinal)
-    if (($startIndex -lt 0) -or ($endIndex -lt 0) -or ($endIndex -le $startIndex)) {
-        throw "NuGet version element was not found in $nuspecPath"
-    }
-
-    $versionStartIndex = $startIndex + $startTag.Length
-    $versionLength = $endIndex - $versionStartIndex
-    $baseVersion = $nuspecContent.Substring($versionStartIndex, $versionLength).Trim()
-    if ($baseVersion -notmatch '^\d+\.\d+\.\d+$') {
-        throw "NuGet version must use the major.minor.patch format in $nuspecPath."
-    }
-
-    $manifest = [xml]$nuspecContent
-    $packageId = $manifest.package.metadata.id
-    $revisions = if (Test-Path -LiteralPath $packagesFeedPath -PathType Container) {
-        Get-ChildItem -LiteralPath $packagesFeedPath -File -Filter "$packageId.$baseVersion.*.nupkg" | ForEach-Object {
-            $versionMatch = [regex]::Match($_.Name, "^$([regex]::Escape($packageId))\.$([regex]::Escape($baseVersion))\.(\d+)\.nupkg$")
-            if ($versionMatch.Success) { [int]$versionMatch.Groups[1].Value }
-        }
-    }
-    $maximumRevision = ($revisions | Measure-Object -Maximum).Maximum
-    if ($null -eq $maximumRevision) { $maximumRevision = 0 }
-    return "$baseVersion.$($maximumRevision + 1)"
+    # Полная версия хранится в исходниках; увеличиваем только последнюю часть.
+    $content = [System.IO.File]::ReadAllText($nuspecPath)
+    $match = [regex]::Match($content, '<version>(\d+(?:\.\d+){2,3})</version>')
+    if (-not $match.Success) { throw "Full package version is missing in $nuspecPath." }
+    $parts = $match.Groups[1].Value.Split('.')
+    $parts[$parts.Length - 1] = ([int]$parts[$parts.Length - 1] + 1).ToString()
+    $nextVersion = $parts -join '.'
+    $content = $content.Remove($match.Groups[1].Index, $match.Groups[1].Length).Insert($match.Groups[1].Index, $nextVersion)
+    [System.IO.File]::WriteAllText($nuspecPath, $content.TrimEnd(), [System.Text.UTF8Encoding]::new($false))
+    return $nextVersion
 }
 
 $runtimeRoot = Join-Path $utilityRoot 'NugetProjects\XamlRuntime'
@@ -210,7 +193,7 @@ $nuspecPath = Join-Path $packagingRoot 'XamlRuntime.nuspec'
 # UH_PACKAGES_FEED используется всеми точками входа упаковки.
 $feedResolver = Join-Path $utilityRoot 'Scripts\PowerShell\Resolve-PackagesFeed.ps1'
 $feedRoot = & $feedResolver -FeedPath $FeedRoot
-$Version = Get-NextPackageVersion $nuspecPath $feedRoot
+$Version = if ($SkipPackage) { ([xml][System.IO.File]::ReadAllText($nuspecPath)).package.metadata.version } else { Get-NextPackageVersion $nuspecPath $feedRoot }
 $packageConfigurations = @('Debug', 'Release')
 
 # Держим результат ANGLE вместе с остальными нативными выходами NuGet-сборки.

@@ -1,4 +1,4 @@
-param(
+﻿param(
     [switch]$NoPause,
     [string]$PackagesFeedPath
 )
@@ -28,18 +28,16 @@ function Get-GradleProperty {
 
 function Get-NextPackageVersion {
     param([string]$PropertiesPath, [string]$PackagesFeedPath, [string]$PackageGroup, [string]$ArtifactId)
-    $baseVersion = Get-GradleProperty $PropertiesPath 'packageVersionBase'
-    if ($baseVersion -notmatch '^\d+\.\d+$') { throw "packageVersionBase must use the major.minor format in $PropertiesPath." }
-    $artifactPath = Join-Path (Join-Path $PackagesFeedPath $PackageGroup.Replace('.', '\')) $ArtifactId
-    $revisions = if (Test-Path -LiteralPath $artifactPath -PathType Container) {
-        Get-ChildItem -LiteralPath $artifactPath -Directory | ForEach-Object {
-            $versionMatch = [regex]::Match($_.Name, "^$([regex]::Escape($baseVersion))\.(\d+)$")
-            if ($versionMatch.Success) { [int]$versionMatch.Groups[1].Value }
-        }
-    }
-    $maximumRevision = ($revisions | Measure-Object -Maximum).Maximum
-    if ($null -eq $maximumRevision) { $maximumRevision = 0 }
-    return "$baseVersion.$($maximumRevision + 1)"
+    # Полная версия хранится в исходниках; увеличиваем только последнюю часть.
+    $content = [System.IO.File]::ReadAllText($PropertiesPath)
+    $match = [regex]::Match($content, '(?m)^packageVersion=(\d+(?:\.\d+){2})\r?$')
+    if (-not $match.Success) { throw "Full package version is missing in $PropertiesPath." }
+    $parts = $match.Groups[1].Value.Split('.')
+    $parts[$parts.Length - 1] = ([int]$parts[$parts.Length - 1] + 1).ToString()
+    $nextVersion = $parts -join '.'
+    $content = $content.Remove($match.Groups[1].Index, $match.Groups[1].Length).Insert($match.Groups[1].Index, $nextVersion)
+    [System.IO.File]::WriteAllText($PropertiesPath, $content.TrimEnd(), [System.Text.UTF8Encoding]::new($false))
+    return $nextVersion
 }
 
 $ErrorActionPreference = 'Stop'

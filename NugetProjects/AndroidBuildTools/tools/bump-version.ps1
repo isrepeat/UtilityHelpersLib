@@ -34,7 +34,7 @@ if ([long]$parts[1] -gt 999 -or $expectedBaseCode -ne $baseCode) {
 
 $publishedVersions = if (Test-Path -LiteralPath $distributionDirectory -PathType Container) {
     Get-ChildItem -LiteralPath $distributionDirectory -Filter "$($config.ArtifactName)-*.apk" -File | ForEach-Object {
-        $match = [regex]::Match($_.Name, "^$([regex]::Escape($config.ArtifactName))-$([regex]::Escape($properties.VERSION_NAME_BASE))\.(\d+)\.apk$")
+        $match = [regex]::Match($_.Name, "^$([regex]::Escape($config.ArtifactName))-$([regex]::Escape($properties.VERSION_NAME_BASE))\.(\d+)(?:-debug|-release)?\.apk$")
         if ($match.Success) {
             [pscustomobject]@{
                 Patch = [int]$match.Groups[1].Value

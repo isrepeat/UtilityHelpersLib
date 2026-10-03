@@ -1,5 +1,7 @@
 # AndroidBuildTools
 
+Полная версия пакета хранится в `AndroidBuildTools.nuspec`. Каждый запуск `Pack.ps1` увеличивает последнюю часть версии и сохраняет её в исходном файле; локальный feed не определяет номер. Версия повышается до сборки и остаётся изменённой даже при ошибке упаковки.
+
 Версионируемые PowerShell-команды, CMake-модули и Gradle conventions для сборки native Android-приложений. Требуется Windows, PowerShell 5.1+, NuGet CLI, Visual Studio C++ с CMake, Android SDK/NDK и JDK 21.
 
 Создание и удаление проектов не входят в этот пакет: для них используется `AndroidTemplates`. При создании генератор находит последнюю опубликованную версию AndroidBuildTools и фиксирует её в `android-build.psd1` нового проекта.

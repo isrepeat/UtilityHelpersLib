@@ -45,6 +45,11 @@ foreach ($name in @('Sample.App-1.2.2.apk', 'Sample.App-1.2.10.apk', 'Sample.App
 }
 Assert-Version '1.2.11' 1002011
 Assert-Version '1.2.10' 1002010 -Keep
+foreach ($name in @('Sample.App-1.2.11-debug.apk', 'Sample.App-1.2.12-release.apk')) {
+    New-Item -ItemType File -Path (Join-Path $distribution.FullName $name) | Out-Null
+}
+Assert-Version '1.2.13' 1002013
+Assert-Version '1.2.12' 1002012 -Keep
 if ([IO.File]::ReadAllText($versionFile) -cne $properties) {
     throw 'Version calculation modified version.properties.'
 }

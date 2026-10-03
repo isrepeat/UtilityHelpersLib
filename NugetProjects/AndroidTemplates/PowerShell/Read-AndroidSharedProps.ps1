@@ -1,4 +1,4 @@
-function Read-AndroidSharedProps {
+﻿function Read-AndroidSharedProps {
     param([Parameter(Mandatory)] [string]$ProjectRoot)
 
     # Ближайший файл целиком заменяет родительский; пути привязаны к его каталогу.

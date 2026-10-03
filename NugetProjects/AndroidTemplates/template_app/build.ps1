@@ -1,5 +1,8 @@
 ﻿[CmdletBinding()]
-param()
+param(
+    [Parameter(Position = 0)] [string]$Command = 'build-android',
+    [string]$BuildToolsVersion
+)
 
 dynamicparam {
     $ErrorActionPreference = 'Stop'
@@ -14,12 +17,26 @@ dynamicparam {
     $androidProjectSharedConfig = Read-AndroidSharedProps -ProjectRoot $PSScriptRoot
     $packagesRoot = Join-Path $PSScriptRoot $androidProjectConfig.PackageDirectories.AndroidBuildTools
     $packageName = 'AndroidBuildTools'
-    $packageVersion = $androidProjectConfig.AndroidBuildToolsVersion
-    if ([string]::IsNullOrWhiteSpace($packageVersion)) {
-        throw 'android-build.psd1 must define AndroidBuildToolsVersion.'
-    }
     $nuget = (Get-Command nuget.exe -ErrorAction Stop).Source
     $source = if ($env:ANDROID_BUILD_TOOLS_SOURCE) { $env:ANDROID_BUILD_TOOLS_SOURCE } else { $androidProjectSharedConfig.Paths.PackagesFeed }
+    $packageVersion = $androidProjectConfig.AndroidBuildToolsVersion
+    if ($Command -eq 'update-build-tools') {
+        # Обновление выполняет загрузчик независимо от возможностей старого пакета.
+        if ($BuildToolsVersion) {
+            $packageVersion = $BuildToolsVersion
+        } else {
+            $availablePackages = & $nuget list $packageName -Source $source -AllVersions -NonInteractive -ForceEnglishOutput 2>&1
+            if ($LASTEXITCODE -ne 0) { throw "AndroidBuildTools version lookup failed for $source." }
+            $packageVersion = $availablePackages | ForEach-Object {
+                $match = [regex]::Match($_.ToString(), '^\s*AndroidBuildTools\s+(\d+(?:\.\d+){2,3})\s*$')
+                if ($match.Success) { [version]$match.Groups[1].Value }
+            } | Sort-Object -Descending | Select-Object -First 1
+        }
+    } elseif ($BuildToolsVersion) {
+        throw 'BuildToolsVersion is only supported by update-build-tools.'
+    }
+    if (-not $packageVersion) { throw 'AndroidBuildToolsVersion is required. Run update-build-tools.' }
+    $packageVersion = $packageVersion.ToString()
 
     & $nuget install $packageName -Version $packageVersion -Source $source -OutputDirectory $packagesRoot -NonInteractive -DirectDownload -NoHttpCache -ForceEnglishOutput | Out-Host
     if ($LASTEXITCODE -ne 0) {
@@ -36,7 +53,7 @@ dynamicparam {
     $common = [System.Management.Automation.PSCmdlet]::CommonParameters + [System.Management.Automation.PSCmdlet]::OptionalCommonParameters
     $parameters = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()
     foreach ($parameter in $metadata.Parameters.Values) {
-        if ($parameter.Name -ne 'ProjectRoot' -and $parameter.Name -notin $common) {
+        if ($parameter.Name -notin @('ProjectRoot', 'Command') -and $parameter.Name -notin $common) {
             $parameters.Add($parameter.Name, [System.Management.Automation.RuntimeDefinedParameter]::new($parameter.Name, $parameter.ParameterType, $parameter.Attributes))
         }
     }
@@ -44,6 +61,19 @@ dynamicparam {
 }
 
 end {
+    if ($Command -eq 'update-build-tools') {
+        $configurationPath = Join-Path $PSScriptRoot 'android-build.psd1'
+        $text = [System.IO.File]::ReadAllText($configurationPath)
+        $assignment = "    AndroidBuildToolsVersion = '$packageVersion'"
+        if ($text -match '(?m)^\s*AndroidBuildToolsVersion\s*=') {
+            $text = [regex]::Replace($text, '(?m)^[ \t]*AndroidBuildToolsVersion\s*=[^\r\n]*', $assignment)
+        } else {
+            $text = [regex]::new('@\{').Replace($text, "@{`r`n$assignment", 1)
+        }
+        [System.IO.File]::WriteAllText($configurationPath, $text.TrimEnd(), [System.Text.UTF8Encoding]::new($false))
+        Write-Host "AndroidBuildToolsVersion updated to $packageVersion."
+        return
+    }
     # Сценарий приложения проверяет Updater; общий сборщик не знает о зависимых проектах.
     $command = if ($PSBoundParameters.Command) { $PSBoundParameters.Command } else { 'build-android' }
     if ($command -in @('build-android', 'build-and-distribute', 'build-for-drive', 'build-all') -and -not $PSBoundParameters.NativeOnly) {

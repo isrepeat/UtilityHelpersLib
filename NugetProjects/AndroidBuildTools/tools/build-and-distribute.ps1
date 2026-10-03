@@ -46,7 +46,7 @@ if ($PSBoundParameters.ContainsKey('TargetsConfigUrl')) {
 }
 & $buildAndroid @buildParameters
 
-$destinationApk = Join-Path $distributionOutput "$($androidProjectConfig.ArtifactName)-$($version.VERSION_NAME).apk"
+$destinationApk = Join-Path $distributionOutput "$($androidProjectConfig.ArtifactName)-$($version.VERSION_NAME)-$apkSuffix.apk"
 New-Item -ItemType Directory -Path $distributionOutput -Force | Out-Null
 Copy-Item -LiteralPath $sourceApk -Destination $destinationApk -Force
 Write-Host "Distribution APK ready: $destinationApk"

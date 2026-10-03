@@ -25,22 +25,16 @@ if ([string]::IsNullOrWhiteSpace($nuget) -or -not (Test-Path -LiteralPath $nuget
 }
 
 function Get-NextPackageVersion([string]$ManifestPath, [string]$PackagesFeedPath) {
-    $manifest = [xml](Get-Content -LiteralPath $ManifestPath -Raw)
-    $packageId = $manifest.package.metadata.id
-    $baseVersion = $manifest.package.metadata.version
-    if ($baseVersion -notmatch '^\d+\.\d+\.\d+$') {
-        throw "Package version must use the major.minor.patch format in $ManifestPath."
-    }
-
-    $revisions = if (Test-Path -LiteralPath $PackagesFeedPath -PathType Container) {
-        Get-ChildItem -LiteralPath $PackagesFeedPath -File -Filter "$packageId.$baseVersion.*.nupkg" | ForEach-Object {
-            $versionMatch = [regex]::Match($_.Name, "^$([regex]::Escape($packageId))\.$([regex]::Escape($baseVersion))\.(\d+)\.nupkg$")
-            if ($versionMatch.Success) { [int]$versionMatch.Groups[1].Value }
-        }
-    }
-    $maximumRevision = ($revisions | Measure-Object -Maximum).Maximum
-    if ($null -eq $maximumRevision) { $maximumRevision = 0 }
-    return "$baseVersion.$($maximumRevision + 1)"
+    # Полная версия хранится в исходниках; увеличиваем только последнюю часть.
+    $content = [System.IO.File]::ReadAllText($ManifestPath)
+    $match = [regex]::Match($content, '<version>(\d+(?:\.\d+){2,3})</version>')
+    if (-not $match.Success) { throw "Full package version is missing in $ManifestPath." }
+    $parts = $match.Groups[1].Value.Split('.')
+    $parts[$parts.Length - 1] = ([int]$parts[$parts.Length - 1] + 1).ToString()
+    $nextVersion = $parts -join '.'
+    $content = $content.Remove($match.Groups[1].Index, $match.Groups[1].Length).Insert($match.Groups[1].Index, $nextVersion)
+    [System.IO.File]::WriteAllText($ManifestPath, $content.TrimEnd(), [System.Text.UTF8Encoding]::new($false))
+    return $nextVersion
 }
 
 $manifestPath = Join-Path $packageRoot 'AndroidAppPreviewer.PluginSDK.nuspec'

@@ -11,7 +11,6 @@ plugins {
 // Получает Maven group и версию из gradle.properties.
 group = providers.gradleProperty("packageGroup").get()
 version = providers.gradleProperty("packageVersion")
-    .orElse(providers.gradleProperty("packageVersionBase").map { "$it.0" })
     .get()
 
 android {

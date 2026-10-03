@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [Parameter(Mandatory)] [ValidatePattern('^[A-Z][A-Za-z0-9]*$')] [string]$Name,
     [Parameter(Mandatory)] [ValidatePattern('^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$')] [string]$PackageId,
@@ -59,30 +59,6 @@ function New-KeyPassword {
     return [BitConverter]::ToString($bytes).Replace('-', '').ToLowerInvariant()
 }
 
-function Resolve-LatestAndroidBuildToolsVersion {
-    param([string]$Source)
-
-    $nuget = (Get-Command nuget.exe -ErrorAction Stop).Source
-    $output = & $nuget list AndroidBuildTools -Source $Source -AllVersions -Prerelease -NonInteractive -ForceEnglishOutput 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        throw "AndroidBuildTools version lookup failed for ${Source} with exit code ${LASTEXITCODE}: $($output -join [Environment]::NewLine)"
-    }
-
-    $versions = @(
-        $output | ForEach-Object {
-            $match = [regex]::Match($_.ToString(), '^\s*AndroidBuildTools\s+(?<Version>\d+(?:\.\d+){2,3})(?:\s|$)')
-            if ($match.Success) {
-                [version]$match.Groups['Version'].Value
-            }
-        }
-    )
-    $latestVersion = $versions | Sort-Object -Descending | Select-Object -First 1
-    if ($null -eq $latestVersion) {
-        throw "AndroidBuildTools was not found in $Source. Publish it to the feed before creating a project."
-    }
-
-    return $latestVersion
-}
 
 $destinationRoot = [IO.Path]::GetFullPath($Destination)
 if (Test-Path -LiteralPath $destinationRoot) {
@@ -107,7 +83,28 @@ if (-not [string]::IsNullOrWhiteSpace($ApkUpdaterProjectRoot)) {
 }
 
 $templateRoot = Join-Path (Split-Path -Parent $PSScriptRoot) 'template_app'
-$androidBuildToolsVersion = (Resolve-LatestAndroidBuildToolsVersion $BuildToolsSource).ToString()
+# Фиксируем одну версию инструментов для нового приложения и существующего Updater.
+$nuget = (Get-Command nuget.exe -ErrorAction Stop).Source
+$availablePackages = & $nuget list AndroidBuildTools -Source $BuildToolsSource -AllVersions -NonInteractive -ForceEnglishOutput 2>&1
+if ($LASTEXITCODE -ne 0) { throw 'AndroidBuildTools version lookup failed.' }
+$androidBuildToolsVersion = $availablePackages | ForEach-Object {
+    $match = [regex]::Match($_.ToString(), '^\s*AndroidBuildTools\s+(\d+(?:\.\d+){2,3})\s*$')
+    if ($match.Success) { [version]$match.Groups[1].Value }
+} | Sort-Object -Descending | Select-Object -First 1
+if ($null -eq $androidBuildToolsVersion) { throw 'AndroidBuildTools was not found in the feed.' }
+$androidBuildToolsVersion = $androidBuildToolsVersion.ToString()
+if ($updaterBuildScript) {
+    $updaterConfigurationPath = Join-Path $ApkUpdaterProjectRoot 'android-build.psd1'
+    $updaterConfigurationText = [IO.File]::ReadAllText($updaterConfigurationPath)
+    $assignment = "    AndroidBuildToolsVersion = '$androidBuildToolsVersion'"
+    if ($updaterConfigurationText -match '(?m)^\s*AndroidBuildToolsVersion\s*=') {
+        $updaterConfigurationText = [regex]::Replace($updaterConfigurationText, '(?m)^[ \t]*AndroidBuildToolsVersion\s*=[^\r\n]*', $assignment)
+    } else {
+        $updaterConfigurationText = [regex]::new('@\{').Replace($updaterConfigurationText, "@{`r`n$assignment", 1)
+    }
+    [IO.File]::WriteAllText($updaterConfigurationPath, $updaterConfigurationText.TrimEnd(), [Text.UTF8Encoding]::new($false))
+    Write-Host "ApkUpdater AndroidBuildToolsVersion updated to $androidBuildToolsVersion."
+}
 $versionPropertiesPath = Join-Path $templateRoot 'version.properties'
 $versionProperties = ConvertFrom-StringData ([IO.File]::ReadAllText($versionPropertiesPath))
 $applicationVersion = $versionProperties.VERSION_NAME_BASE
@@ -164,18 +161,7 @@ debugKeyAlias=debug
 debugKeyPassword=$debugPassword
 "@
     [IO.File]::WriteAllText($signingPropertiesPath, $signingProperties.TrimEnd(), [Text.UTF8Encoding]::new($false))
-    Write-Host "WARNING: Созданы новые общие ключи Android: $sharedSecretsDirectory. Пересоберите ApkUpdater для Debug и Release с этими ключами и установите соответствующую сборку на устройство, иначе приложения не смогут вызвать Updater из-за несовпадения подписей." -ForegroundColor Yellow
-    if ($null -ne $updaterBuildScript) {
-        foreach ($updaterConfiguration in @('Debug', 'Release')) {
-            Write-Host "Building ApkUpdater $updaterConfiguration with $signingPropertiesPath" -ForegroundColor Green
-            & $updaterBuildScript build-android -Configuration $updaterConfiguration -SigningProperties $signingPropertiesPath
-        }
-        Write-Host 'ApkUpdater Debug и Release пересобраны. Установите соответствующий APK на устройство.' -ForegroundColor Green
-    } else {
-        Write-Host 'WARNING: Для автоматической сборки укажите -ApkUpdaterProjectRoot. Для ручной сборки выполните команды в репозитории ApkUpdater:' -ForegroundColor Yellow
-        Write-Host "& '.\build.ps1' build-android -Configuration Debug -SigningProperties '$signingPropertiesPath'" -ForegroundColor Yellow
-        Write-Host "& '.\build.ps1' build-android -Configuration Release -SigningProperties '$signingPropertiesPath'" -ForegroundColor Yellow
-    }
+    Write-Host "WARNING: New shared Android keys were created: $sharedSecretsDirectory. Rebuild ApkUpdater for Debug and Release with these keys and install the matching APK on the device." -ForegroundColor Yellow
 }
 $sharedSigning = ConvertFrom-StringData ([IO.File]::ReadAllText($signingPropertiesPath))
 $debugCertificate = & $oauthSetup -ClientName "$Name debug" -PackageId $PackageId -KeystorePath $sharedSigning.debugStoreFile -KeyAlias $sharedSigning.debugKeyAlias -StorePassword $sharedSigning.debugStorePassword -KeyPassword $sharedSigning.debugKeyPassword
