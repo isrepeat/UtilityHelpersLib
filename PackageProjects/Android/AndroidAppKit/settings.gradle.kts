@@ -9,7 +9,7 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        maven { url = uri("C:/!PackagesFeed/Android") }
+        maven { url = uri(providers.gradleProperty("androidPackagesFeedPath").get()) }
         google()
         mavenCentral()
     }

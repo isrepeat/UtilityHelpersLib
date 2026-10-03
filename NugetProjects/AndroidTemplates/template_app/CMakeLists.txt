@@ -62,7 +62,10 @@ endfunction()
 
 {{application}}_get_configuration_path("PackageDirectories.XamlRuntime"
     {{application}}_xaml_runtime_packages_root)
-{{application}}_get_configuration_value("PackageSources.Native" {{application}}_native_package_source)
+set({{application}}_native_package_source "${ANDROID_PACKAGES_FEED}")
+if (NOT {{application}}_native_package_source)
+    message(FATAL_ERROR "ANDROID_PACKAGES_FEED must be supplied by the project build script.")
+endif()
 include("${ANDROID_BUILD_TOOLS_ROOT}/tools/cmake/InstallXamlRuntime.cmake")
 fn_androidappkit_install_xaml_runtime("${{{application}}_xaml_runtime_packages_root}"
     "${{{application}}_native_package_source}")

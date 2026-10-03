@@ -86,6 +86,7 @@ if (-not $PSBoundParameters.ContainsKey('AppVersionName')) {
 if ($hasNativeBuild) {
     $cmakeConfigureArguments = @('--preset', "$($androidProjectConfig.AndroidPresetPrefix)-$configurationDirectory", "-DCMAKE_MAKE_PROGRAM=$($tools.Ninja)")
     $cmakeConfigureArguments += "-D$($androidProjectConfig.CMakeVersionVariable)=$AppVersionName"
+    $cmakeConfigureArguments += "-DANDROID_PACKAGES_FEED=$($androidProjectSharedConfig.Paths.PackagesFeed)"
 }
 
 if ($hasNativeBuild) {

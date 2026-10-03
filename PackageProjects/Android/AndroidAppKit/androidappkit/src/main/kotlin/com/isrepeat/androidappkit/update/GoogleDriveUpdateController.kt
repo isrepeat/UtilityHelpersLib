@@ -86,6 +86,7 @@ class GoogleDriveUpdateController(
     }
 
     private fun download(token: String): java.io.File? {
+        reportDownloadStatus("Looking for update APK on Google Drive…")
         logger.log("Opening Google Drive folder: ${configuration.driveFolderPath.joinToString("/")}")
         val client = com.isrepeat.androidcoresdk.androidcoresdk.drive.GoogleDriveClient(token)
         val candidate = client.listFiles(client.ensureFolderPath(configuration.driveFolderPath))
@@ -94,7 +95,23 @@ class GoogleDriveUpdateController(
         logger.log("Selected update APK ${candidate.first.name}, versionCode=${candidate.second}.")
         val apk = java.io.File(activity.cacheDir, "self-updates/update.apk").apply { parentFile?.mkdirs() }
         try {
-            client.download(candidate.first.id, apk)
+            reportDownloadStatus("Downloading ${candidate.first.name}…")
+            // Ограничиваем частоту уведомлений, чтобы не перегружать главный поток.
+            var lastProgressTime = 0L
+            client.download(candidate.first.id, apk) { downloaded, total ->
+                val now = android.os.SystemClock.elapsedRealtime()
+                if (now - lastProgressTime >= 250L || (total > 0L && downloaded >= total)) {
+                    lastProgressTime = now
+                    val megabytes = "%.1f".format(java.util.Locale.ROOT, downloaded / 1048576.0)
+                    val message = if (total > 0L) {
+                        "Downloading update: ${downloaded * 100 / total}% ($megabytes MB)…"
+                    } else {
+                        "Downloading update: $megabytes MB…"
+                    }
+                    reportDownloadStatus(message)
+                }
+            }
+            reportDownloadStatus("Download complete. Validating APK…")
             logger.log("Downloaded ${apk.length()} bytes. Validating APK.")
             validateApk(apk)
             return apk
@@ -131,6 +148,7 @@ class GoogleDriveUpdateController(
     }
 
     private fun launchUpdaterAndFinish(apk: java.io.File) {
+        status("Starting updater…")
         runCatching {
             logger.log("Checking updater signature and permission.")
             val pm = activity.packageManager
@@ -154,6 +172,11 @@ class GoogleDriveUpdateController(
         logger.log("Update finished: $message")
         isRunning = false
         status(message)
+    }
+
+    private fun reportDownloadStatus(message: String) {
+        // UI и JNI-обработчики статуса вызываются только в главном потоке.
+        activity.runOnUiThread { status(message) }
     }
 
     @Suppress("DEPRECATION")

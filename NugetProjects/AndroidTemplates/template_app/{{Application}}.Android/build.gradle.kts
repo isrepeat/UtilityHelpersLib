@@ -5,6 +5,15 @@ plugins {
 android {
     namespace = "{{PackageId}}"
     defaultConfig.applicationId = "{{PackageId}}"
+    // Отображаемое имя каждой сборки задаётся самим приложением.
+    buildTypes {
+        getByName("debug") {
+            manifestPlaceholders["appTitle"] = "{{Application}} ${defaultConfig.versionName} (debug)"
+        }
+        getByName("release") {
+            manifestPlaceholders["appTitle"] = "{{Application}}"
+        }
+    }
     sourceSets.getByName("main").jniLibs.srcDir("../Build/{{Application}}.AndroidHost/android/jniLibs")
 }
 

@@ -5,7 +5,9 @@ param(
 
     [switch]$Confirmed,
 
-    [string]$SigningProperties
+    [string]$SigningProperties,
+
+    [string]$SecretsRoot
 )
 
 $ErrorActionPreference = 'Stop'
@@ -16,18 +18,30 @@ if (-not (Test-Path -LiteralPath $configurationPath -PathType Leaf)) {
 }
 
 $configuration = Import-PowerShellDataFile -LiteralPath $configurationPath
-$signingPropertiesPath = if ($SigningProperties) { $SigningProperties } else { $configuration.SigningProperties }
-if (-not $signingPropertiesPath) {
+if (-not $SecretsRoot) {
     . (Join-Path $PSScriptRoot 'Read-AndroidSharedProps.ps1')
     $sharedProps = Read-AndroidSharedProps -ProjectRoot $projectRoot
-    $signingPropertiesPath = $sharedProps.Paths.SigningProperties
+    $SecretsRoot = $sharedProps.Paths.SecretsRoot
 }
 
-$secretsDirectory = Split-Path -Parent $signingPropertiesPath
-$sharedKeys = (Split-Path -Leaf $secretsDirectory) -eq 'shared'
-$packageId = Split-Path -Leaf $projectRoot
+# У старых проектов package ID читаем из Gradle; новые сохраняют его в конфигурации.
+$packageId = $configuration.PackageId
+if (-not $packageId) {
+    $gradlePath = Join-Path $projectRoot "$($configuration.AndroidModule)\build.gradle.kts"
+    $packageMatch = [System.Text.RegularExpressions.Regex]::Match([System.IO.File]::ReadAllText($gradlePath), 'applicationId\s*=\s*"([a-z][a-z0-9]*(?:\.[a-z][a-z0-9]*)+)"')
+    $packageId = $packageMatch.Groups[1].Value
+}
+if ($packageId -notmatch '^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$') {
+    throw 'A valid project PackageId is required to remove project secrets.'
+}
+# Удаляем только непосредственный каталог пакета внутри SecretsRoot, никогда shared.
+$secretsRootPath = [System.IO.Path]::GetFullPath($SecretsRoot).TrimEnd('\', '/')
+$secretsDirectory = [System.IO.Path]::GetFullPath((Join-Path $secretsRootPath $packageId))
+if ([System.IO.Path]::GetDirectoryName($secretsDirectory) -ne $secretsRootPath -or $secretsDirectory -eq $projectRoot -or $projectRoot.StartsWith($secretsDirectory + '\', [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "Invalid project secrets directory: $secretsDirectory"
+}
 if (-not $Confirmed) {
-    $description = if ($sharedKeys) { "Delete project $packageId (shared signing keys are preserved)? [Y/N]" } else { "Delete project and secrets for $packageId? [Y/N]" }
+    $description = "Delete project and secrets for $packageId (shared signing keys are preserved)? [Y/N]"
     $answer = Read-Host $description
     if ($answer -ine 'Y') {
         Write-Host 'Deletion cancelled.'
@@ -41,7 +55,7 @@ if ($scriptPath.StartsWith($normalizedProjectRoot, [StringComparison]::OrdinalIg
     $temporaryScript = Join-Path ([IO.Path]::GetTempPath()) ("Remove-AndroidProject-{0}.ps1" -f [Guid]::NewGuid().ToString('N'))
     Copy-Item -LiteralPath $scriptPath -Destination $temporaryScript -Force
     try {
-        & $temporaryScript -ProjectRoot $projectRoot -Confirmed -SigningProperties $signingPropertiesPath
+        & $temporaryScript -ProjectRoot $projectRoot -Confirmed -SecretsRoot $secretsRootPath
         exit $LASTEXITCODE
     } finally {
         Remove-Item -LiteralPath $temporaryScript -Force -ErrorAction SilentlyContinue
@@ -49,7 +63,7 @@ if ($scriptPath.StartsWith($normalizedProjectRoot, [StringComparison]::OrdinalIg
 }
 
 Set-Location -LiteralPath ([IO.Path]::GetTempPath())
-if (-not $sharedKeys -and (Test-Path -LiteralPath $secretsDirectory -PathType Container)) {
+if (Test-Path -LiteralPath $secretsDirectory -PathType Container) {
     Write-Host "Removing secrets: $secretsDirectory"
     Remove-Item -LiteralPath $secretsDirectory -Recurse -Force
 }

@@ -1,4 +1,14 @@
 set({{application}}_project_root "${CMAKE_CURRENT_SOURCE_DIR}/..")
+# Android-сборка передаёт фактическую версию; preview использует базовую версию проекта.
+if (NOT DEFINED {{APPLICATION}}_PACKAGE_VERSION)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${{{application}}_project_root}/version.properties")
+    file(STRINGS "${{{application}}_project_root}/version.properties" {{application}}_version_line REGEX "^VERSION_NAME_BASE=")
+    string(REGEX REPLACE "^VERSION_NAME_BASE=" "" {{application}}_version_base "${{{application}}_version_line}")
+    set({{APPLICATION}}_PACKAGE_VERSION "${{{application}}_version_base}.0")
+endif()
+file(MAKE_DIRECTORY "${{{application}}_project_root}/!Generated/Build")
+file(WRITE "${{{application}}_project_root}/!Generated/Build/BuildVersion.h"
+    "#pragma once\n#define {{APPLICATION}}_PACKAGE_VERSION \"${{{APPLICATION}}_PACKAGE_VERSION}\"")
 set({{application}}_generated_root "${{{application}}_project_root}/!Generated/{{Application}}.Application/Xaml")
 execute_process(
     COMMAND powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass

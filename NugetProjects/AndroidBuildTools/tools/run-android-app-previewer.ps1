@@ -71,6 +71,8 @@ try {
         $ninja = (Get-Command ninja.exe -ErrorAction Stop).Source
     }
     $cmakeArguments = @('-S', $projectRoot, '-B', $cmakeBuildDirectory, '-G', 'Ninja', "-DCMAKE_BUILD_TYPE=$Configuration", "-DCMAKE_MAKE_PROGRAM=$ninja")
+    # Источник нативных пакетов передаётся из отдельной общей конфигурации.
+    $cmakeArguments += "-DANDROID_PACKAGES_FEED=$($androidProjectSharedConfig.Paths.PackagesFeed)"
     & $cmake @cmakeArguments
     if ($LASTEXITCODE -ne 0) {
         throw "Application preview-plugin CMake configure failed with exit code $LASTEXITCODE."

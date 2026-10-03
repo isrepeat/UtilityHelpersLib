@@ -33,7 +33,7 @@ class MainActivity : androidx.activity.ComponentActivity() {
             this,
             androidappkit.update.GoogleDriveUpdateConfiguration(
                 listOf("Android", "{{Application}}"),
-                Regex("{{Application}}-(\\d+)\\.(\\d+)\\.(\\d+)\\.apk", RegexOption.IGNORE_CASE),
+                Regex("{{Application}}-(\\d+)\\.(\\d+)\\.(\\d+)(?:-debug|-release)\\.apk", RegexOption.IGNORE_CASE),
                 { match ->
                     match.groupValues[1].toLong() * 1_000_000L +
                         match.groupValues[2].toLong() * 1_000L +

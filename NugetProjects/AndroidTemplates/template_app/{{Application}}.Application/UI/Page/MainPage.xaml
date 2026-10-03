@@ -13,7 +13,7 @@
                    fontWeight="Bold"
                    foreground="#CCFFFFFF"
                    horizontalAlignment="Center"
-                   text="Version 1.0.0"/>
+                   text="{Binding PackageVersion}"/>
         <TextBlock id="helloText"
                    margin="0 0 0 20"
                    fontSize="32"

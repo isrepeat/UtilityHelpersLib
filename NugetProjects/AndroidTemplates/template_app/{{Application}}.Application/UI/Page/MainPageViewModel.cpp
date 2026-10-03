@@ -5,13 +5,15 @@
 #endif
 
 #include "../../Core/NavigationStates.h"
+#include "../../../!Generated/Build/BuildVersion.h"
 #include "../../../!Generated/{{Application}}.Application/Xaml/Page/MainPage.xaml.h"
 
 #include <utility>
 
 namespace {{application}}::application::ui::page {
     MainPageViewModel::MainPageViewModel(core::PageContext& context)
-        : context(context) {
+        : context(context)
+        , packageVersion("Version " {{APPLICATION}}_PACKAGE_VERSION) {
     }
 
     //
@@ -61,6 +63,7 @@ namespace {{application}}::application::ui::page {
         result.owner = PageName;
         result.bindings = std::make_shared<xaml::runtime::RuntimeBindingRegistry>();
         result.bindings->AddCommand("NavigateToSettingsCommand", this->NavigateToSettingsCommand());
+        result.bindings->AddText("PackageVersion", [this] { return this->PackageVersion(); });
         result.bindings->AddCommand("RequestApplicationUpdateCommand", this->RequestApplicationUpdateCommand());
         result.bindings->AddText("Status", [this] { return this->Status(); }, [this](std::function<void()> handler) {
             return this->Subscribe([handler](Property) { handler(); });
@@ -92,6 +95,10 @@ namespace {{application}}::application::ui::page {
 
     const std::string& MainPageViewModel::Status() const {
         return this->status;
+    }
+
+    const std::string& MainPageViewModel::PackageVersion() const {
+        return this->packageVersion;
     }
 
     std::function<void()> MainPageViewModel::Subscribe(PropertyChangedHandler handler) {

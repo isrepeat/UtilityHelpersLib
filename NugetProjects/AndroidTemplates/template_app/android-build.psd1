@@ -1,6 +1,7 @@
 @{
     AndroidBuildToolsVersion = '{{AndroidBuildToolsVersion}}'
     ArtifactName = '{{Application}}'
+    PackageId = '{{PackageId}}'
     AndroidModule = '{{Application}}.Android'
     AndroidHost = '{{Application}}.AndroidHost'
     Application = '{{Application}}.Application'
