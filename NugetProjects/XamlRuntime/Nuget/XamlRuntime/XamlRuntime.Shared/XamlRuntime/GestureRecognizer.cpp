@@ -48,9 +48,8 @@ namespace xaml {
         const float verticalDistance = context.currentY - context.downY;
         if (std::max(std::abs(horizontalDistance), std::abs(verticalDistance)) < _details::GestureThreshold
             || std::abs(horizontalDistance) <= std::abs(verticalDistance)
-            || (this->targetPredicate
-                ? !this->targetPredicate(context.target)
-                : !context.target.HasCommand())) {
+            || !this->targetPredicate
+            || !this->targetPredicate(context.target)) {
             return false;
         }
         context.target.SetRenderOffsetX(horizontalDistance);

@@ -1,6 +1,7 @@
 #include "RenderEngine.h"
 
 #include <algorithm>
+#include <cctype>
 #include <vector>
 #include <cmath>
 
@@ -40,6 +41,73 @@ namespace xaml::_details {
             return inactive;
         }
         return InterpolateColor(inactive, active, element.PressProgress());
+    }
+
+    std::vector<std::string> WrapText(std::string_view text, float width, float fontSize) {
+        const size_t maximumCharacters = std::max(
+            static_cast<size_t>(1),
+            static_cast<size_t>(width / (fontSize * 0.55f)));
+        std::vector<std::string> lines;
+        std::string line;
+        std::string word;
+        size_t lineLength = 0;
+        size_t wordLength = 0;
+        const auto addWord = [&] {
+            if (word.empty()) {
+                return;
+            }
+            if (!line.empty() && lineLength + 1 + wordLength > maximumCharacters) {
+                lines.push_back(std::move(line));
+                line.clear();
+                lineLength = 0;
+            }
+            if (!line.empty()) {
+                line += ' ';
+                ++lineLength;
+            }
+            line += word;
+            lineLength += wordLength;
+            word.clear();
+            wordLength = 0;
+        };
+        for (const unsigned char character : text) {
+            if (std::isspace(character)) {
+                addWord();
+            } else {
+                word += static_cast<char>(character);
+                if ((character & 0xC0) != 0x80) {
+                    ++wordLength;
+                }
+            }
+        }
+        addWord();
+        if (!line.empty()) {
+            lines.push_back(std::move(line));
+        }
+        return lines;
+    }
+
+    void RenderTextBlock(
+        const Element& element,
+        IRenderBackend& backend,
+        Rect bounds,
+        float opacity) {
+        const std::vector<std::string> lines = element.TextWrapping()
+            ? WrapText(element.Text(), bounds.width, element.FontSize())
+            : std::vector<std::string>{element.Text()};
+        const float lineHeight = lines.empty() ? bounds.height : bounds.height / static_cast<float>(lines.size());
+        for (size_t index = 0; index < lines.size(); ++index) {
+            Rect lineBounds = bounds;
+            lineBounds.y += lineHeight * static_cast<float>(index);
+            lineBounds.height = lineHeight;
+            backend.DrawText(
+                lineBounds,
+                lines[index],
+                WithOpacity(element.Foreground(), opacity),
+                element.FontSize(),
+                element.FontWeight(),
+                element.HorizontalAlignmentValue());
+        }
     }
 
     void RenderToggleSwitch(
@@ -294,13 +362,7 @@ namespace xaml::_details {
         float opacity) {
         RenderChrome(element, backend, bounds, opacity);
         if (element.Type() == ElementType::textBlock) {
-            backend.DrawText(
-                bounds,
-                element.Text(),
-                WithOpacity(element.Foreground(), opacity),
-                element.FontSize(),
-                element.FontWeight(),
-                element.HorizontalAlignmentValue());
+            RenderTextBlock(element, backend, bounds, opacity);
         } else if (element.Type() == ElementType::button
             || element.Type() == ElementType::iconButton) {
             const attr::Color foreground = element.Type() == ElementType::button

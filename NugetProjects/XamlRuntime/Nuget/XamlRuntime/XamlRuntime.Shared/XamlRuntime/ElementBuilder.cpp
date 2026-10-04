@@ -1,10 +1,10 @@
 #include "ElementBuilder.h"
 #include "XamlAttribute.h"
 
+#include <stdexcept>
 #include <algorithm>
 #include <cstdint>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -344,8 +344,17 @@ namespace xaml {
         case XamlAttribute::fontSize:
             element.SetFontSize(std::stof(std::string(value)));
             return;
+        case XamlAttribute::lineHeight:
+            element.SetLineHeight(std::stof(std::string(value)));
+            return;
         case XamlAttribute::fontFamily:
             element.SetFontFamily(std::string(value));
+            return;
+        case XamlAttribute::textWrapping:
+            if (value != "Wrap" && value != "NoWrap") {
+                throw std::invalid_argument("textWrapping must be Wrap or NoWrap");
+            }
+            element.SetTextWrapping(value == "Wrap");
             return;
         case XamlAttribute::fontWeight:
             element.SetFontWeight(std::string(value));

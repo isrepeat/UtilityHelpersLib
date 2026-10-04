@@ -19,10 +19,8 @@
     <!-- Корневой каталог UtilityHelpersLib и исходники Helpers, включаемые в пакет. -->
     <__UtilityHelpersLibDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\'))</__UtilityHelpersLibDir>
     <__UtilityHelpersLib_HelpersSourcesDir>$(__UtilityHelpersLibDir)Helpers\Helpers.Shared\Helpers</__UtilityHelpersLib_HelpersSourcesDir>
-    <!-- Общий NuGet feed для всех пакетов. Укажите UH_NUGET_FEED в окружении,
-         чтобы перенести feed без изменения проектов или скриптов. -->
-    <__LocalNugetFeedDir Condition="'$(UH_NUGET_FEED)'!=''">$(UH_NUGET_FEED)</__LocalNugetFeedDir>
-    <__LocalNugetFeedDir Condition="'$(__LocalNugetFeedDir)'==''">C:\NugetFeed</__LocalNugetFeedDir>
+    <!-- Общий NuGet feed задаётся через UH_PACKAGES_FEED точками входа упаковки. -->
+    <__LocalNugetFeedDir Condition="'$(UH_PACKAGES_FEED)'!=''">$(UH_PACKAGES_FEED)</__LocalNugetFeedDir>
     <PackageOutputPath Condition="'$(PackageOutputPath)'==''">$(__LocalNugetFeedDir)</PackageOutputPath>
     <!-- Временная структура и результаты упаковки не смешиваются с обычной сборкой решения. -->
     <__NugetBuildDirRoot>$(MSBuildThisFileDirectory)!NUGET_TMP</__NugetBuildDirRoot>

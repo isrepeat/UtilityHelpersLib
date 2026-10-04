@@ -1,0 +1,10 @@
+Build/
+.gradle/
+.kotlin/
+.vs/
+.idea/
+\!Generated/
+local.properties
+CMakeUserPresets.json
+*.jks
+*.keystore

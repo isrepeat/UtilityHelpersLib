@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+    <metadata>
+        <id>AndroidTemplates</id>
+        <version>1.0.0.29</version>
+        <authors>DCT.C++Team</authors>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>Project templates and lifecycle commands for native Android applications.</description>
+    </metadata>
+    <files>
+        <file src="PowerShell\**\*" target="PowerShell" />
+        <file src="PowerShell\Read-AndroidSharedProps.ps1" target="template_app\Scripts\PowerShell" />
+        <file src="PowerShell\Remove-AndroidProject.ps1" target="template_app\Scripts\PowerShell" />
+        <file src="template_app\**\*" target="template_app" />
+        <file src="README.md" target="" />
+    </files>
+</package>

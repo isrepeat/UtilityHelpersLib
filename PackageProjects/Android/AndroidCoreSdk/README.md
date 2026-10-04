@@ -13,10 +13,10 @@ gradle wrapper --gradle-version 8.11.1
 ## Сборка и публикация
 
 ```powershell
-.\Package.Android.AndroidCoreSdk.Pack.ps1
+.\Pack.ps1
 ```
 
-Скрипт увеличивает patch-часть `packageVersion`, собирает AAR в
+Скрипт увеличивает revision-часть `packageVersion`, собирает AAR в
 `androidcoresdk\build\outputs\aar\androidcoresdk-release.aar` и публикует Maven-пакет в
 `C:\!PackagesFeed\Android`. В потребляющем проекте подключите этот каталог как Maven-репозиторий
 и добавьте зависимость `com.isrepeat:androidcoresdk:+`, чтобы получать последнюю версию.

@@ -496,10 +496,18 @@ namespace {
                 output << "            " << variable << "->SetText(\"" << this->EscapeCpp(value) << "\");\n";
             } else if (name == "fontSize") {
                 output << "            " << variable << "->SetFontSize(" << this->FloatLiteral(value) << ");\n";
+            } else if (name == "lineHeight") {
+                output << "            " << variable << "->SetLineHeight(" << this->FloatLiteral(value) << ");\n";
             } else if (name == "fontFamily") {
                 output << "            " << variable << "->SetFontFamily(\"" << this->EscapeCpp(value) << "\");\n";
             } else if (name == "fontWeight") {
                 output << "            " << variable << "->SetFontWeight(\"" << this->EscapeCpp(value) << "\");\n";
+            } else if (name == "textWrapping") {
+                if (value != "Wrap" && value != "NoWrap") {
+                    throw std::runtime_error("TextWrapping must be Wrap or NoWrap");
+                }
+                output << "            " << variable << "->SetTextWrapping("
+                    << (value == "Wrap" ? "true" : "false") << ");\n";
             } else if (name == "source") {
                 output << "            " << variable << "->SetSource(\"" << this->EscapeCpp(value) << "\");\n";
             } else if (name == "command") {

@@ -137,11 +137,17 @@ namespace xaml {
         float FontSize() const;
         void SetFontSize(float value);
 
+        float LineHeight() const;
+        void SetLineHeight(float value);
+
         const std::string& FontFamily() const;
         void SetFontFamily(std::string value);
 
         const std::string& FontWeight() const;
         void SetFontWeight(std::string value);
+
+        bool TextWrapping() const;
+        void SetTextWrapping(bool value);
 
         const std::string& Source() const;
         void SetSource(std::string value);
@@ -367,8 +373,10 @@ namespace xaml {
         std::string renderer;
         std::string text;
         float fontSize = 16.0f;
+        float lineHeight = 0.0f;
         std::string fontFamily;
         std::string fontWeight;
+        bool textWrapping = false;
         std::string source;
         attr::Color tint{1.0f, 1.0f, 1.0f, 1.0f};
         Command command;

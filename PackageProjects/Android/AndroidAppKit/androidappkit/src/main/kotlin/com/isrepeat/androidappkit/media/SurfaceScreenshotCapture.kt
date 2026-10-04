@@ -1,6 +1,8 @@
 package com.isrepeat.androidappkit.media
 
+//
 // Конфигурируемая обвязка над PixelCopy для OpenGL SurfaceView.
+//
 class SurfaceScreenshotCapture(
     private val directoryName: String,
     private val filePrefix: String,

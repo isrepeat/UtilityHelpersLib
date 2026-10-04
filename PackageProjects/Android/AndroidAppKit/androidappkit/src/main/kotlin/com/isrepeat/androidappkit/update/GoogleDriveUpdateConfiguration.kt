@@ -9,8 +9,5 @@ data class GoogleDriveUpdateConfiguration(
     val updaterPermission: String,
     val updaterAction: String,
     val targetPackageExtra: String = "target_package",
+    val confirmSameVersionInUpdater: Boolean = false,
 )
-
-fun interface UpdateLogger {
-    fun log(message: String)
-}

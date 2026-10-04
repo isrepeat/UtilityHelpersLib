@@ -1,6 +1,8 @@
 package com.isrepeat.androidappkit
 
+//
 // Псевдопространства имён и типизированные фасады для публичного API AppKit.
+//
 object androidappkit {
     data class AppIdentity(val name: String, val storageDirectory: String)
 
@@ -21,19 +23,22 @@ object androidappkit {
             configuration: GoogleDriveUploadConfiguration,
             requestAuthorization: (androidx.activity.result.IntentSenderRequest) -> Unit,
             complete: (GoogleDriveUploadResult) -> Unit,
+            logger: diagnostics.AppKitLogger = diagnostics.sharedLogger(),
         ) {
             private val uploader = com.isrepeat.androidappkit.drive.GoogleDriveUploader(
-                activity,
-                com.isrepeat.androidappkit.drive.GoogleDriveUploadConfiguration(configuration.folderPath),
-                requestAuthorization,
-            ) { result ->
-                complete(
-                    when (result) {
-                        is com.isrepeat.androidappkit.drive.GoogleDriveUploadResult.Success -> GoogleDriveUploadResult.Success(result.fileName)
-                        is com.isrepeat.androidappkit.drive.GoogleDriveUploadResult.Failure -> GoogleDriveUploadResult.Failure(result.message)
-                    },
-                )
-            }
+                activity = activity,
+                configuration = com.isrepeat.androidappkit.drive.GoogleDriveUploadConfiguration(configuration.folderPath),
+                requestAuthorization = requestAuthorization,
+                complete = { result ->
+                    complete(
+                        when (result) {
+                            is com.isrepeat.androidappkit.drive.GoogleDriveUploadResult.Success -> GoogleDriveUploadResult.Success(result.fileName)
+                            is com.isrepeat.androidappkit.drive.GoogleDriveUploadResult.Failure -> GoogleDriveUploadResult.Failure(result.message)
+                        },
+                    )
+                },
+                logger = logger,
+            )
 
             fun upload(file: java.io.File, mimeType: String = "application/octet-stream") = uploader.upload(file, mimeType)
             fun upload(uri: android.net.Uri, mimeType: String? = null, fileName: String? = null) = uploader.upload(uri, mimeType, fileName)
@@ -41,17 +46,35 @@ object androidappkit {
         }
     }
 
-    object logging {
+    object diagnostics {
+        fun interface AppKitLogger {
+            fun log(message: String)
+        }
+
+        private val sharedLogger = AppKitLogger { message ->
+            com.isrepeat.androidappkit.diagnostics.AppKitDiagnostics.log(message)
+        }
+
+        fun configureLogger(logger: AppKitLogger) {
+            com.isrepeat.androidappkit.diagnostics.AppKitDiagnostics.configure(
+                com.isrepeat.androidappkit.diagnostics.AppKitLogger { message -> logger.log(message) },
+            )
+            com.isrepeat.androidcoresdk.androidcoresdk.diagnostics.configureLogger(
+                com.isrepeat.androidcoresdk.androidcoresdk.diagnostics.SdkLogger { message -> logger.log(message) },
+            )
+        }
+
+        fun sharedLogger(): AppKitLogger = sharedLogger
+
         class NativeSessionLog(identity: AppIdentity, configureNativeLog: NativeLogConfigurator) {
-            private val log = com.isrepeat.androidappkit.logging.NativeSessionLog(
-                com.isrepeat.androidappkit.AppIdentity(identity.name, identity.storageDirectory),
-            ) { configureNativeLog.configure(it) }
+            private val log = com.isrepeat.androidappkit.diagnostics.NativeSessionLog(
+                identity,
+            ) { nativePath -> configureNativeLog.configure(nativePath) }
 
             fun configure(context: android.content.Context) = log.configure(context)
             fun currentUri() = log.currentUri()
         }
     }
-
     object media {
         fun SurfaceScreenshotCapture(directoryName: String, filePrefix: String) =
             com.isrepeat.androidappkit.media.SurfaceScreenshotCapture(directoryName, filePrefix)
@@ -66,19 +89,17 @@ object androidappkit {
             val updaterActivity: String,
             val updaterPermission: String,
             val updaterAction: String,
+            val confirmSameVersionInUpdater: Boolean = false,
         )
-
-        fun interface UpdateLogger {
-            fun log(message: String)
-        }
 
         class GoogleDriveUpdateController(
             activity: androidx.activity.ComponentActivity,
             configuration: GoogleDriveUpdateConfiguration,
             requestAuthorization: (androidx.activity.result.IntentSenderRequest) -> Unit,
             status: (String) -> Unit,
-            logger: UpdateLogger,
-            confirmSameVersion: (onConfirmed: () -> Unit, onCancelled: () -> Unit) -> Unit,
+            logger: diagnostics.AppKitLogger = diagnostics.sharedLogger(),
+            confirmSameVersion: (onConfirmed: () -> Unit, onCancelled: () -> Unit) -> Unit =
+                { onConfirmed, _ -> onConfirmed() },
         ) {
             private val controller = com.isrepeat.androidappkit.update.GoogleDriveUpdateController(
                 activity,
@@ -90,10 +111,11 @@ object androidappkit {
                     configuration.updaterActivity,
                     configuration.updaterPermission,
                     configuration.updaterAction,
+                    confirmSameVersionInUpdater = configuration.confirmSameVersionInUpdater,
                 ),
                 requestAuthorization,
                 status,
-                com.isrepeat.androidappkit.update.UpdateLogger { logger.log(it) },
+                logger,
                 confirmSameVersion,
             )
 

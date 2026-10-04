@@ -37,8 +37,25 @@ class GoogleDriveClient(private val accessToken: String) {
     }
 
     fun download(id: String, destination: java.io.File) {
-        connection(java.net.URL("$FILES_URL/$id?alt=media"), "GET").useInput { input ->
-            destination.outputStream().use(input::copyTo)
+        download(id, destination) { _, _ -> }
+    }
+
+    fun download(id: String, destination: java.io.File, progress: (Long, Long) -> Unit) {
+        val response = connection(java.net.URL("$FILES_URL/$id?alt=media"), "GET")
+        response.useInput { input ->
+            val total = response.contentLengthLong
+            var downloaded = 0L
+            progress(downloaded, total)
+            destination.outputStream().use { output ->
+                val buffer = ByteArray(64 * 1024)
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    output.write(buffer, 0, count)
+                    downloaded += count
+                    progress(downloaded, total)
+                }
+            }
         }
     }
 
@@ -98,14 +115,14 @@ class GoogleDriveClient(private val accessToken: String) {
             )
         }
         requireSuccess(connection)
-        return org.json.JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+        return org.json.JSONObject(connection.inputStream.bufferedReader().use { reader -> reader.readText() })
             .getString("id")
             .also { connection.disconnect() }
     }
 
     private fun read(url: java.net.URL): String {
         val connection = connection(url, "GET")
-        return connection.inputStream.bufferedReader().use { it.readText() }
+        return connection.inputStream.bufferedReader().use { reader -> reader.readText() }
             .also { connection.disconnect() }
     }
 
@@ -124,7 +141,7 @@ class GoogleDriveClient(private val accessToken: String) {
     private fun requireSuccess(connection: java.net.HttpURLConnection) {
         check(connection.responseCode in 200..299) {
             "Google Drive returned HTTP ${connection.responseCode}: " +
-                connection.errorStream?.bufferedReader()?.use { it.readText() }
+                connection.errorStream?.bufferedReader()?.use { reader -> reader.readText() }
         }
     }
 

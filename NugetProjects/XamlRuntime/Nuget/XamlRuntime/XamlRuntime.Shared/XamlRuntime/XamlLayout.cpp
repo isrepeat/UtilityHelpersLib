@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <sstream>
 #include <limits>
+#include <cctype>
 
 namespace xaml::_details {
     std::vector<TextGlyphMetric> textGlyphMetrics;
@@ -75,6 +76,46 @@ namespace xaml::_details {
         return bottom > top ? (bottom - top) * element.FontSize() : element.FontSize();
     }
 
+    float lineHeight(const Element& element) {
+        return element.LineHeight() > 0.0f ? element.LineHeight() : textHeight(element);
+    }
+
+    size_t wrappedLineCount(const Element& element, float availableWidth) {
+        if (!element.TextWrapping()) {
+            return 1;
+        }
+        const float width = element.Width() > 0.0f ? element.Width() : availableWidth;
+        if (width <= 0.0f) {
+            return 1;
+        }
+        const size_t maximumCharacters = std::max(
+            static_cast<size_t>(1),
+            static_cast<size_t>(width / (element.FontSize() * 0.55f)));
+        size_t lineLength = 0;
+        size_t lineCount = 1;
+        size_t wordLength = 0;
+        const auto addWord = [&] {
+            if (wordLength == 0) {
+                return;
+            }
+            if (lineLength != 0 && lineLength + 1 + wordLength > maximumCharacters) {
+                ++lineCount;
+                lineLength = 0;
+            }
+            lineLength += lineLength == 0 ? wordLength : wordLength + 1;
+            wordLength = 0;
+        };
+        for (const unsigned char character : element.Text()) {
+            if (std::isspace(character)) {
+                addWord();
+            } else if ((character & 0xC0) != 0x80) {
+                ++wordLength;
+            }
+        }
+        addWord();
+        return lineCount;
+    }
+
     float horizontal(const attr::Thickness& thickness) {
         return thickness.left + thickness.right;
     }
@@ -131,19 +172,31 @@ namespace xaml::_details {
 
     std::vector<std::string> tracks(const std::string& definitions);
 
-    Size measure(Element& element) {
+    Size measure(Element& element, float availableWidth) {
         if (!element.ParticipatesInLayout()) {
             element.SetDesiredSize({});
             return {};
         }
-        // Первый проход вычисляет требуемый размер снизу вверх. Точная
-        // метрика шрифта появится позже; пока ширина текста оценивается.
+        const attr::Thickness decoration{
+            element.Padding().left + element.BorderThickness().left,
+            element.Padding().right + element.BorderThickness().right,
+            element.Padding().top + element.BorderThickness().top,
+            element.Padding().bottom + element.BorderThickness().bottom,
+        };
+        const float contentWidth = element.Width() > 0.0f
+            ? std::max(0.0f, element.Width() - horizontal(decoration))
+            : std::max(0.0f, availableWidth - horizontal(element.Margin()) - horizontal(decoration));
+        // Первый проход вычисляет требуемый размер снизу вверх. Ширина
+        // контейнера участвует в вычислении высоты переносимого текста.
         if (element.Type() == ElementType::textBlock
             || (element.Type() == ElementType::button && element.Children().empty())) {
             Size result{
                 std::max(1.0f, static_cast<float>(utf8Length(element.Text())) * element.FontSize() * 0.55f),
-                textHeight(element),
+                lineHeight(element) * static_cast<float>(wrappedLineCount(element, contentWidth)),
             };
+            if (element.TextWrapping() && contentWidth > 0.0f) {
+                result.width = std::min(result.width, contentWidth);
+            }
             if (element.Type() == ElementType::button) {
                 result.width += 48.0f;
                 result.height += 24.0f;
@@ -182,7 +235,7 @@ namespace xaml::_details {
                 }
             }
             for (const auto& child : element.Children()) {
-                const Size childSize = measure(*child);
+                const Size childSize = measure(*child, contentWidth);
                 const size_t column = std::min(
                     static_cast<size_t>(std::max(0, child->GridColumn())), columns.size() - 1);
                 const size_t row = std::min(
@@ -234,7 +287,7 @@ namespace xaml::_details {
         if (element.Type() == ElementType::border || element.Type() == ElementType::button) {
             Size result{};
             if (!element.Children().empty()) {
-                result = measure(*element.Children().front());
+                result = measure(*element.Children().front(), contentWidth);
             }
             result = withCommonSize(element, result);
             element.SetDesiredSize(result);
@@ -244,7 +297,7 @@ namespace xaml::_details {
         if (element.Type() == ElementType::scrollViewer) {
             Size result{};
             if (!element.Children().empty()) {
-                result = measure(*element.Children().front());
+                result = measure(*element.Children().front(), contentWidth);
             }
             result = withCommonSize(element, result);
             element.SetDesiredSize(result);
@@ -253,7 +306,7 @@ namespace xaml::_details {
 
         Size result{};
         for (const auto& child : element.Children()) {
-            const Size childSize = measure(*child);
+            const Size childSize = measure(*child, contentWidth);
             if (element.OrientationValue() == attr::Orientation::vertical) {
                 result.width = std::max(result.width, childSize.width);
                 result.height += childSize.height;
@@ -526,6 +579,18 @@ namespace xaml {
         this->fontSize = value;
     }
 
+    float Element::LineHeight() const {
+        return this->lineHeight;
+    }
+
+    void Element::SetLineHeight(float value) {
+        if (value <= 0.0f) {
+            throw std::invalid_argument("lineHeight must be positive");
+        }
+        this->lineHeight = value;
+        this->InvalidateLayout();
+    }
+
     const std::string& Element::FontFamily() const {
         return this->fontFamily;
     }
@@ -540,6 +605,18 @@ namespace xaml {
 
     void Element::SetFontWeight(std::string value) {
         this->fontWeight = std::move(value);
+    }
+
+    bool Element::TextWrapping() const {
+        return this->textWrapping;
+    }
+
+    void Element::SetTextWrapping(bool value) {
+        if (this->textWrapping == value) {
+            return;
+        }
+        this->textWrapping = value;
+        this->InvalidateLayout();
     }
 
     const std::string& Element::Source() const {
@@ -1200,7 +1277,7 @@ namespace xaml {
     }
 
     void layoutInViewport(Element& root, Size availableSize) {
-        _details::measure(root);
+        _details::measure(root, availableSize.width);
         const Rect bounds{0.0f, 0.0f, availableSize.width, availableSize.height};
         _details::arrange(root, bounds, bounds);
         root.availableSize = availableSize;
@@ -1210,7 +1287,7 @@ namespace xaml {
     void layout(Element& root, Size availableSize) {
         // Разделение measure/arrange позволяет заменить или расширить layout
         // контейнеры, не меняя контракт визуального дерева.
-        const Size desired = _details::measure(root);
+        const Size desired = _details::measure(root, availableSize.width);
         // Layout вызывается только при invalidation, а не в каждом render frame.
         // Поэтому запись полезна для диагностики перестроений и не создаёт
         // постоянной нагрузки в render loop.

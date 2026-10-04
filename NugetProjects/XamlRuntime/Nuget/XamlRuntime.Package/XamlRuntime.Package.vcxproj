@@ -13,7 +13,7 @@
     <ItemGroup>
         <None Include="Android\CMakeLists.txt" />
         <None Include="cmake\XamlRuntimeConfig.cmake" />
-        <None Include="Nuget.XamlRuntime.Pack.ps1" />
+        <None Include="Pack.ps1" />
         <None Include="ThirdParty\ANGLE\vcpkg.json" />
         <None Include="XamlRuntime.nuspec" />
     </ItemGroup>

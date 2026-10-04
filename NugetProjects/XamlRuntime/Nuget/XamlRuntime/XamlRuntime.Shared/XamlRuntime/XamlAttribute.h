@@ -1,8 +1,8 @@
 #pragma once
 
-#include <cstdint>
-#include <optional>
 #include <string_view>
+#include <optional>
+#include <cstdint>
 
 namespace xaml {
     enum class XamlAttribute {
@@ -10,8 +10,10 @@ namespace xaml {
         dataContext,
         text,
         fontSize,
+        lineHeight,
         fontFamily,
         fontWeight,
+        textWrapping,
         source,
         tint,
         command,
