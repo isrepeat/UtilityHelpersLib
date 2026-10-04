@@ -12,11 +12,11 @@ class MainActivity : androidx.activity.ComponentActivity() {
 
     private val authorizeUpdate = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult(),
-    ) { updateController.completeAuthorization(it.data) }
+    ) { result -> updateController.completeAuthorization(result.data) }
 
     private val authorizeLogs = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult(),
-    ) { logsUploader.completeAuthorization(it.data) }
+    ) { result -> logsUploader.completeAuthorization(result.data) }
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
@@ -100,7 +100,7 @@ class MainActivity : androidx.activity.ComponentActivity() {
 
     private fun recordUpdaterResult(intent: android.content.Intent) {
         // Диагностика updater попадает в тот же журнал, который отправляет Send logs.
-        intent.getStringExtra("updater_trace")?.takeIf { it.isNotBlank() }?.let(NativeDiagnostics::log)
+        intent.getStringExtra("updater_trace")?.takeIf { trace -> trace.isNotBlank() }?.let(NativeDiagnostics::log)
         intent.getStringExtra("update_error")?.let(mainPage::setStatus)
         if (intent.action == "com.isrepeat.apkupdater.action.UPDATE_COMPLETED") {
             mainPage.setStatus("Update installed.")

@@ -1,6 +1,8 @@
 package {{PackageId}}
 
-class MainPage(context: android.content.Context, dispatcher: NativeCommandDispatcher) : android.opengl.GLSurfaceView(context), android.opengl.GLSurfaceView.Renderer {
+class MainPage(context: android.content.Context, dispatcher: NativeCommandDispatcher)
+    : android.opengl.GLSurfaceView(context)
+    , android.opengl.GLSurfaceView.Renderer {
     private var handle = nativeCreate(dispatcher)
     private var destroyed = false
 
