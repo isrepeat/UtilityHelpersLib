@@ -1,4 +1,4 @@
-﻿function Initialize-AndroidBuildConsole {
+function Initialize-AndroidBuildConsole {
     # Задаём единый формат для сообщений PowerShell и данных, передаваемых
     # внешним программам через pipeline. Кодировку вывода самой программы
     # без поддержки UTF-8 эта функция изменить не может.
@@ -131,6 +131,89 @@ function Resolve-AndroidSdk {
     throw 'Android SDK was not found. Set ANDROID_HOME or install the Android SDK platform tools.'
 }
 
+function Resolve-LatestNuGetPackageVersion {
+    param(
+        [Parameter(Mandatory)] [string]$PackageName,
+        [Parameter(Mandatory)] [string]$Source
+    )
+
+    $nuget = (Get-Command nuget.exe -ErrorAction Stop).Source
+    $availablePackages = & $nuget list $PackageName -Source $Source -AllVersions -NonInteractive -ForceEnglishOutput 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        throw "$PackageName version lookup failed for $Source."
+    }
+
+    $versions = $availablePackages | ForEach-Object {
+        $match = [regex]::Match($_.ToString(), "^\s*$([regex]::Escape($PackageName))\s+(\d+(?:\.\d+){2,3})\s*$")
+        if ($match.Success) {
+            [version]$match.Groups[1].Value
+        }
+    }
+    return $versions | Sort-Object -Descending | Select-Object -First 1
+}
+
+function Get-AndroidGradlePackages {
+    param(
+        [Parameter(Mandatory)] [string]$ProjectRoot,
+        [Parameter(Mandatory)] [hashtable]$Configuration
+    )
+
+    $moduleBuildFile = Join-Path (Join-Path $ProjectRoot $Configuration.AndroidModule) 'build.gradle.kts'
+    if (-not (Test-Path -LiteralPath $moduleBuildFile -PathType Leaf)) {
+        return @()
+    }
+
+    $pattern = '(?m)^\s*(?<scope>api|implementation|compileOnly|runtimeOnly|testImplementation|androidTestImplementation)\s*\(\s*"(?<group>[^":]+):(?<artifact>[^":]+):(?<version>[^"]+)"\s*\)'
+    return [regex]::Matches([System.IO.File]::ReadAllText($moduleBuildFile), $pattern) | ForEach-Object {
+        [pscustomobject]@{
+            Scope = $_.Groups['scope'].Value
+            Name = "$($_.Groups['group'].Value):$($_.Groups['artifact'].Value)"
+            Version = $_.Groups['version'].Value
+        }
+    }
+}
+
+function Show-AndroidBuildInputs {
+    param(
+        [Parameter(Mandatory)] [string]$ProjectRoot,
+        [Parameter(Mandatory)] [ValidateSet('Debug', 'Release')] [string]$Configuration
+    )
+
+    $androidProjectConfig = Read-AndroidBuildConfiguration $ProjectRoot
+    $androidProjectSharedConfig = Read-AndroidBuildSharedConfiguration $ProjectRoot
+    $hasNativeBuild = $null -ne $androidProjectConfig.Native -or -not [string]::IsNullOrWhiteSpace($androidProjectConfig.NativeLibrary)
+
+    Write-Host '==> Build inputs'
+    Write-Host "Application: $($androidProjectConfig.ArtifactName)"
+    Write-Host "Configuration: $Configuration"
+    Write-Host "Package feed: $($androidProjectSharedConfig.Paths.PackagesFeed)"
+    Write-Host 'NuGet packages:'
+    Write-Host "  AndroidBuildTools $($androidProjectConfig.AndroidBuildToolsVersion)"
+    if ($androidProjectConfig.Xaml) {
+        $xamlRuntimeVersion = Resolve-LatestNuGetPackageVersion -PackageName 'XamlRuntime' -Source $androidProjectSharedConfig.Paths.PackagesFeed
+        Write-Host "  XamlRuntime $xamlRuntimeVersion"
+    }
+
+    $gradlePackages = Get-AndroidGradlePackages -ProjectRoot $ProjectRoot -Configuration $androidProjectConfig
+    if ($gradlePackages.Count -gt 0) {
+        Write-Host 'Gradle packages:'
+        foreach ($gradlePackage in $gradlePackages) {
+            Write-Host "  $($gradlePackage.Scope) $($gradlePackage.Name) $($gradlePackage.Version)"
+        }
+    }
+
+    $javaHome = Resolve-AndroidJavaHome
+    $androidSdk = Resolve-AndroidSdk
+    Write-Host 'Android tools:'
+    Write-Host "  Java: $javaHome"
+    Write-Host "  Android SDK: $androidSdk"
+    if ($hasNativeBuild) {
+        $tools = Resolve-AndroidBuildTools
+        Write-Host "  CMake: $($tools.CMake)"
+        Write-Host "  Ninja: $($tools.Ninja)"
+    }
+}
+
 function Resolve-AndroidBuildConfigurationPath {
     param(
         [Parameter(Mandatory)] [hashtable]$Configuration,
@@ -153,7 +236,7 @@ function Resolve-XamlCompiler {
 
     # Не закрепляем версию XamlRuntime здесь: как и CMake-модуль пакета,
     # при каждом запуске берём последнюю версию из выбранного NuGet feed-а.
-    & $nuget install $packageName -Source $Source -OutputDirectory $PackagesRoot -NonInteractive -ForceEnglishOutput | Out-Host
+    & $nuget install $packageName -Source $Source -OutputDirectory $PackagesRoot -NonInteractive -ForceEnglishOutput -Verbosity quiet | Out-Host
     if ($LASTEXITCODE -ne 0) {
         throw "XamlRuntime restore failed with exit code $LASTEXITCODE."
     }
@@ -182,5 +265,8 @@ Export-ModuleMember -Function `
     Resolve-AndroidBuildTools, `
     Resolve-AndroidJavaHome, `
     Resolve-AndroidSdk, `
+    Resolve-LatestNuGetPackageVersion, `
+    Get-AndroidGradlePackages, `
+    Show-AndroidBuildInputs, `
     Resolve-AndroidBuildConfigurationPath, `
     Resolve-XamlCompiler

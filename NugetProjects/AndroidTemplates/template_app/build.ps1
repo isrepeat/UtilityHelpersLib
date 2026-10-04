@@ -38,7 +38,7 @@ dynamicparam {
     if (-not $packageVersion) { throw 'AndroidBuildToolsVersion is required. Run update-build-tools.' }
     $packageVersion = $packageVersion.ToString()
 
-    & $nuget install $packageName -Version $packageVersion -Source $source -OutputDirectory $packagesRoot -NonInteractive -DirectDownload -NoHttpCache -ForceEnglishOutput | Out-Host
+    & $nuget install $packageName -Version $packageVersion -Source $source -OutputDirectory $packagesRoot -NonInteractive -DirectDownload -NoHttpCache -ForceEnglishOutput -Verbosity quiet | Out-Host
     if ($LASTEXITCODE -ne 0) {
         throw "$packageName $packageVersion restore failed with exit code $LASTEXITCODE."
     }
@@ -76,10 +76,15 @@ end {
     }
     # Сценарий приложения проверяет Updater; общий сборщик не знает о зависимых проектах.
     $command = if ($PSBoundParameters.Command) { $PSBoundParameters.Command } else { 'build-android' }
-    if ($command -in @('build-android', 'build-and-distribute', 'build-for-drive', 'build-all') -and -not $PSBoundParameters.NativeOnly) {
+    if ($command -in @('build-android', 'build-and-distribute', 'build-for-drive', 'build-all')) {
         $configuration = if ($PSBoundParameters.Configuration) { $PSBoundParameters.Configuration } elseif ($command -eq 'build-android') { 'Debug' } else { 'Release' }
-        $signingProperties = if ($PSBoundParameters.SigningProperties) { $PSBoundParameters.SigningProperties } else { $androidProjectSharedConfig.Paths.SigningProperties }
-        & (Join-Path $PSScriptRoot 'Scripts\PowerShell\ensure-apk-updater.ps1') -ApkUpdaterProjectRoot $androidProjectSharedConfig.Paths.ApkUpdaterProjectRoot -SigningProperties $signingProperties -BuildToolsRoot (Split-Path -Parent (Split-Path -Parent $entryPoint)) -Configuration $configuration
+        $buildToolsRoot = Split-Path -Parent (Split-Path -Parent $entryPoint)
+        Import-Module (Join-Path $buildToolsRoot 'tools\Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
+        Module.AndroidBuildTools\Show-AndroidBuildInputs -ProjectRoot $PSScriptRoot -Configuration $configuration
+        if (-not $PSBoundParameters.NativeOnly) {
+            $signingProperties = if ($PSBoundParameters.SigningProperties) { $PSBoundParameters.SigningProperties } else { $androidProjectSharedConfig.Paths.SigningProperties }
+            & (Join-Path $PSScriptRoot 'Scripts\PowerShell\ensure-apk-updater.ps1') -ApkUpdaterProjectRoot $androidProjectSharedConfig.Paths.ApkUpdaterProjectRoot -SigningProperties $signingProperties -BuildToolsRoot $buildToolsRoot -Configuration $configuration
+        }
     }
     & $entryPoint -ProjectRoot $PSScriptRoot @PSBoundParameters
 }

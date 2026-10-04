@@ -18,6 +18,6 @@ android {
 }
 
 dependencies {
-    implementation("com.isrepeat:androidappkit:1.0.17")
+    implementation("com.isrepeat:androidappkit:1.0.18")
     implementation("com.google.android.gms:play-services-auth:21.3.0")
 }
