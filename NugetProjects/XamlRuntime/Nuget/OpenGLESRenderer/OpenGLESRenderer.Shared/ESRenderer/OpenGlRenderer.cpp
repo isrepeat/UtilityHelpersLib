@@ -1,21 +1,20 @@
 #define NOMINMAX
-#include <GLES3/gl3.h>
-#include <Helpers.Logging/Logging.h>
-
 #undef DrawText
-
 #include "OpenGlRenderer.h"
-#include "StandardShaders.h"
 
-#define NANOSVG_IMPLEMENTATION
-#include "../../ThirdParty/nanosvg.h"
-#define NANOSVGRAST_IMPLEMENTATION
-#include "../../ThirdParty/nanosvgrast.h"
-
+#include <GLES3/gl3.h>
 #define STBTT_STATIC
 #define STB_TRUETYPE_IMPLEMENTATION
 #pragma warning(disable: 4505)
 #include "../../ThirdParty/stb_truetype.h"
+#define NANOSVG_IMPLEMENTATION
+#define NANOSVGRAST_IMPLEMENTATION
+#include "../../ThirdParty/nanosvgrast.h"
+
+#include <Helpers.Logging/Logging.h>
+
+#undef DrawText
+#include "./StandardShaders.h"
 
 #include <unordered_map>
 #include <algorithm>
@@ -276,7 +275,9 @@ namespace es_renderer {
         glDisable(GL_SCISSOR_TEST);
         this->clipStack.clear();
         glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        // Шейдеры возвращают straight alpha, а поверхность Android ожидает
+        // premultiplied RGB. Альфа накапливается отдельно, без повторного умножения.
+        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT);
     }
