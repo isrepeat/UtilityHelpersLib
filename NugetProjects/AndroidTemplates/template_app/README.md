@@ -44,13 +44,33 @@ Set-Location $projectRoot
 Пути к `AndroidAppPreviewer.exe` для Debug и Release находятся в параметрах
 `Preview.Executable.Debug` и `Preview.Executable.Release` файла `android-build.psd1`.
 
+## Android-страница
+
+`MainPage.kt` содержит единственную Activity приложения и наследуется от
+`com.isrepeat.androidappkit.NativeOpenGlActivity` (AndroidAppKit 1.0.15 или новее).
+Библиотека создаёт GLSurfaceView, управляет EGL, рендером, touch, Back и временем
+жизни native-сессии. Отдельный MainActivity не нужен; манифест запускает MainPage.
+
+Обработчики `onPageCreated(savedInstanceState)`, `onPageResumed()`,
+`onPagePaused()`, `onPageDestroyed()` и `onPageIntent(intent)` выполняются на UI-потоке.
+`onPageIntent` получает как начальный Intent, так и последующие onNewIntent.
+`onPageTouchEvent(event)` и `onBackRequested()` могут вернуть true, чтобы обработать
+событие в Kotlin; по умолчанию библиотека передаёт его в C++ на GL-потоке.
+Для собственных JNI-команд используйте `withNativeSession { session -> ... }`:
+она ставит вызов в GL-очередь и не принимает новые команды после уничтожения страницы.
+JNI-методы остаются в MainPage, поэтому имена экспортов C++ сохраняются.
+
+Для прозрачного окна переопределите `translucentSurface = true` и используйте
+прозрачную тему Activity. Библиотека запросит RGBA8888 и прозрачный Surface;
+альфу содержимого задаёт XAML. По умолчанию поверхность непрозрачна.
+
 ## Логирование Android
 
 Кнопка `Send logs` после `Update` отправляет журнал текущего сеанса в Google Drive,
 в папку `Android/{{Application}}` рядом с APK. Результат отображается на главной
 странице; при необходимости Google запрашивает доступ к Drive.
 
-При запуске `MainActivity` создаётся журнал сеанса в
+При запуске `MainPage` создаётся журнал сеанса в
 `Downloads/com.isrepeat/{{Application}}`. Kotlin передаёт открытый file descriptor
 в native host через `NativeSessionLog` из AndroidAppKit. Android host настраивает
 `Helpers.Logging` на этот файл, поэтому записи `LOG_INFO`, `LOG_WARNING` и

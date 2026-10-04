@@ -1,100 +1,137 @@
 package {{PackageId}}
 
-class MainPage(context: android.content.Context, dispatcher: NativeCommandDispatcher)
-    : android.opengl.GLSurfaceView(context)
-    , android.opengl.GLSurfaceView.Renderer {
-    private var handle = nativeCreate(dispatcher)
-    private var destroyed = false
+import com.isrepeat.androidappkit.androidappkit
 
-    init {
-        setEGLContextClientVersion(3)
-        setRenderer(this)
-    }
-
-    override fun onSurfaceCreated(gl: javax.microedition.khronos.opengles.GL10?, config: javax.microedition.khronos.egl.EGLConfig?) = Unit
-
-    override fun onSurfaceChanged(gl: javax.microedition.khronos.opengles.GL10?, width: Int, height: Int) {
-        nativeSurface(handle, width, height)
-    }
-
-    override fun onDrawFrame(gl: javax.microedition.khronos.opengles.GL10?) {
-        nativeRender(handle)
-    }
-
-    override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
-        val action = event.actionMasked
-        val x = event.x
-        val y = event.y
-        queueEvent { nativePointer(handle, action, x, y) }
-        return true
-    }
-
-    fun navigateBack(onRoot: () -> Unit) {
-        queueEvent {
-            if (!nativeBack(handle)) {
-                post { onRoot() }
-            }
+class MainPage : androidappkit.NativeOpenGlActivity() {
+    private val dispatcher = NativeCommandDispatcher { command, _, _ ->
+        when (command) {
+            HostCommand.REQUEST_APPLICATION_UPDATE -> updateController.start()
+            HostCommand.SEND_LOGS -> sendLogs()
         }
     }
 
-    fun pauseSession() {
-        val released = java.util.concurrent.CountDownLatch(1)
-        queueEvent {
-            try {
-                nativeReleaseSurface(handle)
-            } finally {
-                released.countDown()
-            }
-        }
-        released.await()
-        onPause()
+    private lateinit var sessionLog: androidappkit.diagnostics.NativeSessionLog
+    private lateinit var updateController: androidappkit.update.GoogleDriveUpdateController
+    private lateinit var logsUploader: androidappkit.drive.GoogleDriveUploader
+    private var reinstallConfirmation: android.app.AlertDialog? = null
+
+    private val authorizeUpdate = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult(),
+    ) { result -> updateController.completeAuthorization(result.data) }
+
+    private val authorizeLogs = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult(),
+    ) { result -> logsUploader.completeAuthorization(result.data) }
+
+    //
+    // androidappkit.NativeOpenGlActivity
+    //
+    override fun createNativeSession(): Long {
+        return nativeCreate(dispatcher)
     }
 
-    fun setStatus(value: String) {
-        if (destroyed) {
-            return
-        }
-        val bytes = value.toByteArray(Charsets.UTF_8)
-        queueEvent {
-            if (handle != 0L) {
-                nativeSetStatus(handle, bytes)
-            }
+    protected external override fun nativeDestroy(handle: Long)
+    protected external override fun nativeSurface(handle: Long, width: Int, height: Int)
+    protected external override fun nativeReleaseSurface(handle: Long)
+    protected external override fun nativeRender(handle: Long)
+    protected external override fun nativePointer(handle: Long, action: Int, x: Float, y: Float)
+    protected external override fun nativeBack(handle: Long): Boolean
+
+    override fun onPageCreated(savedInstanceState: android.os.Bundle?) {
+        sessionLog = androidappkit.diagnostics.NativeSessionLog(
+            androidappkit.AppIdentity("{{Application}}", "com.isrepeat/{{Application}}"),
+            androidappkit.NativeLogConfigurator { nativePath -> configureNativeLog(nativePath) },
+        )
+        sessionLog.configure(this)
+        androidappkit.diagnostics.configureLogger(
+            androidappkit.diagnostics.AppKitLogger { message -> NativeDiagnostics.log(message) },
+        )
+        val driveFolder = listOf("Android", "{{Application}}")
+        logsUploader = androidappkit.drive.GoogleDriveUploader(
+            this,
+            androidappkit.drive.GoogleDriveUploadConfiguration(driveFolder),
+            authorizeLogs::launch,
+            { result ->
+                if (!isDestroyed) {
+                    setStatus(when (result) {
+                        is androidappkit.drive.GoogleDriveUploadResult.Success -> "Logs sent: ${result.fileName}"
+                        is androidappkit.drive.GoogleDriveUploadResult.Failure -> result.message
+                    })
+                }
+            },
+        )
+        updateController = androidappkit.update.GoogleDriveUpdateController(
+            this,
+            androidappkit.update.GoogleDriveUpdateConfiguration(
+                driveFolder,
+                Regex("{{Application}}-(\\d+)\\.(\\d+)\\.(\\d+)(?:-debug|-release)\\.apk", RegexOption.IGNORE_CASE),
+                { match ->
+                    match.groupValues[1].toLong() * 1_000_000L +
+                        match.groupValues[2].toLong() * 1_000L +
+                        match.groupValues[3].toLong()
+                },
+                confirmSameVersionInUpdater = true,
+            ),
+            authorizeUpdate::launch,
+            { message ->
+                if (!isDestroyed) {
+                    setStatus(message)
+                }
+            },
+            androidappkit.diagnostics.sharedLogger(),
+            { onConfirmed, onCancelled ->
+                // Для старого ApkUpdater подтверждение остаётся в приложении.
+                reinstallConfirmation = android.app.AlertDialog.Builder(this)
+                    .setTitle("Reinstall application?")
+                    .setMessage("This version is already installed.")
+                    .setPositiveButton("Reinstall") { _, _ -> onConfirmed() }
+                    .setNegativeButton("Cancel") { _, _ -> onCancelled() }
+                    .setOnCancelListener { _ -> onCancelled() }
+                    .show()
+            },
+        )
+    }
+
+    override fun onPageIntent(intent: android.content.Intent) {
+        // Диагностика updater попадает в тот же журнал, который отправляет Send logs.
+        val result = androidappkit.update.readApkUpdaterResult(intent)
+        result.trace?.takeIf { trace -> trace.isNotBlank() }?.let(NativeDiagnostics::log)
+        result.error?.let(this::setStatus)
+        if (result.installed) {
+            setStatus("Update installed.")
         }
     }
 
-    fun configureNativeLog(path: String) {
-        if (!destroyed) {
-            nativeConfigureLogFile(handle, path)
-        }
+    override fun onPageDestroyed() {
+        dispatcher.close()
+        reinstallConfirmation?.dismiss()
     }
 
-    fun destroySession() {
-        if (destroyed) {
-            return
-        }
-        destroyed = true
-        // Барьер выполняет ранее поставленные события до удаления сессии.
-        val released = java.util.concurrent.CountDownLatch(1)
-        queueEvent {
-            try {
-                nativeDestroy(handle)
-                handle = 0
-            } finally {
-                released.countDown()
-            }
-        }
-        released.await()
-    }
-
+    //
+    // Internal
+    //
     private external fun nativeCreate(dispatcher: NativeCommandDispatcher): Long
     private external fun nativeConfigureLogFile(handle: Long, path: String)
     private external fun nativeSetStatus(handle: Long, value: ByteArray)
-    private external fun nativeDestroy(handle: Long)
-    private external fun nativeSurface(handle: Long, width: Int, height: Int)
-    private external fun nativeReleaseSurface(handle: Long)
-    private external fun nativeRender(handle: Long)
-    private external fun nativePointer(handle: Long, action: Int, x: Float, y: Float)
-    private external fun nativeBack(handle: Long): Boolean
+
+    private fun sendLogs() {
+        val uri = sessionLog.currentUri()
+        if (uri == null) {
+            setStatus("The session log is not available.")
+            return
+        }
+        setStatus("Sending logs to Google Drive…")
+        logsUploader.upload(uri, "text/plain", "{{Application}}-session-${System.currentTimeMillis()}.log")
+    }
+
+    private fun setStatus(value: String) {
+        val bytes = value.toByteArray(Charsets.UTF_8)
+        withNativeSession { session -> nativeSetStatus(session, bytes) }
+    }
+
+    private fun configureNativeLog(path: String) {
+        withNativeSession { session -> nativeConfigureLogFile(session, path) }
+    }
 
     companion object {
         init {

@@ -4,6 +4,9 @@ package com.isrepeat.androidappkit
 // Псевдопространства имён и типизированные фасады для публичного API AppKit.
 //
 object androidappkit {
+    // Короткая публичная точка входа для Activity с native OpenGL-сессией.
+    abstract class NativeOpenGlActivity : com.isrepeat.androidappkit.NativeOpenGlActivity()
+
     data class AppIdentity(val name: String, val storageDirectory: String)
 
     fun interface NativeLogConfigurator {
@@ -85,10 +88,10 @@ object androidappkit {
             val driveFolderPath: List<String>,
             val apkNamePattern: Regex,
             val versionCodeFromName: (MatchResult) -> Long,
-            val updaterPackage: String,
-            val updaterActivity: String,
-            val updaterPermission: String,
-            val updaterAction: String,
+            val updaterPackage: String = com.isrepeat.androidappkit.update.ApkUpdaterProtocol.packageName,
+            val updaterActivity: String = com.isrepeat.androidappkit.update.ApkUpdaterProtocol.activityName,
+            val updaterPermission: String = com.isrepeat.androidappkit.update.ApkUpdaterProtocol.installPermission,
+            val updaterAction: String = com.isrepeat.androidappkit.update.ApkUpdaterProtocol.installAction,
             val confirmSameVersionInUpdater: Boolean = false,
         )
 
@@ -122,5 +125,18 @@ object androidappkit {
             fun start() = controller.start()
             fun completeAuthorization(intent: android.content.Intent?) = controller.completeAuthorization(intent)
         }
+
+        data class ApkUpdaterResult(
+            val trace: String?,
+            val error: String?,
+            val installed: Boolean,
+        )
+
+        fun readApkUpdaterResult(intent: android.content.Intent): ApkUpdaterResult =
+            ApkUpdaterResult(
+                intent.getStringExtra(com.isrepeat.androidappkit.update.ApkUpdaterProtocol.traceExtra),
+                intent.getStringExtra(com.isrepeat.androidappkit.update.ApkUpdaterProtocol.errorExtra),
+                intent.action == com.isrepeat.androidappkit.update.ApkUpdaterProtocol.updateCompletedAction,
+            )
     }
 }

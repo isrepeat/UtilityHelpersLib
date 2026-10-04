@@ -6,7 +6,9 @@ enum class HostCommand(val id: Int) {
     SEND_LOGS(2);
 
     companion object {
-        fun fromId(id: Int): HostCommand? = entries.firstOrNull { command -> command.id == id }
+        fun fromId(id: Int): HostCommand? {
+            return entries.firstOrNull { command -> command.id == id }
+        }
     }
 }
 
