@@ -17,6 +17,15 @@
 
 Полный контракт проекта и flow сборки описаны в [BUILD-PIPELINE.md](BUILD-PIPELINE.md).
 
+Запуск preview использует инкрементальную генерацию XAML и Ninja. Для локального
+feed `Resolve-XamlCompiler` и `InstallXamlRuntime.cmake` проверяют последнюю версию
+архивов и наличие распакованного пакета без запуска NuGet; при отсутствии пакета
+или удалённом feed выполняется обычный restore. `generate-xaml.ps1` принимает
+необязательный `-XamlCompiler`, чтобы запуск preview мог передать найденный компилятор.
+`AndroidBuildConfiguration.cmake` принимает пути из общего сценария, предотвращает
+повторную генерацию в рамках одного запуска и сохраняет время неизменённых заголовков.
+Приложения подключают эти функции, не копируя реализацию сборки в свои скрипты.
+
 Общие пути читаются из ближайшего `Android.SharedProps.json` вверх от корня проекта. `Paths` определяет signing, Updater, Drive, feed и previewer; относительные значения вычисляются от каталога JSON. `$androidProjectConfig` содержит только настройки проекта, а `$androidProjectSharedConfig` — отдельные секции `Paths` и `Properties` из JSON. Команды чтения конфигурации работают только с настройками проекта; сборка обращается к общим настройкам напрямую через `$androidProjectSharedConfig`. Полный контракт версии 1 описан в `Windows/Me/Documentation/AndroidBuild.md`.
 
 `tools/test-apk-signing.ps1` сравнивает SHA-256 сертификата переданного APK с ключом выбранной конфигурации и возвращает boolean. Координация зависимых приложений находится в сценариях AndroidTemplates.

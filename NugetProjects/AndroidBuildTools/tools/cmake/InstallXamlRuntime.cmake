@@ -18,23 +18,40 @@ endfunction()
 function(fn_androidappkit_install_xaml_runtime packages_root package_source)
     set(androidappkit_xaml_runtime_package_name XamlRuntime)
     set(androidappkit_xaml_runtime_packages_root "${packages_root}")
-    # Без -Version NuGet устанавливает последнюю доступную версию пакета.
-    # Выполняем install при каждой конфигурации: уже скачанная старая версия
-    # не должна блокировать получение нового пакета из локального feed-а.
-    find_program(androidappkit_nuget_executable NAMES nuget.exe REQUIRED)
-    execute_process(
-        COMMAND "${androidappkit_nuget_executable}" install "${androidappkit_xaml_runtime_package_name}"
-            -Source "${package_source}"
-            -OutputDirectory "${androidappkit_xaml_runtime_packages_root}"
-            -NonInteractive
-            -ForceEnglishOutput
-            -Verbosity quiet
-        COMMAND_ERROR_IS_FATAL ANY
-    )
-    fn_androidappkit_find_latest_xaml_runtime_package(
-        "${androidappkit_xaml_runtime_packages_root}"
-        "${androidappkit_xaml_runtime_package_name}"
-        androidappkit_xaml_runtime_config_directory)
+    # Для локального feed проверяем последнюю версию без запуска NuGet.
+    set(androidappkit_xaml_runtime_config_directory "")
+    if (IS_DIRECTORY "${package_source}")
+        file(GLOB androidappkit_xaml_archives "${package_source}/XamlRuntime.*.nupkg")
+        list(FILTER androidappkit_xaml_archives INCLUDE REGEX "/XamlRuntime\\.[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?\\.nupkg$")
+        # Убираем расширение до сортировки: 1.0.25.9 должна идти выше 1.0.25.
+        list(TRANSFORM androidappkit_xaml_archives REPLACE "\\.nupkg$" "")
+        list(SORT androidappkit_xaml_archives COMPARE NATURAL ORDER DESCENDING)
+        if (androidappkit_xaml_archives)
+            list(GET androidappkit_xaml_archives 0 androidappkit_xaml_archive)
+            get_filename_component(androidappkit_xaml_archive_name "${androidappkit_xaml_archive}" NAME)
+            string(REGEX REPLACE "\\.nupkg$" "" androidappkit_xaml_archive_name "${androidappkit_xaml_archive_name}")
+            set(androidappkit_xaml_candidate "${packages_root}/${androidappkit_xaml_archive_name}/build/native/cmake")
+            if (EXISTS "${androidappkit_xaml_candidate}/XamlRuntimeConfig.cmake")
+                set(androidappkit_xaml_runtime_config_directory "${androidappkit_xaml_candidate}")
+            endif()
+        endif()
+    endif()
+    if (NOT androidappkit_xaml_runtime_config_directory)
+        find_program(androidappkit_nuget_executable NAMES nuget.exe REQUIRED)
+        execute_process(
+            COMMAND "${androidappkit_nuget_executable}" install "${androidappkit_xaml_runtime_package_name}"
+                -Source "${package_source}"
+                -OutputDirectory "${androidappkit_xaml_runtime_packages_root}"
+                -NonInteractive
+                -ForceEnglishOutput
+                -Verbosity quiet
+            COMMAND_ERROR_IS_FATAL ANY
+        )
+        fn_androidappkit_find_latest_xaml_runtime_package(
+            "${androidappkit_xaml_runtime_packages_root}"
+            "${androidappkit_xaml_runtime_package_name}"
+            androidappkit_xaml_runtime_config_directory)
+    endif()
 
     if (NOT androidappkit_xaml_runtime_config_directory)
         message(FATAL_ERROR "NuGet installation did not provide ${androidappkit_xaml_runtime_package_name}Config.cmake.")

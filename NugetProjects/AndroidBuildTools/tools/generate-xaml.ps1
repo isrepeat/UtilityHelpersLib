@@ -1,7 +1,8 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [string]$ProjectRoot)
+    [string]$ProjectRoot,
+    [string]$XamlCompiler)
 
 $ErrorActionPreference = 'Stop'
 Import-Module -Name (Join-Path $PSScriptRoot 'Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1') -ErrorAction Stop
@@ -43,7 +44,10 @@ function Invoke-Checked {
 
 $xamlPackagesRoot = Module.AndroidBuildTools\Resolve-AndroidBuildConfigurationPath -Configuration $androidProjectConfig -ProjectRoot $ProjectRoot -Name 'PackageDirectories.XamlRuntime'
 $nativePackageSource = $androidProjectSharedConfig.Paths.PackagesFeed
-$xamlCompiler = Module.AndroidBuildTools\Resolve-XamlCompiler -PackagesRoot $xamlPackagesRoot -Source $nativePackageSource
+if (-not $XamlCompiler) {
+    $XamlCompiler = Module.AndroidBuildTools\Resolve-XamlCompiler -PackagesRoot $xamlPackagesRoot -Source $nativePackageSource
+}
+if (-not (Test-Path -LiteralPath $XamlCompiler -PathType Leaf)) { throw "XamlCompiler was not found: $XamlCompiler" }
 Write-Host "==> Using XamlCompiler from $xamlCompiler"
 
 foreach ($xamlSourceRoot in $xamlSourceRoots) {

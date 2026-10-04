@@ -7,15 +7,10 @@ if (NOT DEFINED {{APPLICATION}}_PACKAGE_VERSION)
     set({{APPLICATION}}_PACKAGE_VERSION "${{{application}}_version_base}.0")
 endif()
 file(MAKE_DIRECTORY "${{{application}}_project_root}/!Generated/Build")
-file(WRITE "${{{application}}_project_root}/!Generated/Build/BuildVersion.h"
+fn_androidappkit_write_if_changed("${{{application}}_project_root}/!Generated/Build/BuildVersion.h"
     "#pragma once\n#define {{APPLICATION}}_PACKAGE_VERSION \"${{{APPLICATION}}_PACKAGE_VERSION}\"")
 set({{application}}_generated_root "${{{application}}_project_root}/!Generated/{{Application}}.Application/Xaml")
-execute_process(
-    COMMAND powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass
-        -File "${{{application}}_project_root}/build.ps1" -Command generate-xaml
-    WORKING_DIRECTORY "${{{application}}_project_root}"
-    COMMAND_ERROR_IS_FATAL ANY
-)
+fn_androidappkit_generate_xaml("${{{application}}_project_root}")
 file(GLOB_RECURSE {{application}}_application_sources CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/Base/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/Base/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Core/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/Core/*.h"

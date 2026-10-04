@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
     [Parameter(Position = 0)] [string]$Command = 'build-android',
     [string]$BuildToolsVersion
@@ -11,16 +11,16 @@ dynamicparam {
     [Console]::InputEncoding = $utf8Encoding
     [Console]::OutputEncoding = $utf8Encoding
     $OutputEncoding = $utf8Encoding
-    
+
     $androidProjectConfig = & ([scriptblock]::Create([System.IO.File]::ReadAllText((Join-Path $PSScriptRoot 'android-build.psd1'))))
     . (Join-Path $PSScriptRoot 'Scripts\PowerShell\Read-AndroidSharedProps.ps1')
     $androidProjectSharedConfig = Read-AndroidSharedProps -ProjectRoot $PSScriptRoot
     $packagesRoot = Join-Path $PSScriptRoot $androidProjectConfig.PackageDirectories.AndroidBuildTools
     $packageName = 'AndroidBuildTools'
-    $nuget = (Get-Command nuget.exe -ErrorAction Stop).Source
     $source = if ($env:ANDROID_BUILD_TOOLS_SOURCE) { $env:ANDROID_BUILD_TOOLS_SOURCE } else { $androidProjectSharedConfig.Paths.PackagesFeed }
     $packageVersion = $androidProjectConfig.AndroidBuildToolsVersion
     if ($Command -eq 'update-build-tools') {
+        $nuget = (Get-Command nuget.exe -ErrorAction Stop).Source
         # Обновление выполняет загрузчик независимо от возможностей старого пакета.
         if ($BuildToolsVersion) {
             $packageVersion = $BuildToolsVersion
@@ -38,12 +38,15 @@ dynamicparam {
     if (-not $packageVersion) { throw 'AndroidBuildToolsVersion is required. Run update-build-tools.' }
     $packageVersion = $packageVersion.ToString()
 
-    & $nuget install $packageName -Version $packageVersion -Source $source -OutputDirectory $packagesRoot -NonInteractive -DirectDownload -NoHttpCache -ForceEnglishOutput -Verbosity quiet | Out-Host
-    if ($LASTEXITCODE -ne 0) {
-        throw "$packageName $packageVersion restore failed with exit code $LASTEXITCODE."
-    }
-
     $entryPoint = Join-Path $packagesRoot "$packageName.$packageVersion\tools\Invoke-Build.ps1"
+    # Закреплённую распакованную версию повторно не восстанавливаем.
+    if (-not (Test-Path -LiteralPath $entryPoint -PathType Leaf)) {
+        $nuget = (Get-Command nuget.exe -ErrorAction Stop).Source
+        & $nuget install $packageName -Version $packageVersion -Source $source -OutputDirectory $packagesRoot -NonInteractive -DirectDownload -NoHttpCache -ForceEnglishOutput -Verbosity quiet | Out-Host
+        if ($LASTEXITCODE -ne 0) {
+            throw "$packageName $packageVersion restore failed with exit code $LASTEXITCODE."
+        }
+    }
     if (-not (Test-Path -LiteralPath $entryPoint -PathType Leaf)) {
         throw "$packageName $packageVersion did not provide tools\Invoke-Build.ps1 in $packagesRoot."
     }

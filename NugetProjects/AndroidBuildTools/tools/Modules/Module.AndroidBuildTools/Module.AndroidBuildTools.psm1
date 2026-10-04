@@ -232,10 +232,29 @@ function Resolve-XamlCompiler {
     )
 
     $packageName = 'XamlRuntime'
+    # Локальный feed проверяем по версиям архивов без запуска NuGet.
+    if (Test-Path -LiteralPath $Source -PathType Container) {
+        $archives = Get-ChildItem -LiteralPath $Source -Filter "$packageName.*.nupkg" -File |
+            ForEach-Object {
+                $parsedVersion = $null
+                $versionText = $_.BaseName.Substring($packageName.Length + 1)
+                if ([version]::TryParse($versionText, [ref]$parsedVersion)) {
+                    [pscustomobject]@{ Archive = $_; Version = $parsedVersion }
+                }
+            } | Sort-Object Version -Descending
+        $latest = $archives | Select-Object -First 1
+        if ($null -ne $latest) {
+            $packageDirectory = Join-Path $PackagesRoot $latest.Archive.BaseName
+            $compiler = Join-Path $packageDirectory 'tools\win-x64\XamlCompiler.exe'
+            $config = Join-Path $packageDirectory 'build\native\cmake\XamlRuntimeConfig.cmake'
+            if ((Test-Path -LiteralPath $compiler -PathType Leaf) -and (Test-Path -LiteralPath $config -PathType Leaf)) {
+                return $compiler
+            }
+        }
+    }
     $nuget = (Get-Command nuget.exe -ErrorAction Stop).Source
 
-    # Не закрепляем версию XamlRuntime здесь: как и CMake-модуль пакета,
-    # при каждом запуске берём последнюю версию из выбранного NuGet feed-а.
+    # Для удалённого feed или отсутствующей версии выполняем обычный restore.
     & $nuget install $packageName -Source $Source -OutputDirectory $PackagesRoot -NonInteractive -ForceEnglishOutput -Verbosity quiet | Out-Host
     if ($LASTEXITCODE -ne 0) {
         throw "XamlRuntime restore failed with exit code $LASTEXITCODE."
