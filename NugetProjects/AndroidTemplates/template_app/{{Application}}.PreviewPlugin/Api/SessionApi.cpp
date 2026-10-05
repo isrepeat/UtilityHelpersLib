@@ -80,7 +80,7 @@ namespace {{application}}::preview::api {
         if (session == nullptr) {
             return 0;
         }
-        return 0;
+        return session->value.Pages().IsTransitioning() ? 1 : 0;
     }
 
     int SessionApi::xp_session_navigate_preview_route(
@@ -588,7 +588,9 @@ namespace {{application}}::preview::api {
             || destinationCapacity / destinationStride < surface.height) {
             throw std::invalid_argument("Invalid {{Application}} ANGLE render arguments");
         }
-        surface.value.Render(session.value.Root(), destination, destinationStride);
+        surface.value.Render([&session](xaml::IRenderBackend& renderer) {
+            session.value.Render(renderer);
+        }, destination, destinationStride);
         return true;
     }
 

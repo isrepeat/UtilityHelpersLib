@@ -8,6 +8,8 @@
 
 #include <algorithm>
 #include <stdexcept>
+#include <chrono>
+#include <limits>
 #include <array>
 
 namespace {{application}}::application::core {
@@ -99,14 +101,23 @@ namespace {{application}}::application::core {
     }
 
     void PageManager::PointerDown(float x, float y) {
+        if (this->IsTransitioning()) {
+            return;
+        }
         this->input.PointerDown(this->Root(), this->animations, x, y);
     }
 
     void PageManager::PointerMove(float x, float y) {
+        if (this->IsTransitioning()) {
+            return;
+        }
         this->input.PointerMove(x, y);
     }
 
     void PageManager::PointerUp(float x, float y) {
+        if (this->IsTransitioning()) {
+            return;
+        }
         this->input.PointerUp(this->Root(), this->animations, x, y);
     }
 
@@ -118,6 +129,11 @@ namespace {{application}}::application::core {
         const bool interacting = this->input.Update();
         const bool animating = this->animations.IsAnimating();
         this->animations.Update();
+        this->UpdateTransition();
+        if (this->outgoingPage != nullptr) {
+            this->outgoingPage->Update();
+            xaml::layoutInViewport(this->outgoingPage->Root(), this->viewport);
+        }
         this->currentPage->Update();
         xaml::layoutInViewport(this->Root(), this->viewport);
         const bool changed = this->dirty || interacting || animating || this->animations.IsAnimating();
@@ -129,6 +145,18 @@ namespace {{application}}::application::core {
         this->playbackRate = value;
         this->animations.SetPlaybackRate(value);
     }
+
+    bool PageManager::IsTransitioning() const {
+        return this->outgoingPage != nullptr;
+    }
+
+    void PageManager::Render(xaml::IRenderBackend& renderer, const xaml::RendererRegistry& renderers) {
+        if (this->outgoingPage != nullptr) {
+            xaml::Render(this->outgoingPage->Root(), renderer, renderers);
+        }
+        xaml::Render(this->Root(), renderer, renderers);
+    }
+
 #if defined(ANDROID_APP_PREVIEWER)
     std::vector<PageManager::preview_Route> PageManager::preview_Routes() const {
         std::vector<preview_Route> result;
@@ -153,8 +181,8 @@ namespace {{application}}::application::core {
     }
 
     bool PageManager::preview_NavigateTransitions(std::span<const std::string_view> ids, std::string& error) {
-        if (ids.empty()) {
-            error = "Navigation requires transition IDs";
+        if (ids.empty() || this->IsTransitioning()) {
+            error = "Navigation requires transition IDs and an idle page";
             return false;
         }
         // Проверяем весь путь до первого изменения страниц и истории.
@@ -196,6 +224,14 @@ namespace {{application}}::application::core {
                 error = "Page lifecycle rejected navigation";
                 return false;
             }
+            if (i + 1 < routes.size() && this->IsTransitioning()) {
+                // Промежуточные страницы пути графа доводим до конечного состояния;
+                // последний переход проигрывается обычным циклом кадров.
+                const auto elapsed = std::chrono::duration<float, std::milli>(std::numeric_limits<float>::max());
+                xaml::AnimationController::Update(this->outgoingPage->Root(), elapsed);
+                xaml::AnimationController::Update(this->Root(), elapsed);
+                this->UpdateTransition();
+            }
         }
         error.clear();
         return true;
@@ -211,9 +247,8 @@ namespace {{application}}::application::core {
             xaml::runtime::XamlParser{}.Parse(markup, sourcePath), target->preview_RuntimeContext(), this->viewport);
         this->input.Cancel();
         target->preview_ReplaceRuntimeTree(std::move(tree));
-        if (target == this->currentPage) {
-            this->AttachAnimations();
-        }
+        // Новый runtime-корень тоже подключается к общему контроллеру.
+        this->AttachAnimations();
         this->dirty = true;
         error.clear();
         return true;
@@ -241,7 +276,8 @@ namespace {{application}}::application::core {
 
     bool PageManager::Navigate(const NavigationRoute& route, std::unique_ptr<base::NavigationStateBase> state) {
         auto* target = this->pages.Find(this->ResolveTarget(route));
-        if (this->navigating || target == nullptr || this->currentPage == nullptr || route.source != this->CurrentPageName()) {
+        if (this->navigating || this->IsTransitioning() || target == nullptr || target == this->currentPage
+            || this->currentPage == nullptr || route.source != this->CurrentPageName()) {
             return false;
         }
         this->navigating = true;
@@ -258,14 +294,22 @@ namespace {{application}}::application::core {
             return false;
         }
         this->input.Cancel();
+        this->outgoingPage = this->currentPage;
         this->currentPage = target;
         if (route.targetKind == NavigationTargetKind::previousPage) {
             this->history.pop_back();
         } else {
             this->history.push_back({target, &route});
         }
-        this->AttachAnimations();
-        xaml::layoutInViewport(this->Root(), this->viewport);
+        this->outgoingPage->Root().SetVisibility(xaml::attr::Visibility::collapsed);
+        this->Root().SetVisibility(xaml::attr::Visibility::visible);
+        const std::string direction = route.targetKind == NavigationTargetKind::previousPage ? "Backward" : "Forward";
+        for (auto* page : {this->outgoingPage, this->currentPage}) {
+            xaml::VisualStateManager::GoToState(page->Root(), "NavigationDirection", "Idle", false);
+            xaml::VisualStateManager::GoToState(page->Root(), "NavigationDirection", direction);
+            xaml::layoutInViewport(page->Root(), this->viewport);
+        }
+        this->UpdateTransition();
         this->dirty = true;
         return true;
     }
@@ -279,7 +323,21 @@ namespace {{application}}::application::core {
 
     void PageManager::AttachAnimations() {
         this->animations = xaml::AnimationController{};
-        this->animations.Attach(this->Root(), xaml::AnimationRegistry{}, false);
+        this->outgoingPage = nullptr;
+        this->pages.ForEach([this](interface::IPage& page) {
+            // Видимость устанавливаем до Attach, без проигрывания перехода при загрузке.
+            page.Root().SetVisibility(&page == this->currentPage
+                ? xaml::attr::Visibility::visible : xaml::attr::Visibility::collapsed);
+            this->animations.Attach(page.Root(), xaml::AnimationRegistry{});
+        });
         this->animations.SetPlaybackRate(this->playbackRate);
+    }
+
+    void PageManager::UpdateTransition() {
+        if (this->outgoingPage != nullptr
+            && !xaml::AnimationController::IsAnimating(this->outgoingPage->Root())
+            && !xaml::AnimationController::IsAnimating(this->Root())) {
+            this->outgoingPage = nullptr;
+        }
     }
 }

@@ -43,7 +43,6 @@ namespace {{application}}::preview::rendering {
     } // namespace _details
 
     using xaml::Element;
-    using xaml::RendererRegistry;
 
     class AngleRenderSurface::Implementation {
     public:
@@ -58,7 +57,7 @@ namespace {{application}}::preview::rendering {
         Implementation& operator=(const Implementation&) = delete;
 
         void Render(
-            Element& root,
+            const std::function<void(xaml::IRenderBackend&)>& draw,
             unsigned char* destination,
             int destinationStride);
 
@@ -68,7 +67,6 @@ namespace {{application}}::preview::rendering {
         EGLDisplay display = EGL_NO_DISPLAY;
         EGLSurface surface = EGL_NO_SURFACE;
         EGLContext context = EGL_NO_CONTEXT;
-        RendererRegistry renderers;
         std::unique_ptr<es_renderer::OpenGlRenderer> renderer;
     };
 
@@ -191,7 +189,7 @@ namespace {{application}}::preview::rendering {
     // API [Implementation]
     //
     void AngleRenderSurface::Implementation::Render(
-        Element& root,
+        const std::function<void(xaml::IRenderBackend&)>& draw,
         unsigned char* destination,
         int destinationStride) {
         if (destination == nullptr || destinationStride < this->width * 4) {
@@ -206,7 +204,7 @@ namespace {{application}}::preview::rendering {
         }
         this->renderer->BeginFrame();
         glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-        xaml::Render(root, *this->renderer, this->renderers);
+        draw(*this->renderer);
         glFinish();
 
         std::vector<unsigned char> pixels(
@@ -258,6 +256,15 @@ namespace {{application}}::preview::rendering {
         Element& root,
         unsigned char* destination,
         int destinationStride) {
-        this->implementation->Render(root, destination, destinationStride);
+        this->Render([&root](xaml::IRenderBackend& renderer) {
+            xaml::Render(root, renderer);
+        }, destination, destinationStride);
+    }
+
+    void AngleRenderSurface::Render(
+        const std::function<void(xaml::IRenderBackend&)>& draw,
+        unsigned char* destination,
+        int destinationStride) {
+        this->implementation->Render(draw, destination, destinationStride);
     }
 }

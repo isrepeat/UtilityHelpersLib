@@ -174,6 +174,12 @@ namespace xaml::_details {
         if ((normalized.size() != 7 && normalized.size() != 9) || normalized.front() != '#') {
             throw std::invalid_argument("color must use #RRGGBB, #AARRGGBB or a supported name");
         }
+        if (!std::all_of(normalized.begin() + 1, normalized.end(), [](unsigned char character) {
+            return (character >= '0' && character <= '9') || (character >= 'a' && character <= 'f')
+                || (character >= 'A' && character <= 'F');
+        })) {
+            throw std::invalid_argument("color contains invalid hexadecimal digits");
+        }
         const unsigned long color = std::stoul(normalized.substr(1), nullptr, 16);
         const unsigned long alpha = normalized.size() == 9 ? (color >> 24) & 0xff : 0xff;
         return {
@@ -265,6 +271,10 @@ namespace xaml::_details {
 }
 
 namespace xaml {
+    attr::Color ParseColor(std::string_view value) {
+        return _details::ParseColor(value);
+    }
+
     ElementType ParseElementType(std::string_view name) {
         if (name == "Page") {
             return ElementType::page;

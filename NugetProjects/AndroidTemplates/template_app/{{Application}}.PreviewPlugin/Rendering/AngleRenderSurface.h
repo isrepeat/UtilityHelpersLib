@@ -1,9 +1,11 @@
 #pragma once
 #include <string_view>
+#include <functional>
 #include <memory>
 
 namespace xaml {
     class Element;
+    class IRenderBackend;
 }
 
 namespace {{application}}::preview::rendering {
@@ -24,6 +26,10 @@ namespace {{application}}::preview::rendering {
 
         void Render(
             xaml::Element& root,
+            unsigned char* destination,
+            int destinationStride);
+        void Render(
+            const std::function<void(xaml::IRenderBackend&)>& draw,
             unsigned char* destination,
             int destinationStride);
 

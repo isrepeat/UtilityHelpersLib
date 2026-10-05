@@ -1,4 +1,6 @@
 #pragma once
+#include <XamlRuntime/RenderEngine.h>
+
 #include "../UI/Page/SettingsPageViewModel.h"
 #include "../UI/Page/MainPageViewModel.h"
 #include "./InputDispatcher.h"
@@ -43,6 +45,8 @@ namespace {{application}}::application::core {
         std::string_view CurrentPageName() const;
         std::string_view PageTitle(std::string_view name) const;
         xaml::Element& Root();
+        bool IsTransitioning() const;
+        void Render(xaml::IRenderBackend& renderer, const xaml::RendererRegistry& renderers);
         void PointerDown(float x, float y);
         void PointerMove(float x, float y);
         void PointerUp(float x, float y);
@@ -74,11 +78,13 @@ namespace {{application}}::application::core {
         bool Navigate(const NavigationRoute& route, std::unique_ptr<base::NavigationStateBase> state);
         static bool IsNavigationDataValid(const NavigationRoute& route, const base::NavigationStateBase* state);
         void AttachAnimations();
+        void UpdateTransition();
 
     private:
         PageContext context;
         PageRegistry<ui::page::MainPageViewModel, ui::page::SettingsPageViewModel> pages;
         interface::IPage* currentPage = nullptr;
+        interface::IPage* outgoingPage = nullptr;
         std::vector<HistoryEntry> history;
         xaml::Size viewport{};
         xaml::AnimationController animations;

@@ -41,6 +41,9 @@ namespace xaml {
         Easing easing;
         AnimatedProperty property = AnimatedProperty::opacity;
         bool presence = true;
+        bool isColor = false;
+        std::array<float, 4> fromColor{};
+        std::array<float, 4> toColor{};
     };
 
     // Служебное состояние анимации элемента; обработчики получают доступ через контексты.
@@ -213,6 +216,8 @@ namespace xaml {
             AnimationTrigger trigger, bool useTransitions, bool fromHidden = false);
         static void AddPropertyTrack(Element& target, AnimatedProperty property, float from, float to,
             std::chrono::milliseconds duration, Easing easing, bool presence);
+        static void AddColorTrack(Element& target, const AnimationTrack& track, bool useTransitions,
+            bool presence);
         static void Configure(Element& element, AnimationTrigger trigger, bool fromHidden);
         static void StartDescendantStoryboards(Element& element, AnimationTrigger trigger,
             const AnimationParameters& parameters);

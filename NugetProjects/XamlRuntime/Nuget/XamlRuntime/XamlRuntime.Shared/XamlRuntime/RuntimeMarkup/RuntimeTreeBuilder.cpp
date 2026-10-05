@@ -61,28 +61,47 @@ namespace xaml::runtime::_details {
     }
 
     AnimationTrack Track(const XamlElementNode& node) {
-        if (node.name != "Animation" && node.name != "FloatAnimation") {
-            throw RuntimeDiagnostic(node.location, "Expected Animation or FloatAnimation");
+        if (node.name != "Animation" && node.name != "FloatAnimation" && node.name != "ColorAnimation") {
+            throw RuntimeDiagnostic(node.location, "Expected Animation, FloatAnimation or ColorAnimation");
         }
         if (!node.children.empty()) {
             throw RuntimeDiagnostic(node.location, "Animation cannot contain children");
         }
         AnimationTrack result;
-        const std::map<std::string, AnimatedProperty> properties{{"opacity", AnimatedProperty::opacity},
-            {"height", AnimatedProperty::height}, {"renderOffsetX", AnimatedProperty::renderOffsetX},
-            {"renderOffsetY", AnimatedProperty::renderOffsetY}, {"toggleProgress", AnimatedProperty::toggleProgress},
-            {"pressProgress", AnimatedProperty::pressProgress}};
-        result.name = Attribute(node, "name");
-        const auto property = Attribute(node, "property", "opacity");
-        const auto found = properties.find(property);
-        if (found == properties.end() || (node.name == "Animation" && result.name.empty())) {
-            throw RuntimeDiagnostic(node.location, "Unknown animated property or missing animation name");
+        if (node.name == "ColorAnimation") {
+            const std::map<std::string, AnimatedProperty> colors{{"background", AnimatedProperty::background},
+                {"foreground", AnimatedProperty::foreground}, {"borderBrush", AnimatedProperty::borderColor},
+                {"tint", AnimatedProperty::tint}};
+            const auto property = colors.find(Attribute(node, "property"));
+            const auto from = Attribute(node, "from");
+            const auto to = Attribute(node, "to");
+            if (property == colors.end() || from.empty() || to.empty() || Attribute(node, "duration").empty()) {
+                throw RuntimeDiagnostic(node.location, "ColorAnimation requires supported property, from, to and duration");
+            }
+            try {
+                result = AnimationTrack::Color(property->second, from == "Current" ? attr::Color{} : ParseColor(from),
+                    ParseColor(to), std::chrono::milliseconds(0), Easing::linear, from == "Current");
+            } catch (const std::exception& error) {
+                throw RuntimeDiagnostic(node.location, error.what());
+            }
         }
-        result.property = found->second;
-        result.fromCurrent = Attribute(node, "from") == "Current";
-        result.toToggleState = Attribute(node, "to") == "ToggleState";
-        result.from = result.fromCurrent ? 0.0f : Number(node, "from");
-        result.to = result.toToggleState ? 0.0f : Number(node, "to");
+        if (!result.isColor) {
+            const std::map<std::string, AnimatedProperty> properties{{"opacity", AnimatedProperty::opacity},
+                {"height", AnimatedProperty::height}, {"renderOffsetX", AnimatedProperty::renderOffsetX},
+                {"renderOffsetY", AnimatedProperty::renderOffsetY}, {"toggleProgress", AnimatedProperty::toggleProgress},
+                {"pressProgress", AnimatedProperty::pressProgress}};
+            result.name = Attribute(node, "name");
+            const auto property = Attribute(node, "property", "opacity");
+            const auto found = properties.find(property);
+            if (found == properties.end() || (node.name == "Animation" && result.name.empty())) {
+                throw RuntimeDiagnostic(node.location, "Unknown animated property or missing animation name");
+            }
+            result.property = found->second;
+            result.fromCurrent = Attribute(node, "from") == "Current";
+            result.toToggleState = Attribute(node, "to") == "ToggleState";
+            result.from = result.fromCurrent ? 0.0f : Number(node, "from");
+            result.to = result.toToggleState ? 0.0f : Number(node, "to");
+        }
         const float duration = Number(node, "duration");
         if (duration < 0 || duration > 86400000) {
             throw RuntimeDiagnostic(node.location, "Animation duration is out of range");

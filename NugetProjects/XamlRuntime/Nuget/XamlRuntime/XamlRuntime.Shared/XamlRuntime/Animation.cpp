@@ -1,12 +1,38 @@
-#include "XamlLayout.h"
 #include "Animation.h"
-#include "ElementBuilder.h"
+
+#include "./ElementBuilder.h"
+#include "./XamlLayout.h"
 
 #include <stdexcept>
 #include <algorithm>
 #include <cmath>
 
 namespace xaml::_details {
+    attr::Color AnimatedColor(const Element& target, AnimatedProperty property) {
+        switch (property) {
+        case AnimatedProperty::background: return target.Background();
+        case AnimatedProperty::foreground: return target.Foreground();
+        case AnimatedProperty::borderColor: return target.BorderColor();
+        case AnimatedProperty::tint: return target.Tint();
+        default: throw std::invalid_argument("Unsupported animated color property");
+        }
+    }
+
+    std::array<float, 4> ColorChannels(const attr::Color& color) {
+        return {color.red, color.green, color.blue, color.alpha};
+    }
+
+    void SetAnimatedColor(Element& target, AnimatedProperty property, const std::array<float, 4>& channels) {
+        const attr::Color color{channels[0], channels[1], channels[2], channels[3]};
+        switch (property) {
+        case AnimatedProperty::background: target.SetBackground(color); break;
+        case AnimatedProperty::foreground: target.SetForeground(color); break;
+        case AnimatedProperty::borderColor: target.SetBorderColor(color); break;
+        case AnimatedProperty::tint: target.SetTint(color); break;
+        default: throw std::invalid_argument("Unsupported animated color property");
+        }
+    }
+
     void SetAnimatedValue(Element& target, AnimatedProperty property, float value) {
         if (property == AnimatedProperty::opacity) {
             target.SetOpacity(value);
@@ -49,6 +75,23 @@ namespace xaml::_details {
 }
 
 namespace xaml {
+    AnimationTrack AnimationTrack::Color(AnimatedProperty property, const attr::Color& from, const attr::Color& to,
+        std::chrono::milliseconds duration, Easing easing, bool fromCurrent) {
+        if (property != AnimatedProperty::background && property != AnimatedProperty::foreground
+            && property != AnimatedProperty::borderColor && property != AnimatedProperty::tint) {
+            throw std::invalid_argument("Unsupported animated color property");
+        }
+        AnimationTrack track;
+        track.property = property;
+        track.fromCurrent = fromCurrent;
+        track.duration = duration;
+        track.easing = easing;
+        track.isColor = true;
+        track.fromColor = _details::ColorChannels(from);
+        track.toColor = _details::ColorChannels(to);
+        return track;
+    }
+
     //
     // API
     //
@@ -434,6 +477,11 @@ namespace xaml {
                 continue;
             }
             handled = true;
+            if (track.isColor) {
+                AddColorTrack(target, track, useTransitions,
+                    trigger == AnimationTrigger::show || trigger == AnimationTrigger::hide);
+                continue;
+            }
             AddPropertyTrack(target, track.property,
                 track.fromCurrent ? _details::AnimatedValue(target, track.property, trigger) : track.from,
                 track.toToggleState ? (target.IsOn() ? 1.0f : 0.0f) : track.to,
@@ -511,6 +559,34 @@ namespace xaml {
         _details::SetAnimatedValue(target, property, duration.count() == 0 ? to : from);
         if (duration.count() != 0) {
             tracks.push_back({nullptr, from, to, 0.0f, static_cast<float>(duration.count()), easing, property, presence});
+        }
+    }
+
+    void AnimationController::AddColorTrack(Element& target, const AnimationTrack& track, bool useTransitions,
+        bool presence) {
+        const auto from = track.fromCurrent ? _details::ColorChannels(_details::AnimatedColor(target, track.property))
+            : track.fromColor;
+        const auto valid = [](const std::array<float, 4>& color) {
+            return std::all_of(color.begin(), color.end(), [](float channel) {
+                return std::isfinite(channel) && channel >= 0.0f && channel <= 1.0f;
+            });
+        };
+        if (track.duration.count() < 0 || !valid(from) || !valid(track.toColor)) {
+            throw std::invalid_argument("Invalid color animation");
+        }
+        auto& tracks = target.animationState.tracks;
+        tracks.erase(std::remove_if(tracks.begin(), tracks.end(), [&track](const RunningAnimation& running) {
+            return running.field == nullptr && running.property == track.property;
+        }), tracks.end());
+        const auto duration = useTransitions ? track.duration : std::chrono::milliseconds(0);
+        _details::SetAnimatedColor(target, track.property, duration.count() == 0 ? track.toColor : from);
+        if (duration.count() != 0) {
+            RunningAnimation running{nullptr, 0.0f, 0.0f, 0.0f, static_cast<float>(duration.count()),
+                track.easing, track.property, presence};
+            running.isColor = true;
+            running.fromColor = from;
+            running.toColor = track.toColor;
+            tracks.push_back(running);
         }
     }
 
@@ -599,6 +675,14 @@ namespace xaml {
             if (track.easing == Easing::cubicOut) {
                 const float inverse = 1.0f - progress;
                 progress = 1.0f - inverse * inverse * inverse;
+            }
+            if (track.isColor) {
+                std::array<float, 4> color;
+                for (size_t i = 0; i < color.size(); ++i) {
+                    color[i] = track.fromColor[i] + (track.toColor[i] - track.fromColor[i]) * progress;
+                }
+                _details::SetAnimatedColor(element, track.property, color);
+                continue;
             }
             const float value = track.from + (track.to - track.from) * progress;
             if (track.field != nullptr) {

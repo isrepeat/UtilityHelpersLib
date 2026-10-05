@@ -75,6 +75,10 @@ namespace {{application}}::preview::session {
         return this->applicationSession.Update();
     }
 
+    void PreviewSession::Render(xaml::IRenderBackend& renderer) {
+        this->applicationSession.Render(renderer);
+    }
+
     std::vector<std::string> PreviewSession::ParseNavigationTransitionIds(std::string_view json) {
         const size_t property = json.find("\"transitionIds\"");
         if (property == std::string_view::npos) {

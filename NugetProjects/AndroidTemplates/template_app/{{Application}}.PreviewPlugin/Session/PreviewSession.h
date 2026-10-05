@@ -21,6 +21,7 @@ namespace {{application}}::preview::session {
         void PointerUp(float x, float y);
         void CancelPointer();
         bool Update();
+        void Render(xaml::IRenderBackend& renderer);
         static std::vector<std::string> ParseNavigationTransitionIds(std::string_view json);
 
     private:
