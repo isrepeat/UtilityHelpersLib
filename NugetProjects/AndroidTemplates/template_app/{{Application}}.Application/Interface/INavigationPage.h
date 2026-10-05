@@ -11,7 +11,7 @@ namespace {{application}}::application::interface {
     class INavigationPage {
     public:
         virtual ~INavigationPage() = default;
-        virtual std::unique_ptr<base::NavigationStateBase> OnNavigatingFrom(const core::NavigationRequest& request) = 0;
-        virtual bool OnNavigatingTo(const core::NavigationRequest& request, std::unique_ptr<base::NavigationStateBase> state) = 0;
+        virtual std::unique_ptr<base::NavigationStateBase> OnNavigatingFrom(const core::NavigationRequest& navigationRequest) = 0;
+        virtual bool OnNavigatingTo(const core::NavigationRequest& navigationRequest, std::unique_ptr<base::NavigationStateBase> navigationState) = 0;
     };
 }

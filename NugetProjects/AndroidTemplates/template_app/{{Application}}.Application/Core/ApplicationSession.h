@@ -8,7 +8,7 @@
 namespace {{application}}::application::core {
     class ApplicationSession final {
     public:
-        explicit ApplicationSession(model::ApplicationStateDocument document = {}, ApplicationStateStore::DocumentSaveHandler save = {});
+        explicit ApplicationSession(model::ApplicationStateDocument applicationStateDocument = {}, ApplicationStateStore::DocumentSaveHandler save = {});
         ~ApplicationSession() = default;
         ApplicationSession(const ApplicationSession&) = delete;
         ApplicationSession& operator=(const ApplicationSession&) = delete;
@@ -28,8 +28,8 @@ namespace {{application}}::application::core {
 
     private:
         ApplicationStateStore stateStore;
-        model::ApplicationRepository repository;
-        AppSessionController controller;
+        model::ApplicationRepository applicationRepository;
+        AppSessionController appSessionController;
         PageManager pageManager;
         xaml::RendererRegistry renderers;
     };

@@ -9,7 +9,7 @@
 - Main передаёт GreetingNavigationState.Message из ApplicationRepository. Settings требует этот payload и публикует Message в XAML binding.
 - Перед активацией вызываются OnNavigatingFrom и OnNavigatingTo; контракт проверяет обязательность данных и TypeId. Отклонённый переход не меняет текущую страницу и историю.
 - previousPage берётся из фактической истории. Загрузка уже активной страницы не сбрасывает стек.
-- preview_Routes() публикует граф. Previewer передаёт в xp_navigate только transitionIds, а native создаёт и проверяет previewDefault. Весь путь проверяется до начала переходов; lifecycle может отклонить отдельный шаг.
+- preview_Routes() публикует граф. Previewer передаёт в xp_navigate только transitionIds, а native создаёт и проверяет hasPreviewDefaultNavigationState. Весь путь проверяется до начала переходов; lifecycle может отклонить отдельный шаг.
 - Reload разметки сохраняет экземпляр view model, payload и историю. Runtime bindings используют те же команды и свойства.
 
 ## Анимации переходов

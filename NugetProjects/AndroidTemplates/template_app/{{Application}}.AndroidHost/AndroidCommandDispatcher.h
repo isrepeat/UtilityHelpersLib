@@ -10,7 +10,9 @@ namespace {{application}}::android_host {
         ~AndroidCommandDispatcher() = default;
         AndroidCommandDispatcher(const AndroidCommandDispatcher&) = delete;
         AndroidCommandDispatcher& operator=(const AndroidCommandDispatcher&) = delete;
-        void Dispatch(application::core::HostCommand command, const application::core::HostCommandData& data) const;
+        void Dispatch(
+            application::core::HostCommand hostCommand,
+            const application::core::HostCommandData& hostCommandData) const;
 
     private:
         jni::Object target;

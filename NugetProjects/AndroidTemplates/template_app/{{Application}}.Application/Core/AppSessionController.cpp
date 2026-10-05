@@ -6,9 +6,9 @@ namespace {{application}}::application::core {
     //
     // IHostCommandDispatcher
     //
-    void AppSessionController::Dispatch(HostCommand command, const HostCommandData& data) {
+    void AppSessionController::Dispatch(HostCommand hostCommand, const HostCommandData& hostCommandData) {
         if (this->hostEventHandler) {
-            this->hostEventHandler(command, data);
+            this->hostEventHandler(hostCommand, hostCommandData);
         } else {
             this->SetStatus("Application updates are available in the Android host.");
         }
@@ -17,8 +17,8 @@ namespace {{application}}::application::core {
     //
     // API
     //
-    void AppSessionController::SetHostEventHandler(HostEventHandler handler) {
-        this->hostEventHandler = std::move(handler);
+    void AppSessionController::SetHostEventHandler(HostEventHandler hostEventHandler) {
+        this->hostEventHandler = std::move(hostEventHandler);
     }
 
     const std::string& AppSessionController::Status() const {

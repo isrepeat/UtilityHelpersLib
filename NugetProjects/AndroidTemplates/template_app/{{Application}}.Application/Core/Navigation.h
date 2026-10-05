@@ -55,6 +55,6 @@ namespace {{application}}::application::core {
     struct NavigationRequest final {
         std::string_view source;
         std::string_view target;
-        NavigationTrigger trigger;
+        NavigationTrigger navigationTrigger;
     };
 }

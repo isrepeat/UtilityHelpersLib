@@ -13,14 +13,14 @@ namespace {{application}}::application::ui::page {
         enum class Property { message };
         using PropertyChangedHandler = std::function<void(Property)>;
 
-        explicit SettingsPageViewModel(core::PageContext& context);
+        explicit SettingsPageViewModel(core::PageContext& pageContext);
         ~SettingsPageViewModel() = default;
 
         //
         // INavigationPage
         //
-        std::unique_ptr<base::NavigationStateBase> OnNavigatingFrom(const core::NavigationRequest& request) override;
-        bool OnNavigatingTo(const core::NavigationRequest& request, std::unique_ptr<base::NavigationStateBase> state) override;
+        std::unique_ptr<base::NavigationStateBase> OnNavigatingFrom(const core::NavigationRequest& navigationRequest) override;
+        bool OnNavigatingTo(const core::NavigationRequest& navigationRequest, std::unique_ptr<base::NavigationStateBase> navigationState) override;
 
         //
         // IPage
@@ -32,14 +32,14 @@ namespace {{application}}::application::ui::page {
         xaml::Element& Root() override;
 #if defined(ANDROID_APP_PREVIEWER)
         xaml::runtime::RuntimeBindingContext preview_RuntimeContext() override;
-        void preview_ReplaceRuntimeTree(xaml::runtime::RuntimeBuildResult result) override;
+        void preview_ReplaceRuntimeTree(xaml::runtime::RuntimeBuildResult runtimeBuildResult) override;
 #endif
         xaml::Element::Command NavigateToMainCommand();
-        std::function<void()> Subscribe(PropertyChangedHandler handler);
+        std::function<void()> Subscribe(PropertyChangedHandler propertyChangedHandler);
         const std::string& Message() const;
 
     private:
-        core::PageContext& context;
+        core::PageContext& pageContext;
         std::map<size_t, PropertyChangedHandler> handlers;
         size_t nextSubscription = 0;
         std::unique_ptr<xaml::Element> root;

@@ -25,7 +25,9 @@ namespace {{application}}::preview::api {
             throw std::invalid_argument("Plugin-info buffer and positive capacity are required");
         }
         const std::string pluginInfo = std::format(
-            R"({{"applicationId":"{{Application}}","displayName":"{{Application}}","resourceRootRelativePath":"Resources","sourceMarkupDirectory":"{}","sourceEntryMarkupPath":"{}","sourceControlsDirectory":"{}"}})",
+            R"({{"applicationId":"{{Application}}","displayName":"{{Application}}",)"
+            R"("resourceRootRelativePath":"Resources","sourceMarkupDirectory":"{}",)"
+            R"("sourceEntryMarkupPath":"{}","sourceControlsDirectory":"{}"}})",
             {{APPLICATION}}_PREVIEW_SOURCE_MARKUP_DIRECTORY,
             {{APPLICATION}}_PREVIEW_SOURCE_ENTRY_MARKUP_PATH,
             {{APPLICATION}}_PREVIEW_SOURCE_CONTROLS_DIRECTORY);

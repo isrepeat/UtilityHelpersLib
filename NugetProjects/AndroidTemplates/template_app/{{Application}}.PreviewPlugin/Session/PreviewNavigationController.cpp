@@ -62,10 +62,13 @@ namespace {{application}}::preview::session {
                 + ",\"targetPageId\":" + _details::JsonString(route.target)
                 + ",\"backwardOfTransitionId\":" + _details::JsonString(route.backwardOfRouteId)
                 + ",\"title\":" + _details::JsonString(route.title)
-                + ",\"targetKind\":" + _details::JsonString(route.targetKind == {{application}}::application::core::NavigationTargetKind::previousPage ? "previousPage" : "page")
+                + ",\"targetKind\":" + _details::JsonString(
+                    route.targetKind == {{application}}::application::core::NavigationTargetKind::previousPage
+                        ? "previousPage"
+                        : "page")
                 + ",\"isDefault\":" + (route.isDefault ? "true" : "false")
                 + ",\"dataType\":" + _details::JsonString(route.dataType)
-                + ",\"previewDefault\":" + (route.previewDefault ? "true" : "null") + '}';
+                + ",\"hasPreviewDefaultNavigationState\":" + (route.hasPreviewDefaultNavigationState ? "true" : "null") + '}';
         }
         return result + "]}";
     }

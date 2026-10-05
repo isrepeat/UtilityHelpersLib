@@ -10,8 +10,8 @@
 #include <utility>
 
 namespace {{application}}::application::ui::page {
-    SettingsPageViewModel::SettingsPageViewModel(core::PageContext& context)
-        : context(context) {
+    SettingsPageViewModel::SettingsPageViewModel(core::PageContext& pageContext)
+        : pageContext(pageContext) {
     }
 
     //
@@ -21,8 +21,8 @@ namespace {{application}}::application::ui::page {
         return {};
     }
 
-    bool SettingsPageViewModel::OnNavigatingTo(const core::NavigationRequest&, std::unique_ptr<base::NavigationStateBase> state) {
-        const auto* greeting = dynamic_cast<const core::GreetingNavigationState*>(state.get());
+    bool SettingsPageViewModel::OnNavigatingTo(const core::NavigationRequest&, std::unique_ptr<base::NavigationStateBase> navigationState) {
+        const auto* greeting = dynamic_cast<const core::GreetingNavigationState*>(navigationState.get());
         if (greeting == nullptr) {
             return false;
         }
@@ -61,17 +61,17 @@ namespace {{application}}::application::ui::page {
         xaml::runtime::RuntimeBindingContext result;
         result.xamlNamespace = "urn:{{application}}:xaml";
         result.owner = PageName;
-        result.bindings = std::make_shared<xaml::runtime::RuntimeBindingRegistry>();
-        result.bindings->AddCommand("NavigateToMainCommand", this->NavigateToMainCommand());
-        result.bindings->AddText("Message", [this] { return this->message; }, [this](std::function<void()> handler) {
+        runtimeBuildResult.bindings = std::make_shared<xaml::runtime::RuntimeBindingRegistry>();
+        runtimeBuildResult.bindings->AddCommand("NavigateToMainCommand", this->NavigateToMainCommand());
+        runtimeBuildResult.bindings->AddText("Message", [this] { return this->message; }, [this](std::function<void()> handler) {
             return this->Subscribe([handler](Property) { handler(); });
         });
         return result;
     }
 
-    void SettingsPageViewModel::preview_ReplaceRuntimeTree(xaml::runtime::RuntimeBuildResult result) {
-        this->bindings = std::move(result.bindings);
-        this->root = std::move(result.root);
+    void SettingsPageViewModel::preview_ReplaceRuntimeTree(xaml::runtime::RuntimeBuildResult runtimeBuildResult) {
+        this->bindings = std::move(runtimeBuildResult.bindings);
+        this->root = std::move(runtimeBuildResult.root);
     }
 #endif
     //
@@ -79,13 +79,13 @@ namespace {{application}}::application::ui::page {
     //
     xaml::Element::Command SettingsPageViewModel::NavigateToMainCommand() {
         return [this] {
-            this->context.navigator.NavigateBack();
+            this->pageContext.navigator.NavigateBack();
         };
     }
 
-    std::function<void()> SettingsPageViewModel::Subscribe(PropertyChangedHandler handler) {
+    std::function<void()> SettingsPageViewModel::Subscribe(PropertyChangedHandler propertyChangedHandler) {
         const size_t id = ++this->nextSubscription;
-        this->handlers.emplace(id, std::move(handler));
+        this->handlers.emplace(id, std::move(propertyChangedHandler));
         return [this, id] { this->handlers.erase(id); };
     }
 

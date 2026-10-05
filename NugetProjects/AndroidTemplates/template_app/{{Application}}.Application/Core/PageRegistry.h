@@ -10,23 +10,23 @@
 namespace {{application}}::application::core {
     struct PageContext final {
         interface::IPageNavigator& navigator;
-        model::ApplicationRepository& repository;
+        model::ApplicationRepository& applicationRepository;
         interface::IHostCommandDispatcher& hostCommands;
-        const AppSessionController& controller;
+        const AppSessionController& appSessionController;
     };
 
     template <typename... TPages>
     class PageRegistry final {
     public:
-        explicit PageRegistry(PageContext& context)
-            : pages(std::make_unique<TPages>(context)...) {
+        explicit PageRegistry(PageContext& pageContext)
+            : pageViewModels(std::make_unique<TPages>(pageContext)...) {
         }
 
         template <typename THandler>
         void ForEach(THandler&& handler) const {
-            std::apply([&handler](const auto&... pages) {
-                (handler(*pages), ...);
-            }, this->pages);
+            std::apply([&handler](const auto&... pageViewModels) {
+                (handler(*pageViewModels), ...);
+            }, this->pageViewModels);
         }
 
         interface::IPage* Find(std::string_view name) const {
@@ -40,6 +40,6 @@ namespace {{application}}::application::core {
         }
 
     private:
-        std::tuple<std::unique_ptr<TPages>...> pages;
+        std::tuple<std::unique_ptr<TPages>...> pageViewModels;
     };
 }

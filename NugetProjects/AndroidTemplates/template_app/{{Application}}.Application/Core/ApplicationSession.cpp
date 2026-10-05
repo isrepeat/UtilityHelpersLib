@@ -3,17 +3,17 @@
 #include <utility>
 
 namespace {{application}}::application::core {
-    ApplicationSession::ApplicationSession(model::ApplicationStateDocument document, ApplicationStateStore::DocumentSaveHandler save)
-        : stateStore(std::move(document), std::move(save))
-        , repository(this->stateStore)
-        , pageManager(this->repository, this->controller) {
+    ApplicationSession::ApplicationSession(model::ApplicationStateDocument applicationStateDocument, ApplicationStateStore::DocumentSaveHandler save)
+        : stateStore(std::move(applicationStateDocument), std::move(save))
+        , applicationRepository(this->stateStore)
+        , pageManager(this->applicationRepository, this->appSessionController) {
     }
 
     //
     // API
     //
     AppSessionController& ApplicationSession::Controller() {
-        return this->controller;
+        return this->appSessionController;
     }
 
     void ApplicationSession::Initialize(xaml::Size size) {
@@ -33,7 +33,7 @@ namespace {{application}}::application::core {
     }
 
     model::ApplicationRepository& ApplicationSession::Repository() {
-        return this->repository;
+        return this->applicationRepository;
     }
 
     xaml::Element& ApplicationSession::Root() {

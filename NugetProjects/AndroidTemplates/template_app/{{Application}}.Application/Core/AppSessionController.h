@@ -13,9 +13,9 @@ namespace {{application}}::application::core {
         //
         // IHostCommandDispatcher
         //
-        void Dispatch(HostCommand command, const HostCommandData& data = {}) override;
+        void Dispatch(HostCommand hostCommand, const HostCommandData& hostCommandData = {}) override;
 
-        void SetHostEventHandler(HostEventHandler handler);
+        void SetHostEventHandler(HostEventHandler hostEventHandler);
         const std::string& Status() const;
         void SetStatus(std::string value);
 

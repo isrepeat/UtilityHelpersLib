@@ -5,8 +5,8 @@
 #include <utility>
 
 namespace {{application}}::application::core {
-    ApplicationStateStore::ApplicationStateStore(model::ApplicationStateDocument document, DocumentSaveHandler documentSaveHandler)
-        : document(std::make_unique<model::ApplicationStateDocument>(std::move(document)))
+    ApplicationStateStore::ApplicationStateStore(model::ApplicationStateDocument applicationStateDocument, DocumentSaveHandler documentSaveHandler)
+        : applicationStateDocument(std::make_unique<model::ApplicationStateDocument>(std::move(applicationStateDocument)))
         , documentSaveHandler(std::move(documentSaveHandler)) {
     }
 
@@ -15,43 +15,43 @@ namespace {{application}}::application::core {
     // API
     //
     const model::ApplicationStateDocument& ApplicationStateStore::CurrentDocument() const {
-        return *this->document;
+        return *this->applicationStateDocument;
     }
 
-    bool ApplicationStateStore::TrySaveDocument(model::ApplicationStateDocument candidate) {
+    bool ApplicationStateStore::TrySaveDocument(model::ApplicationStateDocument applicationStateDocument) {
         // Обычный документ сначала записывается через handler; при ошибке текущее
         // состояние в памяти не меняется и UI не видит несохранённые данные.
 #if defined(ANDROID_APP_PREVIEWER)
         // Документ сценария живёт только в памяти preview-сеанса. Изменения UI
         // применяются к нему, но не затрагивают постоянный storage до экспорта.
-        if (!this->isUsingPreviewSessionDocument && this->documentSaveHandler && !this->documentSaveHandler(candidate)) {
+        if (!this->preview_isUsingPreviewSessionDocument && this->documentSaveHandler && !this->documentSaveHandler(applicationStateDocument)) {
 #else
-        if (this->documentSaveHandler && !this->documentSaveHandler(candidate)) {
+        if (this->documentSaveHandler && !this->documentSaveHandler(applicationStateDocument)) {
 #endif
             return false;
         }
-        *this->document = std::move(candidate);
+        *this->applicationStateDocument = std::move(applicationStateDocument);
         return true;
     }
 
 #if defined(ANDROID_APP_PREVIEWER)
-    void ApplicationStateStore::preview_LoadSessionDocument(model::ApplicationStateDocument candidate) {
+    void ApplicationStateStore::preview_LoadSessionDocument(model::ApplicationStateDocument applicationStateDocument) {
         // Замена полного документа переводит storage в memory-only режим preview.
-        *this->document = std::move(candidate);
-        this->isUsingPreviewSessionDocument = true;
+        *this->applicationStateDocument = std::move(applicationStateDocument);
+        this->preview_isUsingPreviewSessionDocument = true;
     }
 
     bool ApplicationStateStore::preview_SaveSessionDocumentToPersistentStorage() {
         // Повторный экспорт обычного документа не требуется.
-        if (!this->isUsingPreviewSessionDocument) {
+        if (!this->preview_isUsingPreviewSessionDocument) {
             return true;
         }
         // Только успешная запись завершает preview-режим; иначе пользователь может
         // повторить экспорт, не теряя изменений текущего сеанса.
-        if (this->documentSaveHandler && !this->documentSaveHandler(*this->document)) {
+        if (this->documentSaveHandler && !this->documentSaveHandler(*this->applicationStateDocument)) {
             return false;
         }
-        this->isUsingPreviewSessionDocument = false;
+        this->preview_isUsingPreviewSessionDocument = false;
         return true;
     }
 #endif
