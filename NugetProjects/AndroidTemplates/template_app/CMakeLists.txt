@@ -46,7 +46,24 @@ fn_androidappkit_get_configuration_path("${CMAKE_CURRENT_SOURCE_DIR}" "PackageDi
     {{application}}_xaml_runtime_packages_root)
 set({{application}}_native_package_source "${ANDROID_PACKAGES_FEED}")
 if (NOT {{application}}_native_package_source)
-    message(FATAL_ERROR "ANDROID_PACKAGES_FEED must be supplied by the project build script.")
+    # Visual Studio запускает CMake напрямую, без аргументов сборочного скрипта.
+    find_program({{application}}_feed_powershell NAMES powershell.exe REQUIRED)
+    execute_process(
+        COMMAND "${{{application}}_feed_powershell}" -NoProfile -ExecutionPolicy Bypass
+            -File "${CMAKE_CURRENT_SOURCE_DIR}/build.ps1" -Command get-packages-feed
+        RESULT_VARIABLE {{application}}_feed_result
+        OUTPUT_VARIABLE {{application}}_feed_output
+        ERROR_VARIABLE {{application}}_feed_error
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if (NOT {{application}}_feed_result EQUAL 0)
+        message(FATAL_ERROR "Could not read PackagesFeed: ${{{application}}_feed_error}")
+    endif()
+    string(REGEX MATCH "[^\r\n]+$" {{application}}_native_package_source
+        "${{{application}}_feed_output}")
+    if (NOT {{application}}_native_package_source)
+        message(FATAL_ERROR "Paths.PackagesFeed must be defined in Android.SharedProps.json.")
+    endif()
 endif()
 include("${ANDROID_BUILD_TOOLS_ROOT}/tools/cmake/InstallXamlRuntime.cmake")
 fn_androidappkit_install_xaml_runtime("${{{application}}_xaml_runtime_packages_root}"

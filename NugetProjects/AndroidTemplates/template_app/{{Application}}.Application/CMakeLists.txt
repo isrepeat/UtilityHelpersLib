@@ -21,7 +21,18 @@ file(GLOB_RECURSE {{application}}_generated_xaml CONFIGURE_DEPENDS "${{{applicat
 if (NOT {{application}}_generated_xaml)
     message(FATAL_ERROR "XamlCompiler did not generate application sources.")
 endif()
-add_library({{application}}_application STATIC ${{{application}}_application_sources} ${{{application}}_generated_xaml})
+# Генерируемые исходники и заголовки показываем отдельно от рукописного кода.
+file(GLOB_RECURSE {{application}}_generated_headers CONFIGURE_DEPENDS "${{{application}}_generated_root}/*.xaml.h")
+set({{application}}_generated_files
+    ${{{application}}_generated_xaml}
+    ${{{application}}_generated_headers}
+    "${{{application}}_project_root}/!Generated/Build/BuildVersion.h")
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${{{application}}_application_sources})
+source_group(TREE "${{{application}}_project_root}/!Generated" PREFIX "!Generated"
+    FILES ${{{application}}_generated_files})
+add_custom_target({{application}}_generated SOURCES ${{{application}}_generated_files})
+set_target_properties({{application}}_generated PROPERTIES FOLDER "!Generated")
+add_library({{application}}_application STATIC ${{{application}}_application_sources} ${{{application}}_generated_files})
 set_target_properties({{application}}_application PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features({{application}}_application PUBLIC cxx_std_20)
 target_include_directories({{application}}_application PUBLIC "${{{application}}_project_root}")

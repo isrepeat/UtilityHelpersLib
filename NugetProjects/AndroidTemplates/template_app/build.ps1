@@ -64,6 +64,11 @@ dynamicparam {
 }
 
 end {
+    # Прямой запуск CMake из IDE использует тот же feed, что и сборочные команды.
+    if ($Command -eq 'get-packages-feed') {
+        Write-Output $androidProjectSharedConfig.Paths.PackagesFeed
+        return
+    }
     if ($Command -eq 'update-build-tools') {
         $configurationPath = Join-Path $PSScriptRoot 'android-build.psd1'
         $text = [System.IO.File]::ReadAllText($configurationPath)
