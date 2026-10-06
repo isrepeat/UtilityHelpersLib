@@ -61,12 +61,12 @@ namespace {{application}}::application::ui::page {
         xaml::runtime::RuntimeBindingContext result;
         result.xamlNamespace = "urn:{{application}}:xaml";
         result.owner = PageName;
-        runtimeBuildResult.bindings = std::make_shared<xaml::runtime::RuntimeBindingRegistry>();
-        runtimeBuildResult.bindings->AddCommand("NavigateToSettingsCommand", this->NavigateToSettingsCommand());
-        runtimeBuildResult.bindings->AddText("PackageVersion", [this] { return this->PackageVersion(); });
-        runtimeBuildResult.bindings->AddCommand("RequestApplicationUpdateCommand", this->RequestApplicationUpdateCommand());
-        runtimeBuildResult.bindings->AddCommand("SendLogsCommand", this->SendLogsCommand());
-        runtimeBuildResult.bindings->AddText("Status", [this] { return this->Status(); }, [this](std::function<void()> handler) {
+        result.bindings = std::make_shared<xaml::runtime::RuntimeBindingRegistry>();
+        result.bindings->AddCommand("NavigateToSettingsCommand", this->NavigateToSettingsCommand());
+        result.bindings->AddText("PackageVersion", [this] { return this->PackageVersion(); });
+        result.bindings->AddCommand("RequestApplicationUpdateCommand", this->RequestApplicationUpdateCommand());
+        result.bindings->AddCommand("SendLogsCommand", this->SendLogsCommand());
+        result.bindings->AddText("Status", [this] { return this->Status(); }, [this](std::function<void()> handler) {
             return this->Subscribe([handler](Property) { handler(); });
         });
         return result;

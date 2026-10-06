@@ -8,7 +8,7 @@ $utf8Encoding = [System.Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = $utf8Encoding
 $OutputEncoding = $utf8Encoding
 $packageRoot = $PSScriptRoot
-$headerPath = Join-Path $packageRoot 'build\native\include\AndroidAppPreviewer.PluginSDK\AndroidAppPreviewerPlugin.h'
+$headerPath = Join-Path $packageRoot 'build\native\AndroidAppPreviewer.PluginSDK\AndroidAppPreviewerPlugin.h'
 if (-not (Test-Path -LiteralPath $headerPath -PathType Leaf)) {
     throw "Plugin SDK header was not found: $headerPath"
 }
@@ -40,9 +40,10 @@ function Get-NextPackageVersion([string]$ManifestPath, [string]$PackagesFeedPath
 $manifestPath = Join-Path $packageRoot 'AndroidAppPreviewer.PluginSDK.nuspec'
 $packageVersion = Get-NextPackageVersion $manifestPath $FeedRoot
 Remove-Item -LiteralPath $stagingRoot -Recurse -Force -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Path (Join-Path $stagingRoot 'build\native\include\AndroidAppPreviewer.PluginSDK'), (Join-Path $stagingRoot 'build\native\cmake'), (Join-Path $stagingRoot 'lib\net8.0'), $FeedRoot -Force | Out-Null
-Copy-Item -LiteralPath $headerPath -Destination (Join-Path $stagingRoot 'build\native\include\AndroidAppPreviewer.PluginSDK\AndroidAppPreviewerPlugin.h')
-Copy-Item -LiteralPath (Join-Path $packageRoot 'cmake\AndroidAppPreviewerPluginConfig.cmake') -Destination (Join-Path $stagingRoot 'build\native\cmake\AndroidAppPreviewerPluginConfig.cmake')
+New-Item -ItemType Directory -Path (Join-Path $stagingRoot 'build\native'), (Join-Path $stagingRoot 'cmake'), (Join-Path $stagingRoot 'lib\net8.0'), $FeedRoot -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $packageRoot 'build\native\AndroidAppPreviewer.PluginSDK') -Destination (Join-Path $stagingRoot 'build\native\AndroidAppPreviewer.PluginSDK') -Recurse
+Copy-Item -Path (Join-Path $packageRoot 'cmake\*.cmake') -Destination (Join-Path $stagingRoot 'cmake')
+Copy-Item -LiteralPath (Join-Path $packageRoot 'build\native\AndroidAppPreviewer.PluginSDK.targets') -Destination (Join-Path $stagingRoot 'build\native')
 Copy-Item -LiteralPath (Join-Path $packageRoot 'AndroidAppPreviewer.PluginSDK.nuspec') -Destination (Join-Path $stagingRoot 'AndroidAppPreviewer.PluginSDK.nuspec')
 
 & dotnet build $managedProject --configuration Release

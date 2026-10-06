@@ -1,36 +1,24 @@
 #pragma once
-#include <XamlRuntime/RenderEngine.h>
+#include <AndroidBuildTools/ApplicationFramework/ApplicationSessionBase.h>
 
 #include "./ApplicationStateStore.h"
 #include "./AppSessionController.h"
 #include "./PageManager.h"
 
 namespace {{application}}::application::core {
-    class ApplicationSession final {
-    public:
-        explicit ApplicationSession(model::ApplicationStateDocument applicationStateDocument = {}, ApplicationStateStore::DocumentSaveHandler save = {});
-        ~ApplicationSession() = default;
-        ApplicationSession(const ApplicationSession&) = delete;
-        ApplicationSession& operator=(const ApplicationSession&) = delete;
-        AppSessionController& Controller();
-        void Initialize(xaml::Size size);
-        void Resize(xaml::Size size);
-        PageManager& Pages();
-        const PageManager& Pages() const;
-        model::ApplicationRepository& Repository();
-        xaml::Element& Root();
-        void PointerDown(float x, float y);
-        void PointerMove(float x, float y);
-        void PointerUp(float x, float y);
-        void CancelPointer();
-        bool Update();
-        void Render(xaml::IRenderBackend& renderer);
+    struct ApplicationSessionTraits final {
+        using ApplicationStateDocument = model::ApplicationStateDocument;
+        using ApplicationStateStore = core::ApplicationStateStore;
+        using ApplicationRepository = model::ApplicationRepository;
+        using AppSessionController = core::AppSessionController;
+        using PageManager = core::PageManager;
+    };
 
-    private:
-        ApplicationStateStore stateStore;
-        model::ApplicationRepository applicationRepository;
-        AppSessionController appSessionController;
-        PageManager pageManager;
-        xaml::RendererRegistry renderers;
+    class ApplicationSession final : public application_framework::ApplicationSessionBase<ApplicationSessionTraits> {
+    public:
+        explicit ApplicationSession(
+            model::ApplicationStateDocument applicationStateDocument = {},
+            ApplicationStateStore::DocumentSaveHandler documentSaveHandler = {}
+        );
     };
 }

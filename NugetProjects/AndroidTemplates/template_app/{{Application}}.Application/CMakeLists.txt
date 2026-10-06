@@ -37,6 +37,7 @@ set_target_properties({{application}}_application PROPERTIES POSITION_INDEPENDEN
 target_compile_features({{application}}_application PUBLIC cxx_std_20)
 target_include_directories({{application}}_application PUBLIC "${{{application}}_project_root}")
 target_link_libraries({{application}}_application PUBLIC
+    AndroidApplication::Framework
     XamlRuntime::Logging
     XamlRuntime::Runtime)
 if (NOT ANDROID)

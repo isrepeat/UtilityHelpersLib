@@ -33,3 +33,9 @@ feed `Resolve-XamlCompiler` и `InstallXamlRuntime.cmake` проверяют п�
 Секция `Native = @{}` включает CMake и XAML; нативные поля `AndroidHost`, `NativeLibrary`, `AndroidPresetPrefix` и `CMakeVersionVariable` остаются в конфигурации проекта. Для совместимости наличие старого `NativeLibrary` также включает нативную сборку. Если этих настроек нет, выполняется только Gradle и Visual Studio не требуется. `-NativeOnly` для такого проекта завершается явной ошибкой.
 
 Kotlin-приложения используют те же команды через свой `build.ps1`. Общий uploader принимает `-FilePath` и `-MimeType` и возвращает метаданные Drive с ID файла; старое имя `-ApkPath` поддерживается как alias.
+
+## Структура исходников
+
+Utility-проект находится в `Nuget/AndroidBuildTools.Package`. В нём `build/native` содержит общие C++ исходники, `cmake` — модули подключения, `gradle` — плагины Gradle, `tests` — проверки, `tools` — PowerShell-инструменты. Рядом с проектом находятся `Pack.ps1` и `AndroidBuildTools.nuspec`.
+
+В пакете сохраняются каталоги `build/native`, `cmake`, `gradle` и `tools`. CMake-подключения используют `${ANDROID_BUILD_TOOLS_ROOT}/cmake/...` начиная с версии 1.0.63.26.

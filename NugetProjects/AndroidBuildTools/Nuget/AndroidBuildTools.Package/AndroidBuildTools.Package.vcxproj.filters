@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <ItemGroup>
+        <Filter Include="build" />
+        <Filter Include="build\native" />
+        <Filter Include="build\native\AndroidBuildTools" />
+        <Filter Include="build\native\AndroidBuildTools\ApplicationFramework" />
+        <Filter Include="cmake" />
+        <Filter Include="gradle" />
+        <Filter Include="gradle\src" />
+        <Filter Include="gradle\src\main" />
+        <Filter Include="gradle\src\main\groovy" />
+        <Filter Include="gradle\src\main\groovy\com" />
+        <Filter Include="gradle\src\main\groovy\com\isrepeat" />
+        <Filter Include="gradle\src\main\groovy\com\isrepeat\build" />
+        <Filter Include="tests" />
+        <Filter Include="tools" />
+        <Filter Include="tools\Modules" />
+        <Filter Include="tools\Modules\Module.AndroidBuildTools" />
+    </ItemGroup>
+    <ItemGroup>
+        <None Include="AndroidBuildTools.nuspec" />
+        <None Include="Pack.ps1" />
+        <ClInclude Include="build\native\AndroidBuildTools\ApplicationFramework\AppSessionControllerBase.h"><Filter>build\native\AndroidBuildTools\ApplicationFramework</Filter></ClInclude>
+        <ClInclude Include="build\native\AndroidBuildTools\ApplicationFramework\ApplicationSessionBase.h"><Filter>build\native\AndroidBuildTools\ApplicationFramework</Filter></ClInclude>
+        <None Include="build\native\AndroidBuildTools\ApplicationFramework\CMakeLists.txt"><Filter>build\native\AndroidBuildTools\ApplicationFramework</Filter></None>
+        <ClCompile Include="build\native\AndroidBuildTools\ApplicationFramework\InputDispatcher.cpp"><Filter>build\native\AndroidBuildTools\ApplicationFramework</Filter></ClCompile>
+        <ClInclude Include="build\native\AndroidBuildTools\ApplicationFramework\InputDispatcher.h"><Filter>build\native\AndroidBuildTools\ApplicationFramework</Filter></ClInclude>
+        <ClInclude Include="build\native\AndroidBuildTools\ApplicationFramework\PageManagerBase.h"><Filter>build\native\AndroidBuildTools\ApplicationFramework</Filter></ClInclude>
+        <None Include="cmake\AndroidApplicationFramework.cmake"><Filter>cmake</Filter></None>
+        <None Include="cmake\AndroidBuildConfiguration.cmake"><Filter>cmake</Filter></None>
+        <None Include="cmake\AndroidToolchain.cmake"><Filter>cmake</Filter></None>
+        <None Include="cmake\InstallAndroidAppPreviewerPluginSdk.cmake"><Filter>cmake</Filter></None>
+        <None Include="cmake\InstallXamlRuntime.cmake"><Filter>cmake</Filter></None>
+        <None Include="gradle\.gitignore"><Filter>gradle</Filter></None>
+        <None Include="gradle\build.gradle"><Filter>gradle</Filter></None>
+        <None Include="gradle\settings.gradle"><Filter>gradle</Filter></None>
+        <None Include="gradle\src\main\groovy\com\isrepeat\build\AndroidApplicationPlugin.groovy"><Filter>gradle\src\main\groovy\com\isrepeat\build</Filter></None>
+        <None Include="gradle\src\main\groovy\com\isrepeat\build\AndroidSettingsPlugin.groovy"><Filter>gradle\src\main\groovy\com\isrepeat\build</Filter></None>
+        <None Include="gradle\src\main\groovy\com\isrepeat\build\VerifyReleaseSigning.groovy"><Filter>gradle\src\main\groovy\com\isrepeat\build</Filter></None>
+        <None Include="tests\Test-PreviewInputs.ps1"><Filter>tests</Filter></None>
+        <None Include="tests\Test-Version.ps1"><Filter>tests</Filter></None>
+        <None Include="tools\Invoke-Build.ps1"><Filter>tools</Filter></None>
+        <None Include="tools\Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1"><Filter>tools\Modules\Module.AndroidBuildTools</Filter></None>
+        <None Include="tools\Read-AndroidSharedProps.ps1"><Filter>tools</Filter></None>
+        <None Include="tools\build-and-distribute.ps1"><Filter>tools</Filter></None>
+        <None Include="tools\build-android.ps1"><Filter>tools</Filter></None>
+        <None Include="tools\bump-version.ps1"><Filter>tools</Filter></None>
+        <None Include="tools\generate-xaml.ps1"><Filter>tools</Filter></None>
+        <None Include="tools\get-configuration-path.ps1"><Filter>tools</Filter></None>
+        <None Include="tools\get-configuration-value.ps1"><Filter>tools</Filter></None>
+        <None Include="tools\run-android-app-previewer.ps1"><Filter>tools</Filter></None>
+        <None Include="tools\test-apk-signing.ps1"><Filter>tools</Filter></None>
+        <None Include="tools\upload-apk-to-drive.ps1"><Filter>tools</Filter></None>
+    </ItemGroup>
+</Project>

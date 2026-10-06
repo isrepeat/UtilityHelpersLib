@@ -21,7 +21,7 @@ if (NOT ANDROID_BUILD_TOOLS_ROOT)
     file(TO_CMAKE_PATH "${{{application}}_bootstrap_root}" ANDROID_BUILD_TOOLS_ROOT)
 endif()
 
-include("${ANDROID_BUILD_TOOLS_ROOT}/tools/cmake/AndroidBuildConfiguration.cmake")
+include("${ANDROID_BUILD_TOOLS_ROOT}/cmake/AndroidBuildConfiguration.cmake")
 
 function({{application}}_get_configuration_value configuration_name output_variable)
     find_program({{application}}_powershell NAMES powershell.exe REQUIRED)
@@ -65,16 +65,18 @@ if (NOT {{application}}_native_package_source)
         message(FATAL_ERROR "Paths.PackagesFeed must be defined in Android.SharedProps.json.")
     endif()
 endif()
-include("${ANDROID_BUILD_TOOLS_ROOT}/tools/cmake/InstallXamlRuntime.cmake")
+include("${ANDROID_BUILD_TOOLS_ROOT}/cmake/InstallXamlRuntime.cmake")
 fn_androidappkit_install_xaml_runtime("${{{application}}_xaml_runtime_packages_root}"
     "${{{application}}_native_package_source}")
+
+include("${ANDROID_BUILD_TOOLS_ROOT}/cmake/AndroidApplicationFramework.cmake")
 
 add_subdirectory({{Application}}.Application)
 add_subdirectory({{Application}}.AndroidHost)
 if (NOT ANDROID)
     fn_androidappkit_get_configuration_path("${CMAKE_CURRENT_SOURCE_DIR}" "PackageDirectories.AndroidAppPreviewerPluginSdk"
         {{application}}_preview_plugin_sdk_packages_root)
-    include("${ANDROID_BUILD_TOOLS_ROOT}/tools/cmake/InstallAndroidAppPreviewerPluginSdk.cmake")
+    include("${ANDROID_BUILD_TOOLS_ROOT}/cmake/InstallAndroidAppPreviewerPluginSdk.cmake")
     fn_androidappkit_install_android_app_previewer_plugin_sdk(
         "${{{application}}_preview_plugin_sdk_packages_root}"
         "${{{application}}_native_package_source}")

@@ -3,15 +3,55 @@
     <ItemGroup>
         <Filter Include="build" />
         <Filter Include="build\native" />
-        <Filter Include="build\native\include" />
-        <Filter Include="build\native\include\AndroidAppPreviewer.PluginSDK" />
+        <Filter Include="build\native\AndroidAppPreviewer.PluginSDK" />
+        <Filter Include="build\native\AndroidAppPreviewer.PluginSDK\Internal" />
+        <Filter Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi" />
+        <Filter Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge" />
+        <Filter Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Rendering" />
+        <Filter Include="build\native\AndroidAppPreviewer.PluginSDK\Session" />
         <Filter Include="cmake" />
     </ItemGroup>
     <ItemGroup>
-        <None Include="build\native\include\AndroidAppPreviewer.PluginSDK\AndroidAppPreviewerPlugin.h"><Filter>build\native\include\AndroidAppPreviewer.PluginSDK</Filter></None>
-        <None Include="build\native\AndroidAppPreviewer.PluginSDK.targets"><Filter>build\native</Filter></None>
-        <None Include="cmake\AndroidAppPreviewerPluginConfig.cmake"><Filter>cmake</Filter></None>
-        <None Include="Pack.ps1" />
         <None Include="AndroidAppPreviewer.PluginSDK.nuspec" />
+        <None Include="Pack.ps1" />
+        <None Include="build\native\AndroidAppPreviewer.PluginSDK.targets"><Filter>build\native</Filter></None>
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\AndroidAppPreviewerPlugin.h"><Filter>build\native\AndroidAppPreviewer.PluginSDK</Filter></ClInclude>
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\DiagnosticAbi.cpp"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi</Filter></ClCompile>
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\DiagnosticAbi.h"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi</Filter></ClInclude>
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\ElementAbi.cpp"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi</Filter></ClCompile>
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\ElementAbi.h"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi</Filter></ClInclude>
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\InteractionAbi.cpp"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi</Filter></ClCompile>
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\InteractionAbi.h"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi</Filter></ClInclude>
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\MetadataAbi.cpp"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi</Filter></ClCompile>
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\MetadataAbi.h"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi</Filter></ClInclude>
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\PreviewPluginAbi.cpp"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi</Filter></ClCompile>
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\PreviewPluginAbi.h"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi</Filter></ClInclude>
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\RenderingAbi.cpp"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi</Filter></ClCompile>
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\RenderingAbi.h"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi</Filter></ClInclude>
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\SessionAbi.cpp"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi</Filter></ClCompile>
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\SessionAbi.h"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi</Filter></ClInclude>
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\XamlCompletionAbi.cpp"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi</Filter></ClCompile>
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\XamlCompletionAbi.h"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi</Filter></ClInclude>
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge\Diagnostic.cpp"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge</Filter></ClCompile>
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge\Diagnostic.h"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge</Filter></ClInclude>
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge\ElementTree.cpp"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge</Filter></ClCompile>
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge\ElementTree.h"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge</Filter></ClInclude>
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge\PreviewPluginSdkTypes.cpp"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge</Filter></ClCompile>
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge\PreviewPluginSdkTypes.h"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge</Filter></ClInclude>
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge\TextBuffer.cpp"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge</Filter></ClCompile>
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge\TextBuffer.h"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge</Filter></ClInclude>
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\PreviewPluginExports.cpp"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal</Filter></ClCompile>
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Rendering\AngleRenderSurface.cpp"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Rendering</Filter></ClCompile>
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Rendering\AngleRenderSurface.h"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Rendering</Filter></ClInclude>
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Rendering\RecordingBackend.cpp"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Rendering</Filter></ClCompile>
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Rendering\RecordingBackend.h"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Internal\Rendering</Filter></ClInclude>
+        <None Include="cmake\Runtime.cmake"><Filter>cmake</Filter></None>
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Session\ApplicationPreviewSession.h"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Session</Filter></ClInclude>
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Session\PluginDefinition.h"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Session</Filter></ClInclude>
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Session\PreviewNavigationController.cpp"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Session</Filter></ClCompile>
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Session\PreviewNavigationController.h"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Session</Filter></ClInclude>
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Session\PreviewSessionBase.cpp"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Session</Filter></ClCompile>
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Session\PreviewSessionBase.h"><Filter>build\native\AndroidAppPreviewer.PluginSDK\Session</Filter></ClInclude>
+        <None Include="cmake\AndroidAppPreviewerPluginConfig.cmake"><Filter>cmake</Filter></None>
     </ItemGroup>
 </Project>

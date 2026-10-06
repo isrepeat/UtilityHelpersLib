@@ -61,9 +61,9 @@ namespace {{application}}::application::ui::page {
         xaml::runtime::RuntimeBindingContext result;
         result.xamlNamespace = "urn:{{application}}:xaml";
         result.owner = PageName;
-        runtimeBuildResult.bindings = std::make_shared<xaml::runtime::RuntimeBindingRegistry>();
-        runtimeBuildResult.bindings->AddCommand("NavigateToMainCommand", this->NavigateToMainCommand());
-        runtimeBuildResult.bindings->AddText("Message", [this] { return this->message; }, [this](std::function<void()> handler) {
+        result.bindings = std::make_shared<xaml::runtime::RuntimeBindingRegistry>();
+        result.bindings->AddCommand("NavigateToMainCommand", this->NavigateToMainCommand());
+        result.bindings->AddText("Message", [this] { return this->message; }, [this](std::function<void()> handler) {
             return this->Subscribe([handler](Property) { handler(); });
         });
         return result;

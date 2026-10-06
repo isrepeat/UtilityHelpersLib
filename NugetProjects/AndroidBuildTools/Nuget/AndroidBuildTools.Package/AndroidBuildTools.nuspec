@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+    <metadata>
+        <id>AndroidBuildTools</id>
+        <version>1.0.63.27</version>
+        <authors>DCT.C++Team</authors>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>Shared PowerShell and CMake tools for native Android application builds.</description>
+    </metadata>
+    <files>
+        <file src="build\native\**\*" target="build\native" />
+        <file src="cmake\**\*" target="cmake" />
+        <file src="tools\**\*" target="tools" />
+        <file src="gradle\**\*" target="gradle" exclude="gradle\build\**;gradle\.gradle\**" />
+        <file src="..\..\README.md" target="" />
+        <file src="..\..\BUILD-PIPELINE.md" target="" />
+    </files>
+</package>

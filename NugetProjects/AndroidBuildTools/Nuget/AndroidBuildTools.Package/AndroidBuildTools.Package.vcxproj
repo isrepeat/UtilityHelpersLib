@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <ItemGroup Label="ProjectConfigurations">
+        <ProjectConfiguration Include="Release|x64"><Configuration>Release</Configuration><Platform>x64</Platform></ProjectConfiguration>
+    </ItemGroup>
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>{79A4FC83-15BC-4D79-A5A9-782FC86A682C}</ProjectGuid>
+        <RootNamespace>AndroidBuildTools.Package</RootNamespace>
+    </PropertyGroup>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration"><ConfigurationType>Utility</ConfigurationType><PlatformToolset>v145</PlatformToolset></PropertyGroup>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+    <ItemDefinitionGroup>
+        <ClCompile>
+            <AdditionalIncludeDirectories>$(ProjectDir)build\native;$(ProjectDir)..\..\..\XamlRuntime\Nuget\XamlRuntime\XamlRuntime.Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+            <LanguageStandard>stdcpp20</LanguageStandard>
+        </ClCompile>
+    </ItemDefinitionGroup>
+    <ItemGroup>
+        <None Include="AndroidBuildTools.nuspec" />
+        <None Include="Pack.ps1" />
+        <ClInclude Include="build\native\AndroidBuildTools\ApplicationFramework\AppSessionControllerBase.h" />
+        <ClInclude Include="build\native\AndroidBuildTools\ApplicationFramework\ApplicationSessionBase.h" />
+        <None Include="build\native\AndroidBuildTools\ApplicationFramework\CMakeLists.txt" />
+        <ClCompile Include="build\native\AndroidBuildTools\ApplicationFramework\InputDispatcher.cpp" />
+        <ClInclude Include="build\native\AndroidBuildTools\ApplicationFramework\InputDispatcher.h" />
+        <ClInclude Include="build\native\AndroidBuildTools\ApplicationFramework\PageManagerBase.h" />
+        <None Include="cmake\AndroidApplicationFramework.cmake" />
+        <None Include="cmake\AndroidBuildConfiguration.cmake" />
+        <None Include="cmake\AndroidToolchain.cmake" />
+        <None Include="cmake\InstallAndroidAppPreviewerPluginSdk.cmake" />
+        <None Include="cmake\InstallXamlRuntime.cmake" />
+        <None Include="gradle\.gitignore" />
+        <None Include="gradle\build.gradle" />
+        <None Include="gradle\settings.gradle" />
+        <None Include="gradle\src\main\groovy\com\isrepeat\build\AndroidApplicationPlugin.groovy" />
+        <None Include="gradle\src\main\groovy\com\isrepeat\build\AndroidSettingsPlugin.groovy" />
+        <None Include="gradle\src\main\groovy\com\isrepeat\build\VerifyReleaseSigning.groovy" />
+        <None Include="tests\Test-PreviewInputs.ps1" />
+        <None Include="tests\Test-Version.ps1" />
+        <None Include="tools\Invoke-Build.ps1" />
+        <None Include="tools\Modules\Module.AndroidBuildTools\Module.AndroidBuildTools.psm1" />
+        <None Include="tools\Read-AndroidSharedProps.ps1" />
+        <None Include="tools\build-and-distribute.ps1" />
+        <None Include="tools\build-android.ps1" />
+        <None Include="tools\bump-version.ps1" />
+        <None Include="tools\generate-xaml.ps1" />
+        <None Include="tools\get-configuration-path.ps1" />
+        <None Include="tools\get-configuration-value.ps1" />
+        <None Include="tools\run-android-app-previewer.ps1" />
+        <None Include="tools\test-apk-signing.ps1" />
+        <None Include="tools\upload-apk-to-drive.ps1" />
+    </ItemGroup>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

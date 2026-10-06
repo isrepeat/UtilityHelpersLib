@@ -17,6 +17,8 @@ set_target_properties({{application}}_preview_plugin PROPERTIES
     CXX_EXTENSIONS OFF
     WINDOWS_EXPORT_ALL_SYMBOLS OFF
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Build/{{Application}}.PreviewPlugin/Build/$<CONFIG>/x64/{{Application}}.PreviewPlugin")
+android_app_previewer_add_runtime({{application}}_preview_plugin)
+
 target_include_directories({{application}}_preview_plugin PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 target_link_libraries({{application}}_preview_plugin PRIVATE
     AndroidAppPreviewerPlugin::SDK
