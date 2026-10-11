@@ -403,7 +403,9 @@ namespace xaml::_details {
             ? element.State<VisualTransform>() : defaults;
         const float offsetX = inheritedOffsetX + element.RenderOffsetX() + transform.offsetX;
         const float offsetY = inheritedOffsetY + element.RenderOffsetY() + transform.offsetY;
-        const float opacity = inheritedOpacity * element.Opacity() * transform.opacity;
+        // Ограничиваем каждый множитель до композиции: opacity > 1 не усиливает альфу цвета или родителя.
+        const float opacity = inheritedOpacity * std::clamp(element.Opacity(), 0.0f, 1.0f)
+            * std::clamp(transform.opacity, 0.0f, 1.0f);
         const Rect bounds = Translate(element.Bounds(), offsetX, offsetY);
         const float childrenOffsetX = element.Type() == ElementType::scrollViewer
             ? offsetX - element.HorizontalOffset() : offsetX;

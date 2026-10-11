@@ -4,8 +4,11 @@
 #include <string>
 #include <chrono>
 #include <vector>
+#include <array>
 
 namespace xaml {
+    namespace attr { struct Color; }
+
     enum class AnimatedProperty {
         opacity,
         renderOffsetX,
@@ -13,6 +16,10 @@ namespace xaml {
         height,
         toggleProgress,
         pressProgress,
+        background,
+        foreground,
+        borderColor,
+        tint,
     };
 
     enum class AnimationTrigger {
@@ -52,6 +59,12 @@ namespace xaml {
         Easing easing = Easing::linear;
         std::string name;
         AnimationSettings settings;
+        bool isColor = false;
+        std::array<float, 4> fromColor{};
+        std::array<float, 4> toColor{};
+
+        static AnimationTrack Color(AnimatedProperty property, const attr::Color& from, const attr::Color& to,
+            std::chrono::milliseconds duration, Easing easing = Easing::linear, bool fromCurrent = false);
     };
 
     struct Storyboard {

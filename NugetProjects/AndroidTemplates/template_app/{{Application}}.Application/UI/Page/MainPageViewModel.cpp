@@ -11,8 +11,8 @@
 #include <utility>
 
 namespace {{application}}::application::ui::page {
-    MainPageViewModel::MainPageViewModel(core::PageContext& context)
-        : context(context)
+    MainPageViewModel::MainPageViewModel(core::PageContext& pageContext)
+        : pageContext(pageContext)
         , packageVersion("Version " {{APPLICATION}}_PACKAGE_VERSION) {
     }
 
@@ -23,8 +23,8 @@ namespace {{application}}::application::ui::page {
         return {};
     }
 
-    bool MainPageViewModel::OnNavigatingTo(const core::NavigationRequest&, std::unique_ptr<base::NavigationStateBase> state) {
-        return state == nullptr;
+    bool MainPageViewModel::OnNavigatingTo(const core::NavigationRequest&, std::unique_ptr<base::NavigationStateBase> navigationState) {
+        return navigationState == nullptr;
     }
 
     //
@@ -45,8 +45,8 @@ namespace {{application}}::application::ui::page {
     }
 
     void MainPageViewModel::Update() {
-        if (this->status != this->context.controller.Status()) {
-            this->status = this->context.controller.Status();
+        if (this->status != this->pageContext.appSessionController.Status()) {
+            this->status = this->pageContext.appSessionController.Status();
             for (const auto& [id, handler] : this->handlers) {
                 handler(Property::status);
             }
@@ -72,9 +72,9 @@ namespace {{application}}::application::ui::page {
         return result;
     }
 
-    void MainPageViewModel::preview_ReplaceRuntimeTree(xaml::runtime::RuntimeBuildResult result) {
-        this->bindings = std::move(result.bindings);
-        this->root = std::move(result.root);
+    void MainPageViewModel::preview_ReplaceRuntimeTree(xaml::runtime::RuntimeBuildResult runtimeBuildResult) {
+        this->bindings = std::move(runtimeBuildResult.bindings);
+        this->root = std::move(runtimeBuildResult.root);
     }
 #endif
     //
@@ -82,21 +82,23 @@ namespace {{application}}::application::ui::page {
     //
     xaml::Element::Command MainPageViewModel::NavigateToSettingsCommand() {
         return [this] {
-            auto state = std::make_unique<core::GreetingNavigationState>();
-            state->Message = this->context.repository.Greeting();
-            this->context.navigator.Trigger(core::NavigationTrigger::navigateToSettings, std::move(state));
+            auto greetingNavigationState = std::make_unique<core::GreetingNavigationState>();
+            greetingNavigationState->Message = this->pageContext.applicationRepository.Greeting();
+            this->pageContext.navigator.Trigger(
+                core::NavigationTrigger::navigateToSettings,
+                std::move(greetingNavigationState));
         };
     }
     xaml::Element::Command MainPageViewModel::RequestApplicationUpdateCommand() {
         return [this] {
-            this->context.hostCommands.Dispatch(core::HostCommand::requestApplicationUpdate);
+            this->pageContext.hostCommands.Dispatch(core::HostCommand::requestApplicationUpdate);
             this->Update();
         };
     }
 
     xaml::Element::Command MainPageViewModel::SendLogsCommand() {
         return [this] {
-            this->context.hostCommands.Dispatch(core::HostCommand::sendLogs);
+            this->pageContext.hostCommands.Dispatch(core::HostCommand::sendLogs);
             this->Update();
         };
     }
@@ -109,9 +111,9 @@ namespace {{application}}::application::ui::page {
         return this->packageVersion;
     }
 
-    std::function<void()> MainPageViewModel::Subscribe(PropertyChangedHandler handler) {
+    std::function<void()> MainPageViewModel::Subscribe(PropertyChangedHandler propertyChangedHandler) {
         const size_t id = ++this->nextSubscription;
-        this->handlers.emplace(id, std::move(handler));
+        this->handlers.emplace(id, std::move(propertyChangedHandler));
         return [this, id] { this->handlers.erase(id); };
     }
 }

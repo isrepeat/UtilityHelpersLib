@@ -5,7 +5,7 @@ call "%UTILITY_HELPERS_ROOT%\Scripts\Resolve-PackagesFeed.cmd"
 set "EXIT_CODE=%ERRORLEVEL%"
 if not "%EXIT_CODE%"=="0" goto :FeedResolutionFailed
 
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%UTILITY_HELPERS_ROOT%\NugetProjects\AndroidBuildTools\Pack.ps1" -FeedPath "%UH_PACKAGES_FEED%" %*
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%UTILITY_HELPERS_ROOT%\NugetProjects\AndroidBuildTools\Nuget\AndroidBuildTools.Package\Pack.ps1" -FeedPath "%UH_PACKAGES_FEED%" %*
 set "EXIT_CODE=%ERRORLEVEL%"
 
 echo.

@@ -123,6 +123,9 @@ foreach ($file in $files) {
         continue
     }
     $text = [IO.File]::ReadAllText($file.FullName)
+    # JSON требует собственного экранирования путей, включая обратные слеши и кавычки.
+    $text = $text.Replace('{{PreviewerDebugExecutableJson}}', (ConvertTo-Json -InputObject $PreviewerDebugExecutablePath -Compress))
+    $text = $text.Replace('{{PreviewerDebugDirectoryJson}}', (ConvertTo-Json -InputObject (Split-Path -Parent $PreviewerDebugExecutablePath) -Compress))
     $text = $text.Replace('{{Application}}', $Name).Replace('{{application}}', $Name.ToLowerInvariant()).Replace('{{APPLICATION}}', $Name.ToUpperInvariant()).Replace('{{ApplicationVersion}}', $applicationVersion).Replace('{{AndroidBuildToolsVersion}}', $androidBuildToolsVersion)
     $text = $text.Replace('{{PackageId}}', $PackageId).Replace('{{JniPackage}}', $PackageId.Replace('.', '_'))
     $text = $text.Replace('{{BuildToolsSource}}', $BuildToolsSource.Replace("'", "''"))

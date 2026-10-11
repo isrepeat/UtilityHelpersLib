@@ -4,11 +4,12 @@
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
-#include <cctype>
 #include <fstream>
-#include <regex>
+#include <cctype>
 #include <string>
 #include <vector>
+#include <cmath>
+#include <regex>
 #include <map>
 #include <set>
 
@@ -322,6 +323,12 @@ namespace {
             const std::string normalized = namedColor == namedColors.end() ? value : namedColor->second;
             if ((normalized.size() != 7 && normalized.size() != 9) || normalized.front() != '#') {
                 throw std::runtime_error(name + " must use #RRGGBB, #AARRGGBB or a supported color name");
+            }
+            if (!std::all_of(normalized.begin() + 1, normalized.end(), [](unsigned char character) {
+                return (character >= '0' && character <= '9') || (character >= 'a' && character <= 'f')
+                    || (character >= 'A' && character <= 'F');
+            })) {
+                throw std::runtime_error(name + " contains invalid hexadecimal digits");
             }
             const unsigned long color = std::stoul(normalized.substr(1), nullptr, 16);
             const unsigned long alpha = normalized.size() == 9 ? (color >> 24) & 0xff : 0xff;
@@ -791,12 +798,18 @@ namespace {
                             const std::string animationName = track.name == "Animation"
                                 ? this->AttributeValue(track, "name") : "";
                             if (!track.children.empty() || targetName.empty()
-                                || (track.name != "Animation" && track.name != "FloatAnimation")
+                                || (track.name != "Animation" && track.name != "FloatAnimation" && track.name != "ColorAnimation")
                                 || (track.name == "Animation" && animationName.empty())) {
                                 throw std::runtime_error("Visual state Animation requires targetName and name");
                             }
                             if (trackIndex != 0) {
                                 output << ", ";
+                            }
+                            if (track.name == "ColorAnimation") {
+                                output << "{\"" << this->EscapeCpp(targetName) << "\", ";
+                                this->EmitColorTrack(track, output);
+                                output << "}";
+                                continue;
                             }
                             if (track.name == "Animation") {
                                 output << "{\"" << this->EscapeCpp(targetName) << "\", [] { AnimationTrack track; track.name = \""
@@ -862,6 +875,34 @@ namespace {
             }
         }
 
+        void EmitColorTrack(const Element& track, std::ostringstream& output) {
+            const auto property = this->AttributeValue(track, "property");
+            const auto from = this->AttributeValue(track, "from");
+            const auto to = this->AttributeValue(track, "to");
+            const auto duration = this->AttributeValue(track, "duration");
+            const auto easing = this->AttributeValue(track, "easing");
+            if (!track.children.empty() || (property != "background" && property != "foreground"
+                    && property != "borderBrush" && property != "tint")
+                || from.empty() || to.empty() || duration.empty()) {
+                throw std::runtime_error("ColorAnimation requires supported property, from, to and duration");
+            }
+            size_t consumed = 0;
+            const float milliseconds = std::stof(duration, &consumed);
+            if (consumed != duration.size() || !std::isfinite(milliseconds) || milliseconds < 0 || milliseconds > 86400000) {
+                throw std::runtime_error("ColorAnimation duration is out of range");
+            }
+            const std::string easingName = easing.empty() || easing == "Linear" ? "linear"
+                : easing == "CubicOut" ? "cubicOut" : "";
+            if (easingName.empty()) {
+                throw std::runtime_error("ColorAnimation easing must be Linear or CubicOut");
+            }
+            output << "AnimationTrack::Color(AnimatedProperty::" << (property == "borderBrush" ? "borderColor" : property)
+                << ", " << (from == "Current" ? "attr::Color{}" : this->ColorLiteral("from", from))
+                << ", " << this->ColorLiteral("to", to) << ", std::chrono::milliseconds("
+                << static_cast<long long>(milliseconds) << "), Easing::" << easingName
+                << ", " << (from == "Current" ? "true" : "false") << ")";
+        }
+
         void EmitStoryboards(
             const Element& element,
             const std::string& variable,
@@ -908,6 +949,10 @@ namespace {
                         }
                         if (index != 0) {
                             output << ", ";
+                        }
+                        if (track.name == "ColorAnimation") {
+                            this->EmitColorTrack(track, output);
+                            continue;
                         }
                         if (track.name == "Animation") {
                             if (attribute("name").empty()) {

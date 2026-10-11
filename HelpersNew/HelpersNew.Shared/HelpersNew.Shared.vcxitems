@@ -10,6 +10,9 @@
         <ProjectCapability Include="SourceItemsFromImports" />
     </ItemGroup>
     <ItemGroup>
+        <ClInclude Include="$(MSBuildThisFileDirectory)HelpersNew\Event\Connection.h" />
+        <ClInclude Include="$(MSBuildThisFileDirectory)HelpersNew\Event\IEvent.h" />
+        <ClInclude Include="$(MSBuildThisFileDirectory)HelpersNew\Event\Signal.h" />
         <ClCompile Include="$(MSBuildThisFileDirectory)HelpersNew\Filesystem\ReadAllBytes.cpp" />
         <ClCompile Include="$(MSBuildThisFileDirectory)HelpersNew\Geometry\ContainsPoint.cpp" />
         <ClInclude Include="$(MSBuildThisFileDirectory)HelpersNew\Filesystem\ReadAllBytes.h" />

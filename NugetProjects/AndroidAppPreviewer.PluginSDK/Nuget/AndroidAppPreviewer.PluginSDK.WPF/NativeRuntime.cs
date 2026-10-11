@@ -86,7 +86,7 @@ namespace AndroidAppPreviewerPluginSDK {
 
     public static class NativeRuntime {
         private const uint PluginAbiVersion = 1;
-        private const uint PluginApiVersion = 1;
+        private const uint PluginAbiTableVersion = 1;
         private static string? pluginPath;
         private static class Delegates {
             //
@@ -94,7 +94,7 @@ namespace AndroidAppPreviewerPluginSDK {
             //
             public static class Abi {
                 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-                public delegate IntPtr xp_get_api(uint requestedVersion);
+                public delegate IntPtr xp_get_abi(uint requestedVersion);
 
             }
 
@@ -478,7 +478,7 @@ namespace AndroidAppPreviewerPluginSDK {
 
 
         [StructLayout(LayoutKind.Sequential)]
-        private struct NativeApiTable {
+        private struct NativeAbiTable {
             public uint Version;
             public uint Size;
             public IntPtr[] FunctionPointers;
@@ -493,8 +493,8 @@ namespace AndroidAppPreviewerPluginSDK {
             return Marshal.GetDelegateForFunctionPointer<T>(functionPointer);
         }
 
-        private static void AddFunctions(NativeApiTable table, string tableName, params string[] names) {
-            if (table.Version != NativeRuntime.PluginApiVersion || table.Size < sizeof(uint) * 2 + IntPtr.Size * names.Length ||
+        private static void AddFunctions(NativeAbiTable table, string tableName, params string[] names) {
+            if (table.Version != NativeRuntime.PluginAbiTableVersion || table.Size < sizeof(uint) * 2 + IntPtr.Size * names.Length ||
                 table.FunctionPointers == null || table.FunctionPointers.Length < names.Length) {
                 throw new InvalidOperationException($"Preview-plugin вернул неполную ABI-таблицу {tableName}.");
             }
@@ -512,21 +512,21 @@ namespace AndroidAppPreviewerPluginSDK {
             }
             NativeRuntime.pluginPath = fullPath;
             NativeRuntime.pluginHandle = NativeLibrary.Load(fullPath);
-            NativeRuntime.LoadApi(NativeRuntime.pluginHandle);
+            NativeRuntime.LoadAbi(NativeRuntime.pluginHandle);
         }
 
-        private static void LoadApi(IntPtr libraryHandle) {
-            var fnGetApiAddress = NativeLibrary.GetExport(libraryHandle, "xp_get_api");
-            var fnGetApi = Marshal.GetDelegateForFunctionPointer<Delegates.Abi.xp_get_api>(fnGetApiAddress);
-            var fnApiAddress = fnGetApi(NativeRuntime.PluginApiVersion);
-            if (fnApiAddress == IntPtr.Zero) throw new InvalidOperationException("Preview-plugin не поддерживает запрошенную таблицу ABI v1.");
-            var rootVersion = (uint)Marshal.ReadInt32(fnApiAddress);
-            var rootSize = (uint)Marshal.ReadInt32(fnApiAddress, sizeof(uint));
-            if (rootVersion != NativeRuntime.PluginApiVersion) {
+        private static void LoadAbi(IntPtr libraryHandle) {
+            var fnGetAbiAddress = NativeLibrary.GetExport(libraryHandle, "xp_get_abi");
+            var fnGetAbi = Marshal.GetDelegateForFunctionPointer<Delegates.Abi.xp_get_abi>(fnGetAbiAddress);
+            var fnAbiAddress = fnGetAbi(NativeRuntime.PluginAbiTableVersion);
+            if (fnAbiAddress == IntPtr.Zero) throw new InvalidOperationException("Preview-plugin не поддерживает запрошенную таблицу ABI v1.");
+            var rootVersion = (uint)Marshal.ReadInt32(fnAbiAddress);
+            var rootSize = (uint)Marshal.ReadInt32(fnAbiAddress, sizeof(uint));
+            if (rootVersion != NativeRuntime.PluginAbiTableVersion) {
                 throw new InvalidOperationException("Preview-plugin вернул неполную корневую таблицу ABI v1.");
             }
 
-            var tableAddress = IntPtr.Add(fnApiAddress, sizeof(uint) * 2);
+            var tableAddress = IntPtr.Add(fnAbiAddress, sizeof(uint) * 2);
             var metadata = NativeRuntime.ReadTable(tableAddress, 6);
             tableAddress = IntPtr.Add(tableAddress, (int)metadata.Size);
             var session = NativeRuntime.ReadTable(tableAddress, 30);
@@ -540,7 +540,7 @@ namespace AndroidAppPreviewerPluginSDK {
             var xamlCompletion = NativeRuntime.ReadTable(tableAddress, 4);
             tableAddress = IntPtr.Add(tableAddress, (int)xamlCompletion.Size);
             var logging = NativeRuntime.ReadTable(tableAddress, 2);
-            if (rootSize < tableAddress.ToInt64() - fnApiAddress.ToInt64() + logging.Size) {
+            if (rootSize < tableAddress.ToInt64() - fnAbiAddress.ToInt64() + logging.Size) {
                 throw new InvalidOperationException("Preview-plugin вернул неполную корневую таблицу ABI v1.");
             }
             NativeRuntime.functionPointers.Clear();
@@ -553,12 +553,12 @@ namespace AndroidAppPreviewerPluginSDK {
             NativeRuntime.AddFunctions(logging, "logging", "xp_configure_logging", "xp_log_info");
         }
 
-        private static NativeApiTable ReadTable(IntPtr address, int functionCount) {
+        private static NativeAbiTable ReadTable(IntPtr address, int functionCount) {
             var functionPointers = new IntPtr[functionCount];
             for (var index = 0; index < functionCount; ++index) {
                 functionPointers[index] = Marshal.ReadIntPtr(address, sizeof(uint) * 2 + (int)IntPtr.Size * index);
             }
-            return new NativeApiTable { Version = (uint)Marshal.ReadInt32(address), Size = (uint)Marshal.ReadInt32(address, sizeof(uint)), FunctionPointers = functionPointers };
+            return new NativeAbiTable { Version = (uint)Marshal.ReadInt32(address), Size = (uint)Marshal.ReadInt32(address, sizeof(uint)), FunctionPointers = functionPointers };
         }
         public static void ThrowIfFalse(bool result) {
             if (!result) {

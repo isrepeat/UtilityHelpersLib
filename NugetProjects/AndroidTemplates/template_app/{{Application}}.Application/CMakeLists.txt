@@ -7,15 +7,10 @@ if (NOT DEFINED {{APPLICATION}}_PACKAGE_VERSION)
     set({{APPLICATION}}_PACKAGE_VERSION "${{{application}}_version_base}.0")
 endif()
 file(MAKE_DIRECTORY "${{{application}}_project_root}/!Generated/Build")
-file(WRITE "${{{application}}_project_root}/!Generated/Build/BuildVersion.h"
+fn_androidappkit_write_if_changed("${{{application}}_project_root}/!Generated/Build/BuildVersion.h"
     "#pragma once\n#define {{APPLICATION}}_PACKAGE_VERSION \"${{{APPLICATION}}_PACKAGE_VERSION}\"")
 set({{application}}_generated_root "${{{application}}_project_root}/!Generated/{{Application}}.Application/Xaml")
-execute_process(
-    COMMAND powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass
-        -File "${{{application}}_project_root}/build.ps1" -Command generate-xaml
-    WORKING_DIRECTORY "${{{application}}_project_root}"
-    COMMAND_ERROR_IS_FATAL ANY
-)
+fn_androidappkit_generate_xaml("${{{application}}_project_root}")
 file(GLOB_RECURSE {{application}}_application_sources CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/Base/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/Base/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Core/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/Core/*.h"
@@ -26,11 +21,23 @@ file(GLOB_RECURSE {{application}}_generated_xaml CONFIGURE_DEPENDS "${{{applicat
 if (NOT {{application}}_generated_xaml)
     message(FATAL_ERROR "XamlCompiler did not generate application sources.")
 endif()
-add_library({{application}}_application STATIC ${{{application}}_application_sources} ${{{application}}_generated_xaml})
+# Генерируемые исходники и заголовки показываем отдельно от рукописного кода.
+file(GLOB_RECURSE {{application}}_generated_headers CONFIGURE_DEPENDS "${{{application}}_generated_root}/*.xaml.h")
+set({{application}}_generated_files
+    ${{{application}}_generated_xaml}
+    ${{{application}}_generated_headers}
+    "${{{application}}_project_root}/!Generated/Build/BuildVersion.h")
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${{{application}}_application_sources})
+source_group(TREE "${{{application}}_project_root}/!Generated" PREFIX "!Generated"
+    FILES ${{{application}}_generated_files})
+add_custom_target({{application}}_generated SOURCES ${{{application}}_generated_files})
+set_target_properties({{application}}_generated PROPERTIES FOLDER "!Generated")
+add_library({{application}}_application STATIC ${{{application}}_application_sources} ${{{application}}_generated_files})
 set_target_properties({{application}}_application PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features({{application}}_application PUBLIC cxx_std_20)
 target_include_directories({{application}}_application PUBLIC "${{{application}}_project_root}")
 target_link_libraries({{application}}_application PUBLIC
+    AndroidApplication::Framework
     XamlRuntime::Logging
     XamlRuntime::Runtime)
 if (NOT ANDROID)

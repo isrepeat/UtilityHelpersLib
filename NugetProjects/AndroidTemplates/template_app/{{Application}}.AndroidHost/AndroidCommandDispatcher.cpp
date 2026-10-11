@@ -10,8 +10,15 @@ namespace {{application}}::android_host {
     //
     // API
     //
-    void AndroidCommandDispatcher::Dispatch(application::core::HostCommand command, const application::core::HostCommandData& data) const {
-        this->dispatch.Call(this->target, static_cast<jint>(command), data.value, data.additionalValue);
+    void AndroidCommandDispatcher::Dispatch(
+        application::core::HostCommand hostCommand,
+        const application::core::HostCommandData& hostCommandData) const {
+        this->dispatch.Call(
+            this->target,
+            static_cast<jint>(hostCommand),
+            hostCommandData.value,
+            hostCommandData.additionalValue
+        );
     }
 }
 #endif

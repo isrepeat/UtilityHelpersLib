@@ -16,11 +16,13 @@ namespace {{application}}::application::interface {
         virtual ~IPageNavigator() = default;
 
         virtual bool Navigate(std::string_view pageName) = 0;
-        virtual bool Trigger(core::NavigationTrigger trigger) = 0;
-        virtual bool Trigger(core::NavigationTrigger trigger, std::unique_ptr<base::NavigationStateBase> state) = 0;
+        virtual bool Trigger(core::NavigationTrigger navigationTrigger) = 0;
+        virtual bool Trigger(
+            core::NavigationTrigger navigationTrigger,
+            std::unique_ptr<base::NavigationStateBase> navigationState) = 0;
         // result отделяет результат действия от самого возврата. Например, диалог выбора
         // передаёт выбранное значение предыдущей странице, а кнопка «Назад» не передаёт ничего.
-        virtual bool NavigateBack(std::unique_ptr<base::NavigationStateBase> result = {}) = 0;
+        virtual bool NavigateBack(std::unique_ptr<base::NavigationStateBase> navigationState = {}) = 0;
 
         template <typename TPage>
         bool Navigate() {

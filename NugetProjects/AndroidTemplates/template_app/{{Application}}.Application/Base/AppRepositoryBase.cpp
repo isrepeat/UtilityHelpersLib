@@ -11,13 +11,13 @@ namespace {{application}}::application::base {
         return this->applicationStateStore.CurrentDocument();
     }
 
-    bool AppRepositoryBase::Commit(model::ApplicationStateDocument document) {
-        return this->applicationStateStore.TrySaveDocument(std::move(document));
+    bool AppRepositoryBase::Commit(model::ApplicationStateDocument applicationStateDocument) {
+        return this->applicationStateStore.TrySaveDocument(std::move(applicationStateDocument));
     }
 
 #if defined(ANDROID_APP_PREVIEWER)
-    void AppRepositoryBase::preview_LoadScenarioState(model::ApplicationStateDocument document) {
-        this->applicationStateStore.preview_LoadSessionDocument(std::move(document));
+    void AppRepositoryBase::preview_LoadScenarioState(model::ApplicationStateDocument applicationStateDocument) {
+        this->applicationStateStore.preview_LoadSessionDocument(std::move(applicationStateDocument));
         this->preview_ReloadFromStateStore();
     }
 

@@ -17,6 +17,15 @@
 
 Полный контракт проекта и flow сборки описаны в [BUILD-PIPELINE.md](BUILD-PIPELINE.md).
 
+Запуск preview использует инкрементальную генерацию XAML и Ninja. Для локального
+feed `Resolve-XamlCompiler` и `InstallXamlRuntime.cmake` проверяют последнюю версию
+архивов и наличие распакованного пакета без запуска NuGet; при отсутствии пакета
+или удалённом feed выполняется обычный restore. `generate-xaml.ps1` принимает
+необязательный `-XamlCompiler`, чтобы запуск preview мог передать найденный компилятор.
+`AndroidBuildConfiguration.cmake` принимает пути из общего сценария, предотвращает
+повторную генерацию в рамках одного запуска и сохраняет время неизменённых заголовков.
+Приложения подключают эти функции, не копируя реализацию сборки в свои скрипты.
+
 Общие пути читаются из ближайшего `Android.SharedProps.json` вверх от корня проекта. `Paths` определяет signing, Updater, Drive, feed и previewer; относительные значения вычисляются от каталога JSON. `$androidProjectConfig` содержит только настройки проекта, а `$androidProjectSharedConfig` — отдельные секции `Paths` и `Properties` из JSON. Команды чтения конфигурации работают только с настройками проекта; сборка обращается к общим настройкам напрямую через `$androidProjectSharedConfig`. Полный контракт версии 1 описан в `Windows/Me/Documentation/AndroidBuild.md`.
 
 `tools/test-apk-signing.ps1` сравнивает SHA-256 сертификата переданного APK с ключом выбранной конфигурации и возвращает boolean. Координация зависимых приложений находится в сценариях AndroidTemplates.
@@ -24,3 +33,9 @@
 Секция `Native = @{}` включает CMake и XAML; нативные поля `AndroidHost`, `NativeLibrary`, `AndroidPresetPrefix` и `CMakeVersionVariable` остаются в конфигурации проекта. Для совместимости наличие старого `NativeLibrary` также включает нативную сборку. Если этих настроек нет, выполняется только Gradle и Visual Studio не требуется. `-NativeOnly` для такого проекта завершается явной ошибкой.
 
 Kotlin-приложения используют те же команды через свой `build.ps1`. Общий uploader принимает `-FilePath` и `-MimeType` и возвращает метаданные Drive с ID файла; старое имя `-ApkPath` поддерживается как alias.
+
+## Структура исходников
+
+Utility-проект находится в `Nuget/AndroidBuildTools.Package`. В нём `build/native` содержит общие C++ исходники, `cmake` — модули подключения, `gradle` — плагины Gradle, `tests` — проверки, `tools` — PowerShell-инструменты. Рядом с проектом находятся `Pack.ps1` и `AndroidBuildTools.nuspec`.
+
+В пакете сохраняются каталоги `build/native`, `cmake`, `gradle` и `tools`. CMake-подключения используют `${ANDROID_BUILD_TOOLS_ROOT}/cmake/...` начиная с версии 1.0.63.26.

@@ -17,7 +17,7 @@ namespace {{application}}::application::interface {
         virtual xaml::Element& Root() = 0;
 #if defined(ANDROID_APP_PREVIEWER)
         virtual xaml::runtime::RuntimeBindingContext preview_RuntimeContext() = 0;
-        virtual void preview_ReplaceRuntimeTree(xaml::runtime::RuntimeBuildResult result) = 0;
+        virtual void preview_ReplaceRuntimeTree(xaml::runtime::RuntimeBuildResult runtimeBuildResult) = 0;
 #endif
     };
 }

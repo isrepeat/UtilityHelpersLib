@@ -3,15 +3,15 @@
 #include <utility>
 
 namespace {{application}}::application::model {
-    ApplicationRepository::ApplicationRepository(core::ApplicationStateStore& store)
-        : base::AppRepositoryBase(store) {
+    ApplicationRepository::ApplicationRepository(core::ApplicationStateStore& applicationStateStore)
+        : base::AppRepositoryBase(applicationStateStore) {
     }
 #if defined(ANDROID_APP_PREVIEWER)
     //
     // AppRepositoryBase
     //
-    bool ApplicationRepository::preview_IsSessionDocumentEquivalentTo(const ApplicationStateDocument& document) const {
-        return this->base::AppRepositoryBase::State() == document;
+    bool ApplicationRepository::preview_IsSessionDocumentEquivalentTo(const ApplicationStateDocument& applicationStateDocument) const {
+        return this->base::AppRepositoryBase::State() == applicationStateDocument;
     }
 
     void ApplicationRepository::preview_ReloadFromStateStore() {
@@ -26,8 +26,8 @@ namespace {{application}}::application::model {
     }
 
     bool ApplicationRepository::SetGreeting(std::string value) {
-        auto document = this->base::AppRepositoryBase::State();
-        document.greeting = std::move(value);
-        return this->base::AppRepositoryBase::Commit(std::move(document));
+        auto applicationStateDocument = this->base::AppRepositoryBase::State();
+        applicationStateDocument.greeting = std::move(value);
+        return this->base::AppRepositoryBase::Commit(std::move(applicationStateDocument));
     }
 }

@@ -6,9 +6,9 @@ namespace {{application}}::application::core {
     // API
     //
     std::unique_ptr<base::NavigationStateBase> GreetingNavigationState::preview_CreatePreviewDefault() {
-        auto state = std::make_unique<GreetingNavigationState>();
-        state->Message = "Hello from preview!";
-        return state;
+        auto greetingNavigationState = std::make_unique<GreetingNavigationState>();
+        greetingNavigationState->Message = "Hello from preview!";
+        return greetingNavigationState;
     }
 #endif
 }

@@ -10,11 +10,57 @@
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration"><ConfigurationType>Utility</ConfigurationType><PlatformToolset>v145</PlatformToolset></PropertyGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+    <ItemDefinitionGroup>
+        <ClCompile>
+            <AdditionalIncludeDirectories>$(ProjectDir)build\native;$(ProjectDir)..\..\..\XamlRuntime\Nuget\XamlRuntime\XamlRuntime.Shared;$(ProjectDir)..\..\..\XamlRuntime\Nuget\OpenGLESRenderer\OpenGLESRenderer.Shared;$(ProjectDir)..\..\..\..\Helpers\Helpers.Logging;$(ProjectDir)..\..\..\..\3rdParty\Spdlog\Spdlog.Shared\Spdlog;$(PkgXamlRuntime)\build\native\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+            <LanguageStandard>stdcpp20</LanguageStandard>
+        </ClCompile>
+    </ItemDefinitionGroup>
     <ItemGroup>
-        <None Include="build\native\include\AndroidAppPreviewer.PluginSDK\AndroidAppPreviewerPlugin.h" />
-        <None Include="cmake\AndroidAppPreviewerPluginConfig.cmake" />
-        <None Include="Pack.ps1" />
+        <PackageReference Include="XamlRuntime" Version="1.0.25.10" GeneratePathProperty="true" PrivateAssets="all" ExcludeAssets="all" />
+    </ItemGroup>
+    <ItemGroup>
         <None Include="AndroidAppPreviewer.PluginSDK.nuspec" />
+        <None Include="Pack.ps1" />
+        <None Include="build\native\AndroidAppPreviewer.PluginSDK.targets" />
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\AndroidAppPreviewerPlugin.h" />
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\DiagnosticAbi.cpp" />
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\DiagnosticAbi.h" />
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\ElementAbi.cpp" />
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\ElementAbi.h" />
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\InteractionAbi.cpp" />
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\InteractionAbi.h" />
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\MetadataAbi.cpp" />
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\MetadataAbi.h" />
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\PreviewPluginAbi.cpp" />
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\PreviewPluginAbi.h" />
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\RenderingAbi.cpp" />
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\RenderingAbi.h" />
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\SessionAbi.cpp" />
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\SessionAbi.h" />
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\XamlCompletionAbi.cpp" />
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Abi\XamlCompletionAbi.h" />
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge\Diagnostic.cpp" />
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge\Diagnostic.h" />
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge\ElementTree.cpp" />
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge\ElementTree.h" />
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge\PreviewPluginSdkTypes.cpp" />
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge\PreviewPluginSdkTypes.h" />
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge\TextBuffer.cpp" />
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Bridge\TextBuffer.h" />
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\PreviewPluginExports.cpp" />
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Rendering\AngleRenderSurface.cpp" />
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Rendering\AngleRenderSurface.h" />
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Rendering\RecordingBackend.cpp" />
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Internal\Rendering\RecordingBackend.h" />
+        <None Include="cmake\Runtime.cmake" />
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Session\ApplicationPreviewSession.h" />
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Session\PluginDefinition.h" />
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Session\PreviewNavigationController.cpp" />
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Session\PreviewNavigationController.h" />
+        <ClCompile Include="build\native\AndroidAppPreviewer.PluginSDK\Session\PreviewSessionBase.cpp" />
+        <ClInclude Include="build\native\AndroidAppPreviewer.PluginSDK\Session\PreviewSessionBase.h" />
+        <None Include="cmake\AndroidAppPreviewerPluginConfig.cmake" />
     </ItemGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
